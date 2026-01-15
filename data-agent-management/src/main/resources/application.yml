@@ -19,6 +19,10 @@ spring:
       separator: ;
       encoding: utf-8
   ai:
+    retry:
+      max-attempts: 5
+      initial-interval: 2000ms
+      multiplier: 2.0
     vectorstore:
       type: simple
     alibaba:
