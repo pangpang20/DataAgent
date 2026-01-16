@@ -1,13 +1,39 @@
 # DataAgent 项目重命名需求文档
 
+## 文档状态：部分已完成
+
+### 已完成的变更（2026-01-16）
+
+✅ **品牌名称变更**（前端）：
+- 前端页面标题：`Spring AI Alibaba Data Agent` → `Audaque Data Agent`
+- 前端 Logo：已替换为自定义 logo（dataagent_logo.png）
+- 前端路由标题、package.json 描述已更新
+
+✅ **项目名称变更**（Maven）：
+- 根 pom.xml：`<name>` 已改为 `Audaque Data Agent`
+- 注意：groupId 和 artifactId 仍保持 `com.alibaba.cloud.ai` 和 `spring-ai-alibaba-data-agent`
+
+✅ **Docker 配置优化**：
+- Dockerfile-backend 和 Dockerfile-frontend 已修改为使用本地代码构建
+- 不再从 GitHub 克隆代码
+
+### 待完成的变更
+
+⏳ **包名变更**：`com.alibaba.cloud` → `com.audaque.cloud`（Java 代码包名尚未修改）
+⏳ **Maven 配置**：groupId 和 artifactId 尚未修改
+⏳ **文档更新**：README.md、CONTRIBUTING.md 等文档中的品牌名称尚未完全更新
+⏳ **许可证配置**：CI 配置中的版权所有者信息尚未更新
+
+---
+
 ## 一、需求背景
 
 ### 1.1 变更目标
 
 将项目从 Spring AI Alibaba 体系独立出来，形成独立的商业化产品，具体变更：
 
-- **包名变更**：`com.alibaba.cloud` → `com.audaque.cloud`
-- **品牌变更**：`Alibaba`/`阿里巴巴` → `audaque`（保留第三方依赖不变）
+- **包名变更**：`com.alibaba.cloud` → `com.audaque.cloud`（待完成）
+- **品牌变更**：`Alibaba`/`阿里巴巴` → `Audaque`（前端已完成，文档待更新）
 
 ### 1.2 变更范围
 
@@ -207,15 +233,15 @@ import com.alibaba.druid.pool.DruidDataSource;
 
 **修改内容对照表**：
 
-| 修改项                  | 修改前                                             | 修改后                                   | 位置     |
-| ----------------------- | -------------------------------------------------- | ---------------------------------------- | -------- |
-| groupId                 | `com.alibaba.cloud.ai`                             | `com.audaque.cloud.ai`                   | 第 6 行  |
-| artifactId              | `spring-ai-alibaba-data-agent`                     | `spring-ai-audaque-data-agent`           | 第 7 行  |
-| name                    | `Spring AI Alibaba Data Agent`                     | `Spring AI Audaque Data Agent`           | 第 9 行  |
-| url                     | `https://github.com/alibaba/spring-ai-alibaba`     | `https://github.com/audaque/DataAgent`   | 第 11 行 |
-| scm.connection          | `git://github.com/spring-ai-alibaba/DataAgent.git` | `git://github.com/audaque/DataAgent.git` | 第 17 行 |
-| scm.developerConnection | `git@github.com:spring-ai-alibaba/DataAgent.git`   | `git@github.com:audaque/DataAgent.git`   | 第 18 行 |
-| scm.url                 | `https://github.com/spring-ai-alibaba/DataAgent`   | `https://github.com/audaque/DataAgent`   | 第 19 行 |
+| 修改项                  | 修改前                                             | 修改后                                   | 状态     | 位置     |
+| ----------------------- | -------------------------------------------------- | ---------------------------------------- | -------- | -------- |
+| name                    | `Spring AI Alibaba Data Agent`                     | `Audaque Data Agent`                     | ✅ 已完成 | 第 10 行 |
+| groupId                 | `com.alibaba.cloud.ai`                             | `com.audaque.cloud.ai`                   | ⏳ 待完成 | 第 7 行  |
+| artifactId              | `spring-ai-alibaba-data-agent`                     | `spring-ai-audaque-data-agent`           | ⏳ 待完成 | 第 8 行  |
+| url                     | `https://github.com/alibaba/spring-ai-alibaba`     | `https://github.com/audaque/DataAgent`   | ⏳ 待完成 | 第 12 行 |
+| scm.connection          | `git://github.com/spring-ai-alibaba/DataAgent.git` | `git://github.com/audaque/DataAgent.git` | ⏳ 待完成 | 第 18 行 |
+| scm.developerConnection | `git@github.com:spring-ai-alibaba/DataAgent.git`   | `git@github.com:audaque/DataAgent.git`   | ⏳ 待完成 | 第 19 行 |
+| scm.url                 | `https://github.com/spring-ai-alibaba/DataAgent`   | `https://github.com/audaque/DataAgent`   | ⏳ 待完成 | 第 20 行 |
 
 **第三方依赖保持不变**（重要）：
 
@@ -247,16 +273,16 @@ import com.alibaba.druid.pool.DruidDataSource;
 
 **修改内容对照表**：
 
-| 修改项                  | 修改前                                           | 修改后                                    | 位置     |
-| ----------------------- | ------------------------------------------------ | ----------------------------------------- | -------- |
-| parent.groupId          | `com.alibaba.cloud.ai`                           | `com.audaque.cloud.ai`                    | 第 6 行  |
-| parent.artifactId       | `spring-ai-alibaba-data-agent`                   | `spring-ai-audaque-data-agent`            | 第 7 行  |
-| artifactId              | `spring-ai-alibaba-data-agent-management`        | `spring-ai-audaque-data-agent-management` | 第 12 行 |
-| name                    | `Spring AI Alibaba DataAgent Management`         | `Spring AI Audaque DataAgent Management`  | 第 13 行 |
-| url                     | `https://github.com/alibaba/spring-ai-alibaba`   | `https://github.com/audaque/DataAgent`    | 第 14 行 |
-| scm.connection          | `git://github.com/alibaba/spring-ai-alibaba.git` | `git://github.com/audaque/DataAgent.git`  | 第 16 行 |
-| scm.developerConnection | `git@github.com:alibaba/spring-ai-alibaba.git`   | `git@github.com:audaque/DataAgent.git`    | 第 17 行 |
-| scm.url                 | `https://github.com/alibaba/spring-ai-alibaba`   | `https://github.com/audaque/DataAgent`    | 第 18 行 |
+| 修改项                  | 修改前                                           | 修改后                                    | 状态     | 位置     |
+| ----------------------- | ------------------------------------------------ | ----------------------------------------- | -------- | -------- |
+| parent.groupId          | `com.alibaba.cloud.ai`                           | `com.audaque.cloud.ai`                    | ⏳ 待完成 | 第 6 行  |
+| parent.artifactId       | `spring-ai-alibaba-data-agent`                   | `spring-ai-audaque-data-agent`            | ⏳ 待完成 | 第 7 行  |
+| artifactId              | `spring-ai-alibaba-data-agent-management`        | `spring-ai-audaque-data-agent-management` | ⏳ 待完成 | 第 12 行 |
+| name                    | `Spring AI Alibaba DataAgent Management`         | `Spring AI Audaque DataAgent Management`  | ⏳ 待完成 | 第 13 行 |
+| url                     | `https://github.com/alibaba/spring-ai-alibaba`   | `https://github.com/audaque/DataAgent`    | ⏳ 待完成 | 第 14 行 |
+| scm.connection          | `git://github.com/alibaba/spring-ai-alibaba.git` | `git://github.com/audaque/DataAgent.git`  | ⏳ 待完成 | 第 16 行 |
+| scm.developerConnection | `git@github.com:alibaba/spring-ai-alibaba.git`   | `git@github.com:audaque/DataAgent.git`    | ⏳ 待完成 | 第 17 行 |
+| scm.url                 | `https://github.com/alibaba/spring-ai-alibaba`   | `https://github.com/audaque/DataAgent`    | ⏳ 待完成 | 第 18 行 |
 
 **保持不变的依赖**：
 
@@ -390,30 +416,61 @@ public class MyBatisConfig {
 
 ### 2.4 前端项目修改
 
-#### 2.4.1 package.json 修改
+#### 2.4.1 前端品牌名称更新
+
+**状态**：✅ **已完成（2026-01-16）**
+
+已更新的文件：
+
+1. **index.html** - 浏览器标签页标题
+   ```html
+   <title>Audaque Data Agent Web UI</title>
+   ```
+
+2. **BaseLayout.vue** - 页面头部 Logo 文字
+   ```vue
+   <span class="brand-text">Audaque Data Agent</span>
+   ```
+
+3. **router/index.js** - 路由页面标题
+   ```javascript
+   document.title = `${to.meta.title} - Audaque Data Agent`;
+   document.title = 'Audaque Data Agent';
+   ```
+
+4. **自定义 Logo**
+   - 位置：`data-agent-frontend/public/logo.png`
+   - 位置：`data-agent-frontend/public/favicon.png`
+   - 来源：`C:\Users\pangpang\Downloads\dataagent_logo.png`
+
+#### 2.4.2 package.json 修改
 
 **文件路径**：`c:\data\code\DataAgent\data-agent-frontend\package.json`
 
+**修改状态**：✅ **已完成**
+
 **修改内容对照表**：
 
-| 字段        | 修改前                                  | 修改后                                  |
-| ----------- | --------------------------------------- | --------------------------------------- |
-| name        | `spring-ai-alibaba-data-agent-frontend` | `spring-ai-audaque-data-agent-frontend` |
-| description | 如有 "Alibaba" 字样                     | 改为 "audaque"                          |
+| 字段        | 修改前                                               | 修改后                                     | 状态     |
+| ----------- | ---------------------------------------------------- | ------------------------------------------ | -------- |
+| name        | `spring-ai-alibaba-data-agent-web-ui`                | 保持不变                                   | -        |
+| description | `Spring AI Alibaba Data Agent Web UI based on Vue 3` | `Audaque Data Agent Web UI based on Vue 3` | ✅ 已完成 |
 
 **示例**：
 
 ```json
 {
-  "name": "spring-ai-audaque-data-agent-frontend",
+  "name": "spring-ai-alibaba-data-agent-web-ui",
   "version": "1.0.0",
-  "description": "Spring AI Audaque Data Agent Frontend"
+  "description": "Audaque Data Agent Web UI based on Vue 3"
 }
 ```
 
-#### 2.4.2 前端 README 修改
+#### 2.4.3 前端 README 修改
 
 **文件路径**：`c:\data\code\DataAgent\data-agent-frontend\README.md`
+
+**状态**：⏳ **待完成**
 
 根据 `grep_code` 结果，需要修改的位置：
 
@@ -425,15 +482,17 @@ public class MyBatisConfig {
 这是 Spring AI Alibaba DataAgent 的前端项目...
 
 <!-- 修改后 -->
-# Spring AI Audaque DataAgent Frontend
+# Audaque DataAgent Frontend
 
 ## 项目介绍
-这是 Spring AI Audaque DataAgent 的前端项目...
+这是 Audaque DataAgent 的前端项目...
 ```
 
-#### 2.4.3 前端代码风格文档修改
+#### 2.4.4 前端代码风格文档修改
 
 **文件路径**：`c:\data\code\DataAgent\data-agent-frontend\README-CODE-STYLE.md`（第 35 行）
+
+**状态**：⏳ **待完成**
 
 ```markdown
 <!-- 修改前 -->
@@ -617,6 +676,46 @@ jobs:
 ### 2.7 Docker 配置修改
 
 #### 2.7.1 Dockerfile 修改
+
+**状态**：✅ **已完成（2026-01-16）**
+
+**文件路径**：
+- `c:\data\code\DataAgent\docker-file\Dockerfile-backend`
+- `c:\data\code\DataAgent\docker-file\Dockerfile-frontend`
+
+**已完成的修改**：
+
+1. **Dockerfile-backend**：
+   - ✅ 移除了 `git` 安装
+   - ✅ 删除了从 GitHub 克隆代码的部分
+   - ✅ 使用本地已构建的 JAR 包：
+     ```dockerfile
+     COPY data-agent-management/target/spring-ai-alibaba-data-agent-management-1.0.0-SNAPSHOT.jar /app/app.jar
+     ```
+
+2. **Dockerfile-frontend**：
+   - ✅ 使用相对路径复制本地代码：
+     ```dockerfile
+     COPY ../data-agent-frontend .
+     ```
+
+3. **docker-file/README.md**：
+   - ✅ 创建了 Docker 部署指南，说明了使用本地代码构建的流程
+
+**更新后的部署流程**：
+```bash
+# 1. 在本地重新编译项目
+cd /opt/DataAgent
+mvn install -DskipTests
+
+# 2. 停止并删除旧容器，重新构建镜像并启动
+cd docker-file
+docker compose up -d --build
+```
+
+#### 2.7.2 docker-compose.yml 修改
+
+**状态**：⏳ **待完成**
 
 **文件路径**：
 - `c:\data\code\DataAgent\docker-file\Dockerfile-backend`
@@ -2198,14 +2297,34 @@ java -jar target/spring-ai-audaque-data-agent-management-1.0.0-SNAPSHOT.jar
 
 ### 12.1 核心要点回顾
 
-1. **包名变更**：`com.alibaba.cloud.ai.dataagent` → `com.audaque.cloud.ai.dataagent`
-2. **品牌变更**：`Alibaba`/`阿里巴巴` → `audaque`
+1. **包名变更**：`com.alibaba.cloud.ai.dataagent` → `com.audaque.cloud.ai.dataagent`（⏳ 待完成）
+2. **品牌变更**：`Alibaba`/`阿里巴巴` → `Audaque`（✅ 前端已完成）
 3. **第三方依赖**：**绝对不能修改**（Spring AI Alibaba、阿里云 SDK、Druid 等）
 4. **推荐工具**：IntelliJ IDEA 的 Refactor → Rename
 5. **验证方法**：编译 → 测试 → 功能回归
 6. **工作量评估**：约 23 小时（3 个工作日）
 
-### 12.2 成功标准
+### 12.2 已完成项（2026-01-16）
+
+✅ 前端品牌名称全局替换：Spring AI Alibaba → Audaque
+✅ 前端自定义 Logo 集成（logo.png + favicon.png）
+✅ 前端 package.json 描述更新
+✅ 根 pom.xml 项目名称修改：Audaque Data Agent
+✅ Docker 配置优化：使用本地代码构建
+✅ 创建 docker-file/README.md 部署指南
+
+### 12.3 待完成项
+
+⏳ Java 源代码包名重构（约 275 个文件）
+⏳ 测试代码包名重构（约 20 个文件）
+⏳ Maven 配置修改（groupId + artifactId）
+⏳ MyBatis Mapper XML 修改（namespace）
+⏳ README.md 文档更新
+⏳ CONTRIBUTING.md 文档更新
+⏳ docs/ 目录下所有文档更新
+⏳ CI 许可证配置更新
+
+### 12.4 成功标准
 
 ✅ 所有 Java 文件的 package 声明已修改
 ✅ 所有项目内代码的 import 语句已修改
