@@ -1,18 +1,16 @@
 <div align="center">
-  <h1>Spring AI Audaque DataAgent</h1>
+  <h1>Audaque DataAgent</h1>
   <p>
-    <strong>基于 <a href="https://github.com/alibaba/spring-ai-alibaba" target="_blank">Spring AI Audaque</a> 的企业级智能数据分析师</strong>
+    <strong>基于 Spring AI 的企业级智能数据分析师</strong>
   </p>
   <p>
      Text-to-SQL | Python 深度分析 | 智能报告 | MCP 服务器 | RAG 增强
   </p>
 
   <p>
-    <a href="https://github.com/alibaba/spring-ai-alibaba"><img src="https://img.shields.io/badge/Spring%20AI%20Alibaba-1.1.0.0-blue" alt="Spring AI Audaque"></a>
     <img src="https://img.shields.io/badge/Spring%20Boot-3.4.8+-green" alt="Spring Boot">
     <img src="https://img.shields.io/badge/Java-17+-orange" alt="Java">
     <img src="https://img.shields.io/badge/License-Apache%202.0-red" alt="License">
-    <a href="https://deepwiki.com/audaque/DataAgent"><img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki"></a>
   </p>
 
    <p>
@@ -27,7 +25,7 @@
 <br/>
 
 <div align="center">
-    <img src="img/LOGO.png" alt="DataAgent" width="1807" style="border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+    <img src="img/LOGO.png" alt="DataAgent" width="200" style="border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
 </div>
 
 <br/>
@@ -42,16 +40,16 @@
 
 ## ✨ 核心特性
 
-| 特性 | 说明 |
-| :--- | :--- |
-| **智能数据分析** | 基于 StateGraph 的 Text-to-SQL 转换，支持复杂的多表查询和多轮对话意图理解。 |
+| 特性                | 说明                                                                                    |
+| :------------------ | :-------------------------------------------------------------------------------------- |
+| **智能数据分析**    | 基于 StateGraph 的 Text-to-SQL 转换，支持复杂的多表查询和多轮对话意图理解。             |
 | **Python 深度分析** | 内置 Docker/Local Python 执行器，自动生成并执行 Python 代码进行统计分析与机器学习预测。 |
-| **智能报告生成** | 分析结果自动汇总为包含 ECharts 图表的 HTML/Markdown 报告，所见即所得。 |
-| **人工反馈机制** | 独创的 Human-in-the-loop 机制，支持用户在计划生成阶段进行干预和调整。 |
-| **RAG 检索增强** | 集成向量数据库，支持对业务元数据、术语库的语义检索，提升 SQL生成准确率。 |
-| **多模型调度** | 内置模型注册表，支持运行时动态切换不同的 LLM 和 Embedding 模型。 |
-| **MCP 服务器** | 遵循 MCP 协议，支持作为 Tool Server 对外提供 NL2SQL 和 智能体管理能力。 |
-| **API Key 管理** | 完善的 API Key 生命周期管理，支持细粒度的权限控制。 |
+| **智能报告生成**    | 分析结果自动汇总为包含 ECharts 图表的 HTML/Markdown 报告，所见即所得。                  |
+| **人工反馈机制**    | 独创的 Human-in-the-loop 机制，支持用户在计划生成阶段进行干预和调整。                   |
+| **RAG 检索增强**    | 集成向量数据库，支持对业务元数据、术语库的语义检索，提升 SQL生成准确率。                |
+| **多模型调度**      | 内置模型注册表，支持运行时动态切换不同的 LLM 和 Embedding 模型。                        |
+| **MCP 服务器**      | 遵循 MCP 协议，支持作为 Tool Server 对外提供 NL2SQL 和 智能体管理能力。                 |
+| **API Key 管理**    | 完善的 API Key 生命周期管理，支持细粒度的权限控制。                                     |
 
 ## 🏗️ 项目结构
 
@@ -87,13 +85,13 @@ npm install && npm run dev
 
 ## 📚 文档导航
 
-| 文档 | 此文档包含的内容 |
-| :--- | :--- |
-| [快速开始](docs/QUICK_START.md) | 环境要求、数据库导入、基础配置、系统初体验 |
-| [架构设计](docs/ARCHITECTURE.md) | 系统分层架构、StateGraph与工作流设计、核心模块时序图 |
-| [开发者指南](docs/DEVELOPER_GUIDE.md) | 开发环境搭建、详细配置手册、代码规范、扩展开发(向量库/模型) |
-| [高级功能](docs/ADVANCED_FEATURES.md) | API Key 调用、MCP 服务器配置、自定义混合检索策略、Python执行器配置 |
-| [知识配置最佳实践](docs/KNOWLEDGE_USAGE.md) | 语义模型，业务知识，智能体知识的解释和使用 |
+| 文档                                        | 此文档包含的内容                                                   |
+| :------------------------------------------ | :----------------------------------------------------------------- |
+| [快速开始](docs/QUICK_START.md)             | 环境要求、数据库导入、基础配置、系统初体验                         |
+| [架构设计](docs/ARCHITECTURE.md)            | 系统分层架构、StateGraph与工作流设计、核心模块时序图               |
+| [开发者指南](docs/DEVELOPER_GUIDE.md)       | 开发环境搭建、详细配置手册、代码规范、扩展开发(向量库/模型)        |
+| [高级功能](docs/ADVANCED_FEATURES.md)       | API Key 调用、MCP 服务器配置、自定义混合检索策略、Python执行器配置 |
+| [知识配置最佳实践](docs/KNOWLEDGE_USAGE.md) | 语义模型，业务知识，智能体知识的解释和使用                         |
 
 ## 🤝 加入社区 & 贡献
 

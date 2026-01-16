@@ -133,7 +133,7 @@ spring:
     username: cyl
     password: Audaque@123
     driver-class-name: com.mysql.cj.jdbc.Driver
-    type: com.alibaba.druid.pool.DruidDataSource
+    type: com.audaque.druid.pool.DruidDataSource
 ```
 
 **修改方案**：
@@ -148,7 +148,7 @@ spring:
     username: ${DATA_AGENT_DATASOURCE_USERNAME:cyl}
     password: ${DATA_AGENT_DATASOURCE_PASSWORD:Audaque@123}
     driver-class-name: ${DATASOURCE_DRIVER_CLASS:com.mysql.cj.jdbc.Driver}
-    type: com.alibaba.druid.pool.DruidDataSource
+    type: com.audaque.druid.pool.DruidDataSource
   
   sql:
     init:
@@ -526,7 +526,7 @@ public String getDatabaseType() {
 为区分"元数据库"和"分析数据源"，建议新增工具类：
 
 ```java
-package com.alibaba.cloud.ai.dataagent.util;
+package com.audaque.cloud.ai.dataagent.util;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -635,7 +635,7 @@ public class SomeService {
 ```yaml
 spring:
   datasource:
-    type: com.alibaba.druid.pool.DruidDataSource
+    type: com.audaque.druid.pool.DruidDataSource
     druid:
       # 达梦数据库连接配置
       initial-size: 5

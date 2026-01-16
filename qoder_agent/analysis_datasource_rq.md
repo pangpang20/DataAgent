@@ -248,7 +248,7 @@ GaussDB 特殊参数：
 
 #### 3.2.1 枚举定义
 
-**文件**：`com.alibaba.cloud.ai.dataagent.enums.BizDataSourceTypeEnum`
+**文件**：`com.audaque.cloud.ai.dataagent.enums.BizDataSourceTypeEnum`
 
 **新增枚举**：
 ```java
@@ -265,7 +265,7 @@ GAUSSDB(7, "gaussdb", DatabaseDialectEnum.POSTGRESQL.getCode(), DbAccessTypeEnum
 
 #### 3.2.2 类型处理器
 
-**文件**：`com.alibaba.cloud.ai.dataagent.service.datasource.handler.impl.GaussDbDatasourceTypeHandler`
+**文件**：`com.audaque.cloud.ai.dataagent.service.datasource.handler.impl.GaussDbDatasourceTypeHandler`
 
 **新建文件**：
 ```java
@@ -284,11 +284,11 @@ GAUSSDB(7, "gaussdb", DatabaseDialectEnum.POSTGRESQL.getCode(), DbAccessTypeEnum
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.cloud.ai.dataagent.service.datasource.handler.impl;
+package com.audaque.cloud.ai.dataagent.service.datasource.handler.impl;
 
-import com.alibaba.cloud.ai.dataagent.enums.BizDataSourceTypeEnum;
-import com.alibaba.cloud.ai.dataagent.entity.Datasource;
-import com.alibaba.cloud.ai.dataagent.service.datasource.handler.DatasourceTypeHandler;
+import com.audaque.cloud.ai.dataagent.enums.BizDataSourceTypeEnum;
+import com.audaque.cloud.ai.dataagent.entity.Datasource;
+import com.audaque.cloud.ai.dataagent.service.datasource.handler.DatasourceTypeHandler;
 import org.springframework.stereotype.Component;
 
 /**
@@ -351,21 +351,21 @@ public class GaussDbDatasourceTypeHandler implements DatasourceTypeHandler {
 
 #### 3.2.3 连接池实现
 
-**文件**：`com.alibaba.cloud.ai.dataagent.connector.impls.gaussdb.GaussDbJdbcConnectionPool`
+**文件**：`com.audaque.cloud.ai.dataagent.connector.impls.gaussdb.GaussDbJdbcConnectionPool`
 
 **新建文件**：
 ```java
 /*
  * Copyright 2024-2026 the original author or authors.
  */
-package com.alibaba.cloud.ai.dataagent.connector.impls.gaussdb;
+package com.audaque.cloud.ai.dataagent.connector.impls.gaussdb;
 
-import com.alibaba.cloud.ai.dataagent.connector.pool.AbstractDBConnectionPool;
-import com.alibaba.cloud.ai.dataagent.enums.BizDataSourceTypeEnum;
-import com.alibaba.cloud.ai.dataagent.enums.ErrorCodeEnum;
+import com.audaque.cloud.ai.dataagent.connector.pool.AbstractDBConnectionPool;
+import com.audaque.cloud.ai.dataagent.enums.BizDataSourceTypeEnum;
+import com.audaque.cloud.ai.dataagent.enums.ErrorCodeEnum;
 import org.springframework.stereotype.Service;
 
-import static com.alibaba.cloud.ai.dataagent.enums.ErrorCodeEnum.OTHERS;
+import static com.audaque.cloud.ai.dataagent.enums.ErrorCodeEnum.OTHERS;
 
 /**
  * 华为 GaussDB JDBC 连接池
@@ -510,7 +510,7 @@ DWS 特殊参数：
 
 #### 4.2.1 枚举定义
 
-**文件**：`com.alibaba.cloud.ai.dataagent.enums.BizDataSourceTypeEnum`
+**文件**：`com.audaque.cloud.ai.dataagent.enums.BizDataSourceTypeEnum`
 
 **新增枚举**：
 ```java
@@ -522,15 +522,15 @@ DWS(8, "dws", DatabaseDialectEnum.POSTGRESQL.getCode(), DbAccessTypeEnum.JDBC.ge
 
 #### 4.2.2 类型处理器
 
-**文件**：`com.alibaba.cloud.ai.dataagent.service.datasource.handler.impl.DwsDatasourceTypeHandler`
+**文件**：`com.audaque.cloud.ai.dataagent.service.datasource.handler.impl.DwsDatasourceTypeHandler`
 
 **新建文件**：
 ```java
-package com.alibaba.cloud.ai.dataagent.service.datasource.handler.impl;
+package com.audaque.cloud.ai.dataagent.service.datasource.handler.impl;
 
-import com.alibaba.cloud.ai.dataagent.enums.BizDataSourceTypeEnum;
-import com.alibaba.cloud.ai.dataagent.entity.Datasource;
-import com.alibaba.cloud.ai.dataagent.service.datasource.handler.DatasourceTypeHandler;
+import com.audaque.cloud.ai.dataagent.enums.BizDataSourceTypeEnum;
+import com.audaque.cloud.ai.dataagent.entity.Datasource;
+import com.audaque.cloud.ai.dataagent.service.datasource.handler.DatasourceTypeHandler;
 import org.springframework.stereotype.Component;
 
 /**
@@ -591,18 +591,18 @@ public class DwsDatasourceTypeHandler implements DatasourceTypeHandler {
 
 #### 4.2.3 连接池实现
 
-**文件**：`com.alibaba.cloud.ai.dataagent.connector.impls.dws.DwsJdbcConnectionPool`
+**文件**：`com.audaque.cloud.ai.dataagent.connector.impls.dws.DwsJdbcConnectionPool`
 
 **新建文件**：
 ```java
-package com.alibaba.cloud.ai.dataagent.connector.impls.dws;
+package com.audaque.cloud.ai.dataagent.connector.impls.dws;
 
-import com.alibaba.cloud.ai.dataagent.connector.pool.AbstractDBConnectionPool;
-import com.alibaba.cloud.ai.dataagent.enums.BizDataSourceTypeEnum;
-import com.alibaba.cloud.ai.dataagent.enums.ErrorCodeEnum;
+import com.audaque.cloud.ai.dataagent.connector.pool.AbstractDBConnectionPool;
+import com.audaque.cloud.ai.dataagent.enums.BizDataSourceTypeEnum;
+import com.audaque.cloud.ai.dataagent.enums.ErrorCodeEnum;
 import org.springframework.stereotype.Service;
 
-import static com.alibaba.cloud.ai.dataagent.enums.ErrorCodeEnum.OTHERS;
+import static com.audaque.cloud.ai.dataagent.enums.ErrorCodeEnum.OTHERS;
 
 /**
  * 华为 DWS JDBC 连接池
