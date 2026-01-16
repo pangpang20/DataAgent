@@ -366,7 +366,7 @@ public class AgentVectorStoreService {
 
 ### 官方文档
 
-- [Spring AI Audaque 文档](https://springdoc.cn/spring-ai/)
+- [Spring AI Alibaba 文档](https://springdoc.cn/spring-ai/)
 - [Spring Boot 文档](https://spring.io/projects/spring-boot)
 - [React 文档](https://react.dev/)
 - [TypeScript 文档](https://www.typescriptlang.org/)
@@ -377,25 +377,6 @@ public class AgentVectorStoreService {
 - MyBatis 数据访问框架
 - Vector Store 向量数据库
 - Server-Sent Events (SSE)
-
-## 🤝 贡献指南
-
-详细的贡献指南请参考 [CONTRIBUTING-zh.md](../CONTRIBUTING-zh.md)。
-
-### 贡献类型
-
-- 🐛 报告 Bug
-- 💡 提出新功能建议
-- 📝 改进文档
-- 🔧 提交代码修复
-- ✨ 开发新功能
-
-### 行为准则
-
-- 尊重所有贡献者
-- 保持友好和专业
-- 接受建设性批评
-- 关注项目目标
 
 
 ---

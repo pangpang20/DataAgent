@@ -18,7 +18,6 @@
     <a href="#-核心特性">核心特性</a> • 
     <a href="#-快速开始">快速开始</a> • 
     <a href="#-文档导航">文档导航</a> • 
-    <a href="#-加入社区--贡献">加入社区</a>
   </p>
 </div>
 
@@ -55,12 +54,12 @@
 
 ![dataagent-structure](img/dataagent-structure.png)
 
-
 ## 🚀 快速开始
 
 > 详细的安装和配置指南请参考 [📑 快速开始文档](docs/QUICK_START.md)。
 
 ### 1. 准备环境
+
 - JDK 17+
 - MySQL 5.7+
 - Node.js 16+
@@ -81,6 +80,7 @@ npm install && npm run dev
 ```
 
 ### 3. 访问系统
+
 打开浏览器访问 `http://localhost:3000`，开始创建您的第一个数据智能体！
 
 ## 📚 文档导航
@@ -93,23 +93,9 @@ npm install && npm run dev
 | [高级功能](docs/ADVANCED_FEATURES.md)       | API Key 调用、MCP 服务器配置、自定义混合检索策略、Python执行器配置 |
 | [知识配置最佳实践](docs/KNOWLEDGE_USAGE.md) | 语义模型，业务知识，智能体知识的解释和使用                         |
 
-## 🤝 加入社区 & 贡献
-
-- **钉钉交流群**: `154405001431` ("DataAgent用户1群") 部分用户可能因为账号安全问题无法加入，条件允许的情况下可换账号申请。
-- **贡献指南**: 欢迎社区贡献！请查阅 [开发者文档](docs/DEVELOPER_GUIDE.md) 了解如何提交 PR。
-
 ## 📄 许可证
 
 本项目采用 Apache License 2.0 许可证。
-## Star 历史
-
-[![Star History Chart](https://api.star-history.com/svg?repos=audaque/DataAgent&type=Date)](https://star-history.com/#audaque/DataAgent&Date)
-
-## 贡献者名单
-
-<a href="https://github.com/audaque/DataAgent/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=audaque/DataAgent" />
-</a>
 
 ---
 
