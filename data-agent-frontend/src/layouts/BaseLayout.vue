@@ -14,33 +14,47 @@
  * limitations under the License.
 -->
 <template>
-  <div class="base-layout">
-    <!-- 现代化头部导航 -->
-    <header class="page-header">
-      <div class="header-content">
-        <div class="brand-section">
-          <div class="brand-logo">
-            <img src="/logo.png" alt="Audaque Logo" class="logo-img" />
-            <span class="brand-text">Audaque Data Agent</span>
-          </div>
-          <nav class="header-nav">
-            <div class="nav-item" :class="{ active: isAgentPage() }" @click="goToAgentList">
-              <i class="bi bi-grid-3x3-gap"></i>
-              <span>智能体列表</span>
-            </div>
-            <div class="nav-item" :class="{ active: isModelConfigPage() }" @click="goToModelConfig">
-              <i class="bi bi-gear"></i>
-              <span>模型配置</span>
-            </div>
-          </nav>
+  <div class="layout-container">
+    <!-- 顶部导航栏 -->
+    <header class="top-nav">
+      <div class="top-nav-brand">
+        <img src="/logo.png" alt="Audaque Logo" class="top-nav-logo" />
+        <span class="top-nav-title">Audaque Data Agent</span>
+      </div>
+
+      <nav class="top-nav-menu">
+        <a
+          class="nav-item"
+          :class="{ active: isAgentPage() }"
+          @click.prevent="goToAgentList"
+          href="#"
+        >
+          智能体列表
+        </a>
+        <a
+          class="nav-item"
+          :class="{ active: isModelConfigPage() }"
+          @click.prevent="goToModelConfig"
+          href="#"
+        >
+          模型配置
+        </a>
+      </nav>
+
+      <div class="top-nav-actions">
+        <div class="nav-user">
+          <div class="nav-user-avatar">A</div>
+          <span class="nav-user-name">管理员</span>
         </div>
       </div>
     </header>
 
     <!-- 页面内容区域 -->
-    <main class="page-content">
-      <slot></slot>
-    </main>
+    <div class="layout-body">
+      <main class="content-container">
+        <slot></slot>
+      </main>
+    </div>
   </div>
 </template>
 
@@ -85,84 +99,5 @@
 </script>
 
 <style scoped>
-  .base-layout {
-    min-height: 100vh;
-    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-  }
-
-  .page-header {
-    background: white;
-    border-bottom: 1px solid #e2e8f0;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    position: sticky;
-    top: 0;
-    z-index: 100;
-  }
-
-  .header-content {
-    width: 100%;
-    padding: 0 1.5rem;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    height: 4rem;
-  }
-
-  .brand-section {
-    display: flex;
-    align-items: center;
-    gap: 2rem;
-  }
-
-  .brand-logo {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    font-size: 1.25rem;
-    font-weight: 600;
-    color: #1e293b;
-  }
-
-  .logo-img {
-    height: 40px;
-    width: auto;
-    object-fit: contain;
-  }
-
-  .header-nav {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-
-  .nav-item {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 1rem;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    color: #64748b;
-    font-weight: 500;
-  }
-
-  .nav-item:hover {
-    background: #f1f5f9;
-    color: #334155;
-  }
-
-  .nav-item.active {
-    background: #e0f2fe;
-    color: #0369a1;
-  }
-
-  .nav-item i {
-    font-size: 1rem;
-  }
-
-  .page-content {
-    flex: 1;
-    padding: 0;
-  }
+  /* 使用全局设计系统样式，无需额外样式 */
 </style>
