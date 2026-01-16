@@ -45,7 +45,7 @@ spring:
     username: ${MYSQL_USERNAME:root}
     password: ${MYSQL_PASSWORD:root}
     driver-class-name: com.mysql.cj.jdbc.Driver
-    type: com.alibaba.druid.pool.DruidDataSource
+    type: com.audaque.druid.pool.DruidDataSource
 ```
 
 ### 2.2 数据初始化配置

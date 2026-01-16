@@ -1,8 +1,8 @@
-# Spring AI Alibaba NL2SQL Web UI 启动指南
+# Spring AI Audaque NL2SQL Web UI 启动指南
 
 ## 概述
 
-这是一个基于 Vue 3 + Vite 构建的 Spring AI Alibaba NL2SQL 管理界面，提供了三个主要功能模块：
+这是一个基于 Vue 3 + Vite 构建的 Spring AI Audaque NL2SQL 管理界面，提供了三个主要功能模块：
 
 - **首页（NL2SQL演示）**: 自然语言转SQL查询演示
 - **业务知识管理**: 管理企业知识引擎，配置业务术语、黑话和常用表达
@@ -11,7 +11,7 @@
 ## 项目结构
 
 ```
-spring-ai-alibaba-nl2sql-web-ui/
+nl2sql-web-ui/
 ├── src/
 │   ├── components/
 │   │   └── HeaderComponent.vue    # 公共头部组件

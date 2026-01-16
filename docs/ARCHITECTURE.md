@@ -325,7 +325,7 @@ sequenceDiagram
 - **查询重写**: `EvidenceRecallNode` 调用 LLM 生成独立检索问题
 - **召回通道**: `AgentVectorStoreService` 执行向量检索；可选混合检索（向量+关键词，`AbstractHybridRetrievalStrategy`）
 - **文档类型**: 业务知识 + 智能体知识，按元数据过滤并合并为 evidence 注入后续 prompt
-- **关键配置**: `spring.ai.alibaba.data-agent.vector-store.enable-hybrid-search` 及相似度/TopK 等参数
+- **关键配置**: `spring.ai.audaque.data-agent.vector-store.enable-hybrid-search` 及相似度/TopK 等参数
 
 #### 架构图
 
@@ -455,7 +455,7 @@ sequenceDiagram
 - **流式输出**: `GraphController` SSE + `GraphServiceImpl` 流式处理
 - **文本标记**: `TextType` 在流中标记 SQL/JSON/HTML/Markdown，前端据此渲染
 - **多轮对话**: `MultiTurnContextManager` 记录"用户问题+规划结果"，注入到后续请求
-- **模式切换**: `spring.ai.alibaba.data-agent.llm-service-type` 支持 `STREAM/BLOCK`
+- **模式切换**: `spring.ai.audaque.data-agent.llm-service-type` 支持 `STREAM/BLOCK`
 
 #### 架构图
 
@@ -656,7 +656,7 @@ sequenceDiagram
 
 - **代码生成**: `PythonGenerateNode` 根据计划与 SQL 结果生成 Python
 - **代码执行**: `PythonExecuteNode` 使用 `CodePoolExecutorService`（Docker/Local/AI 模拟）
-- **执行配置**: `spring.ai.alibaba.data-agent.code-executor.*`（默认 Docker 镜像 `continuumio/anaconda3:latest`）
+- **执行配置**: `spring.ai.audaque.data-agent.code-executor.*`（默认 Docker 镜像 `continuumio/anaconda3:latest`）
 - **结果回传**: 执行结果写回 `PYTHON_EXECUTE_NODE_OUTPUT`，`PythonAnalyzeNode` 汇总后写入 `SQL_EXECUTE_NODE_OUTPUT`，用于最终报告
 
 #### 架构图

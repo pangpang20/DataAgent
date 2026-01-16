@@ -393,7 +393,7 @@ WHERE u.name = '张三'
 ```yaml
 spring:
   ai:
-    alibaba:
+    audaque:
       data-agent:
         code-executor:
           type: docker
@@ -409,7 +409,7 @@ spring:
 ```yaml
 spring:
   ai:
-    alibaba:
+    audaque:
       data-agent:
         code-executor:
           type: local
@@ -421,12 +421,12 @@ spring:
 
 ### AI 模拟执行器
 
-用于测试环境，不实际执行Python代码，而是通过AI模拟执行结果：
+用于测试环境，不实际执行 Python 代码，而是通过 AI 模拟执行结果：
 
 ```yaml
 spring:
   ai:
-    alibaba:
+    audaque:
       data-agent:
         code-executor:
           type: ai-simulation
@@ -439,7 +439,7 @@ spring:
 ```yaml
 spring:
   ai:
-    alibaba:
+    audaque:
       data-agent:
         llm-service-type: STREAM  # STREAM 或 BLOCK
 ```
@@ -452,7 +452,7 @@ spring:
 ```yaml
 spring:
   ai:
-    alibaba:
+    audaque:
       data-agent:
         multi-turn:
           enabled: true
@@ -465,7 +465,7 @@ spring:
 ```yaml
 spring:
   ai:
-    alibaba:
+    audaque:
       data-agent:
         plan-executor:
           max-retry: 3  # 最大重试次数
