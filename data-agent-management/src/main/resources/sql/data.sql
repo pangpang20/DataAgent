@@ -34,7 +34,7 @@ INSERT IGNORE INTO `agent_knowledge` (`id`, `agent_id`, `title`, `content`, `typ
 -- 示例数据源可以运行docker-compose-datasource.yml建立，或者手动修改为自己的数据源
 INSERT IGNORE INTO `datasource` (`id`, `name`, `type`, `host`, `port`, `database_name`, `username`, `password`, `connection_url`, `status`, `test_status`, `description`, `creator_id`, `create_time`, `update_time`) VALUES 
 (1, '生产环境MySQL数据库', 'mysql', 'mysql-data', 3306, 'product_db', 'root', 'root', 'jdbc:mysql://mysql-data:3306/product_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true', 'inactive', 'unknown', '生产环境主数据库，包含核心业务数据', 2100246635, NOW(), NOW()),
-(2, '数据仓库PostgreSQL', 'postgresql', 'postgres-data', 5432, 'data_warehouse', 'postgres', 'postgres', 'jdbc:postgresql://postgres-data:5432/data_warehouse', 'inactive', 'unknown', '数据仓库，用于数据分析和报表生成', 2100246635, NOW(), NOW());
+(2, '数据仓库PostgreSQL', 'postgresql', 'postgres-data', 5432, 'china_population_db', 'postgres', 'postgres', 'jdbc:postgresql://postgres-data:5432/china_population_db', 'inactive', 'unknown', '数据仓库，用于数据分析和报表生成', 2100246635, NOW(), NOW());
 
 -- 智能体数据源关联示例数据
 INSERT IGNORE INTO `agent_datasource` (`id`, `agent_id`, `datasource_id`, `is_active`, `create_time`, `update_time`) VALUES 
