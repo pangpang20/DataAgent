@@ -4,20 +4,20 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>com.alibaba.cloud.ai</groupId>
-  <artifactId>spring-ai-alibaba-data-agent</artifactId>
+  <groupId>com.audaque.cloud.ai</groupId>
+  <artifactId>spring-ai-audaque-data-agent</artifactId>
   <packaging>pom</packaging>
   <name>Audaque Data Agent</name>
   <version>${revision}</version>
-  <url>https://github.com/alibaba/spring-ai-alibaba</url>
+  <url>https://github.com/audaque/DataAgent</url>
 
   <modules>
     <module>data-agent-management</module>
   </modules>
   <scm>
-    <connection>git://github.com/spring-ai-alibaba/DataAgent.git</connection>
-    <developerConnection>git@github.com:spring-ai-alibaba/DataAgent.git</developerConnection>
-    <url>https://github.com/spring-ai-alibaba/DataAgent</url>
+    <connection>git://github.com/audaque/DataAgent.git</connection>
+    <developerConnection>git@github.com:audaque/DataAgent.git</developerConnection>
+    <url>https://github.com/audaque/DataAgent</url>
   </scm>
 
   <properties>
