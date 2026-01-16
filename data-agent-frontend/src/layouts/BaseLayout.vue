@@ -20,8 +20,8 @@
       <div class="header-content">
         <div class="brand-section">
           <div class="brand-logo">
-            <i class="bi bi-robot"></i>
-            <span class="brand-text">Spring AI Alibaba Data Agent</span>
+            <img src="/logo.png" alt="Audaque Logo" class="logo-img" />
+            <span class="brand-text">Audaque Data Agent</span>
           </div>
           <nav class="header-nav">
             <div class="nav-item" :class="{ active: isAgentPage() }" @click="goToAgentList">
@@ -123,9 +123,10 @@
     color: #1e293b;
   }
 
-  .brand-logo i {
-    font-size: 1.5rem;
-    color: #3b82f6;
+  .logo-img {
+    height: 40px;
+    width: auto;
+    object-fit: contain;
   }
 
   .header-nav {
