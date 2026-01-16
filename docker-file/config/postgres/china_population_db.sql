@@ -18,8 +18,14 @@ CREATE DATABASE china_population_db;
 
 \c china_population_db;
 
+-- 创建与数据库同名的schema
+CREATE SCHEMA IF NOT EXISTS china_population_db;
+
+-- 设置默认搜索路径
+SET search_path TO china_population_db;
+
 -- 创建人口总数统计表
-CREATE TABLE population_total (
+CREATE TABLE china_population_db.population_total (
                                   id SERIAL PRIMARY KEY,
                                   year INTEGER NOT NULL,
                                   total_population BIGINT NOT NULL,
@@ -32,7 +38,7 @@ CREATE TABLE population_total (
 );
 
 -- 创建性别比例统计表
-CREATE TABLE gender_ratio (
+CREATE TABLE china_population_db.gender_ratio (
                               id SERIAL PRIMARY KEY,
                               year INTEGER NOT NULL,
                               male_population BIGINT NOT NULL,
@@ -46,7 +52,7 @@ CREATE TABLE gender_ratio (
 );
 
 -- 创建年龄结构统计表
-CREATE TABLE age_structure (
+CREATE TABLE china_population_db.age_structure (
                                id SERIAL PRIMARY KEY,
                                year INTEGER NOT NULL,
                                age_group VARCHAR(20) NOT NULL, -- 年龄组：0-14, 15-64, 65+, etc.
@@ -58,7 +64,7 @@ CREATE TABLE age_structure (
 );
 
 -- 创建城乡分布统计表
-CREATE TABLE urban_rural_distribution (
+CREATE TABLE china_population_db.urban_rural_distribution (
                                           id SERIAL PRIMARY KEY,
                                           year INTEGER NOT NULL,
                                           urban_population BIGINT NOT NULL,
@@ -71,7 +77,7 @@ CREATE TABLE urban_rural_distribution (
 );
 
 -- 创建省份人口统计表
-CREATE TABLE province_population (
+CREATE TABLE china_population_db.province_population (
                                      id SERIAL PRIMARY KEY,
                                      year INTEGER NOT NULL,
                                      province_name VARCHAR(50) NOT NULL,
@@ -124,7 +130,7 @@ CREATE TRIGGER update_province_population_updated_at
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- 插入初始数据 - 人口总数（2010-2022年真实数据）
-INSERT INTO population_total (year, total_population, natural_growth_rate, birth_rate, death_rate) VALUES
+INSERT INTO china_population_db.population_total (year, total_population, natural_growth_rate, birth_rate, death_rate) VALUES
                                                                                                        (2010, 1340910000, 4.79, 11.90, 7.11),
                                                                                                        (2011, 1347350000, 4.79, 11.93, 7.14),
                                                                                                        (2012, 1354040000, 4.95, 12.10, 7.15),
@@ -140,14 +146,14 @@ INSERT INTO population_total (year, total_population, natural_growth_rate, birth
                                                                                                        (2022, 1411750000, -0.60, 6.77, 7.37);
 
 -- 插入初始数据 - 性别比例（部分年份真实数据）
-INSERT INTO gender_ratio (year, male_population, female_population, sex_ratio, male_percentage, female_percentage) VALUES
+INSERT INTO china_population_db.gender_ratio (year, male_population, female_population, sex_ratio, male_percentage, female_percentage) VALUES
                                                                                                                        (2010, 686850000, 654060000, 105.02, 51.24, 48.76),
                                                                                                                        (2015, 705410000, 669210000, 105.41, 51.27, 48.73),
                                                                                                                        (2020, 723340000, 688780000, 105.02, 51.22, 48.78),
                                                                                                                        (2022, 723520000, 688230000, 105.13, 51.25, 48.75);
 
 -- 插入初始数据 - 年龄结构（2020年第七次人口普查数据）
-INSERT INTO age_structure (year, age_group, population, percentage) VALUES
+INSERT INTO china_population_db.age_structure (year, age_group, population, percentage) VALUES
                                                                         (2020, '0-14', 253380000, 17.95),
                                                                         (2020, '15-64', 968710000, 68.58),
                                                                         (2020, '65+', 189510000, 13.47),
@@ -155,14 +161,14 @@ INSERT INTO age_structure (year, age_group, population, percentage) VALUES
                                                                         (2020, '60+', 264020000, 18.70);
 
 -- 插入初始数据 - 城乡分布
-INSERT INTO urban_rural_distribution (year, urban_population, rural_population, urban_percentage, rural_percentage) VALUES
+INSERT INTO china_population_db.urban_rural_distribution (year, urban_population, rural_population, urban_percentage, rural_percentage) VALUES
                                                                                                                         (2010, 665570000, 675340000, 49.65, 50.35),
                                                                                                                         (2015, 771160000, 603460000, 56.05, 43.95),
                                                                                                                         (2020, 914250000, 508490000, 64.71, 35.29),
                                                                                                                         (2022, 920710000, 491040000, 65.22, 34.78);
 
 -- 插入初始数据 - 省份人口（2020年数据）
-INSERT INTO province_population (year, province_name, province_code, total_population) VALUES
+INSERT INTO china_population_db.province_population (year, province_name, province_code, total_population) VALUES
                                                                                            (2020, '广东省', 'GD', 126010000),
                                                                                            (2020, '山东省', 'SD', 101530000),
                                                                                            (2020, '河南省', 'HA', 99370000),
@@ -253,12 +259,12 @@ CREATE OR REPLACE PROCEDURE batch_insert_population_data(
 AS $$
 BEGIN
     -- 插入总人口数据
-INSERT INTO population_total (year, total_population)
+INSERT INTO china_population_db.population_total (year, total_population)
 VALUES (data_year, total_pop)
     ON CONFLICT (year) DO UPDATE SET total_population = EXCLUDED.total_population;
 
 -- 插入性别数据
-INSERT INTO gender_ratio (year, male_population, female_population, sex_ratio, male_percentage, female_percentage)
+INSERT INTO china_population_db.gender_ratio (year, male_population, female_population, sex_ratio, male_percentage, female_percentage)
 VALUES (
            data_year,
            male_pop,
@@ -275,7 +281,7 @@ VALUES (
                               female_percentage = EXCLUDED.female_percentage;
 
 -- 插入城乡分布数据
-INSERT INTO urban_rural_distribution (year, urban_population, rural_population, urban_percentage, rural_percentage)
+INSERT INTO china_population_db.urban_rural_distribution (year, urban_population, rural_population, urban_percentage, rural_percentage)
 VALUES (
            data_year,
            urban_pop,
