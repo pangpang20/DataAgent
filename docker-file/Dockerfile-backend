@@ -17,7 +17,7 @@ FROM openjdk:17-jdk-slim as build
 WORKDIR /app
 
 # 安装所需的软件
-RUN apt update && apt install -y maven git
+RUN apt update && apt install -y maven
 
 # (可选)配置Maven国内镜像源，加速构建
 # RUN echo '<settings>\
@@ -42,16 +42,22 @@ RUN apt update && apt install -y maven git
 #  </profiles>\
 #</settings>' > aliyun-settings.xml
 
-RUN git clone https://github.com/spring-ai-alibaba/DataAgent.git \
-    && cd DataAgent &&  \
-    mvn install -DskipTests
-#    mvn install -DskipTests -s ../aliyun-settings.xml
+# 复制本地项目代码
+COPY pom.xml .
+COPY mvnw .
+COPY mvnw.cmd .
+COPY .mvn .mvn
+COPY data-agent-management data-agent-management
+
+# 构建项目
+RUN mvn install -DskipTests
+#    mvn install -DskipTests -s aliyun-settings.xml
 
 FROM openjdk:17-jdk-slim
 
 WORKDIR /app
 
-COPY --from=build /app/DataAgent/data-agent-management/target/spring-ai-alibaba-data-agent-management-1.0.0-SNAPSHOT.jar /app/app.jar
+COPY --from=build /app/data-agent-management/target/spring-ai-alibaba-data-agent-management-1.0.0-SNAPSHOT.jar /app/app.jar
 
 RUN apt update && apt install -y python3
 
