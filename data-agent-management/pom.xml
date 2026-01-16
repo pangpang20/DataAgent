@@ -3,19 +3,19 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>com.alibaba.cloud.ai</groupId>
-        <artifactId>spring-ai-alibaba-data-agent</artifactId>
+        <groupId>com.audaque.cloud.ai</groupId>
+        <artifactId>spring-ai-audaque-data-agent</artifactId>
         <version>${revision}</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>spring-ai-alibaba-data-agent-management</artifactId>
-    <name>Spring AI Alibaba DataAgent Management</name>
-    <url>https://github.com/alibaba/spring-ai-alibaba</url>
+    <artifactId>spring-ai-audaque-data-agent-management</artifactId>
+    <name>Spring AI Audaque DataAgent Management</name>
+    <url>https://github.com/audaque/DataAgent</url>
     <scm>
-        <connection>git://github.com/alibaba/spring-ai-alibaba.git</connection>
-        <developerConnection>git@github.com:alibaba/spring-ai-alibaba.git</developerConnection>
-        <url>https://github.com/alibaba/spring-ai-alibaba</url>
+        <connection>git://github.com/audaque/DataAgent.git</connection>
+        <developerConnection>git@github.com:audaque/DataAgent.git</developerConnection>
+        <url>https://github.com/audaque/DataAgent</url>
     </scm>
 
     <dependencies>
@@ -292,7 +292,7 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
-                    <mainClass>com.alibaba.cloud.ai.dataagent.DataAgentApplication</mainClass>
+                    <mainClass>com.audaque.cloud.ai.dataagent.DataAgentApplication</mainClass>
                 </configuration>
                 <executions>
                     <execution>

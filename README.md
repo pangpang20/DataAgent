@@ -1,18 +1,18 @@
 <div align="center">
-  <h1>Spring AI Alibaba DataAgent</h1>
+  <h1>Spring AI Audaque DataAgent</h1>
   <p>
-    <strong>基于 <a href="https://github.com/alibaba/spring-ai-alibaba" target="_blank">Spring AI Alibaba</a> 的企业级智能数据分析师</strong>
+    <strong>基于 <a href="https://github.com/alibaba/spring-ai-alibaba" target="_blank">Spring AI Audaque</a> 的企业级智能数据分析师</strong>
   </p>
   <p>
      Text-to-SQL | Python 深度分析 | 智能报告 | MCP 服务器 | RAG 增强
   </p>
 
   <p>
-    <a href="https://github.com/alibaba/spring-ai-alibaba"><img src="https://img.shields.io/badge/Spring%20AI%20Alibaba-1.1.0.0-blue" alt="Spring AI Alibaba"></a>
+    <a href="https://github.com/alibaba/spring-ai-alibaba"><img src="https://img.shields.io/badge/Spring%20AI%20Alibaba-1.1.0.0-blue" alt="Spring AI Audaque"></a>
     <img src="https://img.shields.io/badge/Spring%20Boot-3.4.8+-green" alt="Spring Boot">
     <img src="https://img.shields.io/badge/Java-17+-orange" alt="Java">
     <img src="https://img.shields.io/badge/License-Apache%202.0-red" alt="License">
-    <a href="https://deepwiki.com/spring-ai-alibaba/DataAgent"><img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki"></a>
+    <a href="https://deepwiki.com/audaque/DataAgent"><img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki"></a>
   </p>
 
    <p>
@@ -34,7 +34,7 @@
 
 ## 📖 项目简介
 
-**DataAgent** 是一个基于 **Spring AI Alibaba Graph** 打造的企业级智能数据分析 Agent。它超越了传统的 Text-to-SQL 工具，进化为一个能够执行 **Python 深度分析**、生成 **多维度图表报告** 的 AI 智能数据分析师。
+**DataAgent** 是一个基于 **Spring AI Audaque Graph** 打造的企业级智能数据分析 Agent。它超越了传统的 Text-to-SQL 工具，进化为一个能够执行 **Python 深度分析**、生成 **多维度图表报告** 的 AI 智能数据分析师。
 
 系统采用高度可扩展的架构设计，**全面兼容 OpenAI 接口规范**的对话模型与 Embedding 模型，并支持**灵活挂载任意向量数据库**。无论是私有化部署还是接入主流大模型服务（如 Qwen, Deepseek），都能轻松适配，为企业提供灵活、可控的数据洞察服务。
 
@@ -105,16 +105,16 @@ npm install && npm run dev
 本项目采用 Apache License 2.0 许可证。
 ## Star 历史
 
-[![Star History Chart](https://api.star-history.com/svg?repos=spring-ai-alibaba/DataAgent&type=Date)](https://star-history.com/#spring-ai-alibaba/DataAgent&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=audaque/DataAgent&type=Date)](https://star-history.com/#audaque/DataAgent&Date)
 
 ## 贡献者名单
 
-<a href="https://github.com/spring-ai-alibaba/DataAgent/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=spring-ai-alibaba/DataAgent" />
+<a href="https://github.com/audaque/DataAgent/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=audaque/DataAgent" />
 </a>
 
 ---
 
 <div align="center">
-    Made with ❤️ by Spring AI Alibaba DataAgent Team
+    Made with ❤️ by Spring AI Audaque DataAgent Team
 </div>
