@@ -89,6 +89,20 @@ docker-compose -f docker-compose-datasource.yml up -d
 
 **重要**: 本项目的 Dockerfile 使用本地代码构建，当你修改本地代码后，需要重新构建镜像才能生效。
 
+### 完整更新流程（推荐）
+
+```bash
+# 1. 在本地重新编译项目
+cd /opt/DataAgent
+mvn install -DskipTests
+
+# 2. 停止并删除旧容器,重新构建镜像并启动
+cd docker-file
+docker compose up -d --build
+```
+
+`--build` 参数会强制重新构建镜像,确保使用最新的 jar 包。
+
 ### 重新构建并启动所有服务
 
 ```bash

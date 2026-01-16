@@ -12,52 +12,12 @@
 #See the License for the specific language governing permissions and
 #limitations under the License.
 
-FROM openjdk:17-jdk-slim as build
+FROM eclipse-temurin:17-jdk-jammy
 
 WORKDIR /app
 
-# 安装所需的软件
-RUN apt update && apt install -y maven
-
-# (可选)配置Maven国内镜像源，加速构建
-# RUN echo '<settings>\
-#  <mirrors>\
-#    <mirror>\
-#      <id>aliyun</id>\
-#      <url>https://maven.aliyun.com/repository/public</url>\
-#      <mirrorOf>*</mirrorOf>\
-#    </mirror>\
-#  </mirrors>\
-#  <profiles>\
-#    <profile>\
-#      <id>default</id>\
-#      <activation>\
-#        <activeByDefault>true</activeByDefault>\
-#      </activation>\
-#      <properties>\
-#        <maven.compiler.source>17</maven.compiler.source>\
-#        <maven.compiler.target>17</maven.compiler.target>\
-#      </properties>\
-#    </profile>\
-#  </profiles>\
-#</settings>' > aliyun-settings.xml
-
-# 复制本地项目代码
-COPY pom.xml .
-COPY mvnw .
-COPY mvnw.cmd .
-COPY .mvn .mvn
-COPY data-agent-management data-agent-management
-
-# 构建项目
-RUN mvn install -DskipTests
-#    mvn install -DskipTests -s aliyun-settings.xml
-
-FROM openjdk:17-jdk-slim
-
-WORKDIR /app
-
-COPY --from=build /app/data-agent-management/target/spring-ai-alibaba-data-agent-management-1.0.0-SNAPSHOT.jar /app/app.jar
+# 直接复制本地已构建的jar包
+COPY data-agent-management/target/spring-ai-alibaba-data-agent-management-1.0.0-SNAPSHOT.jar /app/app.jar
 
 RUN apt update && apt install -y python3
 
@@ -66,5 +26,5 @@ RUN mkdir -p /app/config
 
 EXPOSE 8065
 
-# 启动命令，优先使用外部配置文件
+# 启动命令,优先使用外部配置文件
 ENTRYPOINT ["java", "-jar", "app.jar", "--spring.config.location=classpath:application.yml,optional:file:/app/config/application.yml"]
