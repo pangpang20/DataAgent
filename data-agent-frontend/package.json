@@ -1,7 +1,7 @@
 {
   "name": "spring-ai-alibaba-data-agent-web-ui",
   "version": "1.0.0",
-  "description": "Spring AI Alibaba Data Agent Web UI based on Vue 3",
+  "description": "Audaque Data Agent Web UI based on Vue 3",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "build": "vite build",
