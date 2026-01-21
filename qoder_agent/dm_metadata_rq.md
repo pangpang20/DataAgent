@@ -99,6 +99,7 @@ DATASOURCE_DRIVER_CLASS=dm.jdbc.driver.DmDriver
 **现状分析**：
 - 根 pom.xml 已定义：`<dameng.version>8.1.3.140</dameng.version>`
 - 子模块 pom.xml 已引入：`DmJdbcDriver18`（scope=runtime）
+- **注意**：项目使用的 Druid 连接池包名为 `com.alibaba.druid`。
 
 **修改建议**：
 
@@ -133,7 +134,7 @@ spring:
     username: cyl
     password: Audaque@123
     driver-class-name: com.mysql.cj.jdbc.Driver
-    type: com.audaque.druid.pool.DruidDataSource
+    type: com.alibaba.druid.pool.DruidDataSource
 ```
 
 **修改方案**：
@@ -148,7 +149,7 @@ spring:
     username: ${DATA_AGENT_DATASOURCE_USERNAME:cyl}
     password: ${DATA_AGENT_DATASOURCE_PASSWORD:Audaque@123}
     driver-class-name: ${DATASOURCE_DRIVER_CLASS:com.mysql.cj.jdbc.Driver}
-    type: com.audaque.druid.pool.DruidDataSource
+    type: com.alibaba.druid.pool.DruidDataSource
   
   sql:
     init:
@@ -214,7 +215,8 @@ sql/
 | **更新时间**  | `ON UPDATE CURRENT_TIMESTAMP`       | 触发器实现                       | 需改造        |
 | **存储引擎**  | `ENGINE=InnoDB`                     | 不需要                           | 删除该子句    |
 | **索引类型**  | `USING BTREE`                       | 不需要                           | 删除该子句    |
-| **字符集**    | `COLLATE utf8mb4_bin`               | `COLLATE` 语法不同               | 字符串字段    |
+| **字符集**    | `COLLATE utf8mb4_bin`               | 不需要，建库时指定               | 字符串字段    |
+| **分页语法**  | `LIMIT offset, count`               | `LIMIT count OFFSET offset`      | 分页查询      |
 | **注释语法**  | `COMMENT '...'`                     | `COMMENT '...'`                  | 兼容          |
 | **数据类型**  | `INT`                               | `INT`                            | 基本兼容      |
 | **JSON 类型** | `JSON`                              | `CLOB` 或 `VARCHAR2`             | metadata 字段 |
@@ -487,6 +489,8 @@ int update(AgentKnowledge knowledge);
 cd data-agent-management/src/main/java
 grep -r "NOW()" --include="*Mapper.java"
 grep -r "CURRENT_TIMESTAMP" --include="*Mapper.java"
+# 检查 MySQL 特有的 LIMIT offset, count 语法
+grep -r "LIMIT .*," --include="*Mapper.java"
 ```
 
 ---
@@ -635,7 +639,7 @@ public class SomeService {
 ```yaml
 spring:
   datasource:
-    type: com.audaque.druid.pool.DruidDataSource
+    type: com.alibaba.druid.pool.DruidDataSource
     druid:
       # 达梦数据库连接配置
       initial-size: 5
@@ -650,6 +654,9 @@ spring:
       test-while-idle: true
       test-on-borrow: false
       test-on-return: false
+      
+      # 事务隔离级别：READ_COMMITTED
+      default-transaction-isolation: 2
       
       # 过滤器配置
       filters: stat,wall
@@ -729,6 +736,8 @@ spring:
 
 **达梦测试**：
 
+**注意**：H2 数据库虽然支持 MySQL 模式，但并不完全模拟达梦的所有特性（如 IDENTITY、触发器、CLOB 等）。
+
 **方案1：使用 TestContainers（推荐）**
 
 ```xml
@@ -746,6 +755,7 @@ spring:
 public class DamengTestConfig {
     
     @Container
+    // 需确保有达梦 Docker 镜像，或使用通用的数据库容器手动配置
     static GenericContainer<?> damengContainer = new GenericContainer<>("dameng/dm8:latest")
         .withExposedPorts(5236)
         .withEnv("SYSDBA_PWD", "SYSDBA");
@@ -757,19 +767,9 @@ public class DamengTestConfig {
 }
 ```
 
-**方案2：使用 H2 兼容模式（快速）**
+**方案2：本地达梦数据库（最可靠）**
 
-H2 支持部分达梦语法模拟，可在测试时继续使用 H2：
-
-```yaml
-# application-test.yml
-spring:
-  datasource:
-    url: jdbc:h2:mem:testdb;MODE=MySQL;DB_CLOSE_DELAY=-1
-    driver-class-name: org.h2.Driver
-```
-
-**方案3：本地达梦数据库（需要环境）**
+由于达梦特性的复杂性，建议开发环境至少配备一个共享的达梦测试实例。
 
 ```yaml
 # application-dameng-test.yml
@@ -1070,66 +1070,72 @@ SELECT TO_CHAR(create_time, 'YYYY-MM-DD') FROM agent;
 **问题3：分页查询**
 
 ```sql
--- MySQL
-SELECT * FROM agent LIMIT 10 OFFSET 20;
+-- MySQL (不支持)
+SELECT * FROM agent LIMIT 20, 10;  -- offset=20, count=10
 
--- 达梦（兼容 MySQL 语法）
-SELECT * FROM agent LIMIT 10 OFFSET 20;    -- DM8 支持
--- 或使用 ROWNUM（传统方式）
-SELECT * FROM (
-    SELECT ROWNUM AS rn, a.* FROM agent a WHERE ROWNUM <= 30
-) WHERE rn > 20;
+-- 达梦 (标准语法)
+SELECT * FROM agent LIMIT 10 OFFSET 20;    -- DM8 推荐语法
 ```
+
+**改造建议**：
+系统中所有 `LIMIT #{offset}, #{size}` 必须改为 `LIMIT #{size} OFFSET #{offset}`。
 
 ### 6.3 字符集问题
 
-**问题**：中文乱码
+**问题**：MySQL 脚本中的 `COLLATE utf8mb4_bin` 导致达梦执行失败。
 
 **解决**：
 
-```sql
--- 1. 检查数据库字符集
-SELECT SF_GET_PARA_VALUE(2, 'UNICODE_FLAG');
+1. **移除建表语句中的 COLLATE 和 ENGINE**：达梦不支持这些子句。
+2. **创建数据库时指定字符集**：
 
--- 2. 创建数据库时指定字符集
+```sql
+-- 创建数据库时指定字符集和大小写敏感
 CREATE DATABASE data_agent
     CHARACTER SET UTF8
     CASE SENSITIVE = N;
-
--- 3. JDBC URL 参数
-jdbc:dm://localhost:5236?characterEncoding=UTF-8&useUnicode=true
 ```
+
+3. **JDBC URL 参数**：
+`jdbc:dm://localhost:5236?characterEncoding=UTF-8&useUnicode=true`
 
 ### 6.4 自增主键返回问题
 
-**问题**：Insert 后无法获取自增主键值
+**问题**：Insert 后无法获取自增主键值。
 
 **解决**：
+
+MyBatis 的 `useGeneratedKeys` 在达梦 8 中配合 `IDENTITY(1,1)` 通常可以正常工作。
 
 ```java
 // MyBatis 配置
 @Insert("INSERT INTO agent(...) VALUES(...)")
 @Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
 int insert(Agent agent);
+```
 
-// 达梦需要在 SQL 后添加
-INSERT INTO agent(...) VALUES(...);
-SELECT SCOPE_IDENTITY() AS id;  // 返回最后插入的 ID
+**备选方案**（如上述配置失效）：
+使用达梦的 `SELECT SCOPE_IDENTITY()`：
+
+```java
+@Insert("INSERT INTO agent(...) VALUES(...); SELECT SCOPE_IDENTITY() AS id;")
+@Options(useGeneratedKeys = false) // 关闭自动处理
+int insert(Agent agent);
 ```
 
 ### 6.5 事务隔离级别
 
-**问题**：事务行为不一致
+**问题**：事务行为不一致。
 
 **配置**：
 
 ```yaml
 spring:
   datasource:
-    # 达梦默认隔离级别：READ_COMMITTED
-    # MySQL 默认：REPEATABLE_READ
-    hikari:
-      transaction-isolation: TRANSACTION_READ_COMMITTED
+    druid:
+      # 达梦默认隔离级别：READ_COMMITTED (2)
+      # MySQL 默认：REPEATABLE_READ (4)
+      default-transaction-isolation: 2
 ```
 
 ---
@@ -1274,12 +1280,13 @@ public class DatabasePlatformRegistry {
 
 ### 8.4 最终建议
 
-1. **优先使用达梦8**：兼容性最好，支持更多 MySQL 语法
-2. **生产环境建议手动执行 SQL**：不要依赖自动初始化
-3. **保留 MySQL 配置**：通过环境变量切换，方便回退
-4. **充分测试**：国产数据库坑较多，需要充分测试
-5. **监控告警**：部署后持续监控数据库性能
-6. **培训团队**：达梦数据库使用培训
+1. **实战验证**：在正式开始大规模改造前，**务必先用达梦 8 进行小范围功能验证**，确认核心 CRUD、自增主键返回和分页语法在当前 MyBatis 版本下的表现。
+2. **优先使用达梦8**：兼容性最好，支持更多 MySQL 语法。
+3. **生产环境建议手动执行 SQL**：不要依赖自动初始化。
+4. **保留 MySQL 配置**：通过环境变量切换，方便回退。
+5. **充分测试**：国产数据库坑较多，需要充分测试。
+6. **监控告警**：部署后持续监控数据库性能。
+7. **培训团队**：达梦数据库使用培训。
 
 ---
 
@@ -1337,9 +1344,10 @@ SELECT * FROM USER_SEQUENCES;
 
 ## 文档变更记录
 
-| 版本 | 日期       | 修订内容 | 作者         |
-| ---- | ---------- | -------- | ------------ |
-| v1.0 | 2026-01-15 | 初始版本 | AI Assistant |
+| 版本 | 日期       | 修订内容                                          | 作者         |
+| ---- | ---------- | ------------------------------------------------- | ------------ |
+| v1.0 | 2026-01-15 | 初始版本                                          | AI Assistant |
+| v1.1 | 2026-01-21 | 修正 Druid 包名、事务配置、分页语法及自增主键细节 | AI Assistant |
 
 ---
 
