@@ -18,17 +18,16 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 
 # 复制源代码
-COPY data-agent-frontend/package*.json ./
+COPY data-agent-frontend/package.json ./
 
-# 使用更稳定的npm版本并清理缓存
-RUN npm install -g npm@10.8.2 && \
-    npm cache clean --force && \
-    npm install
+# 安装 yarn 并安装依赖
+RUN npm install -g yarn && \
+    yarn install
 
 COPY data-agent-frontend .
 
 # 构建生产版本
-RUN npm run build
+RUN yarn build
 
 
 # 运行阶段
