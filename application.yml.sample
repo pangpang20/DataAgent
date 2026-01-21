@@ -143,6 +143,13 @@ management:
     health:
       show-details: always                    # 总是显示详细健康信息（包括数据库、磁盘空间等）
   
+  # 健康检查配置
+  health:
+    elasticsearch:
+      enabled: false                          # 禁用 Elasticsearch 健康检查（如果未安装 ES）
+    defaults:
+      enabled: true                           # 启用默认健康检查（数据库、磁盘等）
+  
   # 生产环境建议暴露更多端点（可选）：
   # include: health,info,metrics,env,loggers,threaddump,heapdump
 
@@ -152,11 +159,14 @@ management:
 logging:
   # 日志级别配置
   level:
-    root: info                                            # 根日志级别
-    com.audaque.cloud.ai.dataagent.service: info          # 业务服务日志
-    com.audaque.cloud.ai.dataagent.workflow.node: info    # 工作流节点日志
-    com.alibaba.cloud.ai.mapper: info                     # MyBatis Mapper 日志
-    org.springframework.jdbc: warn                        # JDBC 日志
+    root: INFO                                            # 根日志级别
+    com.audaque.cloud.ai.dataagent.service: INFO          # 业务服务日志
+    com.audaque.cloud.ai.dataagent.workflow.node: INFO    # 工作流节点日志
+    com.alibaba.cloud.ai.mapper: INFO                     # MyBatis Mapper 日志
+    org.springframework.jdbc: WARN                        # JDBC 日志
+    org.apache.coyote: WARN                               # Tomcat HTTP 连接器（避免 EOFException 日志）
+    org.apache.tomcat: WARN                               # Tomcat 其他组件
+    org.elasticsearch.client: WARN                        # Elasticsearch 客户端
   
   # 日志文件配置（推荐生产环境启用）
   file:
