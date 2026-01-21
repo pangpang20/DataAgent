@@ -140,9 +140,215 @@ yarn build
 # 构建产物位置：data-agent-frontend/dist/
 ```
 
-### 5. 访问系统
+### 5. 生产部署（使用 JAR 包）
 
-打开浏览器访问 `http://localhost:3000`，开始创建您的第一个数据智能体！
+#### 5.1 准备配置文件
+
+```bash
+# 1. 创建部署目录
+mkdir -p /opt/dataagent
+cd /opt/dataagent
+
+# 2. 复制配置文件模板
+cp /path/to/DataAgent/application.yml.sample ./application.yml
+
+# 3. 编辑配置文件，修改数据库连接等信息
+vi application.yml
+```
+
+**重要配置项说明**：
+
+| 配置项                       | 说明           | 必须修改   |
+| ---------------------------- | -------------- | ---------- |
+| `spring.datasource.url`      | 数据库连接地址 | ✅ 是       |
+| `spring.datasource.username` | 数据库用户名   | ✅ 是       |
+| `spring.datasource.password` | 数据库密码     | ✅ 是       |
+| `server.port`                | 后端服务端口   | ❌ 可选     |
+| `logging.file.name`          | 日志文件路径   | ❌ 建议配置 |
+
+> 完整配置说明请参考 [`application.yml.sample`](application.yml.sample) 文件中的注释
+
+#### 5.2 复制 JAR 包
+
+```bash
+# 复制后端 JAR 包到部署目录
+cp data-agent-management/target/spring-ai-audaque-data-agent-management-*.jar /opt/dataagent/dataagent-backend.jar
+```
+
+#### 5.3 启动后端服务
+
+**方式1：使用外部配置文件启动（推荐）**
+
+```bash
+cd /opt/dataagent
+
+# Spring Boot 会自动加载同级目录或 config/ 子目录的 application.yml
+java -jar dataagent-backend.jar
+
+# 或指定配置文件路径
+java -jar dataagent-backend.jar --spring.config.location=./application.yml
+```
+
+**方式2：使用环境变量（敏感信息推荐）**
+
+```bash
+# 设置环境变量
+export DATA_AGENT_DATASOURCE_URL="jdbc:mysql://192.168.1.100:3306/data_agent"
+export DATA_AGENT_DATASOURCE_USERNAME="prod_user"
+export DATA_AGENT_DATASOURCE_PASSWORD="your_password"
+
+# 启动服务
+java -jar dataagent-backend.jar
+```
+
+**方式3：命令行参数覆盖**
+
+```bash
+java -jar dataagent-backend.jar \
+  --spring.datasource.url="jdbc:mysql://192.168.1.100:3306/data_agent" \
+  --spring.datasource.username="prod_user" \
+  --spring.datasource.password="your_password"
+```
+
+#### 5.4 生产环境启动建议
+
+**使用 JVM 参数优化**：
+
+```bash
+java -Xmx2g -Xms2g \
+  -XX:+UseG1GC \
+  -XX:+HeapDumpOnOutOfMemoryError \
+  -XX:HeapDumpPath=/var/log/dataagent/heapdump.hprof \
+  -Dfile.encoding=UTF-8 \
+  -jar dataagent-backend.jar
+```
+
+**后台运行并记录日志**：
+
+```bash
+# 使用 nohup 后台运行
+nohup java -jar dataagent-backend.jar > /var/log/dataagent/console.log 2>&1 &
+
+# 查看进程
+ps aux | grep dataagent-backend
+
+# 查看日志
+tail -f /var/log/dataagent/console.log
+```
+
+**创建 systemd 服务（推荐）**：
+
+```bash
+# 创建服务文件
+sudo vi /etc/systemd/system/dataagent.service
+```
+
+添加以下内容：
+
+```ini
+[Unit]
+Description=Audaque DataAgent Service
+After=network.target mysql.service
+
+[Service]
+Type=simple
+User=dataagent
+WorkingDirectory=/opt/dataagent
+ExecStart=/usr/bin/java -Xmx2g -Xms2g -jar /opt/dataagent/dataagent-backend.jar
+Restart=always
+RestartSec=10
+StandardOutput=append:/var/log/dataagent/console.log
+StandardError=append:/var/log/dataagent/error.log
+
+# 环境变量（可选）
+Environment="DATA_AGENT_DATASOURCE_PASSWORD=your_password"
+
+[Install]
+WantedBy=multi-user.target
+```
+
+启动服务：
+
+```bash
+# 重载 systemd 配置
+sudo systemctl daemon-reload
+
+# 启动服务
+sudo systemctl start dataagent
+
+# 设置开机自启
+sudo systemctl enable dataagent
+
+# 查看服务状态
+sudo systemctl status dataagent
+
+# 查看日志
+journalctl -u dataagent -f
+```
+
+#### 5.5 部署前端（静态文件）
+
+**使用 Nginx 部署前端**：
+
+```bash
+# 1. 安装 Nginx
+sudo apt-get install nginx  # Ubuntu/Debian
+sudo yum install nginx      # CentOS/RHEL
+
+# 2. 复制前端构建产物
+sudo cp -r data-agent-frontend/dist/* /var/www/dataagent/
+
+# 3. 配置 Nginx
+sudo vi /etc/nginx/sites-available/dataagent
+```
+
+Nginx 配置示例：
+
+```nginx
+server {
+    listen 80;
+    server_name your-domain.com;  # 修改为实际域名或 IP
+
+    # 前端静态文件
+    location / {
+        root /var/www/dataagent;
+        index index.html;
+        try_files $uri $uri/ /index.html;
+    }
+
+    # 后端 API 代理
+    location /api/ {
+        proxy_pass http://localhost:8065/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # 文件上传配置
+    client_max_body_size 10M;
+}
+```
+
+启用配置并重启 Nginx：
+
+```bash
+# 启用站点配置
+sudo ln -s /etc/nginx/sites-available/dataagent /etc/nginx/sites-enabled/
+
+# 测试配置
+sudo nginx -t
+
+# 重启 Nginx
+sudo systemctl restart nginx
+```
+
+### 6. 访问系统
+
+- **开发环境**：`http://localhost:3000`
+- **生产环境**：`http://your-domain.com` 或 `http://your-server-ip`
+
+开始创建您的第一个数据智能体！
 
 ## 📚 文档导航
 
