@@ -14,6 +14,9 @@
 #See the License for the specific language governing permissions and
 #limitations under the License.
 
+# 设置错误时退出
+set -e
+
 echo "=================================================="
 echo "  启动 Audaque DataAgent 服务"
 echo "=================================================="
@@ -30,7 +33,21 @@ docker system prune -f
 
 # 重新构建并启动
 echo "重新构建并启动服务..."
-docker compose up -d --build
+if ! docker compose up -d --build; then
+    echo ""
+    echo "=================================================="
+    echo "  错误：服务启动失败！"
+    echo "=================================================="
+    echo "查看详细错误信息："
+    echo "  docker compose logs"
+    echo ""
+    echo "清理并重试："
+    echo "  docker compose down"
+    echo "  docker system prune -af"
+    echo "  ./start.sh"
+    echo "=================================================="
+    exit 1
+fi
 
 # 等待服务启动
 echo "等待服务启动..."
@@ -42,6 +59,18 @@ echo "=================================================="
 echo "  服务状态"
 echo "=================================================="
 docker compose ps
+
+# 检查是否有服务运行
+if ! docker compose ps | grep -q "Up"; then
+    echo ""
+    echo "=================================================="
+    echo "  警告：没有服务处于运行状态！"
+    echo "=================================================="
+    echo "查看日志："
+    echo "  docker compose logs"
+    echo "=================================================="
+    exit 1
+fi
 
 echo ""
 echo "=================================================="
