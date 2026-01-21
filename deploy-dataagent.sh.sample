@@ -394,8 +394,27 @@ configure_nginx() {
         HOST_IP="localhost"
     fi
     
+    # 检测 Nginx 配置目录结构
+    if [ -d "/etc/nginx/sites-available" ]; then
+        # Ubuntu/Debian 风格
+        NGINX_CONFIG_DIR="/etc/nginx/sites-available"
+        NGINX_ENABLE_DIR="/etc/nginx/sites-enabled"
+        NGINX_CONFIG_FILE="$NGINX_CONFIG_DIR/dataagent"
+        USE_SITES_STYLE=true
+    else
+        # CentOS/RHEL/Kylin 风格
+        NGINX_CONFIG_DIR="/etc/nginx/conf.d"
+        NGINX_CONFIG_FILE="$NGINX_CONFIG_DIR/dataagent.conf"
+        USE_SITES_STYLE=false
+        
+        # 确保 conf.d 目录存在
+        sudo mkdir -p "$NGINX_CONFIG_DIR"
+    fi
+    
+    info "使用配置文件: $NGINX_CONFIG_FILE"
+    
     # 创建 Nginx 配置文件
-    sudo tee /etc/nginx/sites-available/dataagent > /dev/null <<EOF
+    sudo tee "$NGINX_CONFIG_FILE" > /dev/null <<EOF
 server {
     listen $FRONTEND_PORT;
     server_name $HOST_IP localhost;
@@ -434,21 +453,30 @@ server {
 EOF
     
     # 启用配置
-    if [ -d "/etc/nginx/sites-enabled" ]; then
-        sudo ln -sf /etc/nginx/sites-available/dataagent /etc/nginx/sites-enabled/
-        sudo rm -f /etc/nginx/sites-enabled/default
+    if [ "$USE_SITES_STYLE" = true ]; then
+        # Ubuntu/Debian: 创建符号链接
+        sudo ln -sf "$NGINX_CONFIG_FILE" "$NGINX_ENABLE_DIR/dataagent"
+        # 移除默认配置（避免端口冲突）
+        sudo rm -f "$NGINX_ENABLE_DIR/default"
+        info "已启用配置: $NGINX_ENABLE_DIR/dataagent"
     else
-        # CentOS/RHEL 风格配置
-        sudo ln -sf /etc/nginx/sites-available/dataagent /etc/nginx/conf.d/dataagent.conf
+        # CentOS/RHEL: 配置文件已直接在 conf.d 目录
+        info "配置文件已生效: $NGINX_CONFIG_FILE"
+        
+        # 备份并移除默认配置（避免 80 端口冲突）
+        if [ -f "/etc/nginx/nginx.conf" ]; then
+            # 注释掉默认 server 块中的 listen 80
+            sudo sed -i.bak 's/^\(\s*listen\s\+80\)/# \1/' /etc/nginx/nginx.conf 2>/dev/null || true
+        fi
     fi
     
     # 测试配置
-    if sudo nginx -t; then
+    if sudo nginx -t 2>&1; then
         info "Nginx 配置测试通过"
         sudo systemctl reload nginx
         info "Nginx 已重新加载配置"
     else
-        error "Nginx 配置测试失败，请检查配置文件"
+        error "Nginx 配置测试失败，请检查配置文件: $NGINX_CONFIG_FILE"
     fi
 }
 
