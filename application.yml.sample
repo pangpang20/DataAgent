@@ -135,11 +135,16 @@ logging:
     com.alibaba.cloud.ai.mapper: info                     # MyBatis Mapper 日志
     org.springframework.jdbc: warn                        # JDBC 日志
   
-  # 日志文件配置（可选）
-  # file:
-  #   name: /var/log/dataagent/application.log            # 日志文件路径
-  #   max-size: 100MB                                     # 单个日志文件最大大小
-  #   max-history: 30                                     # 保留天数
+  # 日志文件配置（推荐生产环境启用）
+  file:
+    name: logs/application.log              # 日志文件路径（相对于 JAR 包所在目录）
+    max-size: 100MB                         # 单个日志文件最大大小
+    max-history: 30                         # 保留天数
+  
+  # 其他日志文件路径配置示例：
+  # - 绝对路径：/var/log/dataagent/application.log
+  # - 相对路径：logs/application.log（推荐，会在 JAR 同级创建 logs 目录）
+  # - 用户目录：~/logs/dataagent/application.log
   
   # 日志格式配置
   pattern:
