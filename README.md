@@ -64,7 +64,32 @@
 - MySQL 5.7+
 - Node.js 16+
 
-### 2. 启动服务
+### 2. 编译构建
+
+#### 后端编译
+
+```bash
+# 使用 Maven Wrapper 编译后端（跳过测试）
+.\mvnw.cmd -B clean compile -DskipTests=true
+
+# 或使用 Maven（如果已安装）
+mvn -B clean compile -DskipTests=true
+```
+
+#### 前端编译
+
+```bash
+# 进入前端目录
+cd data-agent-frontend
+
+# 安装依赖
+npm install
+
+# 编译构建
+npm run build
+```
+
+### 3. 启动服务
 
 ```bash
 # 1. 导入数据库
@@ -72,14 +97,36 @@ mysql -u root -p < data-agent-management/src/main/resources/sql/schema.sql
 
 # 2. 启动后端
 cd data-agent-management
-./mvnw spring-boot:run
+.\mvnw.cmd spring-boot:run
 
-# 3. 启动前端
+# 3. 启动前端（开发模式）
 cd data-agent-frontend
 npm install && npm run dev
 ```
 
-### 3. 访问系统
+### 4. 生产打包
+
+#### 后端打包
+
+```bash
+# 打包成可执行 JAR 文件
+.\mvnw.cmd -B clean package -DskipTests=true
+
+# 打包文件位置：data-agent-management/target/*.jar
+```
+
+#### 前端打包
+
+```bash
+cd data-agent-frontend
+
+# 生产环境构建
+npm run build
+
+# 构建产物位置：data-agent-frontend/dist/
+```
+
+### 5. 访问系统
 
 打开浏览器访问 `http://localhost:3000`，开始创建您的第一个数据智能体！
 
