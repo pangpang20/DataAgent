@@ -71,8 +71,11 @@
 #### 后端编译
 
 ```bash
-# 使用 Maven Wrapper 编译后端（跳过测试）
+# Windows 系统
 .\mvnw.cmd -B clean compile -DskipTests=true
+
+# Linux/Mac 系统
+./mvnw -B clean compile -DskipTests=true
 
 # 或使用 Maven（如果已安装）
 mvn -B clean compile -DskipTests=true
@@ -102,7 +105,10 @@ mysql -u root -p < data-agent-management/src/main/resources/sql/schema.sql
 
 # 2. 启动后端
 cd data-agent-management
+# Windows 系统
 .\mvnw.cmd spring-boot:run
+# Linux/Mac 系统
+./mvnw spring-boot:run
 
 # 3. 启动前端（开发模式）
 cd data-agent-frontend
@@ -114,8 +120,11 @@ yarn install && yarn dev
 #### 后端打包
 
 ```bash
-# 打包成可执行 JAR 文件
+# Windows 系统
 .\mvnw.cmd -B clean package -DskipTests=true
+
+# Linux/Mac 系统
+./mvnw -B clean package -DskipTests=true
 
 # 打包文件位置：data-agent-management/target/*.jar
 ```
