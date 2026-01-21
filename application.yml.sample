@@ -37,15 +37,22 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
     type: com.alibaba.druid.pool.DruidDataSource
   
-  # 数据库初始化配置
+  # 数据库初始化配置（生产环境建议禁用）
   sql:
     init:
-      mode: always                          # 始终执行初始化脚本
+      mode: never                           # never: 不执行初始化脚本（生产环境推荐）
+                                            # always: 始终执行（开发环境）
+                                            # embedded: 仅嵌入式数据库执行（如 H2）
       schema-locations: classpath:sql/schema.sql  # 建表脚本
       data-locations: classpath:sql/data.sql      # 初始数据脚本
       continue-on-error: true               # 脚本执行出错时继续
       separator: ;
       encoding: utf-8
+  
+  # 重要说明：
+  # 生产环境首次部署时，请手动执行数据库初始化脚本：
+  #   mysql -u username -p database_name < data-agent-management/src/main/resources/sql/schema.sql
+  # 后续启动必须设置 mode: never，避免重复初始化导致数据丢失！
   
   # ============================================================================
   # AI 配置
@@ -122,6 +129,22 @@ mybatis:
   configuration:
     map-underscore-to-camel-case: true      # 下划线转驼峰
     log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl  # 日志实现
+
+# ============================================================================
+# Actuator 监控配置
+# ============================================================================
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics          # 暴露的端点：health(健康检查)、info(应用信息)、metrics(性能指标)
+      base-path: /actuator                    # 端点基础路径
+  endpoint:
+    health:
+      show-details: always                    # 总是显示详细健康信息（包括数据库、磁盘空间等）
+  
+  # 生产环境建议暴露更多端点（可选）：
+  # include: health,info,metrics,env,loggers,threaddump,heapdump
 
 # ============================================================================
 # 日志配置
