@@ -226,15 +226,32 @@ java -Xmx2g -Xms2g \
 **后台运行并记录日志**：
 
 ```bash
-# 使用 nohup 后台运行
-nohup java -jar dataagent-backend.jar > /var/log/dataagent/console.log 2>&1 &
+# 使用 nohup 后台运行（支持 IPv4 和 IPv6 双栈）
+nohup java -Xmx2g -Xms2g \
+  -XX:+UseG1GC \
+  -Dfile.encoding=UTF-8 \
+  -jar dataagent-backend.jar \
+  > /var/log/dataagent/console.log 2>&1 &
 
 # 查看进程
 ps aux | grep dataagent-backend
 
+# 验证监听地址（应该同时显示 IPv4 和 IPv6）
+netstat -anlp | grep 8065
+# 预期输出：
+# tcp   0  0  0.0.0.0:8065  0.0.0.0:*  LISTEN  <PID>/java
+# tcp6  0  0  :::8065       :::*       LISTEN  <PID>/java
+
 # 查看日志
 tail -f /var/log/dataagent/console.log
 ```
+
+**网络配置说明**：
+- 默认同时支持 IPv4 和 IPv6 访问
+- IPv4 地址：`http://172.16.1.137:8065`
+- IPv6 地址：`http://[::1]:8065` 或 `http://[fe80::1]:8065`
+- 如果只需 IPv4，添加参数：`-Djava.net.preferIPv4Stack=true`
+- 如果只需 IPv6，添加参数：`-Djava.net.preferIPv6Addresses=true`
 
 **创建 systemd 服务（推荐）**：
 
@@ -262,6 +279,9 @@ StandardError=append:/var/log/dataagent/error.log
 
 # 环境变量（可选）
 Environment="DATA_AGENT_DATASOURCE_PASSWORD=your_password"
+
+# 如需强制使用 IPv4，可添加：
+# Environment="JAVA_OPTS=-Djava.net.preferIPv4Stack=true"
 
 [Install]
 WantedBy=multi-user.target

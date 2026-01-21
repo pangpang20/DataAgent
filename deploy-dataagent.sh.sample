@@ -460,8 +460,10 @@ start_backend() {
     
     cd "$DEPLOY_DIR"
     
-    # 后台启动
-    nohup java -Xmx2g -Xms2g -XX:+UseG1GC \
+    # 后台启动（支持 IPv4 和 IPv6 双栈）
+    # 注意：不添加 -Djava.net.preferIPv4Stack=true，让 JVM 同时监听 IPv4 和 IPv6
+    nohup java -Xmx2g -Xms2g \
+        -XX:+UseG1GC \
         -Dfile.encoding=UTF-8 \
         -jar dataagent-backend.jar \
         > console.log 2>&1 &
@@ -476,6 +478,18 @@ start_backend() {
         if curl -s http://localhost:$BACKEND_PORT/actuator/health > /dev/null 2>&1 || \
            curl -s http://localhost:$BACKEND_PORT/api/agent/list > /dev/null 2>&1; then
             info "后端服务启动成功！"
+            
+            # 验证监听地址
+            echo ""
+            info "监听地址信息："
+            netstat -anl | grep ":$BACKEND_PORT " | grep LISTEN | while read line; do
+                if echo "$line" | grep -q "0.0.0.0:$BACKEND_PORT"; then
+                    info "  ✅ IPv4: 0.0.0.0:$BACKEND_PORT"
+                elif echo "$line" | grep -q ":::$BACKEND_PORT"; then
+                    info "  ✅ IPv6: :::$BACKEND_PORT"
+                fi
+            done
+            
             return 0
         fi
         echo -n "."
