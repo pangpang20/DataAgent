@@ -61,8 +61,10 @@
 ### 1. 准备环境
 
 - JDK 17+
+- Maven 3.6.3+ (推荐 3.9.9，项目自带 Maven Wrapper)
 - MySQL 5.7+
 - Node.js 16+
+- npm 9.x 或 10.x (推荐 10.x，npm 11.6 存在兼容性问题)
 
 ### 2. 编译构建
 
@@ -79,14 +81,17 @@ mvn -B clean compile -DskipTests=true
 #### 前端编译
 
 ```bash
+# 安装 yarn（如果未安装）
+npm install -g yarn
+
 # 进入前端目录
 cd data-agent-frontend
 
-# 安装依赖
-npm install
+# 使用 yarn 安装依赖
+yarn install
 
 # 编译构建
-npm run build
+yarn build
 ```
 
 ### 3. 启动服务
@@ -101,7 +106,7 @@ cd data-agent-management
 
 # 3. 启动前端（开发模式）
 cd data-agent-frontend
-npm install && npm run dev
+yarn install && yarn dev
 ```
 
 ### 4. 生产打包
@@ -121,7 +126,7 @@ npm install && npm run dev
 cd data-agent-frontend
 
 # 生产环境构建
-npm run build
+yarn build
 
 # 构建产物位置：data-agent-frontend/dist/
 ```
