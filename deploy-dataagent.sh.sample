@@ -214,6 +214,84 @@ check_mysql() {
 }
 
 # ============================================================================
+# 配置防火墙
+# ============================================================================
+configure_firewall() {
+    info "配置防火墙..."
+    
+    # 检测防火墙类型
+    if command -v firewall-cmd &> /dev/null; then
+        # firewalld (默认 CentOS/RHEL 7+)
+        if systemctl is-active --quiet firewalld; then
+            info "检测到 firewalld 正在运行"
+            
+            # 提供两种选择
+            warn "防火墙配置选项："
+            warn "  1. 开放端口（推荐，安全）"
+            warn "  2. 禁用防火墙（仅测试环境）"
+            
+            # 默认采用方案 1：开放端口
+            info "采用方案 1: 开放必要端口"
+            
+            # 开放 HTTP 端口
+            sudo firewall-cmd --permanent --add-port=$FRONTEND_PORT/tcp
+            info "已开放前端端口: $FRONTEND_PORT/tcp"
+            
+            # 开放后端端口
+            sudo firewall-cmd --permanent --add-port=$BACKEND_PORT/tcp
+            info "已开放后端端口: $BACKEND_PORT/tcp"
+            
+            # 重载防火墙
+            sudo firewall-cmd --reload
+            info "防火墙规则已重载"
+            
+            # 显示当前规则
+            info "当前防火墙规则："
+            sudo firewall-cmd --list-all | grep -E "ports|services" | head -2
+            
+            # 如果用户需要禁用防火墙，可以手动执行：
+            # sudo systemctl stop firewalld
+            # sudo systemctl disable firewalld
+        else
+            info "firewalld 未运行，跳过防火墙配置"
+        fi
+    elif command -v iptables &> /dev/null; then
+        # iptables (传统方式)
+        info "检测到 iptables"
+        
+        # 检查是否有限制规则
+        if sudo iptables -L INPUT -n | grep -q "DROP\|REJECT"; then
+            warn "iptables 有限制规则，请手动添加以下规则："
+            warn "  sudo iptables -I INPUT -p tcp --dport $FRONTEND_PORT -j ACCEPT"
+            warn "  sudo iptables -I INPUT -p tcp --dport $BACKEND_PORT -j ACCEPT"
+            warn "  sudo service iptables save"
+        else
+            info "iptables 未启用限制，跳过配置"
+        fi
+    else
+        info "未检测到防火墙，跳过配置"
+    fi
+}
+
+# ============================================================================
+# 禁用防火墙（仅用于测试环境）
+# ============================================================================
+disable_firewall() {
+    warn "========================================"
+    warn "  警告：禁用防火墙！"
+    warn "========================================"
+    warn "请确认这是测试环境，生产环境请使用 configure_firewall 函数开放端口。"
+    
+    if command -v firewall-cmd &> /dev/null; then
+        if systemctl is-active --quiet firewalld; then
+            sudo systemctl stop firewalld
+            sudo systemctl disable firewalld
+            info "firewalld 已禁用"
+        fi
+    fi
+}
+
+# ============================================================================
 # 停止服务
 # ============================================================================
 stop_services() {
@@ -603,6 +681,12 @@ main() {
     check_install_nodejs
     check_install_nginx
     check_mysql
+    
+    # 配置防火墙（开放必要端口）
+    configure_firewall
+    
+    # 如果是测试环境且需要禁用防火墙，取消下面的注释：
+    # disable_firewall
     
     echo ""
     info "=========================================="

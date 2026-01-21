@@ -287,7 +287,7 @@ Environment="DATA_AGENT_DATASOURCE_PASSWORD=your_password"
 WantedBy=multi-user.target
 ```
 
-启动服务：
+# 启动服务
 
 ```bash
 # 重载 systemd 配置
@@ -306,7 +306,39 @@ sudo systemctl status dataagent
 journalctl -u dataagent -f
 ```
 
-#### 5.5 部署前端（静态文件）
+#### 5.5 防火墙配置
+
+**方案 1：开放必要端口（推荐）**：
+
+```bash
+# CentOS/RHEL/KylinV10 使用 firewalld
+sudo firewall-cmd --permanent --add-port=80/tcp     # 前端端口
+sudo firewall-cmd --permanent --add-port=8065/tcp   # 后端端口
+sudo firewall-cmd --reload
+
+# 验证规则
+sudo firewall-cmd --list-all
+
+# Ubuntu/Debian 使用 ufw
+sudo ufw allow 80/tcp
+sudo ufw allow 8065/tcp
+sudo ufw status
+```
+
+**方案 2：禁用防火墙（仅测试环境）**：
+
+```bash
+# CentOS/RHEL/KylinV10
+sudo systemctl stop firewalld
+sudo systemctl disable firewalld
+
+# Ubuntu/Debian
+sudo ufw disable
+```
+
+⚠️ **警告**：生产环境不建议完全禁用防火墙，请使用方案 1 开放特定端口。
+
+#### 5.6 部署前端（静态文件）
 
 **使用 Nginx 部署前端**：
 
