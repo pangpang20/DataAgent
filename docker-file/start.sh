@@ -72,12 +72,23 @@ if ! docker compose ps | grep -q "Up"; then
     exit 1
 fi
 
+# 获取本机 IP 地址
+HOST_IP=$(hostname -I | awk '{print $1}')
+if [ -z "$HOST_IP" ]; then
+    # 如果 hostname -I 失败，尝试其他方法
+    HOST_IP=$(ip route get 1 | awk '{print $7}' | head -n1)
+fi
+if [ -z "$HOST_IP" ]; then
+    # 如果还是失败，使用 localhost
+    HOST_IP="localhost"
+fi
+
 echo ""
 echo "=================================================="
 echo "  访问地址"
 echo "=================================================="
-echo "前端: http://localhost:3000"
-echo "后端: http://localhost:8065"
+echo "前端: http://$HOST_IP:3000"
+echo "后端: http://$HOST_IP:8065"
 echo ""
 echo "查看日志: docker compose logs -f"
 echo "=================================================="
