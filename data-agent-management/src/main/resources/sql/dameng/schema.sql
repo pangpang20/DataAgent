@@ -440,3 +440,5 @@ CREATE OR REPLACE TRIGGER trg_agent_datasource_tables_update_time BEFORE UPDATE 
 CREATE OR REPLACE TRIGGER trg_model_config_update_time BEFORE UPDATE ON model_config FOR EACH ROW BEGIN :NEW.updated_time := SYSDATE; END;
 /
 
+EXIT;
+

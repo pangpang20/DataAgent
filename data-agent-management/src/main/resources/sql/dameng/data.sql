@@ -69,3 +69,6 @@ INSERT INTO agent_datasource (id, agent_id, datasource_id, is_active, create_tim
 INSERT INTO agent_datasource (id, agent_id, datasource_id, is_active, create_time, update_time) VALUES 
 (4, 4, 1, 0, SYSDATE, SYSDATE);
 SET IDENTITY_INSERT agent_datasource OFF;
+
+COMMIT;
+EXIT;

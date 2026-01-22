@@ -74,3 +74,6 @@ INSERT INTO order_items (order_id, product_id, quantity, unit_price) VALUES
 (9, 9, 1, 399.00),
 (10, 8, 4, 25.00),
 (10, 5, 1, 29.00);
+
+COMMIT;
+EXIT;

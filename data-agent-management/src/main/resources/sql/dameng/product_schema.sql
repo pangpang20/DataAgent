@@ -82,3 +82,5 @@ COMMENT ON COLUMN product_categories.category_id IS '分类ID';
 
 ALTER TABLE product_categories ADD CONSTRAINT fk_pc_product FOREIGN KEY (product_id) REFERENCES products(id);
 ALTER TABLE product_categories ADD CONSTRAINT fk_pc_category FOREIGN KEY (category_id) REFERENCES categories(id);
+
+EXIT;
