@@ -84,16 +84,19 @@ mvn -B clean compile -DskipTests=true
 #### 前端编译
 
 ```bash
-# 安装 yarn（如果未安装）
-npm install -g yarn
-
 # 进入前端目录
 cd data-agent-frontend
 
-# 使用 yarn 安装依赖
+# 安装依赖
+# Windows 系统 (PowerShell)
+npm install
+# Linux/Mac 系统
 yarn install
 
 # 编译构建
+# Windows 系统 (PowerShell)
+npm run build
+# Linux/Mac 系统
 yarn build
 ```
 
@@ -112,6 +115,9 @@ cd data-agent-management
 
 # 3. 启动前端（开发模式）
 cd data-agent-frontend
+# Windows 系统 (PowerShell)
+npm install; npm run dev
+# Linux/Mac 系统
 yarn install && yarn dev
 ```
 
@@ -135,6 +141,9 @@ yarn install && yarn dev
 cd data-agent-frontend
 
 # 生产环境构建
+# Windows 系统 (PowerShell)
+npm run build
+# Linux/Mac 系统
 yarn build
 
 # 构建产物位置：data-agent-frontend/dist/
