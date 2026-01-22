@@ -14,20 +14,22 @@
 
 可以在项目仓库获取测试表和数据：
 
-文件在：`data-agent-management/src/main/resources/sql`，里面有4个文件：
+文件在：`data-agent-management/src/main/resources/sql/{platform}/`（platform 为 `mysql` 或 `dameng`），每个目录下包含：
 - `schema.sql` - 功能相关的表结构
 - `data.sql` - 功能相关的数据
-- `product_schema.sql` - 模拟数据表结构
-- `product_data.sql` - 模拟数据
+- `product_schema.sql` - 示例业务数据表结构（用于测试 Agent 分析）
+- `product_data.sql` - 示例业务数据
 
-将表和数据导入到你的MySQL数据库中。
+系统默认开启自动初始化 (`spring.sql.init.mode: always`)，会根据配置的 `platform` 自动执行对应目录下的脚本。
+
+如果需要手动导入：
 
 ```bash
-# 示例：使用 MySQL 命令行导入
-mysql -u root -p your_database < data-agent-management/src/main/resources/sql/schema.sql
-mysql -u root -p your_database < data-agent-management/src/main/resources/sql/data.sql
-mysql -u root -p your_database < data-agent-management/src/main/resources/sql/product_schema.sql
-mysql -u root -p your_database < data-agent-management/src/main/resources/sql/product_data.sql
+# 示例：使用 MySQL 命令行导入到 saa_data_agent 数据库
+mysql -u root -p saa_data_agent < data-agent-management/src/main/resources/sql/mysql/schema.sql
+mysql -u root -p saa_data_agent < data-agent-management/src/main/resources/sql/mysql/data.sql
+mysql -u root -p saa_data_agent < data-agent-management/src/main/resources/sql/mysql/product_schema.sql
+mysql -u root -p saa_data_agent < data-agent-management/src/main/resources/sql/mysql/product_data.sql
 ```
 
 ## ⚙️ 2. 配置

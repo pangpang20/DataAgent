@@ -28,8 +28,12 @@ spring:
   sql:
     init:
       mode: always
-      schema-locations: classpath:sql/${spring.datasource.platform}/schema.sql
-      data-locations: classpath:sql/${spring.datasource.platform}/data.sql
+      schema-locations:
+        - classpath:sql/${spring.datasource.platform}/schema.sql
+        - classpath:sql/${spring.datasource.platform}/product_schema.sql
+      data-locations:
+        - classpath:sql/${spring.datasource.platform}/data.sql
+        - classpath:sql/${spring.datasource.platform}/product_data.sql
       continue-on-error: true
       separator: ;
       encoding: utf-8
