@@ -1,5 +1,7 @@
 -- 初始化数据文件（达梦版本）
 
+SET DEFINE OFF;
+
 -- 业务知识示例数据
 SET IDENTITY_INSERT business_knowledge ON;
 INSERT INTO business_knowledge (id, business_term, description, synonyms, is_recall, agent_id, created_time, updated_time) VALUES
@@ -53,9 +55,9 @@ SET IDENTITY_INSERT agent_knowledge OFF;
 -- 数据源示例数据
 SET IDENTITY_INSERT datasource ON;
 INSERT INTO datasource (id, name, type, host, port, database_name, username, password, connection_url, status, test_status, description, creator_id, create_time, update_time) VALUES 
-(1, '生产环境MySQL数据库', 'mysql', 'mysql-data', 3306, 'product_db', 'root', 'root', 'jdbc:mysql://mysql-data:3306/product_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true', 'inactive', 'unknown', '生产环境主数据库，包含核心业务数据', 2100246635, SYSDATE, SYSDATE);
+(1, '生产环境达梦数据库', 'dameng', 'localhost', 5236, 'product_db', 'SYSDBA', 'SYSDBA', 'jdbc:dm://localhost:5236/product_db', 'inactive', 'unknown', '生产环境主数据库，包含核心业务数据', 2100246635, SYSDATE, SYSDATE);
 INSERT INTO datasource (id, name, type, host, port, database_name, username, password, connection_url, status, test_status, description, creator_id, create_time, update_time) VALUES 
-(2, '数据仓库PostgreSQL', 'postgresql', 'postgres-data', 5432, 'china_population_db', 'postgres', 'postgres', 'jdbc:postgresql://postgres-data:5432/china_population_db', 'inactive', 'unknown', '数据仓库，用于数据分析和报表生成', 2100246635, SYSDATE, SYSDATE);
+(2, '数据仓库达梦数据库', 'dameng', 'localhost', 5236, 'china_population_db', 'SYSDBA', 'SYSDBA', 'jdbc:dm://localhost:5236/china_population_db', 'inactive', 'unknown', '数据仓库，用于数据分析和报表生成', 2100246635, SYSDATE, SYSDATE);
 SET IDENTITY_INSERT datasource OFF;
 
 -- 智能体数据源关联示例数据
