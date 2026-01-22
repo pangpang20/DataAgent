@@ -1007,7 +1007,7 @@ CREATE INDEX idx_datasource_type ON datasource(type);
 
 ```bash
 # 连接数据库
-/opt/dmdbms/bin/disql data_agent/Audaque@123@localhost:5236
+/opt/dmdbms/bin/disql data_agent/\"Audaque@123\"@localhost:5236
 
 # 执行脚本
 SQL> START '/home/dataagent/dataagent/sql/dameng/schema.sql';
@@ -1539,7 +1539,7 @@ curl http://localhost:8065/api/agents
 
 ```bash
 # 连接达梦数据库
-/opt/dmdbms/bin/disql data_agent/Audaque@123@localhost:5236
+/opt/dmdbms/bin/disql data_agent/\"Audaque@123\"@localhost:5236
 
 # 查询表数据
 SQL> SELECT COUNT(*) FROM agent;
@@ -1779,7 +1779,7 @@ grep ERROR ~/dataagent/logs/dataagent-backend.log
 grep "datasource" ~/dataagent/logs/dataagent-backend.log
 
 # 连接数据库检查表
-/opt/dmdbms/bin/disql data_agent/Audaque@123@localhost:5236
+/opt/dmdbms/bin/disql data_agent/\"Audaque@123\"@localhost:5236
 SQL> SELECT TABLE_NAME FROM USER_TABLES;
 ```
 
@@ -2137,7 +2137,7 @@ cp ~/dataagent/backend/*.jar ~/backups/backend_$(date +%Y%m%d).jar
 cp /path/to/new_version.jar ~/dataagent/backend/
 
 # 4. 执行数据库升级脚本（如有）
-/opt/dmdbms/bin/disql data_agent/Audaque@123@localhost:5236 < upgrade_v1.1.sql
+/opt/dmdbms/bin/disql data_agent/\"Audaque@123\"@localhost:5236 < upgrade_v1.1.sql
 
 # 5. 启动服务
 ~/dataagent/backend/start.sh
@@ -2199,7 +2199,7 @@ nohup java -jar \
 
 ```sql
 -- 连接达梦数据库
-/opt/dmdbms/bin/disql data_agent/Audaque@123@localhost:5236
+/opt/dmdbms/bin/disql data_agent/\"Audaque@123\"@localhost:5236
 
 -- 分析表统计信息
 ANALYZE TABLE agent;
@@ -2400,7 +2400,7 @@ echo "✓ 项目源码解压完成"
 echo "[7/10] 初始化数据库..."
 read -p "是否需要初始化数据库？(y/n): " INIT_DB
 if [ "$INIT_DB" = "y" ]; then
-    /opt/dmdbms/bin/disql data_agent/Audaque@123@localhost:5236 < ~/dataagent/sql/dameng/schema.sql
+    /opt/dmdbms/bin/disql data_agent/\"Audaque@123\"@localhost:5236 < ~/dataagent/sql/dameng/schema.sql
     echo "✓ 数据库初始化完成"
 fi
 
