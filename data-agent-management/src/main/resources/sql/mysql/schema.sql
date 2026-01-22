@@ -1,5 +1,21 @@
 -- 简化的数据库初始化脚本，兼容Spring Boot SQL初始化
 
+SET FOREIGN_KEY_CHECKS = 0;
+DROP TABLE IF EXISTS `model_config`;
+DROP TABLE IF EXISTS `agent_datasource_tables`;
+DROP TABLE IF EXISTS `user_prompt_config`;
+DROP TABLE IF EXISTS `chat_message`;
+DROP TABLE IF EXISTS `chat_session`;
+DROP TABLE IF EXISTS `agent_preset_question`;
+DROP TABLE IF EXISTS `agent_datasource`;
+DROP TABLE IF EXISTS `logical_relation`;
+DROP TABLE IF EXISTS `datasource`;
+DROP TABLE IF EXISTS `agent_knowledge`;
+DROP TABLE IF EXISTS `semantic_model`;
+DROP TABLE IF EXISTS `business_knowledge`;
+DROP TABLE IF EXISTS `agent`;
+SET FOREIGN_KEY_CHECKS = 1;
+
 -- 智能体表
 CREATE TABLE IF NOT EXISTS agent (
     id INT NOT NULL AUTO_INCREMENT,
