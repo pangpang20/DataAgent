@@ -11,6 +11,7 @@ INSERT INTO business_knowledge (id, business_term, description, synonyms, is_rec
 INSERT INTO business_knowledge (id, business_term, description, synonyms, is_recall, agent_id, created_time, updated_time) VALUES
 (3, 'Customer Retention Rate', 'The percentage of customers who continue to use a service over a given period.', 'retention, customer loyalty', 0, 2, SYSDATE, SYSDATE);
 SET IDENTITY_INSERT business_knowledge OFF;
+COMMIT;
 
 -- 语义模型示例数据
 SET IDENTITY_INSERT semantic_model ON;
@@ -21,6 +22,7 @@ INSERT INTO semantic_model (id, agent_id, datasource_id, table_name, column_name
 INSERT INTO semantic_model (id, agent_id, datasource_id, table_name, column_name, business_name, synonyms, business_description, column_comment, data_type, created_time, updated_time, status) VALUES
 (3, 2, 1, 'customer_metrics', 'retention_pct', 'customerRetentionRate', 'retention rate, loyalty rate', 'Percentage of retained customers', '客户保留率', 'decimal', SYSDATE, SYSDATE, 0);
 SET IDENTITY_INSERT semantic_model OFF;
+COMMIT;
 
 -- 智能体示例数据
 SET IDENTITY_INSERT agent ON;
@@ -33,6 +35,7 @@ INSERT INTO agent (id, name, description, avatar, status, api_key, api_key_enabl
 INSERT INTO agent (id, name, description, avatar, status, api_key, api_key_enabled, prompt, category, admin_id, tags, create_time, update_time, human_review_enabled) VALUES 
 (4, '库存管理智能体', '专注于库存数据管理和供应链分析的智能体', '/avatars/inventory-agent.png', 'draft', NULL, 0, '你是一个库存管理专家，能够帮助用户查询库存状态、分析供应链数据。', '供应链', 2100246635, '库存管理,供应链,物流', SYSDATE, SYSDATE, 0);
 SET IDENTITY_INSERT agent OFF;
+COMMIT;
 
 -- 智能体知识示例数据
 SET IDENTITY_INSERT agent_knowledge ON;
@@ -51,6 +54,7 @@ INSERT INTO agent_knowledge (id, agent_id, title, content, type, is_recall, embe
 INSERT INTO agent_knowledge (id, agent_id, title, content, type, is_recall, embedding_status, file_type, created_time, updated_time) VALUES 
 (7, 4, '库存管理最佳实践', '库存管理的核心要点：\n1. 安全库存设置：确保不断货\n2. ABC分类管理：重点管理A类物料\n3. 先进先出原则：避免库存积压\n4. 定期盘点：确保数据准确性\n5. 供应商管理：建立稳定供应关系', 'DOCUMENT', 1, 'PENDING', 'text', SYSDATE, SYSDATE);
 SET IDENTITY_INSERT agent_knowledge OFF;
+COMMIT;
 
 -- 数据源示例数据
 SET IDENTITY_INSERT datasource ON;
@@ -59,6 +63,7 @@ INSERT INTO datasource (id, name, type, host, port, database_name, username, pas
 INSERT INTO datasource (id, name, type, host, port, database_name, username, password, connection_url, status, test_status, description, creator_id, create_time, update_time) VALUES 
 (2, '数据仓库达梦数据库', 'dameng', 'localhost', 5236, 'china_population_db', 'SYSDBA', 'SYSDBA', 'jdbc:dm://localhost:5236/china_population_db', 'inactive', 'unknown', '数据仓库，用于数据分析和报表生成', 2100246635, SYSDATE, SYSDATE);
 SET IDENTITY_INSERT datasource OFF;
+COMMIT;
 
 -- 智能体数据源关联示例数据
 SET IDENTITY_INSERT agent_datasource ON;
