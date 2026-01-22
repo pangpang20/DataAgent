@@ -54,7 +54,7 @@ public interface BusinessKnowledgeMapper {
 
 	@Insert("""
 			INSERT INTO business_knowledge (business_term, description, synonyms, is_recall, agent_id, created_time, updated_time, embedding_status, is_deleted)
-			VALUES (#{businessTerm}, #{description}, #{synonyms}, #{isRecall}, #{agentId}, NOW(), NOW(), #{embeddingStatus}, #{isDeleted})
+			VALUES (#{businessTerm}, #{description}, #{synonyms}, #{isRecall}, #{agentId}, ${@sqlDialectResolver.now()}, ${@sqlDialectResolver.now()}, #{embeddingStatus}, #{isDeleted})
 			""")
 	@Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
 	int insert(BusinessKnowledge knowledge);
@@ -71,7 +71,7 @@ public interface BusinessKnowledgeMapper {
 				<if test="embeddingStatus != null">embedding_status = #{embeddingStatus},</if>
 				<if test="errorMsg != null">error_msg = #{errorMsg},</if>
 				<if test="isDeleted != null">is_deleted = #{isDeleted},</if>
-				updated_time = NOW()
+				updated_time = ${@sqlDialectResolver.now()}
 			</set>
 			WHERE id = #{id}
 			</script>
@@ -98,7 +98,7 @@ public interface BusinessKnowledgeMapper {
 
 	@Update("""
 			UPDATE business_knowledge
-			SET is_deleted = #{isDeleted}, updated_time = NOW()
+			SET is_deleted = #{isDeleted}, updated_time = ${@sqlDialectResolver.now()}
 			WHERE id = #{id}
 			""")
 	int logicalDelete(@Param("id") Long id, @Param("isDeleted") Integer isDeleted);

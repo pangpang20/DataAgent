@@ -61,7 +61,7 @@ public interface AgentKnowledgeMapper {
 				<if test="fileType != null">file_type = #{fileType},</if>
 				<if test="isDeleted != null">is_deleted = #{isDeleted},</if>
 				<if test="isResourceCleaned != null">is_resource_cleaned = #{isResourceCleaned},</if>
-				updated_time = NOW()
+				updated_time = ${@sqlDialectResolver.now()}
 			</set>
 			WHERE id = #{id}
 			</script>
@@ -82,7 +82,7 @@ public interface AgentKnowledgeMapper {
 				AND embedding_status = #{queryDTO.embeddingStatus}
 			</if>
 			AND is_deleted = 0
-			LIMIT #{offset}, #{queryDTO.pageSize}
+			${@sqlDialectResolver.limit(offset, queryDTO.pageSize)}
 			</script>
 			""")
 	List<AgentKnowledge> selectByConditionsWithPage(@Param("queryDTO") AgentKnowledgeQueryDTO queryDTO,
@@ -112,15 +112,16 @@ public interface AgentKnowledgeMapper {
 	List<Integer> selectRecalledKnowledgeIds(@Param("agentId") Integer agentId);
 
 	/**
-	 * 查询待清理的“僵尸”记录 条件：is_deleted = 1 AND is_resource_cleaned = 0 AND updated_time <(当前时间
+	 * 查询待清理的“僵尸”记录 条件：is_deleted = 1 AND is_resource_cleaned = 0 AND updated_time
+	 * <(当前时间
 	 * - N分钟)
 	 */
 	@Select("""
 			    SELECT * FROM agent_knowledge
 			    WHERE is_deleted = 1
 			      AND is_resource_cleaned = 0
-			      AND updated_time < #{beforeTime}
-			    LIMIT #{limit}
+			      AND updated_time &lt; #{beforeTime}
+			    ${@sqlDialectResolver.limit(0, limit)}
 			""")
 	List<AgentKnowledge> selectDirtyRecords(@Param("beforeTime") LocalDateTime beforeTime, @Param("limit") int limit);
 

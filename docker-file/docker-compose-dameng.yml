@@ -12,30 +12,32 @@
 #See the License for the specific language governing permissions and
 #limitations under the License.
 
-# DataAgent 一键部署配置 - MySQL 元数据库版本（默认）
-# 使用方式：docker-compose up -d
-# 如需使用达梦数据库，请使用：docker-compose -f docker-compose-dameng.yml up -d
+# DataAgent 一键部署配置 - 达梦数据库版本
+# 使用方式：docker-compose -f docker-compose-dameng.yml up -d
 
 services:
-  # MySQL数据库（元数据存储）
-  mysql:
-    image: mysql:8.0
-    container_name: data-agent-mysql-inner
+  # 达梦数据库（元数据存储）
+  dameng-metadata:
+    image: dameng/dm8:latest
+    container_name: data-agent-dameng-metadata
     environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: data_agent
-#    volumes:
-#      - nl2sql-mysql-inner-data:/var/lib/mysql
+      SYSDBA_PWD: SYSDBA
+      DM_PORT: 5236
+    ports:
+      - "5236:5236"
+    volumes:
+      - dameng-metadata-data:/opt/dmdbms/data
+      - ./config/dameng:/docker-entrypoint-initdb.d
     networks:
       - app-network
     restart: unless-stopped
     healthcheck:
-      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p$$MYSQL_ROOT_PASSWORD" ]
+      test: ["CMD-SHELL", "echo 'SELECT 1;' | /opt/dmdbms/bin/disql SYSDBA/SYSDBA@localhost:5236 || exit 1"]
       interval: 30s
       timeout: 10s
-      retries: 3
+      retries: 5
 
-  # 后端服务
+  # 后端服务（连接达梦元数据库）
   backend:
     build:
       context: ..
@@ -44,14 +46,20 @@ services:
         - saa-data-agent-backend:1.0.0-SNAPSHOT
     container_name: audaque-data-agent-backend
     environment:
-      - DATA_AGENT_DATASOURCE_URL=jdbc:mysql://mysql:3306/data_agent?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
-      - DATA_AGENT_DATASOURCE_USERNAME=root
-      - DATA_AGENT_DATASOURCE_PASSWORD=root
+      # 达梦元数据库配置
+      - DATASOURCE_PLATFORM=dameng
+      - DATA_AGENT_DATASOURCE_URL=jdbc:dm://dameng-metadata:5236?zeroDateTimeBehavior=convertToNull&useUnicode=true&characterEncoding=UTF-8
+      - DATA_AGENT_DATASOURCE_USERNAME=SYSDBA
+      - DATA_AGENT_DATASOURCE_PASSWORD=SYSDBA
+      - DATASOURCE_DRIVER_CLASS=dm.jdbc.driver.DmDriver
+      - DRUID_VALIDATION_QUERY=SELECT 1 FROM DUAL
+      - DRUID_TRANSACTION_ISOLATION=2
+      # AI 配置
       - AI_DASHSCOPE_API_KEY=${AI_DASHSCOPE_API_KEY}
     ports:
       - "8065:8065"
     depends_on:
-      mysql:
+      dameng-metadata:
         condition: service_healthy
       mysql-data:
         condition: service_healthy
@@ -70,7 +78,7 @@ services:
         - saa-data-agent-frontend:1.0.0-SNAPSHOT
     container_name: audaque-data-agent-frontend
     ports:
-      - "3000:3000"  # 只暴露前端端口
+      - "3000:3000"
     depends_on:
       - backend
     volumes:
@@ -116,7 +124,7 @@ services:
       retries: 3
 
 volumes:
-  data-agent-mysql-inner-data:
+  dameng-metadata-data:
 
 networks:
   app-network:

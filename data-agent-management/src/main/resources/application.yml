@@ -5,16 +5,31 @@ server:
 # 存储 DataAgent 业务数据的数据库，并非Agent分析数据的来源
 spring:
   datasource:
+    # 数据库类型标识：mysql | dameng
+    platform: ${DATASOURCE_PLATFORM:mysql}
     url: ${DATA_AGENT_DATASOURCE_URL:jdbc:mysql://127.0.0.1:3306/data_agent?useUnicode=true&characterEncoding=utf-8&zeroDateTimeBehavior=convertToNull&transformedBitIsBoolean=true&allowMultiQueries=true&allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=Asia/Shanghai}
     username: ${DATA_AGENT_DATASOURCE_USERNAME:cyl}
     password: ${DATA_AGENT_DATASOURCE_PASSWORD:Audaque@123}
-    driver-class-name: com.mysql.cj.jdbc.Driver
+    driver-class-name: ${DATASOURCE_DRIVER_CLASS:com.mysql.cj.jdbc.Driver}
     type: com.alibaba.druid.pool.DruidDataSource
+    druid:
+      # 连接池基础配置
+      initial-size: 5
+      min-idle: 5
+      max-active: 20
+      max-wait: 60000
+      # 验证查询，达梦推荐使用 SELECT 1 FROM DUAL，MySQL 使用 SELECT 1
+      validation-query: ${DRUID_VALIDATION_QUERY:SELECT 1}
+      test-while-idle: true
+      test-on-borrow: false
+      test-on-return: false
+      # 事务隔离级别：2 (READ_COMMITTED) 是达梦推荐值
+      default-transaction-isolation: ${DRUID_TRANSACTION_ISOLATION:2}
   sql:
     init:
       mode: always
-      schema-locations: classpath:sql/schema.sql
-      data-locations: classpath:sql/data.sql
+      schema-locations: classpath:sql/${spring.datasource.platform}/schema.sql
+      data-locations: classpath:sql/${spring.datasource.platform}/data.sql
       continue-on-error: true
       separator: ;
       encoding: utf-8

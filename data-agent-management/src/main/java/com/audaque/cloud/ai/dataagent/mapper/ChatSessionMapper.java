@@ -54,7 +54,7 @@ public interface ChatSessionMapper {
 				<if test="status != null">status = #{status},</if>
 				<if test="isPinned != null">is_pinned = #{isPinned},</if>
 				<if test="userId != null">user_id = #{userId},</if>
-				update_time = NOW()
+				update_time = ${@sqlDialectResolver.now()}
 			</set>
 			WHERE id = #{sessionId}
 			</script>

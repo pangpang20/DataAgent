@@ -44,7 +44,7 @@ public interface DatasourceMapper {
 	@Insert("""
 			INSERT INTO datasource
 			    (name, type, host, port, database_name, username, password, connection_url, status, test_status, description, creator_id, create_time, update_time)
-			VALUES (#{name}, #{type}, #{host}, #{port}, #{databaseName}, #{username}, #{password}, #{connectionUrl}, #{status}, #{testStatus}, #{description}, #{creatorId}, NOW(), NOW())
+			VALUES (#{name}, #{type}, #{host}, #{port}, #{databaseName}, #{username}, #{password}, #{connectionUrl}, #{status}, #{testStatus}, #{description}, #{creatorId}, ${@sqlDialectResolver.now()}, ${@sqlDialectResolver.now()})
 			""")
 	@Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
 	int insert(Datasource datasource);
@@ -68,7 +68,7 @@ public interface DatasourceMapper {
 			    <if test="testStatus != null">test_status = #{testStatus},</if>
 			    <if test="description != null">description = #{description},</if>
 			    <if test="creatorId != null">creator_id = #{creatorId},</if>
-			    update_time = NOW()
+			    update_time = ${@sqlDialectResolver.now()}
 			</set>
 			WHERE id = #{id}
 			</script>

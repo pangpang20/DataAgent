@@ -32,21 +32,67 @@ server:
 # ============================================================================
 # 重要说明：此数据库用于存储 DataAgent 的元数据（Agent 配置、会话记录、知识库等）
 #          不是用户要分析的业务数据库（业务数据库在前端界面配置）
+# 
+# 支持的数据库类型：MySQL（默认）、达梦数据库（DM8）
 # ============================================================================
 spring:
   datasource:
+    # ========================================================================
+    # 数据库平台类型（可选：mysql | dameng）
+    # ========================================================================
+    platform: mysql                         # 默认使用 MySQL
+                                            # 如需使用达梦数据库，改为：dameng
+    
+    # ========================================================================
     # 数据库连接地址（请根据实际环境修改）
+    # ========================================================================
+    # MySQL 示例：
     url: jdbc:mysql://127.0.0.1:3306/data_agent?useUnicode=true&characterEncoding=utf-8&zeroDateTimeBehavior=convertToNull&transformedBitIsBoolean=true&allowMultiQueries=true&allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=Asia/Shanghai
+    
+    # 达梦数据库示例（如使用达梦，请取消注释并注释掉上面的 MySQL URL）：
+    # url: jdbc:dm://127.0.0.1:5236?zeroDateTimeBehavior=convertToNull&useUnicode=true&characterEncoding=UTF-8
     
     # 数据库用户名（请修改为实际用户名）
     username: cyl
+    # 达梦数据库默认用户名：SYSDBA
     
     # 数据库密码（请修改为实际密码，建议生产环境使用环境变量）
     password: Audaque@123
+    # 达梦数据库默认密码：SYSDBA
     
-    # 数据库驱动（无需修改）
+    # ========================================================================
+    # 数据库驱动配置
+    # ========================================================================
+    # MySQL 驱动（默认）：
     driver-class-name: com.mysql.cj.jdbc.Driver
+    # 达梦数据库驱动（如使用达梦，请取消注释并注释掉上面的 MySQL 驱动）：
+    # driver-class-name: dm.jdbc.driver.DmDriver
+    
     type: com.alibaba.druid.pool.DruidDataSource
+    
+    # ========================================================================
+    # Druid 连接池配置
+    # ========================================================================
+    druid:
+      # 连接池基础配置
+      initial-size: 5                       # 初始连接数
+      min-idle: 5                           # 最小空闲连接数
+      max-active: 20                        # 最大活跃连接数
+      max-wait: 60000                       # 获取连接最大等待时间（毫秒）
+      
+      # 验证查询配置
+      # MySQL 使用：SELECT 1
+      validation-query: SELECT 1
+      # 达梦数据库使用（如使用达梦，请取消注释并注释掉上面的 MySQL 验证查询）：
+      # validation-query: SELECT 1 FROM DUAL
+      
+      test-while-idle: true                 # 空闲时检测连接有效性
+      test-on-borrow: false                 # 获取连接时不检测
+      test-on-return: false                 # 归还连接时不检测
+      
+      # 事务隔离级别（2=READ_COMMITTED）
+      # MySQL 默认：4（REPEATABLE_READ），达梦推荐：2（READ_COMMITTED）
+      default-transaction-isolation: 2
   
   # 数据库初始化配置（生产环境建议禁用）
   sql:
@@ -54,15 +100,19 @@ spring:
       mode: never                           # never: 不执行初始化脚本（生产环境推荐）
                                             # always: 始终执行（开发环境）
                                             # embedded: 仅嵌入式数据库执行（如 H2）
-      schema-locations: classpath:sql/schema.sql  # 建表脚本
-      data-locations: classpath:sql/data.sql      # 初始数据脚本
+      # 根据数据库平台自动选择 SQL 脚本
+      schema-locations: classpath:sql/${spring.datasource.platform}/schema.sql
+      data-locations: classpath:sql/${spring.datasource.platform}/data.sql
       continue-on-error: true               # 脚本执行出错时继续
       separator: ;
       encoding: utf-8
   
   # 重要说明：
   # 生产环境首次部署时，请手动执行数据库初始化脚本：
-  #   mysql -u username -p database_name < data-agent-management/src/main/resources/sql/schema.sql
+  #   MySQL:
+  #     mysql -u username -p database_name < data-agent-management/src/main/resources/sql/mysql/schema.sql
+  #   达梦数据库：
+  #     disql SYSDBA/SYSDBA@localhost:5236 < data-agent-management/src/main/resources/sql/dameng/schema.sql
   # 后续启动必须设置 mode: never，避免重复初始化导致数据丢失！
   
   # ============================================================================
