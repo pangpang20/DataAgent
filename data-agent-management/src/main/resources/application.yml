@@ -6,6 +6,8 @@ server:
 spring:
   main:
     allow-bean-definition-overriding: true
+  autoconfigure:
+    exclude: ${VECTOR_STORE_EXCLUDE:org.springframework.ai.vectorstore.milvus.autoconfigure.MilvusVectorStoreAutoConfiguration,org.springframework.ai.vectorstore.elasticsearch.autoconfigure.ElasticsearchVectorStoreAutoConfiguration}
   datasource:
     # 数据库类型标识：mysql | dameng
     platform: ${DATASOURCE_PLATFORM:mysql}
