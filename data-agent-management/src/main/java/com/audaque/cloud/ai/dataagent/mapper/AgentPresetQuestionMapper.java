@@ -47,7 +47,7 @@ public interface AgentPresetQuestionMapper {
 
 	@Insert("""
 			INSERT INTO agent_preset_question (agent_id, question, sort_order, is_active, create_time, update_time)
-			VALUES (#{agentId}, #{question}, #{sortOrder}, #{isActive}, ${@sqlDialectResolver.now()}, ${@sqlDialectResolver.now()})
+			VALUES (#{agentId}, #{question}, #{sortOrder}, #{isActive}, ${@sqlDialectResolver@now()}, ${@sqlDialectResolver@now()})
 			""")
 	@Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
 	int insert(AgentPresetQuestion question);
@@ -59,7 +59,7 @@ public interface AgentPresetQuestionMapper {
 				<if test="question != null">question = #{question},</if>
 				<if test="sortOrder != null">sort_order = #{sortOrder},</if>
 				<if test="isActive != null">is_active = #{isActive},</if>
-				update_time = ${@sqlDialectResolver.now()}
+				update_time = ${@sqlDialectResolver@now()}
 			</set>
 			WHERE id = #{id}
 			</script>

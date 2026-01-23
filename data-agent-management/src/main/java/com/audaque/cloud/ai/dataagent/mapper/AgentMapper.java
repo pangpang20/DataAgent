@@ -87,7 +87,7 @@ public interface AgentMapper {
 			            <if test='adminId != null'>admin_id = #{adminId},</if>
 			            <if test='tags != null'>tags = #{tags},</if>
 			            <if test='humanReviewEnabled != null'>human_review_enabled = #{humanReviewEnabled},</if>
-			            update_time = ${@sqlDialectResolver.now()}
+			            update_time = ${@sqlDialectResolver@now()}
 			          </trim>
 			          WHERE id = #{id}
 			</script>
@@ -96,7 +96,7 @@ public interface AgentMapper {
 
 	@Update("""
 			UPDATE agent
-			SET api_key = #{apiKey}, api_key_enabled = #{apiKeyEnabled}, update_time = ${@sqlDialectResolver.now()}
+			SET api_key = #{apiKey}, api_key_enabled = #{apiKeyEnabled}, update_time = ${@sqlDialectResolver@now()}
 			WHERE id = #{id}
 			""")
 	int updateApiKey(@Param("id") Long id, @Param("apiKey") String apiKey,
@@ -104,7 +104,7 @@ public interface AgentMapper {
 
 	@Update("""
 			UPDATE agent
-			SET api_key_enabled = #{enabled}, update_time = ${@sqlDialectResolver.now()}
+			SET api_key_enabled = #{enabled}, update_time = ${@sqlDialectResolver@now()}
 			WHERE id = #{id}
 			""")
 	int toggleApiKey(@Param("id") Long id, @Param("enabled") Integer enabled);
