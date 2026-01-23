@@ -592,7 +592,7 @@ configure_nginx() {
     
     # 1. 复制 Nginx 配置模板到部署目录
     info "复制 Nginx 配置模板..."
-    NGINX_TEMPLATE="$SCRIPT_DIR/docker-file/config/nginx-production.conf"
+    NGINX_TEMPLATE="$SOURCE_DIR/docker-file/config/nginx-production.conf"
     NGINX_LOCAL_CONF="$DEPLOY_DIR/nginx-dataagent.conf"
     
     if [ ! -f "$NGINX_TEMPLATE" ]; then

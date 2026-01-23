@@ -162,7 +162,7 @@ deploy_milvus() {
     mkdir -p milvus-deploy
     cd milvus-deploy
 
-    # 使用配置模板
+    # 使用配置模板（SCRIPT_DIR 已经是项目根目录）
     MILVUS_TEMPLATE="$SCRIPT_DIR/docker-file/config/milvus-docker-compose.yml"
     
     if [ -f "$MILVUS_TEMPLATE" ]; then
@@ -170,7 +170,8 @@ deploy_milvus() {
         cp "$MILVUS_TEMPLATE" docker-compose.yml
         info "已使用模板: $MILVUS_TEMPLATE"
     else
-        warn "未找到模板文件，使用默认配置"
+        warn "未找到模板文件: $MILVUS_TEMPLATE"
+        warn "使用默认配置"
         # 生成 docker-compose.yml（备用方案）
         cat <<EOF > docker-compose.yml
 version: '3.5'
