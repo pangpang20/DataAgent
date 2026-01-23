@@ -22,10 +22,12 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.*;
 
 /**
- * User Prompt Configuration Management Service Provides CRUD functionality for prompt
+ * User Prompt Configuration Management Service Provides CRUD functionality for
+ * prompt
  * configurations, supports runtime configuration updates
  *
  * @author Makoto
@@ -53,9 +55,9 @@ public class UserPromptServiceImpl implements UserPromptService {
 				config.setDescription(configDTO.description());
 				config.setPriority(configDTO.priority() != null ? configDTO.priority() : 0);
 				config.setDisplayOrder(configDTO.displayOrder() != null ? configDTO.displayOrder() : 0);
+				config.setUpdateTime(LocalDateTime.now());
 				userPromptConfigMapper.updateById(config);
-			}
-			else {
+			} else {
 				// ID不存在，创建新配置
 				config = new UserPromptConfig();
 				config.setId(configDTO.id());
@@ -68,10 +70,14 @@ public class UserPromptServiceImpl implements UserPromptService {
 				config.setCreator(configDTO.creator());
 				config.setPriority(configDTO.priority() != null ? configDTO.priority() : 0);
 				config.setDisplayOrder(configDTO.displayOrder() != null ? configDTO.displayOrder() : 0);
+
+				LocalDateTime now = LocalDateTime.now();
+				config.setCreateTime(now);
+				config.setUpdateTime(now);
+
 				userPromptConfigMapper.insert(config);
 			}
-		}
-		else {
+		} else {
 			// Create new configuration
 			config = new UserPromptConfig();
 			config.setId(UUID.randomUUID().toString());
@@ -84,6 +90,11 @@ public class UserPromptServiceImpl implements UserPromptService {
 			config.setCreator(configDTO.creator());
 			config.setPriority(configDTO.priority() != null ? configDTO.priority() : 0);
 			config.setDisplayOrder(configDTO.displayOrder() != null ? configDTO.displayOrder() : 0);
+
+			LocalDateTime now = LocalDateTime.now();
+			config.setCreateTime(now);
+			config.setUpdateTime(now);
+
 			userPromptConfigMapper.insert(config);
 		}
 
@@ -187,6 +198,7 @@ public class UserPromptServiceImpl implements UserPromptService {
 		UserPromptConfig config = userPromptConfigMapper.selectById(id);
 		if (config != null) {
 			config.setPriority(priority);
+			config.setUpdateTime(LocalDateTime.now());
 			userPromptConfigMapper.updateById(config);
 			log.info("更新配置优先级成功：{} -> {}", id, priority);
 			return true;
@@ -199,6 +211,7 @@ public class UserPromptServiceImpl implements UserPromptService {
 		UserPromptConfig config = userPromptConfigMapper.selectById(id);
 		if (config != null) {
 			config.setDisplayOrder(displayOrder);
+			config.setUpdateTime(LocalDateTime.now());
 			userPromptConfigMapper.updateById(config);
 			log.info("更新配置显示顺序成功：{} -> {}", id, displayOrder);
 			return true;

@@ -34,6 +34,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -102,8 +103,7 @@ public class BusinessKnowledgeServiceImpl implements BusinessKnowledgeService {
 			entity.setEmbeddingStatus(EmbeddingStatus.COMPLETED);
 			entity.setErrorMsg(null);
 			businessKnowledgeMapper.updateById(entity);
-		}
-		catch (Exception e) {
+		} catch (Exception e) {
 			String errorMsg = "Failed to add to vector store: " + e.getMessage();
 			entity.setEmbeddingStatus(EmbeddingStatus.FAILED);
 			entity.setErrorMsg(errorMsg);
@@ -141,8 +141,7 @@ public class BusinessKnowledgeServiceImpl implements BusinessKnowledgeService {
 			knowledge.setEmbeddingStatus(EmbeddingStatus.COMPLETED);
 			knowledge.setErrorMsg(null);
 			businessKnowledgeMapper.updateById(knowledge);
-		}
-		catch (Exception e) {
+		} catch (Exception e) {
 			// 向量库更新失败，不回滚MySQL，只标记状态为失败
 			String errorMsg = "Failed to update vector store: " + e.getMessage();
 			knowledge.setEmbeddingStatus(EmbeddingStatus.FAILED);
@@ -217,16 +216,16 @@ public class BusinessKnowledgeServiceImpl implements BusinessKnowledgeService {
 		// 获取所有 isRecall 等于 1 且未逻辑删除的 BusinessKnowledge
 		List<BusinessKnowledge> allKnowledge = businessKnowledgeMapper.selectAll();
 		List<BusinessKnowledge> recalledKnowledge = allKnowledge.stream()
-			.filter(knowledge -> knowledge.getIsRecall() != null && knowledge.getIsRecall() == 1)
-			.filter(knowledge -> knowledge.getIsDeleted() == null || knowledge.getIsDeleted() == 0)
-			.filter(knowledge -> agentId.equals(knowledge.getAgentId().toString()))
-			.toList();
+				.filter(knowledge -> knowledge.getIsRecall() != null && knowledge.getIsRecall() == 1)
+				.filter(knowledge -> knowledge.getIsDeleted() == null || knowledge.getIsDeleted() == 0)
+				.filter(knowledge -> agentId.equals(knowledge.getAgentId().toString()))
+				.toList();
 
 		// 转换为 Document 并插入到 vectorStore
 		if (!recalledKnowledge.isEmpty()) {
 			List<Document> documents = recalledKnowledge.stream()
-				.map(DocumentConverterUtil::convertBusinessKnowledgeToDocument)
-				.toList();
+					.map(DocumentConverterUtil::convertBusinessKnowledgeToDocument)
+					.toList();
 			agentVectorStoreService.addDocuments(agentId, documents);
 		}
 	}
@@ -252,8 +251,7 @@ public class BusinessKnowledgeServiceImpl implements BusinessKnowledgeService {
 			knowledge.setEmbeddingStatus(EmbeddingStatus.COMPLETED);
 			knowledge.setErrorMsg(null);
 			businessKnowledgeMapper.updateById(knowledge);
-		}
-		catch (Exception e) {
+		} catch (Exception e) {
 			// 再次失败，更新错误信息
 			knowledge.setEmbeddingStatus(EmbeddingStatus.FAILED);
 			knowledge.setErrorMsg(e.getMessage().length() > 200 ? e.getMessage().substring(0, 200) : e.getMessage());

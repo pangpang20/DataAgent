@@ -39,6 +39,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -102,6 +103,10 @@ public class DatasourceServiceImpl implements DatasourceService {
 			datasource.setTestStatus("unknown");
 		}
 
+		LocalDateTime now = LocalDateTime.now();
+		datasource.setCreateTime(now);
+		datasource.setUpdateTime(now);
+
 		datasourceMapper.insert(datasource);
 		return datasource;
 	}
@@ -115,6 +120,7 @@ public class DatasourceServiceImpl implements DatasourceService {
 			datasource.setConnectionUrl(connectionUrl);
 		}
 		datasource.setId(id);
+		datasource.setUpdateTime(LocalDateTime.now());
 
 		datasourceMapper.updateById(datasource);
 		return datasource;
@@ -149,8 +155,7 @@ public class DatasourceServiceImpl implements DatasourceService {
 			updateTestStatus(id, connectionSuccess ? "success" : "failed");
 
 			return connectionSuccess;
-		}
-		catch (Exception e) {
+		} catch (Exception e) {
 			updateTestStatus(id, "failed");
 			log.error("Error testing connection for datasource ID " + id + ": " + e.getMessage(), e);
 			return false;
@@ -223,10 +228,10 @@ public class DatasourceServiceImpl implements DatasourceService {
 
 		// Extract table names
 		List<String> tableNames = tableInfoList.stream()
-			.map(TableInfoBO::getName)
-			.filter(name -> name != null && !name.trim().isEmpty())
-			.sorted()
-			.toList();
+				.map(TableInfoBO::getName)
+				.filter(name -> name != null && !name.trim().isEmpty())
+				.sorted()
+				.toList();
 
 		log.info("Found {} tables for datasource: {}", tableNames.size(), datasourceId);
 		return tableNames;
@@ -260,10 +265,10 @@ public class DatasourceServiceImpl implements DatasourceService {
 		Accessor dbAccessor = accessorFactory.getAccessorByDbConfig(dbConfig);
 		List<ColumnInfoBO> columnInfoList = dbAccessor.showColumns(dbConfig, queryParam); // 提取字段名称
 		List<String> columnNames = columnInfoList.stream()
-			.map(ColumnInfoBO::getName)
-			.filter(name -> name != null && !name.trim().isEmpty())
-			.sorted()
-			.toList();
+				.map(ColumnInfoBO::getName)
+				.filter(name -> name != null && !name.trim().isEmpty())
+				.sorted()
+				.toList();
 
 		log.info("Found {} columns for table {} in datasource: {}", columnNames.size(), tableName, datasourceId);
 		return columnNames;
@@ -292,6 +297,10 @@ public class DatasourceServiceImpl implements DatasourceService {
 		}
 
 		// 插入外键
+		LocalDateTime now = LocalDateTime.now();
+		logicalRelation.setCreatedTime(now);
+		logicalRelation.setUpdatedTime(now);
+
 		logicalRelationMapper.insert(logicalRelation);
 		log.info("Logical relation added successfully with id: {}", logicalRelation.getId());
 
@@ -316,6 +325,7 @@ public class DatasourceServiceImpl implements DatasourceService {
 		// 设置ID和数据源ID
 		logicalRelation.setId(logicalRelationId);
 		logicalRelation.setDatasourceId(datasourceId);
+		logicalRelation.setUpdatedTime(LocalDateTime.now());
 
 		// 更新外键
 		int updated = logicalRelationMapper.updateById(logicalRelation);
@@ -344,7 +354,7 @@ public class DatasourceServiceImpl implements DatasourceService {
 		}
 
 		// 删除外键（逻辑删除）
-		int deleted = logicalRelationMapper.deleteById(logicalRelationId);
+		int deleted = logicalRelationMapper.deleteById(logicalRelationId, LocalDateTime.now());
 		if (deleted == 0) {
 			throw new RuntimeException("删除逻辑外键失败");
 		}
@@ -360,19 +370,20 @@ public class DatasourceServiceImpl implements DatasourceService {
 		// 获取现有的所有外键关系
 		List<LogicalRelation> existingRelations = logicalRelationMapper.selectByDatasourceId(datasourceId);
 		Map<Integer, LogicalRelation> existingMap = existingRelations.stream()
-			.collect(Collectors.toMap(LogicalRelation::getId, relation -> relation));
+				.collect(Collectors.toMap(LogicalRelation::getId, relation -> relation));
 
 		// 收集传入列表中已存在的ID
 		Set<Integer> incomingIds = logicalRelations.stream()
-			.map(LogicalRelation::getId)
-			.filter(Objects::nonNull)
-			.collect(Collectors.toSet());
+				.map(LogicalRelation::getId)
+				.filter(Objects::nonNull)
+				.collect(Collectors.toSet());
 
 		// 删除那些不在传入列表中的外键
 		int deletedCount = 0;
+		LocalDateTime now = LocalDateTime.now();
 		for (LogicalRelation existing : existingRelations) {
 			if (!incomingIds.contains(existing.getId())) {
-				logicalRelationMapper.deleteById(existing.getId());
+				logicalRelationMapper.deleteById(existing.getId(), now);
 				deletedCount++;
 				log.info("Deleted logical relation: {} -> {}", existing.getSourceTableName(),
 						existing.getTargetTableName());
@@ -391,8 +402,7 @@ public class DatasourceServiceImpl implements DatasourceService {
 			if (!seen.contains(key)) {
 				seen.add(key);
 				uniqueRelations.add(logicalRelation);
-			}
-			else {
+			} else {
 				log.warn("跳过重复的逻辑外键: {} -> {}", logicalRelation.getSourceTableName(),
 						logicalRelation.getTargetTableName());
 			}
@@ -411,14 +421,16 @@ public class DatasourceServiceImpl implements DatasourceService {
 
 			if (logicalRelation.getId() != null && existingMap.containsKey(logicalRelation.getId())) {
 				// 更新现有记录
+				logicalRelation.setUpdatedTime(now);
 				logicalRelationMapper.updateById(logicalRelation);
 				updatedCount++;
 				log.debug("Updated logical relation: {} -> {}", logicalRelation.getSourceTableName(),
 						logicalRelation.getTargetTableName());
-			}
-			else {
+			} else {
 				// 插入新记录
 				logicalRelation.setId(null);
+				logicalRelation.setCreatedTime(now);
+				logicalRelation.setUpdatedTime(now);
 				logicalRelationMapper.insert(logicalRelation);
 				insertedCount++;
 				log.debug("Inserted logical relation: {} -> {}", logicalRelation.getSourceTableName(),

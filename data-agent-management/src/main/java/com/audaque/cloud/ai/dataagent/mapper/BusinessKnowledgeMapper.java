@@ -102,6 +102,7 @@ public interface BusinessKnowledgeMapper {
 			SET is_deleted = #{isDeleted}, updated_time = #{updatedTime}
 			WHERE id = #{id}
 			""")
-	int logicalDelete(@Param("id") Long id, @Param("isDeleted") Integer isDeleted, @Param("updatedTime") LocalDateTime updatedTime);
+	int logicalDelete(@Param("id") Long id, @Param("isDeleted") Integer isDeleted,
+			@Param("updatedTime") LocalDateTime updatedTime);
 
 }

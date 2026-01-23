@@ -21,6 +21,7 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -40,6 +41,9 @@ public class ChatMessageServiceImpl implements ChatMessageService {
 
 	@Override
 	public ChatMessage saveMessage(ChatMessage message) {
+		if (message.getCreateTime() == null) {
+			message.setCreateTime(LocalDateTime.now());
+		}
 		chatMessageMapper.insert(message);
 		log.info("Saved message: {} for session: {}", message.getId(), message.getSessionId());
 		return message;

@@ -28,6 +28,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -69,6 +70,9 @@ public class SemanticModelServiceImpl implements SemanticModelService {
 
 	@Override
 	public void addSemanticModel(SemanticModel semanticModel) {
+		LocalDateTime now = LocalDateTime.now();
+		semanticModel.setCreatedTime(now);
+		semanticModel.setUpdatedTime(now);
 		semanticModelMapper.insert(semanticModel);
 	}
 
@@ -79,19 +83,22 @@ public class SemanticModelServiceImpl implements SemanticModelService {
 
 		// 转换DTO为Entity
 		SemanticModel semanticModel = SemanticModel.builder()
-			.agentId(dto.getAgentId())
-			.datasourceId(datasourceId)
-			.tableName(dto.getTableName())
-			.columnName(dto.getColumnName())
-			.businessName(dto.getBusinessName())
-			.synonyms(dto.getSynonyms())
-			.businessDescription(dto.getBusinessDescription())
-			.columnComment(dto.getColumnComment())
-			.dataType(dto.getDataType())
-			.status(1) // 默认启用状态
-			.build();
+				.agentId(dto.getAgentId())
+				.datasourceId(datasourceId)
+				.tableName(dto.getTableName())
+				.columnName(dto.getColumnName())
+				.businessName(dto.getBusinessName())
+				.synonyms(dto.getSynonyms())
+				.businessDescription(dto.getBusinessDescription())
+				.columnComment(dto.getColumnComment())
+				.dataType(dto.getDataType())
+				.status(1) // 默认启用状态
+				.build();
 
 		// 保存到数据库
+		LocalDateTime now = LocalDateTime.now();
+		semanticModel.setCreatedTime(now);
+		semanticModel.setUpdatedTime(now);
 		semanticModelMapper.insert(semanticModel);
 
 		return true;
@@ -146,23 +153,23 @@ public class SemanticModelServiceImpl implements SemanticModelService {
 	@Override
 	public void updateSemanticModel(Long id, SemanticModel semanticModel) {
 		semanticModel.setId(id);
+		semanticModel.setUpdatedTime(LocalDateTime.now());
 		semanticModelMapper.updateById(semanticModel);
 	}
 
 	@Override
 	public BatchImportResult batchImport(SemanticModelBatchImportDTO dto) {
 		BatchImportResult result = BatchImportResult.builder()
-			.total(dto.getItems().size())
-			.successCount(0)
-			.failCount(0)
-			.build();
+				.total(dto.getItems().size())
+				.successCount(0)
+				.failCount(0)
+				.build();
 
 		// 获取datasourceId
 		Integer datasourceId;
 		try {
 			datasourceId = findDatasourceIdByAgentId(dto.getAgentId());
-		}
-		catch (Exception e) {
+		} catch (Exception e) {
 			log.error("获取数据源ID失败: agentId={}", dto.getAgentId(), e);
 			result.setFailCount(dto.getItems().size());
 			result.addError("获取数据源ID失败: " + e.getMessage());
@@ -184,34 +191,33 @@ public class SemanticModelServiceImpl implements SemanticModelService {
 					existing.setBusinessDescription(item.getBusinessDescription());
 					existing.setColumnComment(item.getColumnComment());
 					existing.setDataType(item.getDataType());
+					existing.setUpdatedTime(LocalDateTime.now());
 					semanticModelMapper.updateById(existing);
 					log.info("更新语义模型: agentId={}, tableName={}, columnName={}", dto.getAgentId(), item.getTableName(),
 							item.getColumnName());
-				}
-				else {
+				} else {
 					// 插入新记录
 					SemanticModel newModel = SemanticModel.builder()
-						.agentId(dto.getAgentId().intValue())
-						.datasourceId(datasourceId)
-						.tableName(item.getTableName())
-						.columnName(item.getColumnName())
-						.businessName(item.getBusinessName())
-						.synonyms(item.getSynonyms())
-						.businessDescription(item.getBusinessDescription())
-						.columnComment(item.getColumnComment())
-						.dataType(item.getDataType())
-						.status(1) // 默认启用
-						.createdTime(
-								item.getCreateTime() != null ? item.getCreateTime() : java.time.LocalDateTime.now())
-						.build();
+							.agentId(dto.getAgentId().intValue())
+							.datasourceId(datasourceId)
+							.tableName(item.getTableName())
+							.columnName(item.getColumnName())
+							.businessName(item.getBusinessName())
+							.synonyms(item.getSynonyms())
+							.businessDescription(item.getBusinessDescription())
+							.columnComment(item.getColumnComment())
+							.dataType(item.getDataType())
+							.status(1) // 默认启用
+							.createdTime(item.getCreateTime() != null ? item.getCreateTime() : LocalDateTime.now())
+							.updatedTime(LocalDateTime.now())
+							.build();
 					semanticModelMapper.insert(newModel);
 					log.info("插入语义模型: agentId={}, tableName={}, columnName={}", dto.getAgentId(), item.getTableName(),
 							item.getColumnName());
 				}
 
 				result.setSuccessCount(result.getSuccessCount() + 1);
-			}
-			catch (Exception e) {
+			} catch (Exception e) {
 				log.error("导入第{}条记录失败: tableName={}, columnName={}", i + 1, item.getTableName(), item.getColumnName(),
 						e);
 				result.setFailCount(result.getFailCount() + 1);
@@ -233,9 +239,9 @@ public class SemanticModelServiceImpl implements SemanticModelService {
 
 			// 组装DTO
 			SemanticModelBatchImportDTO dto = SemanticModelBatchImportDTO.builder()
-				.agentId(agentId)
-				.items(items)
-				.build();
+					.agentId(agentId)
+					.items(items)
+					.build();
 
 			// 执行批量导入
 			BatchImportResult result = batchImport(dto);
@@ -243,8 +249,7 @@ public class SemanticModelServiceImpl implements SemanticModelService {
 					result.getFailCount());
 
 			return result;
-		}
-		catch (Exception e) {
+		} catch (Exception e) {
 			log.error("Excel导入失败", e);
 			BatchImportResult result = BatchImportResult.builder().total(0).successCount(0).failCount(0).build();
 			result.addError("Excel导入失败: " + e.getMessage());

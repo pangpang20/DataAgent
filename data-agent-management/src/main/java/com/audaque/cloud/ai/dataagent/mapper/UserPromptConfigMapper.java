@@ -95,7 +95,7 @@ public interface UserPromptConfigMapper {
 			  <if test='description != null'>description = #{description},</if>
 			  <if test='priority != null'>priority = #{priority},</if>
 			  <if test='displayOrder != null'>display_order = #{displayOrder},</if>
-			  update_time = ${@sqlDialectResolver.now()}
+			  update_time = #{updateTime}
 			</set>
 			WHERE id = #{id}
 			</script>
@@ -105,7 +105,7 @@ public interface UserPromptConfigMapper {
 	@Insert("""
 			INSERT INTO user_prompt_config
 			(id, name, prompt_type, agent_id, system_prompt, enabled, description, priority, display_order, create_time, update_time, creator)
-			VALUES (#{id}, #{name}, #{promptType}, #{agentId}, #{systemPrompt}, #{enabled}, #{description}, #{priority}, #{displayOrder}, ${@sqlDialectResolver.now()}, ${@sqlDialectResolver.now()}, #{creator})
+			VALUES (#{id}, #{name}, #{promptType}, #{agentId}, #{systemPrompt}, #{enabled}, #{description}, #{priority}, #{displayOrder}, #{createTime}, #{updateTime}, #{creator})
 			""")
 	int insert(UserPromptConfig config);
 

@@ -18,6 +18,7 @@ package com.audaque.cloud.ai.dataagent.mapper;
 import com.audaque.cloud.ai.dataagent.entity.LogicalRelation;
 import org.apache.ibatis.annotations.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -46,7 +47,7 @@ public interface LogicalRelationMapper {
 			    (datasource_id, source_table_name, source_column_name, target_table_name, target_column_name,
 			     relation_type, description, is_deleted, created_time, updated_time)
 			VALUES (#{datasourceId}, #{sourceTableName}, #{sourceColumnName}, #{targetTableName}, #{targetColumnName},
-			        #{relationType}, #{description}, 0, ${@sqlDialectResolver.now()}, ${@sqlDialectResolver.now()})
+			        #{relationType}, #{description}, 0, #{createdTime}, #{updatedTime})
 			""")
 	@Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
 	int insert(LogicalRelation logicalRelation);
@@ -64,7 +65,7 @@ public interface LogicalRelationMapper {
 			    <if test="targetColumnName != null">target_column_name = #{targetColumnName},</if>
 			    <if test="relationType != null">relation_type = #{relationType},</if>
 			    <if test="description != null">description = #{description},</if>
-			    updated_time = ${@sqlDialectResolver.now()}
+			    updated_time = #{updatedTime}
 			</set>
 			WHERE id = #{id}
 			</script>
@@ -74,14 +75,15 @@ public interface LogicalRelationMapper {
 	/**
 	 * 逻辑删除外键
 	 */
-	@Update("UPDATE logical_relation SET is_deleted = 1, updated_time = ${@sqlDialectResolver.now()} WHERE id = #{id}")
-	int deleteById(@Param("id") Integer id);
+	@Update("UPDATE logical_relation SET is_deleted = 1, updated_time = #{updatedTime} WHERE id = #{id}")
+	int deleteById(@Param("id") Integer id, @Param("updatedTime") LocalDateTime updatedTime);
 
 	/**
 	 * 逻辑删除数据源下的所有逻辑外键
 	 */
-	@Update("UPDATE logical_relation SET is_deleted = 1, updated_time = ${@sqlDialectResolver.now()} WHERE datasource_id = #{datasourceId}")
-	int deleteByDatasourceId(@Param("datasourceId") Integer datasourceId);
+	@Update("UPDATE logical_relation SET is_deleted = 1, updated_time = #{updatedTime} WHERE datasource_id = #{datasourceId}")
+	int deleteByDatasourceId(@Param("datasourceId") Integer datasourceId,
+			@Param("updatedTime") LocalDateTime updatedTime);
 
 	/**
 	 * 检查逻辑外键是否存在

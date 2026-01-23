@@ -20,6 +20,7 @@ import com.audaque.cloud.ai.dataagent.mapper.AgentPresetQuestionMapper;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -51,6 +52,10 @@ public class AgentPresetQuestionServiceImpl implements AgentPresetQuestionServic
 			question.setIsActive(true);
 		}
 
+		LocalDateTime now = LocalDateTime.now();
+		question.setCreateTime(now);
+		question.setUpdateTime(now);
+
 		agentPresetQuestionMapper.insert(question);
 		return question; // ID will be auto-filled by MyBatis
 	}
@@ -58,6 +63,7 @@ public class AgentPresetQuestionServiceImpl implements AgentPresetQuestionServic
 	@Override
 	public void update(Long id, AgentPresetQuestion question) {
 		question.setId(id); // Ensure the ID is set
+		question.setUpdateTime(LocalDateTime.now());
 		agentPresetQuestionMapper.update(question);
 	}
 

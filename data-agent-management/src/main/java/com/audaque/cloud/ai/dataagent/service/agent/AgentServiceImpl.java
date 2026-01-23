@@ -79,8 +79,7 @@ public class AgentServiceImpl implements AgentService {
 			}
 
 			agentMapper.insert(agent);
-		}
-		else {
+		} else {
 			// Update
 			agent.setUpdateTime(now);
 			// 确保 humanReviewEnabled 不为 null
@@ -111,8 +110,7 @@ public class AgentServiceImpl implements AgentService {
 				try {
 					agentVectorStoreService.deleteDocumentsByMetedata(id.toString(), new HashMap<>());
 					log.info("Successfully deleted vector data for agent: {}", id);
-				}
-				catch (Exception vectorException) {
+				} catch (Exception vectorException) {
 					log.warn("Failed to delete vector data for agent: {}, error: {}", id, vectorException.getMessage());
 					// Vector data deletion failure does not affect the main process
 				}
@@ -124,15 +122,13 @@ public class AgentServiceImpl implements AgentService {
 					fileStorageService.deleteFile(avatar);
 					log.info("Successfully deleted avatar file: {} for agent: {}", avatar, id);
 				}
-			}
-			catch (Exception avatarEx) {
+			} catch (Exception avatarEx) {
 				log.warn("Failed to cleanup avatar file: {} for agent: {}, error: {}", avatar, id,
 						avatarEx.getMessage());
 			}
 
 			log.info("Successfully deleted agent: {}", id);
-		}
-		catch (Exception e) {
+		} catch (Exception e) {
 			log.error("Failed to delete agent: {}", id, e);
 			throw e;
 		}
@@ -142,7 +138,7 @@ public class AgentServiceImpl implements AgentService {
 	public Agent generateApiKey(Long id) {
 		Agent agent = requireAgent(id);
 		String apiKey = ApiKeyUtil.generate();
-		agentMapper.updateApiKey(id, apiKey, 1);
+		agentMapper.updateApiKey(id, apiKey, 1, LocalDateTime.now());
 		agent.setApiKey(apiKey);
 		agent.setApiKeyEnabled(1);
 		return agent;
@@ -156,7 +152,7 @@ public class AgentServiceImpl implements AgentService {
 	@Override
 	public Agent deleteApiKey(Long id) {
 		Agent agent = requireAgent(id);
-		agentMapper.updateApiKey(id, null, 0);
+		agentMapper.updateApiKey(id, null, 0, LocalDateTime.now());
 		agent.setApiKey(null);
 		agent.setApiKeyEnabled(0);
 		return agent;
@@ -164,7 +160,7 @@ public class AgentServiceImpl implements AgentService {
 
 	@Override
 	public Agent toggleApiKey(Long id, boolean enabled) {
-		agentMapper.toggleApiKey(id, enabled ? 1 : 0);
+		agentMapper.toggleApiKey(id, enabled ? 1 : 0, LocalDateTime.now());
 		Agent agent = requireAgent(id);
 		agent.setApiKeyEnabled(enabled ? 1 : 0);
 		return agent;

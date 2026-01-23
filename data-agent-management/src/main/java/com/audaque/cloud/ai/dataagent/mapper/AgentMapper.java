@@ -18,6 +18,7 @@ package com.audaque.cloud.ai.dataagent.mapper;
 import com.audaque.cloud.ai.dataagent.entity.Agent;
 import org.apache.ibatis.annotations.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Mapper
@@ -100,14 +101,15 @@ public interface AgentMapper {
 			WHERE id = #{id}
 			""")
 	int updateApiKey(@Param("id") Long id, @Param("apiKey") String apiKey,
-			@Param("apiKeyEnabled") Integer apiKeyEnabled);
+			@Param("apiKeyEnabled") Integer apiKeyEnabled, @Param("updateTime") LocalDateTime updateTime);
 
 	@Update("""
 			UPDATE agent
 			SET api_key_enabled = #{enabled}, update_time = #{updateTime}
 			WHERE id = #{id}
 			""")
-	int toggleApiKey(@Param("id") Long id, @Param("enabled") Integer enabled);
+	int toggleApiKey(@Param("id") Long id, @Param("enabled") Integer enabled,
+			@Param("updateTime") LocalDateTime updateTime);
 
 	@Delete("""
 			DELETE FROM agent WHERE id = #{id}

@@ -93,7 +93,7 @@ public interface SemanticModelMapper {
 			INSERT INTO semantic_model
 			(agent_id, datasource_id, table_name, column_name, business_name, synonyms, business_description, column_comment, data_type, created_time, updated_time, status)
 			VALUES
-			(#{agentId}, #{datasourceId}, #{tableName}, #{columnName}, #{businessName}, #{synonyms}, #{businessDescription}, #{columnComment}, #{dataType}, ${@sqlDialectResolver.now()}, ${@sqlDialectResolver.now()}, #{status})
+			(#{agentId}, #{datasourceId}, #{tableName}, #{columnName}, #{businessName}, #{synonyms}, #{businessDescription}, #{columnComment}, #{dataType}, #{createdTime}, #{updatedTime}, #{status})
 			""")
 	@Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
 	int insert(SemanticModel model);
@@ -112,7 +112,7 @@ public interface SemanticModelMapper {
 				<if test="columnComment != null">column_comment = #{columnComment},</if>
 				<if test="dataType != null">data_type = #{dataType},</if>
 				<if test="status != null">status = #{status},</if>
-				updated_time = ${@sqlDialectResolver.now()}
+				updated_time = #{updatedTime}
 			</set>
 			WHERE id = #{id}
 			</script>
