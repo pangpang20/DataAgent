@@ -179,7 +179,7 @@ public class BusinessKnowledgeServiceImpl implements BusinessKnowledgeService {
 
 		doDelVector(knowledge);
 
-		if (businessKnowledgeMapper.logicalDelete(id, 1) <= 0) {
+		if (businessKnowledgeMapper.logicalDelete(id, 1, LocalDateTime.now()) <= 0) {
 			// 重新添加修复被删除的记录
 			agentVectorStoreService.addDocuments(knowledge.getAgentId().toString(),
 					List.of(DocumentConverterUtil.convertBusinessKnowledgeToDocument(knowledge)));

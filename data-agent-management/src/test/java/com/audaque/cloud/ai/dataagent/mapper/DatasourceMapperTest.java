@@ -16,7 +16,7 @@
 package com.audaque.cloud.ai.dataagent.mapper;
 
 import com.audaque.cloud.ai.dataagent.entity.Datasource;
-import com.audaque.cloud.ai.dataagent.service.MySqlContainerConfiguration;
+import com.audaque.cloud.ai.dataagent.MySqlContainerConfiguration;
 import org.junit.jupiter.api.Test;
 import org.mybatis.spring.boot.test.autoconfigure.MybatisTest;
 import org.springframework.beans.factory.annotation.Autowired;

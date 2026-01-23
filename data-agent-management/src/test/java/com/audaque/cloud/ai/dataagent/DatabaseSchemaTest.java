@@ -15,7 +15,6 @@
  */
 package com.audaque.cloud.ai.dataagent;
 
-import com.audaque.cloud.ai.dataagent.service.MySqlContainerConfiguration;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mybatis.spring.boot.test.autoconfigure.MybatisTest;
@@ -38,8 +37,8 @@ import java.util.Optional;
  * @since 2025/9/26
  */
 @MybatisTest
-@ImportTestcontainers(com.audaque.cloud.ai.dataagent.service.MySqlContainerConfiguration.class)
-@ImportAutoConfiguration(com.audaque.cloud.ai.dataagent.service.MySqlContainerConfiguration.class)
+@ImportTestcontainers(com.audaque.cloud.ai.dataagent.MySqlContainerConfiguration.class)
+@ImportAutoConfiguration(com.audaque.cloud.ai.dataagent.MySqlContainerConfiguration.class)
 public class DatabaseSchemaTest {
 
 	@Autowired
@@ -55,9 +54,9 @@ public class DatabaseSchemaTest {
 		Connection conn = null;
 		try {
 			conn = DriverManager.getConnection(
-					com.audaque.cloud.ai.dataagent.service.MySqlContainerConfiguration.getJdbcUrl(),
-					com.audaque.cloud.ai.dataagent.service.MySqlContainerConfiguration.USER_PWD,
-					com.audaque.cloud.ai.dataagent.service.MySqlContainerConfiguration.USER_PWD);
+					com.audaque.cloud.ai.dataagent.MySqlContainerConfiguration.getJdbcUrl(),
+					com.audaque.cloud.ai.dataagent.MySqlContainerConfiguration.USER_PWD,
+					com.audaque.cloud.ai.dataagent.MySqlContainerConfiguration.USER_PWD);
 			DatabaseMetaData metaData = conn.getMetaData();
 			ResultSet tables = metaData.getTables(MySqlContainerConfiguration.DATABASE_NAME, null, "%",
 					new String[] { "TABLE" });

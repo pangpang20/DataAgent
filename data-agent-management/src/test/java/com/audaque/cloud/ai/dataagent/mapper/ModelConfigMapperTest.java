@@ -15,7 +15,6 @@
  */
 package com.audaque.cloud.ai.dataagent.mapper;
 
-import com.audaque.cloud.ai.dataagent.MySqlContainerConfiguration;
 import com.audaque.cloud.ai.dataagent.entity.ModelConfig;
 import com.audaque.cloud.ai.dataagent.enums.ModelType;
 import com.audaque.cloud.ai.dataagent.util.SqlDialectResolver;
@@ -25,10 +24,10 @@ import org.junit.jupiter.api.Test;
 import org.mybatis.spring.boot.test.autoconfigure.MybatisTest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
-import org.springframework.boot.testcontainers.context.ImportTestcontainers;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.TestPropertySource;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -42,12 +41,14 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 @MybatisTest
 @TestPropertySource(properties = {
-	"spring.sql.init.mode=never",
-	"spring.datasource.platform=mysql"
+	"spring.sql.init.mode=always",
+	"spring.datasource.platform=mysql",
+	"spring.sql.init.schema-locations=classpath:sql/mysql/schema.sql",
+	"spring.datasource.url=jdbc:h2:mem:testdb;MODE=MySQL;DB_CLOSE_DELAY=-1",
+	"spring.datasource.driver-class-name=org.h2.Driver"
 })
-@ImportTestcontainers(MySqlContainerConfiguration.class)
 @Import(SqlDialectResolver.class)
-@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.ANY)
 @DisplayName("ModelConfigMapper 数据库兼容性测试")
 class ModelConfigMapperTest {
 
@@ -63,21 +64,21 @@ class ModelConfigMapperTest {
 	}
 
 	@Test
-	@DisplayName("insert - @sqlDialectResolver@now() 应正确设置时间")
-	void testInsertWithDialectResolver() {
+	@DisplayName("insert - 应正确保存 Java 设置的时间戳")
+	void testInsert() {
 		ModelConfig config = createConfig("openai", "gpt-4", ModelType.CHAT);
 
 		int result = modelConfigMapper.insert(config);
 
 		assertEquals(1, result);
 		assertNotNull(config.getId());
-		assertNotNull(config.getCreatedTime(), "created_time 应由 @sqlDialectResolver@now() 自动设置");
-		assertNotNull(config.getUpdatedTime(), "updated_time 应由 @sqlDialectResolver@now() 自动设置");
+		assertNotNull(config.getCreatedTime(), "created_time 应已设置");
+		assertNotNull(config.getUpdatedTime(), "updated_time 应已设置");
 	}
 
 	@Test
-	@DisplayName("updateById - 更新时间应自动更新")
-	void testUpdateWithDialectResolver() {
+	@DisplayName("updateById - 应正确更新 Java 设置的时间戳")
+	void testUpdate() {
 		ModelConfig config = createConfig("openai", "gpt-4", ModelType.CHAT);
 		modelConfigMapper.insert(config);
 		
@@ -167,6 +168,10 @@ class ModelConfigMapperTest {
 		config.setCompletionsPath("/chat/completions");
 		config.setEmbeddingsPath("/embeddings");
 		config.setIsDeleted(0);
+		
+		LocalDateTime now = LocalDateTime.now();
+		config.setCreatedTime(now);
+		config.setUpdatedTime(now);
 		return config;
 	}
 

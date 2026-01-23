@@ -71,7 +71,7 @@ public interface ModelConfigMapper {
 
 	@Insert("""
 			INSERT INTO model_config (provider, base_url, api_key, model_name, temperature, is_active, max_tokens, model_type, completions_path, embeddings_path, created_time, updated_time, is_deleted)
-			VALUES (#{provider}, #{baseUrl}, #{apiKey}, #{modelName}, #{temperature}, #{isActive}, #{maxTokens}, #{modelType}, #{completionsPath}, #{embeddingsPath}, ${@sqlDialectResolver.now()}, ${@sqlDialectResolver.now()}, 0)
+			VALUES (#{provider}, #{baseUrl}, #{apiKey}, #{modelName}, #{temperature}, #{isActive}, #{maxTokens}, #{modelType}, #{completionsPath}, #{embeddingsPath}, #{createdTime}, #{updatedTime}, 0)
 			""")
 	@Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
 	int insert(ModelConfig modelConfig);
@@ -91,7 +91,7 @@ public interface ModelConfigMapper {
 			            <if test='completionsPath != null'>completions_path = #{completionsPath},</if>
 			            <if test='embeddingsPath != null'>embeddings_path = #{embeddingsPath},</if>
 			            <if test='isDeleted != null'>is_deleted = #{isDeleted},</if>
-			            updated_time = ${@sqlDialectResolver.now()}
+			            updated_time = #{updatedTime}
 			          </trim>
 			          WHERE id = #{id}
 			</script>

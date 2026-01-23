@@ -21,6 +21,8 @@ import com.audaque.cloud.ai.dataagent.enums.EmbeddingStatus;
 import com.audaque.cloud.ai.dataagent.vo.BusinessKnowledgeVO;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDateTime;
+
 @Component
 public class BusinessKnowledgeConverter {
 
@@ -41,6 +43,7 @@ public class BusinessKnowledgeConverter {
 
 	// toEntityForCreate
 	public BusinessKnowledge toEntityForCreate(CreateBusinessKnowledgeDTO dto) {
+		LocalDateTime now = LocalDateTime.now();
 		return BusinessKnowledge.builder()
 			.businessTerm(dto.getBusinessTerm())
 			.description(dto.getDescription())
@@ -49,6 +52,8 @@ public class BusinessKnowledgeConverter {
 			.isRecall(dto.getIsRecall() ? 1 : 0)
 			.isDeleted(0)
 			.embeddingStatus(EmbeddingStatus.PROCESSING)
+			.createdTime(now)
+			.updatedTime(now)
 			.build();
 
 	}

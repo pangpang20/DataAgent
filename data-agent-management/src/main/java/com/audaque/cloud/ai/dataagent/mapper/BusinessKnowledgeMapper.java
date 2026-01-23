@@ -18,6 +18,7 @@ package com.audaque.cloud.ai.dataagent.mapper;
 import com.audaque.cloud.ai.dataagent.entity.BusinessKnowledge;
 import org.apache.ibatis.annotations.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Mapper
@@ -54,7 +55,7 @@ public interface BusinessKnowledgeMapper {
 
 	@Insert("""
 			INSERT INTO business_knowledge (business_term, description, synonyms, is_recall, agent_id, created_time, updated_time, embedding_status, is_deleted)
-			VALUES (#{businessTerm}, #{description}, #{synonyms}, #{isRecall}, #{agentId}, ${@sqlDialectResolver.now()}, ${@sqlDialectResolver.now()}, #{embeddingStatus}, #{isDeleted})
+			VALUES (#{businessTerm}, #{description}, #{synonyms}, #{isRecall}, #{agentId}, #{createdTime}, #{updatedTime}, #{embeddingStatus}, #{isDeleted})
 			""")
 	@Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
 	int insert(BusinessKnowledge knowledge);
@@ -71,7 +72,7 @@ public interface BusinessKnowledgeMapper {
 				<if test="embeddingStatus != null">embedding_status = #{embeddingStatus},</if>
 				<if test="errorMsg != null">error_msg = #{errorMsg},</if>
 				<if test="isDeleted != null">is_deleted = #{isDeleted},</if>
-				updated_time = ${@sqlDialectResolver.now()}
+				updated_time = #{updatedTime}
 			</set>
 			WHERE id = #{id}
 			</script>
@@ -98,9 +99,9 @@ public interface BusinessKnowledgeMapper {
 
 	@Update("""
 			UPDATE business_knowledge
-			SET is_deleted = #{isDeleted}, updated_time = ${@sqlDialectResolver.now()}
+			SET is_deleted = #{isDeleted}, updated_time = #{updatedTime}
 			WHERE id = #{id}
 			""")
-	int logicalDelete(@Param("id") Long id, @Param("isDeleted") Integer isDeleted);
+	int logicalDelete(@Param("id") Long id, @Param("isDeleted") Integer isDeleted, @Param("updatedTime") LocalDateTime updatedTime);
 
 }

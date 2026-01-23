@@ -61,7 +61,7 @@ public interface AgentKnowledgeMapper {
 				<if test="fileType != null">file_type = #{fileType},</if>
 				<if test="isDeleted != null">is_deleted = #{isDeleted},</if>
 				<if test="isResourceCleaned != null">is_resource_cleaned = #{isResourceCleaned},</if>
-				updated_time = ${@sqlDialectResolver.now()}
+				updated_time = #{updatedTime}
 			</set>
 			WHERE id = #{id}
 			</script>

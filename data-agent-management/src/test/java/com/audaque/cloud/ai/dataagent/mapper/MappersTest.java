@@ -15,7 +15,7 @@
  */
 package com.audaque.cloud.ai.dataagent.mapper;
 
-import com.audaque.cloud.ai.dataagent.service.MySqlContainerConfiguration;
+import com.audaque.cloud.ai.dataagent.MySqlContainerConfiguration;
 import com.audaque.cloud.ai.dataagent.entity.*;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
