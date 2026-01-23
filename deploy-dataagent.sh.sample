@@ -39,7 +39,7 @@ FRONTEND_PORT=80
 # 数据库配置（首次部署需要手动初始化）
 # 支持的数据库类型：mysql（默认）、dameng（达梦数据库）
 DB_TYPE="dameng"                  # 数据库类型：mysql | dameng
-DB_HOST="172.16.1.104"
+DB_HOST="172.16.1.137"
 DB_PORT="5236"                   # MySQL 默认端口：3306，达梦默认端口：5236
 DB_NAME="cyl"
 DB_USER="cyl"                    # 达梦数据库默认用户：SYSDBA
@@ -468,33 +468,37 @@ deploy_backend() {
     info "后端 JAR 已部署到: $DEPLOY_DIR/dataagent-backend.jar"
     
     # 创建或更新配置文件
-    if [ ! -f "$DEPLOY_DIR/application.yml" ]; then
-        if [ -f "$SOURCE_DIR/application.yml.sample" ]; then
-            cp "$SOURCE_DIR/application.yml.sample" "$DEPLOY_DIR/application.yml"
-            info "配置文件已创建，请检查并修改数据库连接信息:"
-            info "  vi $DEPLOY_DIR/application.yml"
-            
-            # 根据数据库类型替换配置
-            if [ "$DB_TYPE" = "dameng" ] || [ "$DB_TYPE" = "dm" ]; then
-                # 达梦数据库配置
-                info "配置达梦数据库..."
-                sed -i "s|platform: mysql|platform: dameng|g" "$DEPLOY_DIR/application.yml"
-                sed -i "s|url: jdbc:mysql://127.0.0.1:3306/data_agent.*|url: jdbc:dm://$DB_HOST:$DB_PORT?zeroDateTimeBehavior=convertToNull\&useUnicode=true\&characterEncoding=UTF-8|g" "$DEPLOY_DIR/application.yml"
-                sed -i "s|driver-class-name: com.mysql.cj.jdbc.Driver|driver-class-name: dm.jdbc.driver.DmDriver|g" "$DEPLOY_DIR/application.yml"
-                sed -i "s|validation-query: SELECT 1|validation-query: SELECT 1 FROM DUAL|g" "$DEPLOY_DIR/application.yml"
-                sed -i "s|username: cyl|username: $DB_USER|g" "$DEPLOY_DIR/application.yml"
-                sed -i "s|password: Audaque@123|password: $DB_PASSWORD|g" "$DEPLOY_DIR/application.yml"
-                info "已配置为达梦数据库"
-            else
-                # MySQL 配置（默认）
-                sed -i "s|url: jdbc:mysql://127.0.0.1:3306/data_agent|url: jdbc:mysql://$DB_HOST:$DB_PORT/$DB_NAME|g" "$DEPLOY_DIR/application.yml"
-                sed -i "s|username: cyl|username: $DB_USER|g" "$DEPLOY_DIR/application.yml"
-                sed -i "s|password: Audaque@123|password: $DB_PASSWORD|g" "$DEPLOY_DIR/application.yml"
-                info "已自动更新配置文件中的 MySQL 数据库连接信息"
-            fi
+    if [ -f "$SOURCE_DIR/application.yml.sample" ]; then
+        info "正在同步最新的配置文件..."
+        \cp "$SOURCE_DIR/application.yml.sample" "$DEPLOY_DIR/application.yml"
+        
+        # 转义变量中的特殊字符（用于 sed 替换安全）
+        ESC_DB_USER=$(echo "$DB_USER" | sed 's/[&/|]/\\&/g')
+        ESC_DB_PASS=$(echo "$DB_PASSWORD" | sed 's/[&/|]/\\&/g')
+        ESC_DB_HOST=$(echo "$DB_HOST" | sed 's/[&/|]/\\&/g')
+        ESC_DB_NAME=$(echo "$DB_NAME" | sed 's/[&/|]/\\&/g')
+
+        # 根据数据库类型替换配置
+        if [ "$DB_TYPE" = "dameng" ] || [ "$DB_TYPE" = "dm" ]; then
+            # 达梦数据库配置
+            info "正在应用达梦数据库配置..."
+            sed -i -e "s|platform: mysql|platform: dameng|g" \
+                   -e "s|url: jdbc:mysql://127.0.0.1:3306/data_agent.*|url: jdbc:dm://$ESC_DB_HOST:$DB_PORT?zeroDateTimeBehavior=convertToNull\&useUnicode=true\&characterEncoding=UTF-8|g" \
+                   -e "s|driver-class-name: com.mysql.cj.jdbc.Driver|driver-class-name: dm.jdbc.driver.DmDriver|g" \
+                   -e "s|validation-query: SELECT 1|validation-query: SELECT 1 FROM DUAL|g" \
+                   -e "s|username: cyl|username: $ESC_DB_USER|g" \
+                   -e "s|password: Audaque@123|password: $ESC_DB_PASS|g" \
+                   "$DEPLOY_DIR/application.yml"
+            info "已配置为达梦数据库"
+        else
+            # MySQL 配置（默认）
+            info "正在应用 MySQL 数据库配置..."
+            sed -i -e "s|url: jdbc:mysql://127.0.0.1:3306/data_agent|url: jdbc:mysql://$ESC_DB_HOST:$DB_PORT/$ESC_DB_NAME|g" \
+                   -e "s|username: cyl|username: $ESC_DB_USER|g" \
+                   -e "s|password: Audaque@123|password: $ESC_DB_PASS|g" \
+                   "$DEPLOY_DIR/application.yml"
+            info "已自动更新配置文件中的 MySQL 数据库连接信息"
         fi
-    else
-        info "使用现有配置文件: $DEPLOY_DIR/application.yml"
     fi
 }
 
