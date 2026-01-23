@@ -12,8 +12,9 @@
 #See the License for the specific language governing permissions and
 #limitations under the License.
 
-# 使用eclipse-temurin镜像（基于Ubuntu Jammy，包含Java 17和Python 3）
-FROM eclipse-temurin:17-jdk-jammy
+# 使用带有Python的JDK镜像（Debian基础镜像通常自带Python3）
+# 如果此镜像不可用，可尝试：amazoncorretto:17、openjdk:17-slim-buster
+FROM openjdk:17-slim-bullseye
 
 WORKDIR /app
 
