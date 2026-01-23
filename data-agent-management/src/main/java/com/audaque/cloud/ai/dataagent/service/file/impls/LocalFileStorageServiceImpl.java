@@ -17,16 +17,12 @@ package com.audaque.cloud.ai.dataagent.service.file.impls;
 
 import com.audaque.cloud.ai.dataagent.properties.FileStorageProperties;
 import com.audaque.cloud.ai.dataagent.service.file.FileStorageService;
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.util.StringUtils;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -63,8 +59,7 @@ public class LocalFileStorageServiceImpl implements FileStorageService {
 			log.info("文件存储成功: {}", storagePath);
 			return storagePath;
 
-		}
-		catch (IOException e) {
+		} catch (IOException e) {
 			log.error("文件存储失败", e);
 			throw new RuntimeException("文件存储失败: " + e.getMessage(), e);
 		}
@@ -73,18 +68,17 @@ public class LocalFileStorageServiceImpl implements FileStorageService {
 	@Override
 	public boolean deleteFile(String filePath) {
 		try {
-			Path fullPath = Paths.get(fileStorageProperties.getPath(), filePath);
+			String internalPath = resolveInternalPath(filePath);
+			Path fullPath = Paths.get(fileStorageProperties.getPath(), internalPath);
 			if (Files.exists(fullPath)) {
 				Files.deleteIfExists(fullPath);
-				log.info("成功删除文件: {}", filePath);
-			}
-			else {
+				log.info("成功删除文件: {}", internalPath);
+			} else {
 				// 删除是个等幂的操作，不存在也是当做被删除了
-				log.info("文件不存在，跳过删除，视为成功: {}", filePath);
+				log.info("文件不存在，跳过删除，视为成功: {}", internalPath);
 			}
 			return true;
-		}
-		catch (IOException e) {
+		} catch (IOException e) {
 			log.error("删除文件失败: {}", filePath, e);
 			return false;
 		}
@@ -92,32 +86,56 @@ public class LocalFileStorageServiceImpl implements FileStorageService {
 
 	@Override
 	public String getFileUrl(String filePath) {
-		try {
-			ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder
-				.getRequestAttributes();
-			if (attributes != null) {
-				HttpServletRequest request = attributes.getRequest();
-				return ServletUriComponentsBuilder.fromRequestUri(request)
-					.replacePath(fileStorageProperties.getUrlPrefix() + "/" + filePath)
-					.build()
-					.toUriString();
-			}
+		String prefix = fileStorageProperties.getUrlPrefix();
+		if (!prefix.endsWith("/") && !filePath.startsWith("/")) {
+			return prefix + "/" + filePath;
 		}
-		catch (Exception e) {
-			log.warn("动态构建URL失败，使用相对路径", e);
-		}
-		return fileStorageProperties.getUrlPrefix() + "/" + filePath;
+		return prefix + filePath;
 	}
 
 	@Override
 	public Resource getFileResource(String filePath) {
-		Path fullPath = Paths.get(fileStorageProperties.getPath(), filePath);
+		String internalPath = resolveInternalPath(filePath);
+		Path fullPath = Paths.get(fileStorageProperties.getPath(), internalPath);
 		if (Files.exists(fullPath)) {
 			return new FileSystemResource(fullPath);
+		} else {
+			throw new RuntimeException("File is not exist: " + internalPath);
 		}
-		else {
-			throw new RuntimeException("File is not exist: " + filePath);
+	}
+
+	/**
+	 * 从URL或完整路径中解析出内部存储路径
+	 */
+	private String resolveInternalPath(String filePathOrUrl) {
+		if (filePathOrUrl == null) {
+			return "";
 		}
+
+		String path = filePathOrUrl;
+
+		// 如果是绝对URL，去掉协议和主机部分
+		if (path.startsWith("http://") || path.startsWith("https://")) {
+			try {
+				java.net.URL url = new java.net.URL(path);
+				path = url.getPath();
+			} catch (java.net.MalformedURLException e) {
+				log.warn("解析URL失败: {}", path);
+			}
+		}
+
+		// 去掉 urlPrefix
+		String urlPrefix = fileStorageProperties.getUrlPrefix();
+		if (path.startsWith(urlPrefix)) {
+			path = path.substring(urlPrefix.length());
+		}
+
+		// 去掉开头的斜杠
+		while (path.startsWith("/")) {
+			path = path.substring(1);
+		}
+
+		return path;
 	}
 
 	/**
