@@ -78,7 +78,10 @@ public class AgentServiceImpl implements AgentService {
 				agent.setApiKeyEnabled(0);
 			}
 
+			log.info("准备插入新的 Agent - name: {}, avatar: {}, status: {}, category: {}",
+					agent.getName(), agent.getAvatar(), agent.getStatus(), agent.getCategory());
 			agentMapper.insert(agent);
+			log.info("成功插入 Agent, 生成的 ID: {}", agent.getId());
 		} else {
 			// Update
 			agent.setUpdateTime(now);

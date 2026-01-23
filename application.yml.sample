@@ -236,13 +236,20 @@ logging:
   # 日志级别配置
   level:
     root: INFO                                            # 根日志级别
-    com.audaque.cloud.ai.dataagent.service: INFO          # 业务服务日志
-    com.audaque.cloud.ai.dataagent.workflow.node: INFO    # 工作流节点日志
-    com.alibaba.cloud.ai.mapper: INFO                     # MyBatis Mapper 日志
-    org.springframework.jdbc: WARN                        # JDBC 日志
-    org.apache.coyote: WARN                               # Tomcat HTTP 连接器（避免 EOFException 日志）
-    org.apache.tomcat: WARN                               # Tomcat 其他组件
+    com.audaque.cloud.ai.dataagent.service: DEBUG         # 业务服务日志
+    com.audaque.cloud.ai.dataagent.workflow.node: DEBUG   # 工作流节点日志
+    com.alibaba.cloud.ai.mapper: DEBUG                    # MyBatis Mapper 日志
+    org.springframework.jdbc: DEBUG                       # JDBC 日志（查看所有 SQL）
+    org.apache.coyote.http11.Http11Processor: INFO       # 屏蔽 Tomcat EOFException 日志
+    org.apache.tomcat: WARN                              # Tomcat 其他组件
     org.elasticsearch.client: WARN                        # Elasticsearch 客户端
+    # 打印 Agent 相关的 SQL 语句（包括插入、更新操作）
+    com.audaque.cloud.ai.dataagent.mapper.AgentMapper: DEBUG
+    
+    # 生产环境建议：
+    # - root: WARN 或 INFO
+    # - com.audaque.cloud.ai.dataagent.service: INFO
+    # - org.springframework.jdbc: WARN（关闭 SQL 日志以提升性能）
   
   # 日志文件配置（推荐生产环境启用）
   file:

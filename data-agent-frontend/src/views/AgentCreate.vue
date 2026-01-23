@@ -32,7 +32,7 @@
               <div class="avatar-upload">
                 <div class="avatar-preview">
                   <img
-                    :src="agentForm.avatar"
+                    :src="getAvatarUrl(agentForm.avatar)"
                     alt="智能体头像"
                     @load="handleImageLoad"
                     @error="handleImageError"
@@ -353,6 +353,7 @@
         handleImageLoad,
         handleImageError,
         createAgent,
+        getAvatarUrl,
       };
     },
   });

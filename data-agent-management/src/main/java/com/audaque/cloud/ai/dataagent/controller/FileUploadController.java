@@ -74,10 +74,10 @@ public class FileUploadController {
 			// 提取文件名
 			String filename = filePath.substring(filePath.lastIndexOf("/") + 1);
 
+			log.debug("头像上传成功 - filePath: {}, fileUrl: {}, filename: {}", filePath, fileUrl, filename);
 			return ResponseEntity.ok(UploadResponse.ok("上传成功", fileUrl, filename));
 
-		}
-		catch (Exception e) {
+		} catch (Exception e) {
 			log.error("头像上传失败", e);
 			return ResponseEntity.internalServerError().body(UploadResponse.error("上传失败: " + e.getMessage()));
 		}
@@ -103,11 +103,11 @@ public class FileUploadController {
 			String contentType = Files.probeContentType(fullPath);
 
 			return ResponseEntity.ok()
-				.contentType(MediaType.parseMediaType(contentType != null ? contentType : "application/octet-stream"))
-				.body(fileContent);
+					.contentType(
+							MediaType.parseMediaType(contentType != null ? contentType : "application/octet-stream"))
+					.body(fileContent);
 
-		}
-		catch (IOException e) {
+		} catch (IOException e) {
 			log.error("文件读取失败", e);
 			return ResponseEntity.internalServerError().build();
 		}
