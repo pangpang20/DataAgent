@@ -88,31 +88,38 @@ yarn preview
 - **后端服务地址**: http://localhost:8065
 - **API路径**: `/api/*`
 - **NL2SQL路径**: `/nl2sql/*`
+- **静态资源路径**: `/uploads/*`
 
-如需修改后端服务地址，请编辑 `vite.config.js` 文件中的 proxy 配置：
+### 方式1：使用环境变量（推荐）
+
+1. **复制环境变量模板**：
+```bash
+cp .env.example .env.local
+```
+
+2. **编辑 `.env.local` 文件**：
+```bash
+# 本地开发
+ VITE_BACKEND_URL=http://localhost:8065
+
+# 局域网开发
+VITE_BACKEND_URL=http://192.168.1.100:8065
+
+# 域名开发
+VITE_BACKEND_URL=http://dev.example.com
+```
+
+3. **重启开发服务器**：
+```bash
+npm run dev
+```
+
+### 方式2：直接修改配置文件
+
+编辑 `vite.config.js` 文件，修改 `backendUrl` 变量：
 
 ```javascript
-export default defineConfig({
-  // ...
-  server: {
-    port: 3000,
-    proxy: {
-      '/api': {
-        target: 'http://localhost:8065', // 修改为实际的后端地址
-        changeOrigin: true,
-      },
-      '/nl2sql': {
-        target: 'http://localhost:8065', // 修改为实际的后端地址
-        target: 'http://your-backend-host:port', // 修改为你的后端地址
-        changeOrigin: true,
-      },
-      '/nl2sql': {
-        target: 'http://your-backend-host:port', // 修改为你的后端地址
-        changeOrigin: true,
-      },
-    },
-  },
-});
+const backendUrl = 'http://your-backend-host:port'; // 修改为实际的后端地址
 ```
 
 ## 功能说明

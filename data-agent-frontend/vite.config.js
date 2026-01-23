@@ -17,30 +17,39 @@ import { defineConfig } from 'vite';
 import vue from '@vitejs/plugin-vue';
 import { resolve } from 'path';
 
-export default defineConfig({
-  plugins: [vue()],
-  resolve: {
-    alias: {
-      '@': resolve(__dirname, 'src'),
-    },
-  },
-  server: {
-    port: 3000,
-    proxy: {
-      '/api': {
-        target: 'http://localhost:8065',
-        changeOrigin: true,
-      },
-      '/nl2sql': {
-        target: 'http://localhost:8065',
-        changeOrigin: true,
+export default defineConfig(({ mode }) => {
+  // 开发环境的后端地址
+  const backendUrl = process.env.VITE_BACKEND_URL || 'http://localhost:8065';
+
+  return {
+    plugins: [vue()],
+    resolve: {
+      alias: {
+        '@': resolve(__dirname, 'src'),
       },
     },
-    historyApiFallback: true,
-  },
-  build: {
-    outDir: 'dist',
-    assetsDir: 'assets',
-    copyPublicDir: true,
-  },
+    server: {
+      port: 3000,
+      proxy: {
+        '/api': {
+          target: backendUrl,
+          changeOrigin: true,
+        },
+        '/nl2sql': {
+          target: backendUrl,
+          changeOrigin: true,
+        },
+        '/uploads': {
+          target: backendUrl,
+          changeOrigin: true,
+        },
+      },
+      historyApiFallback: true,
+    },
+    build: {
+      outDir: 'dist',
+      assetsDir: 'assets',
+      copyPublicDir: true,
+    },
+  };
 });
