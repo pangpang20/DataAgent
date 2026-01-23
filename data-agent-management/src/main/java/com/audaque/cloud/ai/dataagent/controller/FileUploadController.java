@@ -40,7 +40,7 @@ import java.nio.file.Paths;
  */
 @Slf4j
 @RestController
-@RequestMapping("/api/upload")
+@RequestMapping("/api")
 @CrossOrigin(origins = "*")
 @AllArgsConstructor
 public class FileUploadController {
@@ -52,7 +52,7 @@ public class FileUploadController {
 	/**
 	 * 上传头像图片
 	 */
-	@PostMapping(value = "/avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+	@PostMapping(value = "/upload/avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	public ResponseEntity<UploadResponse> uploadAvatar(@RequestParam("file") MultipartFile file) {
 		try {
 			// 验证文件类型
@@ -84,9 +84,11 @@ public class FileUploadController {
 	}
 
 	/**
-	 * 获取文件
+	 * 获取文件 - 此方法已废弃，文件访问由 WebConfig 静态资源映射处理
+	 * 保留此方法仅作为备用方案
 	 */
-	@GetMapping("/**")
+	@Deprecated
+	@GetMapping("/upload/**")
 	public ResponseEntity<byte[]> getFile(HttpServletRequest request) {
 		try {
 			String requestPath = request.getRequestURI();
