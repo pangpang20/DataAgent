@@ -44,9 +44,15 @@ spring:
       max-attempts: 5
       initial-interval: 2000ms
       multiplier: 2.0
+    vectorstore:
+      milvus:
+        enabled: false
+      elasticsearch:
+        enabled: false
     # Milvus 配置示例 (当 type 为 milvus 时生效)
     # vectorstore:
     #   milvus:
+    #     enabled: true
     #     client:
     #       host: ${MILVUS_HOST:localhost}
     #       port: ${MILVUS_PORT:19530}

@@ -129,8 +129,13 @@ spring:
     
     # 向量存储配置
     vectorstore:
+      milvus:
+        enabled: false
+      elasticsearch:
+        enabled: false
       # 如果使用 Milvus，需要配置以下参数：
       # milvus:
+      #   enabled: true
       #   client:
       #     host: localhost
       #     port: 19530

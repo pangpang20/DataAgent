@@ -516,6 +516,7 @@ deploy_backend() {
             # 取消注释 Milvus 配置并替换变量
             # 注意：这里需要根据 application.yml.sample 的具体结构进行匹配替换
             sed -i "/# milvus:/s/^      # //" "$DEPLOY_DIR/application.yml"
+            sed -i "/#   enabled:/s/^      # //" "$DEPLOY_DIR/application.yml"
             sed -i "/#   client:/s/^      # //" "$DEPLOY_DIR/application.yml"
             sed -i "/#     host:/s/^      # //" "$DEPLOY_DIR/application.yml"
             sed -i "/#     port:/s/^      # //" "$DEPLOY_DIR/application.yml"
