@@ -35,7 +35,8 @@ import java.util.concurrent.ConcurrentHashMap;
 public abstract class AbstractDBConnectionPool implements DBConnectionPool {
 
 	/**
-	 * DataSource cache to ensure that each configuration creates DataSource only once.
+	 * DataSource cache to ensure that each configuration creates DataSource only
+	 * once.
 	 */
 	private static final ConcurrentHashMap<String, DataSource> DATA_SOURCE_CACHE = new ConcurrentHashMap<>();
 
@@ -70,8 +71,7 @@ public abstract class AbstractDBConnectionPool implements DBConnectionPool {
 				rs.close();
 			}
 			return ErrorCodeEnum.SUCCESS;
-		}
-		catch (SQLException e) {
+		} catch (SQLException e) {
 			log.error("test db connection error, url:{}, state:{}, message:{}", jdbcUrl, e.getSQLState(),
 					e.getMessage());
 			return errorMapping(e.getSQLState());
@@ -96,8 +96,7 @@ public abstract class AbstractDBConnectionPool implements DBConnectionPool {
 					try {
 						log.debug("Creating new DataSource for key: {}", key);
 						return createdDataSource(jdbcUrl, config.getUsername(), config.getPassword());
-					}
-					catch (Exception e) {
+					} catch (Exception e) {
 						log.error("Failed to create DataSource for key: {}", key, e);
 						throw new RuntimeException("Failed to create DataSource", e);
 					}
@@ -112,8 +111,7 @@ public abstract class AbstractDBConnectionPool implements DBConnectionPool {
 				}
 
 				return dataSource.getConnection();
-			}
-			catch (Exception e) {
+			} catch (Exception e) {
 				log.warn("Attempt {} to get database connection failed: {}", attempt, e.getMessage());
 
 				if (attempt == maxRetries) {
@@ -125,8 +123,7 @@ public abstract class AbstractDBConnectionPool implements DBConnectionPool {
 				// Wait before retry with exponential backoff
 				try {
 					Thread.sleep((long) retryDelay * attempt);
-				}
-				catch (InterruptedException ignore) {
+				} catch (InterruptedException ignore) {
 
 				}
 			}
@@ -136,7 +133,8 @@ public abstract class AbstractDBConnectionPool implements DBConnectionPool {
 
 	/**
 	 * Generate cache key based on connection parameters.
-	 * @param url the database URL
+	 * 
+	 * @param url      the database URL
 	 * @param username the database username
 	 * @param password the database password
 	 * @return the cache key
@@ -157,7 +155,8 @@ public abstract class AbstractDBConnectionPool implements DBConnectionPool {
 	}
 
 	/**
-	 * Clear DataSource cache and close all cached DataSource instances. This method is
+	 * Clear DataSource cache and close all cached DataSource instances. This method
+	 * is
 	 * useful for resource cleanup in special scenarios.
 	 */
 

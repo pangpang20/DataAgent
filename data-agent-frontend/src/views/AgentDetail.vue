@@ -35,7 +35,7 @@
               @mouseenter="showHeaderAvatarButton = true"
               @mouseleave="showHeaderAvatarButton = false"
             >
-              <el-avatar :src="agent.avatar" size="large" class="header-avatar">
+              <el-avatar :src="getAvatarUrl(agent.avatar)" size="large" class="header-avatar">
                 {{ agent.name }}
               </el-avatar>
               <div v-if="showHeaderAvatarButton" class="avatar-overlay-header">
@@ -263,7 +263,7 @@
         try {
           headerUploading.value = true;
 
-          originalHeaderAvatar.value = agent.value.avatar;
+          originalHeaderAvatar.value = agent.value.avatar || '';
 
           const reader = new FileReader();
           reader.onload = e => {
@@ -328,6 +328,14 @@
         await loadAgent();
       });
 
+      const getAvatarUrl = (url: string | undefined) => {
+        if (!url) return '';
+        if (url.startsWith('data:')) return url; // Base64
+        // 添加时间戳防止缓存
+        const separator = url.includes('?') ? '&' : '?';
+        return `${url}${separator}t=${new Date().getTime()}`;
+      };
+
       return {
         ArrowLeft,
         agent,
@@ -339,6 +347,7 @@
         showHeaderAvatarButton,
         triggerHeaderFileUpload,
         handleHeaderFileUpload,
+        getAvatarUrl,
       };
     },
   });

@@ -22,7 +22,7 @@
         <el-button type="primary" @click="goBack" circle>
           <el-icon><ArrowLeft /></el-icon>
         </el-button>
-        <el-avatar :src="agent.avatar" size="large">{{ agent.name }}</el-avatar>
+        <el-avatar :src="getAvatarUrl(agent.avatar)" size="large">{{ agent.name }}</el-avatar>
         <el-button type="danger" @click="clearAllSessions" circle>
           <el-icon><Delete /></el-icon>
         </el-button>
@@ -258,6 +258,13 @@
         router.push(`/agent/${agentId.value}`);
       };
 
+      const getAvatarUrl = (url: string | undefined) => {
+        if (!url) return '';
+        if (url.startsWith('data:')) return url;
+        const separator = url.includes('?') ? '&' : '?';
+        return `${url}${separator}t=${new Date().getTime()}`;
+      };
+
       const loadSessions = async () => {
         try {
           sessions.value = await ChatService.getAgentSessions(parseInt(agentId.value));
@@ -366,6 +373,7 @@
         startEditSessionTitle,
         saveSessionTitle,
         cancelEditSessionTitle,
+        getAvatarUrl,
       };
     },
   });

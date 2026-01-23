@@ -105,7 +105,7 @@
               <!-- 文本类型消息使用原有布局 -->
               <div v-else :class="['message', message.role]">
                 <div class="message-avatar">
-                  <el-avatar :size="32">
+                  <el-avatar :size="32" :src="message.role === 'assistant' ? getAvatarUrl(agent.avatar) : ''">
                     {{ message.role === 'user' ? '我' : 'AI' }}
                   </el-avatar>
                 </div>
@@ -484,6 +484,13 @@
           ElMessage.error('加载消息失败');
           console.error('加载消息失败:', error);
         }
+      };
+
+      const getAvatarUrl = (url: string | undefined) => {
+        if (!url) return '';
+        if (url.startsWith('data:')) return url;
+        const separator = url.includes('?') ? '&' : '?';
+        return `${url}${separator}t=${new Date().getTime()}`;
       };
 
       const sendMessage = async () => {
@@ -1280,6 +1287,7 @@
         resetReportState,
         handleHumanFeedback,
         handlePresetQuestionClick,
+        getAvatarUrl,
         stopStreaming,
         deleteSessionState,
       };

@@ -120,7 +120,7 @@
 
                   <!-- 头像区域 -->
                   <div class="agent-avatar">
-                    <el-avatar :size="48" :src="agent.avatar">
+                    <el-avatar :size="48" :src="getAvatarUrl(agent.avatar)">
                       {{ agent.name }}
                     </el-avatar>
                   </div>
@@ -309,10 +309,16 @@
         }
       };
 
-      // 生命周期
       onMounted(() => {
         loadAgents();
       });
+
+      const getAvatarUrl = (url: string | undefined) => {
+        if (!url) return '';
+        if (url.startsWith('data:')) return url;
+        const separator = url.includes('?') ? '&' : '?';
+        return `${url}${separator}t=${new Date().getTime()}`;
+      };
 
       return {
         loading,
@@ -331,6 +337,7 @@
         formatTime,
         goToCreateAgent,
         handleDeleteAgent,
+        getAvatarUrl,
         Search,
         Refresh,
         Plus,

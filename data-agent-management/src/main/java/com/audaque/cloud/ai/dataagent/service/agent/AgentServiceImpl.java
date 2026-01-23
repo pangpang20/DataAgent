@@ -89,6 +89,7 @@ public class AgentServiceImpl implements AgentService {
 			if (agent.getApiKeyEnabled() == null) {
 				agent.setApiKeyEnabled(0);
 			}
+			log.info("Updating agent: {}, avatar: {}", agent.getId(), agent.getAvatar());
 			agentMapper.updateById(agent);
 		}
 
