@@ -82,7 +82,7 @@ public interface AgentKnowledgeMapper {
 				AND embedding_status = #{queryDTO.embeddingStatus}
 			</if>
 			AND is_deleted = 0
-			${@sqlDialectResolver.limit(offset, queryDTO.pageSize)}
+			${@com.audaque.cloud.ai.dataagent.util.SqlDialectResolver@limit(offset, queryDTO.pageSize)}
 			</script>
 			""")
 	List<AgentKnowledge> selectByConditionsWithPage(@Param("queryDTO") AgentKnowledgeQueryDTO queryDTO,
@@ -120,8 +120,8 @@ public interface AgentKnowledgeMapper {
 			    SELECT * FROM agent_knowledge
 			    WHERE is_deleted = 1
 			      AND is_resource_cleaned = 0
-			      AND updated_time &lt; #{beforeTime}
-			    ${@sqlDialectResolver.limit(0, limit)}
+			      AND updated_time < #{beforeTime}
+			    ${@com.audaque.cloud.ai.dataagent.util.SqlDialectResolver@limit(0, limit)}
 			""")
 	List<AgentKnowledge> selectDirtyRecords(@Param("beforeTime") LocalDateTime beforeTime, @Param("limit") int limit);
 

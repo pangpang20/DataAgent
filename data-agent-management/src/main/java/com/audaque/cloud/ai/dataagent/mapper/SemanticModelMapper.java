@@ -151,7 +151,7 @@ public interface SemanticModelMapper {
 			WHERE agent_id = #{agentId}
 			  AND table_name = #{tableName}
 			  AND column_name = #{columnName}
-			LIMIT 1
+			${@com.audaque.cloud.ai.dataagent.util.SqlDialectResolver@limit(0, 1)}
 			""")
 	SemanticModel selectByAgentIdAndTableNameAndColumnName(@Param("agentId") Integer agentId,
 			@Param("tableName") String tableName, @Param("columnName") String columnName);

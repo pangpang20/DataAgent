@@ -24,14 +24,21 @@ import org.springframework.stereotype.Component;
 @Component
 public class SqlDialectResolver {
 
-    @Value("${spring.datasource.platform:mysql}")
     private String platform;
+
+    private static String staticPlatform;
+
+    @Value("${spring.datasource.platform:mysql}")
+    public void setPlatform(String platform) {
+        this.platform = platform;
+        staticPlatform = platform;
+    }
 
     /**
      * 获取当前时间函数
      */
-    public String now() {
-        if ("dameng".equalsIgnoreCase(platform) || "dm".equalsIgnoreCase(platform)) {
+    public static String now() {
+        if ("dameng".equalsIgnoreCase(staticPlatform) || "dm".equalsIgnoreCase(staticPlatform)) {
             return "SYSDATE";
         }
         return "NOW()";
@@ -42,8 +49,8 @@ public class SqlDialectResolver {
      * MySQL: LIMIT offset, size
      * Dameng: LIMIT size OFFSET offset
      */
-    public String limit(int offset, int size) {
-        if ("dameng".equalsIgnoreCase(platform) || "dm".equalsIgnoreCase(platform)) {
+    public static String limit(int offset, int size) {
+        if ("dameng".equalsIgnoreCase(staticPlatform) || "dm".equalsIgnoreCase(staticPlatform)) {
             return "LIMIT " + size + " OFFSET " + offset;
         }
         return "LIMIT " + offset + ", " + size;
@@ -52,8 +59,8 @@ public class SqlDialectResolver {
     /**
      * 判断是否为达梦数据库
      */
-    public boolean isDameng() {
-        return "dameng".equalsIgnoreCase(platform) || "dm".equalsIgnoreCase(platform);
+    public static boolean isDameng() {
+        return "dameng".equalsIgnoreCase(staticPlatform) || "dm".equalsIgnoreCase(staticPlatform);
     }
 
 }

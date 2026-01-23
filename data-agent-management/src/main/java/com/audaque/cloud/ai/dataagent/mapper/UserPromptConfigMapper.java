@@ -50,7 +50,7 @@ public interface UserPromptConfigMapper {
 			WHERE prompt_type = #{promptType}
 			  AND enabled = 1
 			<if test='agentId != null'> AND agent_id = #{agentId}</if>
-			LIMIT 1
+			${@com.audaque.cloud.ai.dataagent.util.SqlDialectResolver@limit(0, 1)}
 			</script>
 			""")
 	UserPromptConfig selectActiveByPromptType(@Param("promptType") String promptType, @Param("agentId") Long agentId);

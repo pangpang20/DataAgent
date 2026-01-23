@@ -33,7 +33,7 @@ public interface ModelConfigMapper {
 			""")
 	ModelConfig findById(Integer id);
 
-	@Select("SELECT id, provider, base_url, api_key, model_name, temperature, is_active, max_tokens, model_type, completions_path, embeddings_path, created_time, updated_time, is_deleted FROM model_config WHERE model_type = #{modelType} AND is_active = 1 AND is_deleted = 0 LIMIT 1")
+	@Select("SELECT id, provider, base_url, api_key, model_name, temperature, is_active, max_tokens, model_type, completions_path, embeddings_path, created_time, updated_time, is_deleted FROM model_config WHERE model_type = #{modelType} AND is_active = 1 AND is_deleted = 0 ${@com.audaque.cloud.ai.dataagent.util.SqlDialectResolver@limit(0, 1)}")
 	ModelConfig selectActiveByType(@Param("modelType") String modelType);
 
 	@Update("UPDATE model_config SET is_active = 0 WHERE model_type = #{modelType} AND id != #{currentId} AND is_deleted = 0")
