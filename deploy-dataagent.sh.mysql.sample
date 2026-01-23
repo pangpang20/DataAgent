@@ -666,7 +666,7 @@ start_backend() {
         -XX:+UseG1GC \
         -Dfile.encoding=UTF-8 \
         -jar dataagent-backend.jar \
-        > console.log 2>&1 &
+        > /dev/null 2>&1 &
     
     BACKEND_PID=$!
     echo $BACKEND_PID > "$DEPLOY_DIR/backend.pid"
