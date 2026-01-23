@@ -311,8 +311,10 @@
       // 图片加载失败处理
       const handleImageError = () => {
         console.error('头像图片加载失败');
-        // 设置默认头像
-        agentForm.avatar = generateFallbackAvatar();
+        // 只有当当前没有头像或者是默认SVG时才重新生成，避免上传成功的图因为网络抖动被重置
+        if (!agentForm.avatar || agentForm.avatar.startsWith('data:')) {
+          agentForm.avatar = generateFallbackAvatar();
+        }
       };
 
       const createAgent = async () => {
