@@ -12,26 +12,14 @@
 #See the License for the specific language governing permissions and
 #limitations under the License.
 
-# 使用包含Python的基础镜像，然后安装Java
-FROM python:3.11-slim-bookworm
-
-# 安装OpenJDK 17
-RUN apt-get update && \
-    apt-get install -y openjdk-17-jre-headless && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
-
-# 设置JAVA_HOME
-ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
-ENV PATH="${JAVA_HOME}/bin:${PATH}"
+# 使用eclipse-temurin镜像（已包含Java 17和Python 3）
+# 注意：此镜像已预装Python，无需额外安装
+FROM eclipse-temurin:17-jdk-jammy
 
 WORKDIR /app
 
 # 直接复制本地已构建的jar包
 COPY data-agent-management/target/spring-ai-audaque-data-agent-management-1.0.0-SNAPSHOT.jar /app/app.jar
-
-# 创建配置文件目录
-RUN mkdir -p /app/config
 
 EXPOSE 8065
 
