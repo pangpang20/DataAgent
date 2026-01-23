@@ -18,6 +18,11 @@
 set -e
 
 # ============================================================================
+# 脚本目录
+# ============================================================================
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# ============================================================================
 # 默认配置
 # ============================================================================
 INSTALL_MODE="docker"  # 默认安装模式
@@ -157,8 +162,17 @@ deploy_milvus() {
     mkdir -p milvus-deploy
     cd milvus-deploy
 
-    # 生成 docker-compose.yml
-    cat <<EOF > docker-compose.yml
+    # 使用配置模板
+    MILVUS_TEMPLATE="$SCRIPT_DIR/docker-file/config/milvus-docker-compose.yml"
+    
+    if [ -f "$MILVUS_TEMPLATE" ]; then
+        info "复制 Milvus Docker Compose 配置模板..."
+        cp "$MILVUS_TEMPLATE" docker-compose.yml
+        info "已使用模板: $MILVUS_TEMPLATE"
+    else
+        warn "未找到模板文件，使用默认配置"
+        # 生成 docker-compose.yml（备用方案）
+        cat <<EOF > docker-compose.yml
 version: '3.5'
 
 services:
@@ -220,6 +234,7 @@ networks:
   default:
     name: milvus
 EOF
+    fi
 
     info "启动容器 (可能需要几分钟下载镜像)..."
     $DOCKER_COMPOSE_CMD up -d

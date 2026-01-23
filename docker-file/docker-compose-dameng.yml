@@ -57,7 +57,7 @@ services:
       # AI 配置
       - AI_DASHSCOPE_API_KEY=${AI_DASHSCOPE_API_KEY}
     ports:
-      - "8065:8065"
+      - "18065:8065"
     depends_on:
       dameng-metadata:
         condition: service_healthy

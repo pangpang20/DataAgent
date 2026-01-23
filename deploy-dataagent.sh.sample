@@ -585,139 +585,45 @@ configure_nginx() {
     
     info "使用配置文件: $NGINX_CONFIG_FILE"
     
-    # 创建 Nginx 配置文件（基于 nginx-production.conf）
-    sudo tee "$NGINX_CONFIG_FILE" > /dev/null <<EOF
-# 后端服务地址池（支持负载均衡和故障转移）
-upstream dataagent_backend {
-    # 优先使用 IPv4
-    server 127.0.0.1:$BACKEND_PORT max_fails=3 fail_timeout=30s;
-    keepalive 32;
-}
-
-server {
-    listen $FRONTEND_PORT;
-    server_name $HOST_IP localhost;
+    # 1. 复制 Nginx 配置模板到部署目录
+    info "复制 Nginx 配置模板..."
+    NGINX_TEMPLATE="$SCRIPT_DIR/docker-file/config/nginx-production.conf"
+    NGINX_LOCAL_CONF="$DEPLOY_DIR/nginx-dataagent.conf"
     
-    # 日志配置
-    access_log /var/log/nginx/dataagent_access.log;
-    error_log /var/log/nginx/dataagent_error.log warn;
+    if [ ! -f "$NGINX_TEMPLATE" ]; then
+        error "Nginx 配置模板不存在: $NGINX_TEMPLATE"
+    fi
     
-    # 客户端上传文件大小限制
-    client_max_body_size 10M;
+    cp "$NGINX_TEMPLATE" "$NGINX_LOCAL_CONF"
+    info "已复制模板到: $NGINX_LOCAL_CONF"
     
-    # ========================================================================
-    # 前端静态文件
-    # ========================================================================
-    location / {
-        root /var/www/dataagent;
-        index index.html;
-        try_files \$uri \$uri/ /index.html;
-        
-        # 静态文件缓存
-        expires 7d;
-        add_header Cache-Control "public, immutable";
-    }
+    # 2. 修改配置文件中的变量
+    info "修改配置参数..."
     
-    # ========================================================================
-    # API 接口代理到后端
-    # ========================================================================
-    location /api/ {
-        proxy_pass http://dataagent_backend;
-        
-        # 基础代理头
-        proxy_set_header Host \$host;
-        proxy_set_header X-Real-IP \$remote_addr;
-        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto \$scheme;
-        
-        # 支持 WebSocket 和长连接
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade \$http_upgrade;
-        proxy_set_header Connection "upgrade";
-        
-        # 超时设置
-        proxy_connect_timeout 75s;
-        proxy_send_timeout 300s;
-        proxy_read_timeout 300s;
-        
-        # 缓冲设置
-        proxy_buffering off;
-        proxy_cache off;
-    }
+    # 替换后端端口
+    sed -i "s|server 127.0.0.1:8065|server 127.0.0.1:$BACKEND_PORT|g" "$NGINX_LOCAL_CONF"
     
-    # ========================================================================
-    # NL2SQL 接口（流式响应）
-    # ========================================================================
-    location /nl2sql/ {
-        proxy_pass http://dataagent_backend;
-        
-        proxy_set_header Host \$host;
-        proxy_set_header X-Real-IP \$remote_addr;
-        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto \$scheme;
-        
-        # SSE（Server-Sent Events）支持
-        proxy_http_version 1.1;
-        proxy_set_header Connection "";
-        
-        # 关键：禁用缓冲以支持流式响应
-        proxy_buffering off;
-        proxy_cache off;
-        proxy_read_timeout 24h;
-        proxy_connect_timeout 75s;
-        
-        # 禁用 gzip 以避免流式响应延迟
-        gzip off;
-        
-        # Chunked transfer encoding
-        chunked_transfer_encoding on;
-    }
+    # 替换监听端口
+    sed -i "s|listen 80;|listen $FRONTEND_PORT;|g" "$NGINX_LOCAL_CONF"
     
-    # ========================================================================
-    # 静态资源：头像等上传文件
-    # ========================================================================
-    location /uploads/ {
-        # uploads 目录路径（注意末尾的斜杠）
-        alias $DEPLOY_DIR/uploads/;
-        
-        # 禁止目录浏览
-        autoindex off;
-        
-        # 缓存设置
-        expires 7d;
-        add_header Cache-Control "public";
-    }
+    # 替换 server_name
+    sed -i "s|server_name 172.16.1.137;|server_name $HOST_IP localhost;|g" "$NGINX_LOCAL_CONF"
     
-    # ========================================================================
-    # Actuator 健康检查
-    # ========================================================================
-    location /actuator/ {
-        proxy_pass http://dataagent_backend;
-        proxy_set_header Host \$host;
-        proxy_set_header X-Real-IP \$remote_addr;
-    }
+    # 替换前端静态文件路径
+    sed -i "s|root /root/local_DataAgent/data-agent-frontend/dist;|root /var/www/dataagent;|g" "$NGINX_LOCAL_CONF"
     
-    # ========================================================================
-    # 健康检查端点
-    # ========================================================================
-    location /health {
-        access_log off;
-        return 200 "healthy\\n";
-        add_header Content-Type text/plain;
-    }
+    # 替换 uploads 目录路径（注意处理末尾斜杠）
+    sed -i "s|alias /root/local_DataAgent/uploads/;|alias $DEPLOY_DIR/uploads/;|g" "$NGINX_LOCAL_CONF"
     
-    # ========================================================================
-    # 错误页面
-    # ========================================================================
-    error_page 500 502 503 504 /50x.html;
-    location = /50x.html {
-        root /usr/share/nginx/html;
-    }
+    # 删除嵌套的 location ~ \.(jpg|jpeg|png...) 配置块（避免冲突）
+    sed -i '/# 允许的文件类型/,/^    }/d' "$NGINX_LOCAL_CONF"
     
-    # 404 返回前端首页（支持前端路由）
-    error_page 404 /index.html;
-}
-EOF
+    info "配置参数修改完成"
+    
+    # 3. 部署到 Nginx 配置目录
+    info "部署配置文件到 Nginx..."
+    sudo cp "$NGINX_LOCAL_CONF" "$NGINX_CONFIG_FILE"
+    info "已部署到: $NGINX_CONFIG_FILE"
     
     # 启用配置
     if [ "$USE_SITES_STYLE" = true ]; then

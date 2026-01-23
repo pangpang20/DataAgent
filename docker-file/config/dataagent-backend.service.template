@@ -1,0 +1,38 @@
+# ============================================================================
+# DataAgent Backend Systemd Service 配置模板
+# ============================================================================
+# 使用说明：
+# 1. 复制此文件到 /etc/systemd/system/dataagent-backend.service
+# 2. 修改 User、WorkingDirectory、ExecStart 等参数
+# 3. 重载配置：sudo systemctl daemon-reload
+# 4. 启动服务：sudo systemctl start dataagent-backend
+# 5. 开机自启：sudo systemctl enable dataagent-backend
+# ============================================================================
+
+[Unit]
+Description=DataAgent Backend Service
+Documentation=https://github.com/your-org/DataAgent
+After=network.target
+
+[Service]
+Type=simple
+User=root
+Group=root
+WorkingDirectory=/opt/dataagent
+ExecStart=/usr/bin/java -Xmx4g -Xms2g -XX:+UseG1GC -Dfile.encoding=UTF-8 -jar /opt/dataagent/dataagent-backend.jar
+Restart=on-failure
+RestartSec=10s
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=dataagent-backend
+
+# 环境变量（可选）
+# Environment="JAVA_HOME=/usr/lib/jvm/java-17"
+# Environment="SPRING_PROFILES_ACTIVE=production"
+
+# 资源限制（可选）
+# LimitNOFILE=65536
+# LimitNPROC=4096
+
+[Install]
+WantedBy=multi-user.target
