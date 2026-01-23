@@ -4,6 +4,8 @@ server:
 
 # 存储 DataAgent 业务数据的数据库，并非Agent分析数据的来源
 spring:
+  main:
+    allow-bean-definition-overriding: true
   datasource:
     # 数据库类型标识：mysql | dameng
     platform: ${DATASOURCE_PLATFORM:mysql}
