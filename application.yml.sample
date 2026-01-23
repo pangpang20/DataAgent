@@ -164,8 +164,8 @@ spring:
         
         # Python 代码执行器配置
         code-executor:
-          # 运行环境：local（本地）或 docker（Docker容器）
-          # 生产环境建议使用 docker，更安全隔离
+          # 运行环境：local（本地环境执行）或 docker（Docker 容器内启动子容器执行）
+          # 注意：在 Docker 部署模式下，建议使用 local 模式（利用镜像自带的 Python），以避免 Docker-in-Docker 的复杂权限配置
           code-pool-executor: local
           # Python 执行的最大重试次数
           python-max-tries-count: 5
