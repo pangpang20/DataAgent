@@ -22,7 +22,7 @@
         <el-button type="primary" @click="goBack" circle>
           <el-icon><ArrowLeft /></el-icon>
         </el-button>
-        <el-avatar :src="getAvatarUrl(agent.avatar)" size="large">{{ agent.name }}</el-avatar>
+        <el-avatar :src="getAvatarUrl(agent.avatar)" size="large" @error="handleImageError">{{ agent.name }}</el-avatar>
         <el-button type="danger" @click="clearAllSessions" circle>
           <el-icon><Delete /></el-icon>
         </el-button>
@@ -97,6 +97,7 @@
   import { ArrowLeft, Plus, Delete, Star, StarFilled, Edit } from '@element-plus/icons-vue';
   import { type Agent } from '../../services/agent';
   import { type ChatSession } from '../../services/chat';
+  import { generateFallbackAvatar, getAvatarUrl } from '../../services/avatar';
 
   // 扩展ChatSession接口以包含编辑相关属性
   interface ExtendedChatSession extends ChatSession {
@@ -258,13 +259,6 @@
         router.push(`/agent/${agentId.value}`);
       };
 
-      const getAvatarUrl = (url: string | undefined) => {
-        if (!url) return '';
-        if (url.startsWith('data:')) return url;
-        const separator = url.includes('?') ? '&' : '?';
-        return `${url}${separator}t=${new Date().getTime()}`;
-      };
-
       const loadSessions = async () => {
         try {
           sessions.value = await ChatService.getAgentSessions(parseInt(agentId.value));
@@ -325,6 +319,15 @@
         }
       };
 
+      // 图片加载失败处理
+      const handleImageError = () => {
+        console.error('头像图片加载失败');
+        // 只有当当前没有头像或者是默认SVG时才重新生成
+        if (!props.agent.avatar || props.agent.avatar.startsWith('data:')) {
+          props.agent.avatar = generateFallbackAvatar();
+        }
+      };
+
       const clearAllSessions = async () => {
         try {
           await ElMessageBox.confirm('确定要清空所有会话吗？此操作不可恢复。', '确认清空', {
@@ -369,6 +372,7 @@
         createNewSession,
         togglePinSession,
         deleteSession,
+        handleImageError,
         clearAllSessions,
         startEditSessionTitle,
         saveSessionTitle,

@@ -105,7 +105,7 @@
               <!-- 文本类型消息使用原有布局 -->
               <div v-else :class="['message', message.role]">
                 <div class="message-avatar">
-                  <el-avatar :size="32" :src="message.role === 'assistant' ? getAvatarUrl(agent.avatar) : ''">
+                  <el-avatar :size="32" :src="message.role === 'assistant' ? getAvatarUrl(agent.avatar) : ''" @error="handleImageError">
                     {{ message.role === 'user' ? '我' : 'AI' }}
                   </el-avatar>
                 </div>
@@ -325,6 +325,7 @@
   import PresetQuestions from '@/components/run/PresetQuestions.vue';
   import Markdown from '@/components/run/Markdown.vue';
   import ResultSetDisplay from '@/components/run/ResultSetDisplay.vue';
+  import { generateFallbackAvatar, getAvatarUrl } from '@/services/avatar';
 
   // 扩展Window接口以包含自定义方法
   declare global {
@@ -463,6 +464,15 @@
         }
       };
 
+      // 图片加载失败处理
+      const handleImageError = () => {
+        console.error('头像图片加载失败');
+        // 只有当当前没有头像或者是默认SVG时才重新生成
+        if (!agent.value.avatar || agent.value.avatar.startsWith('data:')) {
+          agent.value.avatar = generateFallbackAvatar();
+        }
+      };
+
       const selectSession = async (session: ChatSession | null) => {
         // 将源会话状态保存，然后切换到目标会话
         if (currentSession.value) {
@@ -484,13 +494,6 @@
           ElMessage.error('加载消息失败');
           console.error('加载消息失败:', error);
         }
-      };
-
-      const getAvatarUrl = (url: string | undefined) => {
-        if (!url) return '';
-        if (url.startsWith('data:')) return url;
-        const separator = url.includes('?') ? '&' : '?';
-        return `${url}${separator}t=${new Date().getTime()}`;
       };
 
       const sendMessage = async () => {
@@ -570,9 +573,11 @@
                     content: node[0].text, // 保存原始JSON数据
                     messageType: 'result-set', // 使用特殊的messageType
                   };
-                  return ChatService.saveMessage(sessionId, aiMessage).catch(error => {
-                    console.error('保存AI消息失败:', error);
-                  });
+                  return ChatService.saveMessage(sessionId, aiMessage)
+                    .then(() => {})
+                    .catch(error => {
+                      console.error('保存AI消息失败:', error);
+                    });
                 }
               } catch (error) {
                 console.error('解析结果集JSON失败:', error);
@@ -589,9 +594,11 @@
               messageType: 'html',
             };
 
-            return ChatService.saveMessage(sessionId, aiMessage).catch(error => {
-              console.error('保存AI消息失败:', error);
-            });
+            return ChatService.saveMessage(sessionId, aiMessage)
+              .then(() => {})
+              .catch(error => {
+                console.error('保存AI消息失败:', error);
+              });
           };
 
           // 反转plainReport的值
@@ -637,7 +644,7 @@
                   sessionState.htmlReportSize = sessionState.htmlReportContent.length;
 
                   // 更新显示：当前已经收集了多少字节的报告
-                  const reportNode: GraphNodeResponse[] = sessionState.nodeBlocks.find(
+                  const reportNode = sessionState.nodeBlocks.find(
                     (block: GraphNodeResponse[]) =>
                       block.length > 0 &&
                       block[0].nodeName === 'ReportGeneratorNode' &&
@@ -654,15 +661,15 @@
                     ]);
                   }
                 }
-                // 处理Markdown报告
-                else if (response.textType === 'MARK_DOWN') {
-                  sessionState.markdownReportContent += response.text;
-                  const reportNode: GraphNodeResponse[] = sessionState.nodeBlocks.find(
-                    (block: GraphNodeResponse[]) =>
-                      block.length > 0 &&
-                      block[0].nodeName === 'ReportGeneratorNode' &&
-                      block[0].textType === 'MARK_DOWN',
-                  );
+                  // 处理Markdown报告
+                  else if (response.textType === 'MARK_DOWN') {
+                    sessionState.markdownReportContent += response.text;
+                    const reportNode = sessionState.nodeBlocks.find(
+                      (block: GraphNodeResponse[]) =>
+                        block.length > 0 &&
+                        block[0].nodeName === 'ReportGeneratorNode' &&
+                        block[0].textType === 'MARK_DOWN',
+                    );
                   if (reportNode) {
                     reportNode[0].text = `正在收集Markdown报告... 已收集 ${sessionState.markdownReportContent.length} 字节`;
                   } else {
@@ -1006,7 +1013,8 @@
               // 如果type不是table，不生成HTML，由模板中的ResultSetDisplay组件处理
             } catch (error) {
               console.error('解析结果集JSON失败:', error);
-              content += `<div class="result-set-error">解析结果集数据失败: ${error.message}</div>`;
+              const errMsg = error instanceof Error ? error.message : '未知错误';
+              content += `<div class="result-set-error">解析结果集数据失败: ${errMsg}</div>`;
             }
           } else {
             console.warn(`不支持的 textType: ${node[idx].textType}`);
@@ -1277,6 +1285,7 @@
         getMarkdownContentFromNode,
         selectSession,
         sendMessage,
+        handleImageError,
         formatMessageContent,
         formatNodeContent,
         generateNodeHtml,

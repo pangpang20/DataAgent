@@ -120,7 +120,7 @@
 
                   <!-- 头像区域 -->
                   <div class="agent-avatar">
-                    <el-avatar :size="48" :src="getAvatarUrl(agent.avatar)">
+                    <el-avatar :size="48" :src="getAvatarUrl(agent.avatar)" @error="handleImageError(agent)">
                       {{ agent.name }}
                     </el-avatar>
                   </div>
@@ -183,6 +183,7 @@
   import BaseLayout from '@/layouts/BaseLayout.vue';
   import agentService from '@/services/agent';
   import type { Agent } from '@/services/agent';
+  import { generateFallbackAvatar, getAvatarUrl } from '@/services/avatar';
 
   export default defineComponent({
     name: 'AgentList',
@@ -282,6 +283,15 @@
         router.push('/agent/create');
       };
 
+      // 图片加载失败处理
+      const handleImageError = (agent: Agent) => {
+        console.error('头像图片加载失败:', agent.name);
+        // 只有当当前没有头像或者是默认SVG时才重新生成
+        if (!agent.avatar || agent.avatar.startsWith('data:')) {
+          agent.avatar = generateFallbackAvatar();
+        }
+      };
+
       // 删除智能体
       const handleDeleteAgent = async (agent: Agent) => {
         try {
@@ -313,13 +323,6 @@
         loadAgents();
       });
 
-      const getAvatarUrl = (url: string | undefined) => {
-        if (!url) return '';
-        if (url.startsWith('data:')) return url;
-        const separator = url.includes('?') ? '&' : '?';
-        return `${url}${separator}t=${new Date().getTime()}`;
-      };
-
       return {
         loading,
         activeFilter,
@@ -337,6 +340,7 @@
         formatTime,
         goToCreateAgent,
         handleDeleteAgent,
+        handleImageError,
         getAvatarUrl,
         Search,
         Refresh,

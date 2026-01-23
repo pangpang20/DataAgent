@@ -182,6 +182,7 @@
   import BaseLayout from '../layouts/BaseLayout.vue';
   import agentService from '@/services/agent';
   import { fileUploadApi } from '@/services/fileUpload';
+  import { generateFallbackAvatar, getAvatarUrl } from '@/services/avatar';
 
   export default defineComponent({
     name: 'AgentCreate',
@@ -207,33 +208,12 @@
 
       // 组件挂载时生成随机头像
       onMounted(() => {
-        agentForm.avatar = generateFallbackAvatar();
+        if (!agentForm.avatar) {
+          agentForm.avatar = generateFallbackAvatar();
+        }
       });
 
-      // 备用头像生成函数
-      const generateFallbackAvatar = (): string => {
-        const colors = [
-          '3B82F6',
-          '8B5CF6',
-          '10B981',
-          'F59E0B',
-          'EF4444',
-          '6366F1',
-          'EC4899',
-          '14B8A6',
-        ];
-        const randomColor = colors[Math.floor(Math.random() * colors.length)];
-        const letters = ['AI', '数据', '智能', 'DA', 'BI', 'ML', 'DL', 'NL'];
-        const randomLetter = letters[Math.floor(Math.random() * letters.length)];
-
-        const svg = `<svg width="200" height="200" xmlns="http://www.w3.org/2000/svg">
-        <rect width="200" height="200" fill="#${randomColor}"/>
-        <text x="100" y="120" font-family="Arial, sans-serif" font-size="48" font-weight="bold" text-anchor="middle" fill="white">${randomLetter}</text>
-      </svg>`;
-
-        return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
-      };
-
+      // 复制自 BaseSetting 的代码
       const goBack = () => {
         router.push('/agents');
       };
@@ -267,8 +247,10 @@
           return;
         }
 
+        let previousAvatar = '';
         try {
           uploading.value = true;
+          previousAvatar = agentForm.avatar;
 
           // 显示上传中的预览（使用base64）
           const reader = new FileReader();
@@ -292,8 +274,12 @@
         } catch (error) {
           console.error('头像上传失败:', error);
           ElMessage.error('头像上传失败: ' + (error instanceof Error ? error.message : '未知错误'));
-          // 恢复之前的头像
-          agentForm.avatar = generateFallbackAvatar();
+          // 恢复之前的头像，如果之前没有头像则生成一个
+          if (!previousAvatar) {
+            agentForm.avatar = generateFallbackAvatar();
+          } else {
+            agentForm.avatar = previousAvatar;
+          }
         } finally {
           uploading.value = false;
           // 清空文件输入

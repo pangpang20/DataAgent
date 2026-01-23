@@ -35,7 +35,12 @@
               @mouseenter="showHeaderAvatarButton = true"
               @mouseleave="showHeaderAvatarButton = false"
             >
-              <el-avatar :src="getAvatarUrl(agent.avatar)" size="large" class="header-avatar">
+              <el-avatar
+                :src="getAvatarUrl(agent.avatar)"
+                size="large"
+                class="header-avatar"
+                @error="handleImageError"
+              >
                 {{ agent.name }}
               </el-avatar>
               <div v-if="showHeaderAvatarButton" class="avatar-overlay-header">
@@ -189,6 +194,7 @@
   import NotFound from '@/views/NotFound.vue';
   import { Agent } from '@/services/agent';
   import { fileUploadApi } from '@/services/fileUpload';
+  import { generateFallbackAvatar, getAvatarUrl } from '@/services/avatar';
 
   export default defineComponent({
     name: 'AgentDetail',
@@ -219,7 +225,7 @@
       // 响应式数据
       const activeMenuIndex: Ref<string> = ref('basic');
       const agent: Ref<Agent> = ref({
-        id: '',
+        id: 0,
         name: 'loading...',
         description: '',
         status: 'draft',
@@ -231,12 +237,21 @@
         adminId: '',
         tags: '',
         humanReviewEnabled: false,
-      } as Agent);
+      } as unknown as Agent);
 
       const headerFileInput = ref<HTMLInputElement | null>(null);
       const headerUploading = ref(false);
       const showHeaderAvatarButton = ref(false);
       const originalHeaderAvatar = ref<string>('');
+
+      // 图片加载失败处理
+      const handleImageError = () => {
+        console.error('头像图片加载失败');
+        // 只有当当前没有头像或者是默认SVG时才重新生成，避免上传成功的图因为网络抖动被重置
+        if (!agent.value.avatar || agent.value.avatar.startsWith('data:')) {
+          agent.value.avatar = generateFallbackAvatar();
+        }
+      };
 
       const triggerHeaderFileUpload = () => {
         if (headerFileInput.value) {
@@ -311,7 +326,7 @@
 
       const loadAgent = async () => {
         try {
-          const id = router.currentRoute.value.params.id;
+          const id = Number(router.currentRoute.value.params.id);
           const loadAgent = await AgentService.get(id);
           if (loadAgent) {
             agent.value = loadAgent;
@@ -328,14 +343,6 @@
         await loadAgent();
       });
 
-      const getAvatarUrl = (url: string | undefined) => {
-        if (!url) return '';
-        if (url.startsWith('data:')) return url; // Base64
-        // 添加时间戳防止缓存
-        const separator = url.includes('?') ? '&' : '?';
-        return `${url}${separator}t=${new Date().getTime()}`;
-      };
-
       return {
         ArrowLeft,
         agent,
@@ -348,6 +355,7 @@
         triggerHeaderFileUpload,
         handleHeaderFileUpload,
         getAvatarUrl,
+        handleImageError,
       };
     },
   });
