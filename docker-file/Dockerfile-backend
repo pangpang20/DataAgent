@@ -15,17 +15,16 @@
 # 使用eclipse-temurin镜像（基于Ubuntu Jammy，包含Java 17和Python 3）
 FROM eclipse-temurin:17-jdk-jammy
 
-# 验证Python是否可用，不执行RUN指令以避免runc错误
 WORKDIR /app
 
-# 设置Python环境变量（为LocalCodePoolExecutorService提供指寻）
-ENV PYTHON_HOME=/usr/bin/python3
-ENV PATH="${PYTHON_HOME}:${PATH}"
+# 确保 /usr/bin 在 PATH 中（python3 通常位于此处）
+ENV PATH="/usr/bin:${PATH}"
 
 # 直接复制本地已构建的jar包
 COPY data-agent-management/target/spring-ai-audaque-data-agent-management-1.0.0-SNAPSHOT.jar /app/app.jar
 
 EXPOSE 8065
 
-# 启动命令,优先使用外部配置文件
-ENTRYPOINT ["java", "-jar", "app.jar", "--spring.config.location=classpath:application.yml,optional:file:/app/config/application.yml"]
+# 启动命令，优先使用外部配置文件
+# 注意：ubuntu jammy 基础镜像自带 python3，位于 /usr/bin/python3
+ENTRYPOINT ["/bin/sh", "-c", "python3 --version && java -jar app.jar --spring.config.location=classpath:application.yml,optional:file:/app/config/application.yml"]
