@@ -17,6 +17,7 @@ package com.audaque.cloud.ai.dataagent.config;
 
 import com.audaque.cloud.ai.dataagent.properties.FileStorageProperties;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
@@ -26,6 +27,7 @@ import java.nio.file.Paths;
 /**
  * Web配置类
  */
+@Slf4j
 @Configuration
 @AllArgsConstructor
 public class WebConfig implements WebMvcConfigurer {
@@ -35,10 +37,13 @@ public class WebConfig implements WebMvcConfigurer {
 	@Override
 	public void addResourceHandlers(ResourceHandlerRegistry registry) {
 		String uploadDir = Paths.get(fileStorageProperties.getPath()).toAbsolutePath().toString();
+		String urlPrefix = fileStorageProperties.getUrlPrefix();
 
-		registry.addResourceHandler(fileStorageProperties.getUrlPrefix() + "/**")
-			.addResourceLocations("file:" + uploadDir + "/")
-			.setCachePeriod(3600);
+		log.info("配置静态资源映射 - URL前缀: {}, 物理路径: {}", urlPrefix, uploadDir);
+
+		registry.addResourceHandler(urlPrefix + "/**")
+				.addResourceLocations("file:" + uploadDir + "/")
+				.setCachePeriod(3600);
 	}
 
 }
