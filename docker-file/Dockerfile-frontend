@@ -12,30 +12,15 @@
 #See the License for the specific language governing permissions and
 #limitations under the License.
 
-# 构建阶段
-# 注意：如果node:20-alpine或nginx:alpine的预拖取失败，需要配置国内镜像源
-# 配置方法：编辑/etc/docker/daemon.json，添加registry-mirrors字段
-FROM node:20-alpine AS builder
-
-WORKDIR /app
-
-# 复制整个前端项目
-COPY data-agent-frontend ./
-
-# 启用 corepack 并安装依赖
-RUN corepack enable && \
-    corepack prepare yarn@stable --activate && \
-    yarn install
-
-# 构建生产版本
-RUN yarn build
-
-
-# 运行阶段
+# 直接使用nginx运行阶段，跳过构建步骤以绕过runc权限问题
 FROM nginx:alpine
 
-# 复制构建结果到nginx目录
-COPY --from=builder /app/dist /usr/share/nginx/html
+# 复制本地已构建好的dist目录到nginx目录
+# 注意：路径相对于docker-compose.yml所在目录的父目录
+COPY data-agent-frontend/dist /usr/share/nginx/html
+
+# 复制nginx配置文件
+COPY docker-file/config/nginx.conf /etc/nginx/nginx.conf
 
 # 暴露端口
 EXPOSE 3000
