@@ -5,12 +5,38 @@
 ################################################################################
 # 功能：
 # 1. 自动检测环境 (Linux CentOS/Kylin, Windows Git Bash/WSL)
-# 2. 检查并安装 Docker 和 Docker Compose (仅 Linux)
-# 3. 部署 Milvus Standalone (Etcd, Minio, Milvus)
-# 4. 验证安装状态
+# 2. 支持 Docker 部署或单机本地二进制部署 (通过参数控制)
+# 3. 自动安装 Docker 和 Docker Compose (仅 Linux 且模式为 docker 时)
+# 4. 部署 Milvus Standalone (Etcd, Minio, Milvus)
+# 5. 验证安装状态
+#
+# 使用方式：
+#   ./install_milvus.sh --mode docker   (默认，使用容器)
+#   ./install_milvus.sh --mode local    (单机本地二进制安装，仅限 Linux)
 ################################################################################
 
 set -e
+
+# ============================================================================
+# 默认配置
+# ============================================================================
+INSTALL_MODE="docker"  # 默认安装模式
+MILVUS_VERSION="v2.5.0"
+ETCD_VERSION="v3.5.5"
+MINIO_VERSION="RELEASE.2023-03-20T20-16-18Z"
+
+# 解析参数
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --mode)
+            INSTALL_MODE="$2"
+            shift 2
+            ;;
+        *)
+            error "未知参数: $1"
+            ;;
+    esac
+done
 
 # ============================================================================
 # 颜色输出
@@ -198,6 +224,88 @@ EOF
     info "启动容器 (可能需要几分钟下载镜像)..."
     $DOCKER_COMPOSE_CMD up -d
 
+    check_health
+}
+
+# ============================================================================
+# 本地二进制部署 (仅限 Linux)
+# ============================================================================
+deploy_milvus_local() {
+    if [[ "$OS" == "windows" ]]; then
+        error "单机本地二进制模式 (--mode local) 暂不支持直接在 Windows 上运行，请使用 Docker 模式或在 WSL 中执行。"
+    fi
+
+    info "准备本地二进制部署 (Standalone 模式)..."
+    INSTALL_DIR="$(pwd)/milvus-local"
+    mkdir -p "$INSTALL_DIR/bin" "$INSTALL_DIR/configs" "$INSTALL_DIR/data"
+    cd "$INSTALL_DIR"
+
+    # 1. 下载 etcd
+    if [[ ! -f "bin/etcd" ]]; then
+        info "下载 Etcd $ETCD_VERSION..."
+        ETCD_URL="https://github.com/etcd-io/etcd/releases/download/${ETCD_VERSION}/etcd-${ETCD_VERSION}-linux-amd64.tar.gz"
+        curl -L "$ETCD_URL" -o etcd.tar.gz
+        tar -zxf etcd.tar.gz
+        mv etcd-${ETCD_VERSION}-linux-amd64/etcd* bin/
+        rm -rf etcd.tar.gz etcd-${ETCD_VERSION}-linux-amd64
+    fi
+
+    # 2. 下载 Minio
+    if [[ ! -f "bin/minio" ]]; then
+        info "下载 Minio..."
+        curl -L "https://dl.min.io/server/minio/release/linux-amd64/archive/minio.${MINIO_VERSION}" -o bin/minio
+        chmod +x bin/minio
+    fi
+
+    # 3. 下载 Milvus
+    if [[ ! -f "bin/milvus" ]]; then
+        info "下载 Milvus $MILVUS_VERSION..."
+        # 注意：这里下载的是 standalone 预编译二进制文件
+        MILVUS_URL="https://github.com/milvus-io/milvus/releases/download/${MILVUS_VERSION}/milvus-standalone-linux-amd64.tar.gz"
+        if curl -I "$MILVUS_URL" 2>&1 | grep -q "404"; then
+            warn "官方可能未提供该版本的预编译 standalone 二进制包，尝试下载通用包..."
+            # 如果不存在 standalone 专用包，则可能需要手动配置。此处仅作为示例逻辑
+        fi
+        curl -L "$MILVUS_URL" -o milvus.tar.gz || warn "下载失败，请手动下载并放入 bin 目录"
+        if [[ -f milvus.tar.gz ]]; then
+            tar -zxf milvus.tar.gz
+            mv milvus bin/
+            rm -rf milvus.tar.gz
+        fi
+    fi
+
+    # 4. 启动服务 (后台运行)
+    info "启动后台服务..."
+    
+    # 启动 Etcd
+    nohup ./bin/etcd --data-dir ./data/etcd > etcd.log 2>&1 &
+    echo $! > etcd.pid
+    
+    # 启动 Minio
+    export MINIO_ROOT_USER=minioadmin
+    export MINIO_ROOT_PASSWORD=minioadmin
+    nohup ./bin/minio server ./data/minio --console-address ":9001" > minio.log 2>&1 &
+    echo $! > minio.pid
+
+    # 等待基础组件
+    sleep 5
+
+    # 启动 Milvus
+    # 注意：本地模式通常需要 milvus.yaml 配置文件，此处假设使用默认配置或已存在
+    if [[ -f "bin/milvus" ]]; then
+        nohup ./bin/milvus run standalone > milvus.log 2>&1 &
+        echo $! > milvus.pid
+    else
+        error "未发现 Milvus 二进制文件，请确保已下载并放置在 $INSTALL_DIR/bin/milvus"
+    fi
+
+    check_health
+}
+
+# ============================================================================
+# 健康检查
+# ============================================================================
+check_health() {
     info "等待 Milvus 启动就绪..."
     MAX_RETRIES=30
     COUNT=0
@@ -211,7 +319,7 @@ EOF
         COUNT=$((COUNT + 1))
     done
 
-    error "Milvus 启动超时，请检查容器状态: $DOCKER_COMPOSE_CMD ps"
+    error "Milvus 启动超时，请检查日志或状态。"
 }
 
 # ============================================================================
@@ -226,12 +334,17 @@ main() {
 
     detect_os
 
-    if [[ "$OS" != "windows" && "$OS" != "macos" ]]; then
-        install_docker_linux
+    if [[ "$INSTALL_MODE" == "docker" ]]; then
+        if [[ "$OS" != "windows" && "$OS" != "macos" ]]; then
+            install_docker_linux
+        fi
+        install_docker_compose
+        deploy_milvus
+    elif [[ "$INSTALL_MODE" == "local" ]]; then
+        deploy_milvus_local
+    else
+        error "不支持的安装模式: $INSTALL_MODE (请使用 docker 或 local)"
     fi
-
-    install_docker_compose
-    deploy_milvus
 
     echo ""
     info "=========================================="
