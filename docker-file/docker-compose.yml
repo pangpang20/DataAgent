@@ -21,8 +21,10 @@ services:
   mysql:
     image: mysql:8.0
     pull_policy: never
+    privileged: true
     security_opt:
       - label:disable
+      - apparmor:unconfined
     container_name: data-agent-mysql-inner
     environment:
       MYSQL_ROOT_PASSWORD: root
@@ -43,8 +45,10 @@ services:
     build:
       context: ..
       dockerfile: ./docker-file/Dockerfile-backend
+    privileged: true
     security_opt:
       - label:disable
+      - apparmor:unconfined
     container_name: audaque-data-agent-backend
     environment:
       - DATA_AGENT_DATASOURCE_URL=jdbc:mysql://mysql:3306/data_agent?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
@@ -69,8 +73,10 @@ services:
     build:
       context: ..
       dockerfile: ./docker-file/Dockerfile-frontend
+    privileged: true
     security_opt:
       - label:disable
+      - apparmor:unconfined
     container_name: audaque-data-agent-frontend
     ports:
       - "3000:3000"  # 只暴露前端端口
@@ -86,6 +92,10 @@ services:
   mysql-data:
     image: mysql:8.0
     pull_policy: never
+    privileged: true
+    security_opt:
+      - label:disable
+      - apparmor:unconfined
     container_name: data-agent-mysql-datasource
     restart: always
     environment:
@@ -105,6 +115,10 @@ services:
   postgres-data:
     image: postgres:15
     pull_policy: never
+    privileged: true
+    security_opt:
+      - label:disable
+      - apparmor:unconfined
     container_name: data-agent-postgres-datasource
     restart: always
     environment:
