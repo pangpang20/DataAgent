@@ -127,7 +127,12 @@ spring:
     
     # 向量存储配置
     vectorstore:
-      type: simple                          # 向量存储类型：simple（内存）或 elasticsearch
+      # 如果使用 Milvus，需要配置以下参数：
+      # milvus:
+      #   client:
+      #     host: localhost
+      #     port: 19530
+      #   collection-name: data_agent_vector
       # 如果使用 Elasticsearch，需要配置以下参数：
       # elasticsearch:
       #   uris: http://localhost:9200
@@ -137,8 +142,9 @@ spring:
     # DataAgent 专属配置
     alibaba:
       data-agent:
-        # 向量检索配置
+        # 向量库类型：simple（内存）, milvus, elasticsearch
         vector-store:
+          type: simple                      # 默认使用内存向量库
           table-topk-limit: 10              # 表检索返回的最大数量
           table-similarity-threshold: 0.2   # 表检索的相似度阈值
           default-topk-limit: 8             # 默认检索返回数量

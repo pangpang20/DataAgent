@@ -45,6 +45,13 @@ DB_NAME="cyl"
 DB_USER="cyl"                    # 达梦数据库默认用户：SYSDBA
 DB_PASSWORD="Audaque@123"        # 达梦数据库默认密码：SYSDBA
 
+# 向量库配置
+# 支持的向量库类型：simple（默认，内存模式）、milvus（生产环境推荐）
+VECTOR_STORE_TYPE="simple"       # 向量库类型：simple | milvus
+MILVUS_HOST="127.0.0.1"          # Milvus 地址
+MILVUS_PORT="19530"              # Milvus 端口
+MILVUS_COLLECTION="data_agent"   # Milvus 集合名称
+
 # ============================================================================
 # 颜色输出
 # ============================================================================
@@ -498,6 +505,25 @@ deploy_backend() {
                    -e "s|password: Audaque@123|password: $ESC_DB_PASS|g" \
                    "$DEPLOY_DIR/application.yml"
             info "已自动更新配置文件中的 MySQL 数据库连接信息"
+        fi
+
+        # 配置向量库
+        info "正在配置向量库类型为: $VECTOR_STORE_TYPE"
+        sed -i "s|type: simple|type: $VECTOR_STORE_TYPE|g" "$DEPLOY_DIR/application.yml"
+
+        if [ "$VECTOR_STORE_TYPE" = "milvus" ]; then
+            info "正在应用 Milvus 配置..."
+            # 取消注释 Milvus 配置并替换变量
+            # 注意：这里需要根据 application.yml.sample 的具体结构进行匹配替换
+            sed -i "/# milvus:/s/^      # //" "$DEPLOY_DIR/application.yml"
+            sed -i "/#   client:/s/^      # //" "$DEPLOY_DIR/application.yml"
+            sed -i "/#     host:/s/^      # //" "$DEPLOY_DIR/application.yml"
+            sed -i "/#     port:/s/^      # //" "$DEPLOY_DIR/application.yml"
+            sed -i "/#   collection-name:/s/^      # //" "$DEPLOY_DIR/application.yml"
+            
+            sed -i "s|host: localhost|host: $MILVUS_HOST|g" "$DEPLOY_DIR/application.yml"
+            sed -i "s|port: 19530|port: $MILVUS_PORT|g" "$DEPLOY_DIR/application.yml"
+            sed -i "s|collection-name: data_agent_vector|collection-name: $MILVUS_COLLECTION|g" "$DEPLOY_DIR/application.yml"
         fi
     fi
 }

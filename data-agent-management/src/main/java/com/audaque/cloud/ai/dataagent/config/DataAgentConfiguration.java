@@ -93,10 +93,10 @@ public class DataAgentConfiguration implements DisposableBean {
 	public RestClientCustomizer restClientCustomizer(@Value("${rest.connect.timeout:600}") long connectTimeout,
 			@Value("${rest.read.timeout:600}") long readTimeout) {
 		return restClientBuilder -> restClientBuilder
-			.requestFactory(ClientHttpRequestFactoryBuilder.reactor().withCustomizer(factory -> {
-				factory.setConnectTimeout(Duration.ofSeconds(connectTimeout));
-				factory.setReadTimeout(Duration.ofSeconds(readTimeout));
-			}).build());
+				.requestFactory(ClientHttpRequestFactoryBuilder.reactor().withCustomizer(factory -> {
+					factory.setConnectTimeout(Duration.ofSeconds(connectTimeout));
+					factory.setReadTimeout(Duration.ofSeconds(readTimeout));
+				}).build());
 	}
 
 	@Bean
@@ -104,8 +104,8 @@ public class DataAgentConfiguration implements DisposableBean {
 	public WebClient.Builder webClientBuilder(@Value("${webclient.response.timeout:600}") long responseTimeout) {
 
 		return WebClient.builder()
-			.clientConnector(new ReactorClientHttpConnector(
-					HttpClient.create().responseTimeout(Duration.ofSeconds(responseTimeout))));
+				.clientConnector(new ReactorClientHttpConnector(
+						HttpClient.create().responseTimeout(Duration.ofSeconds(responseTimeout))));
 	}
 
 	@Bean
@@ -174,75 +174,76 @@ public class DataAgentConfiguration implements DisposableBean {
 		};
 
 		StateGraph stateGraph = new StateGraph(NL2SQL_GRAPH_NAME, keyStrategyFactory)
-			.addNode(INTENT_RECOGNITION_NODE, nodeBeanUtil.getNodeBeanAsync(IntentRecognitionNode.class))
-			.addNode(EVIDENCE_RECALL_NODE, nodeBeanUtil.getNodeBeanAsync(EvidenceRecallNode.class))
-			.addNode(QUERY_ENHANCE_NODE, nodeBeanUtil.getNodeBeanAsync(QueryEnhanceNode.class))
-			.addNode(SCHEMA_RECALL_NODE, nodeBeanUtil.getNodeBeanAsync(SchemaRecallNode.class))
-			.addNode(TABLE_RELATION_NODE, nodeBeanUtil.getNodeBeanAsync(TableRelationNode.class))
-			.addNode(FEASIBILITY_ASSESSMENT_NODE, nodeBeanUtil.getNodeBeanAsync(FeasibilityAssessmentNode.class))
-			.addNode(SQL_GENERATE_NODE, nodeBeanUtil.getNodeBeanAsync(SqlGenerateNode.class))
-			.addNode(PLANNER_NODE, nodeBeanUtil.getNodeBeanAsync(PlannerNode.class))
-			.addNode(PLAN_EXECUTOR_NODE, nodeBeanUtil.getNodeBeanAsync(PlanExecutorNode.class))
-			.addNode(SQL_EXECUTE_NODE, nodeBeanUtil.getNodeBeanAsync(SqlExecuteNode.class))
-			.addNode(PYTHON_GENERATE_NODE, nodeBeanUtil.getNodeBeanAsync(PythonGenerateNode.class))
-			.addNode(PYTHON_EXECUTE_NODE, nodeBeanUtil.getNodeBeanAsync(PythonExecuteNode.class))
-			.addNode(PYTHON_ANALYZE_NODE, nodeBeanUtil.getNodeBeanAsync(PythonAnalyzeNode.class))
-			.addNode(REPORT_GENERATOR_NODE, nodeBeanUtil.getNodeBeanAsync(ReportGeneratorNode.class))
-			.addNode(SEMANTIC_CONSISTENCY_NODE, nodeBeanUtil.getNodeBeanAsync(SemanticConsistencyNode.class))
-			.addNode(HUMAN_FEEDBACK_NODE, nodeBeanUtil.getNodeBeanAsync(HumanFeedbackNode.class));
+				.addNode(INTENT_RECOGNITION_NODE, nodeBeanUtil.getNodeBeanAsync(IntentRecognitionNode.class))
+				.addNode(EVIDENCE_RECALL_NODE, nodeBeanUtil.getNodeBeanAsync(EvidenceRecallNode.class))
+				.addNode(QUERY_ENHANCE_NODE, nodeBeanUtil.getNodeBeanAsync(QueryEnhanceNode.class))
+				.addNode(SCHEMA_RECALL_NODE, nodeBeanUtil.getNodeBeanAsync(SchemaRecallNode.class))
+				.addNode(TABLE_RELATION_NODE, nodeBeanUtil.getNodeBeanAsync(TableRelationNode.class))
+				.addNode(FEASIBILITY_ASSESSMENT_NODE, nodeBeanUtil.getNodeBeanAsync(FeasibilityAssessmentNode.class))
+				.addNode(SQL_GENERATE_NODE, nodeBeanUtil.getNodeBeanAsync(SqlGenerateNode.class))
+				.addNode(PLANNER_NODE, nodeBeanUtil.getNodeBeanAsync(PlannerNode.class))
+				.addNode(PLAN_EXECUTOR_NODE, nodeBeanUtil.getNodeBeanAsync(PlanExecutorNode.class))
+				.addNode(SQL_EXECUTE_NODE, nodeBeanUtil.getNodeBeanAsync(SqlExecuteNode.class))
+				.addNode(PYTHON_GENERATE_NODE, nodeBeanUtil.getNodeBeanAsync(PythonGenerateNode.class))
+				.addNode(PYTHON_EXECUTE_NODE, nodeBeanUtil.getNodeBeanAsync(PythonExecuteNode.class))
+				.addNode(PYTHON_ANALYZE_NODE, nodeBeanUtil.getNodeBeanAsync(PythonAnalyzeNode.class))
+				.addNode(REPORT_GENERATOR_NODE, nodeBeanUtil.getNodeBeanAsync(ReportGeneratorNode.class))
+				.addNode(SEMANTIC_CONSISTENCY_NODE, nodeBeanUtil.getNodeBeanAsync(SemanticConsistencyNode.class))
+				.addNode(HUMAN_FEEDBACK_NODE, nodeBeanUtil.getNodeBeanAsync(HumanFeedbackNode.class));
 
 		stateGraph.addEdge(START, INTENT_RECOGNITION_NODE)
-			.addConditionalEdges(INTENT_RECOGNITION_NODE, edge_async(new IntentRecognitionDispatcher()),
-					Map.of(EVIDENCE_RECALL_NODE, EVIDENCE_RECALL_NODE, END, END))
-			.addEdge(EVIDENCE_RECALL_NODE, QUERY_ENHANCE_NODE)
-			.addConditionalEdges(QUERY_ENHANCE_NODE, edge_async(new QueryEnhanceDispatcher()),
-					Map.of(SCHEMA_RECALL_NODE, SCHEMA_RECALL_NODE, END, END))
-			.addConditionalEdges(SCHEMA_RECALL_NODE, edge_async(new SchemaRecallDispatcher()),
-					Map.of(TABLE_RELATION_NODE, TABLE_RELATION_NODE, END, END))
+				.addConditionalEdges(INTENT_RECOGNITION_NODE, edge_async(new IntentRecognitionDispatcher()),
+						Map.of(EVIDENCE_RECALL_NODE, EVIDENCE_RECALL_NODE, END, END))
+				.addEdge(EVIDENCE_RECALL_NODE, QUERY_ENHANCE_NODE)
+				.addConditionalEdges(QUERY_ENHANCE_NODE, edge_async(new QueryEnhanceDispatcher()),
+						Map.of(SCHEMA_RECALL_NODE, SCHEMA_RECALL_NODE, END, END))
+				.addConditionalEdges(SCHEMA_RECALL_NODE, edge_async(new SchemaRecallDispatcher()),
+						Map.of(TABLE_RELATION_NODE, TABLE_RELATION_NODE, END, END))
 
-			.addConditionalEdges(TABLE_RELATION_NODE, edge_async(new TableRelationDispatcher()),
-					Map.of(FEASIBILITY_ASSESSMENT_NODE, FEASIBILITY_ASSESSMENT_NODE, END, END, TABLE_RELATION_NODE,
-							TABLE_RELATION_NODE)) // retry
-			.addConditionalEdges(FEASIBILITY_ASSESSMENT_NODE, edge_async(new FeasibilityAssessmentDispatcher()),
-					Map.of(PLANNER_NODE, PLANNER_NODE, END, END))
+				.addConditionalEdges(TABLE_RELATION_NODE, edge_async(new TableRelationDispatcher()),
+						Map.of(FEASIBILITY_ASSESSMENT_NODE, FEASIBILITY_ASSESSMENT_NODE, END, END, TABLE_RELATION_NODE,
+								TABLE_RELATION_NODE)) // retry
+				.addConditionalEdges(FEASIBILITY_ASSESSMENT_NODE, edge_async(new FeasibilityAssessmentDispatcher()),
+						Map.of(PLANNER_NODE, PLANNER_NODE, END, END))
 
-			// The edge from PlannerNode now goes to PlanExecutorNode for validation and
-			// execution
-			.addEdge(PLANNER_NODE, PLAN_EXECUTOR_NODE)
-			// python nodes
-			.addEdge(PYTHON_GENERATE_NODE, PYTHON_EXECUTE_NODE)
-			.addConditionalEdges(PYTHON_EXECUTE_NODE, edge_async(new PythonExecutorDispatcher(codeExecutorProperties)),
-					Map.of(PYTHON_ANALYZE_NODE, PYTHON_ANALYZE_NODE, END, END, PYTHON_GENERATE_NODE,
-							PYTHON_GENERATE_NODE))
-			.addEdge(PYTHON_ANALYZE_NODE, PLAN_EXECUTOR_NODE)
-			// The dispatcher at PlanExecutorNode will decide the next step
-			.addConditionalEdges(PLAN_EXECUTOR_NODE, edge_async(new PlanExecutorDispatcher()), Map.of(
-					// If validation fails, go back to PlannerNode to repair
-					PLANNER_NODE, PLANNER_NODE,
-					// If validation passes, proceed to the correct execution node
-					SQL_GENERATE_NODE, SQL_GENERATE_NODE, PYTHON_GENERATE_NODE, PYTHON_GENERATE_NODE,
-					REPORT_GENERATOR_NODE, REPORT_GENERATOR_NODE,
-					// If human review is enabled, go to human_feedback node
-					HUMAN_FEEDBACK_NODE, HUMAN_FEEDBACK_NODE,
-					// If max repair attempts are reached, end the process
-					END, END))
-			// Human feedback node routing
-			.addConditionalEdges(HUMAN_FEEDBACK_NODE, edge_async(new HumanFeedbackDispatcher()), Map.of(
-					// If plan is rejected, go back to PlannerNode
-					PLANNER_NODE, PLANNER_NODE,
-					// If plan is approved, continue with execution
-					PLAN_EXECUTOR_NODE, PLAN_EXECUTOR_NODE,
-					// If max repair attempts are reached, end the process
-					END, END))
-			.addEdge(REPORT_GENERATOR_NODE, END)
-			// sql generate and sql execute node
-			.addConditionalEdges(SQL_GENERATE_NODE, nodeBeanUtil.getEdgeBeanAsync(SqlGenerateDispatcher.class),
-					Map.of(SQL_GENERATE_NODE, SQL_GENERATE_NODE, END, END, SEMANTIC_CONSISTENCY_NODE,
-							SEMANTIC_CONSISTENCY_NODE))
-			.addConditionalEdges(SEMANTIC_CONSISTENCY_NODE, edge_async(new SemanticConsistenceDispatcher()),
-					Map.of(SQL_GENERATE_NODE, SQL_GENERATE_NODE, SQL_EXECUTE_NODE, SQL_EXECUTE_NODE))
-			.addConditionalEdges(SQL_EXECUTE_NODE, edge_async(new SQLExecutorDispatcher()),
-					Map.of(SQL_GENERATE_NODE, SQL_GENERATE_NODE, PLAN_EXECUTOR_NODE, PLAN_EXECUTOR_NODE));
+				// The edge from PlannerNode now goes to PlanExecutorNode for validation and
+				// execution
+				.addEdge(PLANNER_NODE, PLAN_EXECUTOR_NODE)
+				// python nodes
+				.addEdge(PYTHON_GENERATE_NODE, PYTHON_EXECUTE_NODE)
+				.addConditionalEdges(PYTHON_EXECUTE_NODE,
+						edge_async(new PythonExecutorDispatcher(codeExecutorProperties)),
+						Map.of(PYTHON_ANALYZE_NODE, PYTHON_ANALYZE_NODE, END, END, PYTHON_GENERATE_NODE,
+								PYTHON_GENERATE_NODE))
+				.addEdge(PYTHON_ANALYZE_NODE, PLAN_EXECUTOR_NODE)
+				// The dispatcher at PlanExecutorNode will decide the next step
+				.addConditionalEdges(PLAN_EXECUTOR_NODE, edge_async(new PlanExecutorDispatcher()), Map.of(
+						// If validation fails, go back to PlannerNode to repair
+						PLANNER_NODE, PLANNER_NODE,
+						// If validation passes, proceed to the correct execution node
+						SQL_GENERATE_NODE, SQL_GENERATE_NODE, PYTHON_GENERATE_NODE, PYTHON_GENERATE_NODE,
+						REPORT_GENERATOR_NODE, REPORT_GENERATOR_NODE,
+						// If human review is enabled, go to human_feedback node
+						HUMAN_FEEDBACK_NODE, HUMAN_FEEDBACK_NODE,
+						// If max repair attempts are reached, end the process
+						END, END))
+				// Human feedback node routing
+				.addConditionalEdges(HUMAN_FEEDBACK_NODE, edge_async(new HumanFeedbackDispatcher()), Map.of(
+						// If plan is rejected, go back to PlannerNode
+						PLANNER_NODE, PLANNER_NODE,
+						// If plan is approved, continue with execution
+						PLAN_EXECUTOR_NODE, PLAN_EXECUTOR_NODE,
+						// If max repair attempts are reached, end the process
+						END, END))
+				.addEdge(REPORT_GENERATOR_NODE, END)
+				// sql generate and sql execute node
+				.addConditionalEdges(SQL_GENERATE_NODE, nodeBeanUtil.getEdgeBeanAsync(SqlGenerateDispatcher.class),
+						Map.of(SQL_GENERATE_NODE, SQL_GENERATE_NODE, END, END, SEMANTIC_CONSISTENCY_NODE,
+								SEMANTIC_CONSISTENCY_NODE))
+				.addConditionalEdges(SEMANTIC_CONSISTENCY_NODE, edge_async(new SemanticConsistenceDispatcher()),
+						Map.of(SQL_GENERATE_NODE, SQL_GENERATE_NODE, SQL_EXECUTE_NODE, SQL_EXECUTE_NODE))
+				.addConditionalEdges(SQL_EXECUTE_NODE, edge_async(new SQLExecutorDispatcher()),
+						Map.of(SQL_GENERATE_NODE, SQL_GENERATE_NODE, PLAN_EXECUTOR_NODE, PLAN_EXECUTOR_NODE));
 
 		GraphRepresentation graphRepresentation = stateGraph.getGraph(GraphRepresentation.Type.PLANTUML,
 				"workflow graph");
@@ -260,7 +261,8 @@ public class DataAgentConfiguration implements DisposableBean {
 	@Primary
 	@Bean
 	@ConditionalOnMissingBean(VectorStore.class)
-	@ConditionalOnProperty(name = "spring.ai.vectorstore.type", havingValue = "simple", matchIfMissing = true)
+	@ConditionalOnProperty(name = PROJECT_PROPERTIES_PREFIX
+			+ ".vector-store.type", havingValue = "simple", matchIfMissing = true)
 	public VectorStore simpleVectorStore(EmbeddingModel embeddingModel) {
 		return SimpleVectorStore.builder(embeddingModel).build();
 	}
@@ -272,10 +274,9 @@ public class DataAgentConfiguration implements DisposableBean {
 		EncodingType encodingType;
 		try {
 			Optional<EncodingType> encodingTypeOptional = EncodingType
-				.fromName(properties.getEmbeddingBatch().getEncodingType());
+					.fromName(properties.getEmbeddingBatch().getEncodingType());
 			encodingType = encodingTypeOptional.orElse(EncodingType.CL100K_BASE);
-		}
-		catch (Exception e) {
+		} catch (Exception e) {
 			log.warn("Unknown encodingType '{}', falling back to CL100K_BASE",
 					properties.getEmbeddingBatch().getEncodingType());
 			encodingType = EncodingType.CL100K_BASE;
@@ -291,22 +292,24 @@ public class DataAgentConfiguration implements DisposableBean {
 		List<ToolCallback> allFunctionAndToolCallbacks = new ArrayList<>(
 				McpServerToolUtil.excludeMcpServerTool(context, ToolCallback.class));
 		McpServerToolUtil.excludeMcpServerTool(context, ToolCallbackProvider.class)
-			.stream()
-			.map(pr -> List.of(pr.getToolCallbacks()))
-			.forEach(allFunctionAndToolCallbacks::addAll);
+				.stream()
+				.map(pr -> List.of(pr.getToolCallbacks()))
+				.forEach(allFunctionAndToolCallbacks::addAll);
 
 		var staticToolCallbackResolver = new StaticToolCallbackResolver(allFunctionAndToolCallbacks);
 
 		var springBeanToolCallbackResolver = SpringBeanToolCallbackResolver.builder()
-			.applicationContext(context)
-			.build();
+				.applicationContext(context)
+				.build();
 
 		return new DelegatingToolCallbackResolver(List.of(staticToolCallbackResolver, springBeanToolCallbackResolver));
 	}
 
 	/**
-	 * 动态生成 EmbeddingModel 的代理 Bean。 原理： 1. 这是一个 Bean，Milvus/PgVector Starter 能看到它，启动不会报错。
-	 * 2. 它是动态代理，内部没有写死任何方法。 3. 每次被调用时，它会执行 getTarget() -> registry.getEmbeddingModel()。
+	 * 动态生成 EmbeddingModel 的代理 Bean。 原理： 1. 这是一个 Bean，Milvus/PgVector Starter
+	 * 能看到它，启动不会报错。
+	 * 2. 它是动态代理，内部没有写死任何方法。 3. 每次被调用时，它会执行 getTarget() ->
+	 * registry.getEmbeddingModel()。
 	 */
 	@Bean
 	@Primary
@@ -402,12 +405,10 @@ public class DataAgentConfiguration implements DisposableBean {
 					if (!dbOperationExecutor.awaitTermination(10, TimeUnit.SECONDS)) {
 						log.error("Executor failed to terminate completely.");
 					}
-				}
-				else {
+				} else {
 					log.info("Database operation executor terminated gracefully.");
 				}
-			}
-			catch (InterruptedException e) {
+			} catch (InterruptedException e) {
 				log.warn("Interrupted during executor shutdown. Forcing immediate shutdown.");
 				dbOperationExecutor.shutdownNow();
 				Thread.currentThread().interrupt();

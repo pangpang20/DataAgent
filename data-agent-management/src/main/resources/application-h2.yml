@@ -47,7 +47,7 @@ spring:
           path-prefix: data-agent
           # 当前目录下不要用点， ./uploads win下拼接完整格式路径会解析不了，比如 data-agent/./uploads win识别不了
           path: uploads
-          url-prefix: /uploads
+          url-prefix: /api/upload
           imageSize: 2097152
           oss:
             access-key-id: ${OSS_ACCESS_KEY_ID:}

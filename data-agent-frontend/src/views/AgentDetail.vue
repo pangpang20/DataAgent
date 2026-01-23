@@ -275,6 +275,13 @@
 
           if (response.success) {
             agent.value.avatar = response.url;
+            // 立即保存到数据库，确保刷新后仍然有效
+            if (agent.value.id) {
+              await AgentService.update(Number(agent.value.id), {
+                ...agent.value,
+                avatar: response.url,
+              });
+            }
             ElMessage.success('头像上传成功');
           } else {
             throw new Error(response.message || '上传失败');

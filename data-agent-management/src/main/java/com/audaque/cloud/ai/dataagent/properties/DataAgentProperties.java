@@ -159,6 +159,11 @@ public class DataAgentProperties {
 	@Setter
 	public static class VectorStoreProperties {
 
+		/**
+		 * 向量库类型：simple (内存), milvus
+		 */
+		private String type = "simple";
+
 		// 专门给召回Table 用的配置
 		private int tableTopkLimit = 10;
 

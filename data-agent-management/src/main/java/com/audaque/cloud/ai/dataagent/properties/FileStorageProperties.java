@@ -49,7 +49,7 @@ public class FileStorageProperties {
 	/**
 	 * 对外暴露的访问前缀。
 	 */
-	private String urlPrefix = "/uploads";
+	private String urlPrefix = "/api/upload";
 
 	/**
 	 * 头像图片大小上限（字节）。默认 2MB。
