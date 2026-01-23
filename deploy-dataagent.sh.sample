@@ -620,9 +620,6 @@ configure_nginx() {
     # 替换 uploads 目录路径（注意处理末尾斜杠）
     sed -i "s|alias /root/local_DataAgent/uploads/;|alias $DEPLOY_DIR/uploads/;|g" "$NGINX_LOCAL_CONF"
     
-    # 删除嵌套的 location ~ \.(jpg|jpeg|png...) 配置块（避免冲突）
-    sed -i '/# 允许的文件类型/,/^    }/d' "$NGINX_LOCAL_CONF"
-    
     info "配置参数修改完成"
     
     # 3. 部署到 Nginx 配置目录
