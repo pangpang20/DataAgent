@@ -16,8 +16,6 @@
 # 使用方式：docker-compose up -d
 # 如需使用达梦数据库，请使用：docker-compose -f docker-compose-dameng.yml up -d
 
-version: '3.8'
-
 services:
   # MySQL数据库（元数据存储）
   mysql:

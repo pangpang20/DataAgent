@@ -15,8 +15,6 @@
 # DataAgent 一键部署配置 - 达梦数据库版本
 # 使用方式：docker-compose -f docker-compose-dameng.yml up -d
 
-version: '3.8'
-
 services:
   # 达梦数据库（元数据存储）
   dameng-metadata:
