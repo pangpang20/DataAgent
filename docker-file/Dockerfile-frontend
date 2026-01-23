@@ -13,6 +13,8 @@
 #limitations under the License.
 
 # 构建阶段
+# 注意：如果node:20-alpine或nginx:alpine的预拖取失败，需要配置国内镜像源
+# 配置方法：编辑/etc/docker/daemon.json，添加registry-mirrors字段
 FROM node:20-alpine AS builder
 
 WORKDIR /app
