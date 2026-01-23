@@ -21,6 +21,8 @@ services:
   mysql:
     image: mysql:8.0
     pull_policy: never
+    security_opt:
+      - label:disable
     container_name: data-agent-mysql-inner
     environment:
       MYSQL_ROOT_PASSWORD: root
@@ -41,8 +43,8 @@ services:
     build:
       context: ..
       dockerfile: ./docker-file/Dockerfile-backend
-      tags:
-        - saa-data-agent-backend:1.0.0-SNAPSHOT
+    security_opt:
+      - label:disable
     container_name: audaque-data-agent-backend
     environment:
       - DATA_AGENT_DATASOURCE_URL=jdbc:mysql://mysql:3306/data_agent?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
@@ -67,8 +69,8 @@ services:
     build:
       context: ..
       dockerfile: ./docker-file/Dockerfile-frontend
-      tags:
-        - saa-data-agent-frontend:1.0.0-SNAPSHOT
+    security_opt:
+      - label:disable
     container_name: audaque-data-agent-frontend
     ports:
       - "3000:3000"  # 只暴露前端端口
