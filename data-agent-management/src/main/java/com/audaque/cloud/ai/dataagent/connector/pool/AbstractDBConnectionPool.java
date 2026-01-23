@@ -166,8 +166,10 @@ public abstract class AbstractDBConnectionPool implements DBConnectionPool {
 		String driver = getDriver();
 
 		String filters = "wall,stat";
+		String validationQuery = "SELECT 1";
 		if (driver != null && driver.toLowerCase().contains("dm.jdbc.driver.dmdriver")) {
 			filters = "stat";
+			validationQuery = "SELECT 1 FROM DUAL";
 		}
 
 		java.util.Map<String, String> props = new java.util.HashMap<>();
@@ -181,6 +183,10 @@ public abstract class AbstractDBConnectionPool implements DBConnectionPool {
 		props.put(DruidDataSourceFactory.PROP_MAXWAIT, "10000");
 		props.put(DruidDataSourceFactory.PROP_TIMEBETWEENEVICTIONRUNSMILLIS, "60000");
 		props.put(DruidDataSourceFactory.PROP_FILTERS, filters);
+		props.put(DruidDataSourceFactory.PROP_VALIDATIONQUERY, validationQuery);
+		props.put(DruidDataSourceFactory.PROP_TESTWHILEIDLE, "true");
+		props.put(DruidDataSourceFactory.PROP_TESTONBORROW, "false");
+		props.put(DruidDataSourceFactory.PROP_TESTONRETURN, "false");
 
 		DruidDataSource dataSource = (DruidDataSource) DruidDataSourceFactory.createDataSource(props);
 		dataSource.setBreakAfterAcquireFailure(Boolean.TRUE);
