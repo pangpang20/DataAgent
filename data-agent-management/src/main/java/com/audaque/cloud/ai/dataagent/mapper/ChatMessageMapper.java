@@ -64,7 +64,7 @@ public interface ChatMessageMapper {
 
 	@Insert("""
 			INSERT INTO chat_message (session_id, role, content, message_type, metadata, create_time)
-			VALUES (#{sessionId}, #{role}, #{content}, #{messageType}, #{metadata}, ${@sqlDialectResolver@now()})
+			VALUES (#{sessionId}, #{role}, #{content}, #{messageType}, #{metadata}, ${@sqlDialectResolver.now()})
 			""")
 	@Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
 	int insert(ChatMessage message);
