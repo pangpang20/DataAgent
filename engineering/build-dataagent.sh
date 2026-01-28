@@ -74,7 +74,8 @@ check_environment() {
     info "Java 版本: $(java -version 2>&1 | head -n1)"
     
     # 检查 Maven Wrapper
-    if [ ! -f "$SCRIPT_DIR/mvnw" ]; then
+    PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+    if [ ! -f "$PROJECT_ROOT/mvnw" ]; then
         error "Maven Wrapper 不存在，请确保项目完整"
     fi
     info "Maven Wrapper: OK"
@@ -106,7 +107,7 @@ check_environment() {
 clean_build() {
     step "清理旧的构建产物"
     
-    cd "$SCRIPT_DIR"
+    cd "$PROJECT_ROOT"
     
     # 清理后端
     if [ -f "./mvnw" ]; then
@@ -129,13 +130,13 @@ clean_build() {
 build_backend() {
     step "编译后端"
     
-    cd "$SCRIPT_DIR"
+    cd "$PROJECT_ROOT"
     
     info "开始编译后端项目..."
     ./mvnw clean package -DskipTests=true
     
     # 查找生成的 JAR 文件
-    JAR_FILE=$(find "$SCRIPT_DIR/data-agent-management/target" -name "spring-ai-audaque-data-agent-management-*.jar" ! -name "*.original" | head -n1)
+    JAR_FILE=$(find "$PROJECT_ROOT/data-agent-management/target" -name "spring-ai-audaque-data-agent-management-*.jar" ! -name "*.original" | head -n1)
     
     if [ ! -f "$JAR_FILE" ]; then
         error "后端编译失败，未找到 JAR 文件"
@@ -154,7 +155,7 @@ build_backend() {
 build_frontend() {
     step "编译前端"
     
-    cd "$SCRIPT_DIR/data-agent-frontend"
+    cd "$PROJECT_ROOT/data-agent-frontend"
     
     # 安装依赖
     if [ ! -d "node_modules" ]; then
@@ -197,15 +198,15 @@ package_output() {
     
     # 复制前端构建产物
     info "复制前端构建产物..."
-    cp -r "$SCRIPT_DIR/data-agent-frontend/dist/"* "$OUTPUT_DIR/frontend/"
+    cp -r "$PROJECT_ROOT/data-agent-frontend/dist/"* "$OUTPUT_DIR/frontend/"
     
     # 复制配置模板
     info "复制配置模板..."
-    cp "$SCRIPT_DIR/application.yml.sample" "$OUTPUT_DIR/config/application.yml.template"
+    cp "$PROJECT_ROOT/application.yml.sample" "$OUTPUT_DIR/config/application.yml.template"
     
     # 复制 Nginx 配置模板
-    if [ -f "$SCRIPT_DIR/docker-file/config/nginx-production.conf" ]; then
-        cp "$SCRIPT_DIR/docker-file/config/nginx-production.conf" "$OUTPUT_DIR/config/nginx-dataagent.conf.template"
+    if [ -f "$PROJECT_ROOT/docker-file/config/nginx-production.conf" ]; then
+        cp "$PROJECT_ROOT/docker-file/config/nginx-production.conf" "$OUTPUT_DIR/config/nginx-dataagent.conf.template"
     fi
     
     # 复制数据库初始化脚本
@@ -213,12 +214,12 @@ package_output() {
     mkdir -p "$OUTPUT_DIR/config/sql/mysql"
     mkdir -p "$OUTPUT_DIR/config/sql/dameng"
     
-    if [ -d "$SCRIPT_DIR/data-agent-management/src/main/resources/sql/mysql" ]; then
-        cp -r "$SCRIPT_DIR/data-agent-management/src/main/resources/sql/mysql/"* "$OUTPUT_DIR/config/sql/mysql/"
+    if [ -d "$PROJECT_ROOT/data-agent-management/src/main/resources/sql/mysql" ]; then
+        cp -r "$PROJECT_ROOT/data-agent-management/src/main/resources/sql/mysql/"* "$OUTPUT_DIR/config/sql/mysql/"
     fi
     
-    if [ -d "$SCRIPT_DIR/data-agent-management/src/main/resources/sql/dameng" ]; then
-        cp -r "$SCRIPT_DIR/data-agent-management/src/main/resources/sql/dameng/"* "$OUTPUT_DIR/config/sql/dameng/"
+    if [ -d "$PROJECT_ROOT/data-agent-management/src/main/resources/sql/dameng" ]; then
+        cp -r "$PROJECT_ROOT/data-agent-management/src/main/resources/sql/dameng/"* "$OUTPUT_DIR/config/sql/dameng/"
     fi
     
     # 生成版本信息
@@ -233,7 +234,7 @@ Build User: $(whoami)
 Backend JAR: $(basename $BACKEND_JAR)
 JAR Size: $(du -h "$BACKEND_JAR" | cut -f1)
 
-Frontend Dist Size: $(du -sh "$SCRIPT_DIR/data-agent-frontend/dist" | cut -f1)
+Frontend Dist Size: $(du -sh "$PROJECT_ROOT/data-agent-frontend/dist" | cut -f1)
 
 Java Version: $(java -version 2>&1 | head -n1)
 Node Version: $(node -v)

@@ -26,6 +26,9 @@
 - Node.js 16 或更高版本
 - Yarn 包管理器
 - Maven（项目自带 Maven Wrapper）
+- 至少 8GB 可用内存（推荐 16GB）
+
+> **注意**：编译 DataAgent 项目需要较大内存，如果在编译过程中遇到 `Native memory allocation` 或 `insufficient memory` 错误，请增加系统虚拟内存或在更高配置的机器上编译。
 
 ### 1.2 执行编译
 
@@ -34,6 +37,9 @@
 ```bash
 # 默认输出到 ./output 目录
 ./build-dataagent.sh
+
+# windows执行
+./build-dataagent.ps1
 
 # 指定输出目录
 ./build-dataagent.sh /path/to/custom/output
@@ -158,21 +164,21 @@ tar -xzf dataagent-output.tar.gz
 
 ### 2.8 完整参数说明
 
-| 参数 | 说明 | 默认值 |
-|------|------|--------|
-| `--output-dir` | 编译输出目录（必需） | - |
-| `--deploy-dir` | 部署目录 | `/opt/dataagent` |
-| `--db-type` | 数据库类型：`mysql` 或 `dameng` | `mysql` |
-| `--db-host` | 数据库主机 | `127.0.0.1` |
-| `--db-port` | 数据库端口 | MySQL: `3306`<br>达梦: `5236` |
-| `--db-name` | 数据库名称 | `data_agent` |
-| `--db-user` | 数据库用户 | MySQL: `root`<br>达梦: `SYSDBA` |
-| `--db-password` | 数据库密码 | - |
-| `--backend-port` | 后端端口 | `8065` |
-| `--frontend-port` | 前端端口 | `80` |
-| `--vector-store` | 向量库类型：`simple` 或 `milvus` | `simple` |
-| `--skip-deps` | 跳过依赖安装 | `false` |
-| `--help` | 显示帮助信息 | - |
+| 参数              | 说明                             | 默认值                          |
+| ----------------- | -------------------------------- | ------------------------------- |
+| `--output-dir`    | 编译输出目录（必需）             | -                               |
+| `--deploy-dir`    | 部署目录                         | `/opt/dataagent`                |
+| `--db-type`       | 数据库类型：`mysql` 或 `dameng`  | `mysql`                         |
+| `--db-host`       | 数据库主机                       | `127.0.0.1`                     |
+| `--db-port`       | 数据库端口                       | MySQL: `3306`<br>达梦: `5236`   |
+| `--db-name`       | 数据库名称                       | `data_agent`                    |
+| `--db-user`       | 数据库用户                       | MySQL: `root`<br>达梦: `SYSDBA` |
+| `--db-password`   | 数据库密码                       | -                               |
+| `--backend-port`  | 后端端口                         | `8065`                          |
+| `--frontend-port` | 前端端口                         | `80`                            |
+| `--vector-store`  | 向量库类型：`simple` 或 `milvus` | `simple`                        |
+| `--skip-deps`     | 跳过依赖安装                     | `false`                         |
+| `--help`          | 显示帮助信息                     | -                               |
 
 ---
 
@@ -184,6 +190,9 @@ Windows 服务器需要：
 - Java 17 或更高版本（需手动安装）
 - 数据库：MySQL 或达梦数据库
 - PowerShell 5.1 或更高版本
+- 至少 8GB 可用内存用于编译（如果在 Windows 上编译）
+
+> **注意**：如果在 Windows 上进行编译，遇到内存不足错误，请增加系统虚拟内存或在更高配置的机器上编译。编译完成后，部署过程对内存要求较低。
 
 ### 3.2 基本安装
 
@@ -245,21 +254,21 @@ npx http-server . -p 8080
 
 ### 3.6 完整参数说明
 
-| 参数 | 说明 | 默认值 |
-|------|------|--------|
-| `-OutputDir` | 编译输出目录（必需） | - |
-| `-DeployDir` | 部署目录 | `C:\DataAgent` |
-| `-DbType` | 数据库类型：`mysql` 或 `dameng` | `mysql` |
-| `-DbHost` | 数据库主机 | `127.0.0.1` |
-| `-DbPort` | 数据库端口 | MySQL: `3306`<br>达梦: `5236` |
-| `-DbName` | 数据库名称 | `data_agent` |
-| `-DbUser` | 数据库用户 | MySQL: `root`<br>达梦: `SYSDBA` |
-| `-DbPassword` | 数据库密码 | - |
-| `-BackendPort` | 后端端口 | `8065` |
-| `-FrontendPort` | 前端端口 | `8080` |
-| `-VectorStore` | 向量库类型：`simple` 或 `milvus` | `simple` |
-| `-SkipDeps` | 跳过依赖检查 | `false` |
-| `-Help` | 显示帮助信息 | - |
+| 参数            | 说明                             | 默认值                          |
+| --------------- | -------------------------------- | ------------------------------- |
+| `-OutputDir`    | 编译输出目录（必需）             | -                               |
+| `-DeployDir`    | 部署目录                         | `C:\DataAgent`                  |
+| `-DbType`       | 数据库类型：`mysql` 或 `dameng`  | `mysql`                         |
+| `-DbHost`       | 数据库主机                       | `127.0.0.1`                     |
+| `-DbPort`       | 数据库端口                       | MySQL: `3306`<br>达梦: `5236`   |
+| `-DbName`       | 数据库名称                       | `data_agent`                    |
+| `-DbUser`       | 数据库用户                       | MySQL: `root`<br>达梦: `SYSDBA` |
+| `-DbPassword`   | 数据库密码                       | -                               |
+| `-BackendPort`  | 后端端口                         | `8065`                          |
+| `-FrontendPort` | 前端端口                         | `8080`                          |
+| `-VectorStore`  | 向量库类型：`simple` 或 `milvus` | `simple`                        |
+| `-SkipDeps`     | 跳过依赖检查                     | `false`                         |
+| `-Help`         | 显示帮助信息                     | -                               |
 
 ---
 
@@ -501,11 +510,11 @@ tar -xzf dataagent-v1.0.0.tar.gz
 
 ## 十、总结
 
-| 阶段 | 脚本 | 执行位置 | 作用 |
-|------|------|----------|------|
-| 编译 | `build-dataagent.sh` | 开发机器 | 编译前后端，生成 output 目录 |
-| 安装（Linux） | `install-dataagent.sh` | 目标服务器 | 从 output 部署到 Linux |
-| 安装（Windows） | `install-dataagent.ps1` | 目标服务器 | 从 output 部署到 Windows |
+| 阶段            | 脚本                    | 执行位置   | 作用                         |
+| --------------- | ----------------------- | ---------- | ---------------------------- |
+| 编译            | `build-dataagent.sh`    | 开发机器   | 编译前后端，生成 output 目录 |
+| 安装（Linux）   | `install-dataagent.sh`  | 目标服务器 | 从 output 部署到 Linux       |
+| 安装（Windows） | `install-dataagent.ps1` | 目标服务器 | 从 output 部署到 Windows     |
 
 **关键优势**
 - ✅ 编译与部署分离
@@ -519,14 +528,14 @@ tar -xzf dataagent-v1.0.0.tar.gz
 
 ## 附录：配置文件位置
 
-| 文件 | Linux 路径 | Windows 路径 |
-|------|-----------|--------------|
-| 后端 JAR | `/opt/dataagent/dataagent-backend.jar` | `C:\DataAgent\dataagent-backend.jar` |
-| 后端配置 | `/opt/dataagent/application.yml` | `C:\DataAgent\application.yml` |
-| 前端文件 | `/var/www/dataagent/` | `C:\DataAgent\frontend\` |
-| Nginx 配置 | `/etc/nginx/conf.d/dataagent.conf` | N/A |
-| 后端日志 | `/opt/dataagent/logs/application.log` | `C:\DataAgent\logs\application.log` |
-| 备份目录 | `/opt/dataagent/backup/` | `C:\DataAgent\backup\` |
+| 文件       | Linux 路径                             | Windows 路径                         |
+| ---------- | -------------------------------------- | ------------------------------------ |
+| 后端 JAR   | `/opt/dataagent/dataagent-backend.jar` | `C:\DataAgent\dataagent-backend.jar` |
+| 后端配置   | `/opt/dataagent/application.yml`       | `C:\DataAgent\application.yml`       |
+| 前端文件   | `/var/www/dataagent/`                  | `C:\DataAgent\frontend\`             |
+| Nginx 配置 | `/etc/nginx/conf.d/dataagent.conf`     | N/A                                  |
+| 后端日志   | `/opt/dataagent/logs/application.log`  | `C:\DataAgent\logs\application.log`  |
+| 备份目录   | `/opt/dataagent/backup/`               | `C:\DataAgent\backup\`               |
 
 ---
 

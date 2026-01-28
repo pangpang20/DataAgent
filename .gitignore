@@ -61,3 +61,4 @@ uploads/*
 
 # qoder agent directory
 # qoder_agent/
+*.log
