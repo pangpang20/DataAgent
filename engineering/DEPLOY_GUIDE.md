@@ -28,7 +28,13 @@
 - Maven（项目自带 Maven Wrapper）
 - 至少 8GB 可用内存（推荐 16GB）
 
-> **注意**：编译 DataAgent 项目需要较大内存，如果在编译过程中遇到 `Native memory allocation` 或 `insufficient memory` 错误，请增加系统虚拟内存或在更高配置的机器上编译。
+> **注意**：
+> 
+> 1. 编译 DataAgent 项目需要较大内存，如果在编译过程中遇到 `Native memory allocation` 或 `insufficient memory` 错误，请增加系统虚拟内存或在更高配置的机器上编译。
+> 2. 如果遇到 `MalformedInputException` 或字符编码相关错误，请确保系统区域设置为 UTF-8，或在运行编译脚本前设置 `MAVEN_OPTS` 环境变量：
+>    ```bash
+>    export MAVEN_OPTS="-Dfile.encoding=UTF-8 -Dsun.jnu.encoding=UTF-8"
+>    ```
 
 ### 1.2 执行编译
 
@@ -38,8 +44,16 @@
 # 默认输出到 ./output 目录
 ./build-dataagent.sh
 
-# windows执行
+# windows执行（标准模式）
 ./build-dataagent.ps1
+
+# windows执行（综合模式，推荐）
+# 支持内存优化和编码优化模式
+powershell -ExecutionPolicy Bypass -File "./build-dataagent-windows-combined.ps1"
+# 内存优化模式
+powershell -ExecutionPolicy Bypass -File "./build-dataagent-windows-combined.ps1" -MemoryOptimized
+# 指定输出目录
+powershell -ExecutionPolicy Bypass -File "./build-dataagent-windows-combined.ps1" -OutputDir "C:\\path\\to\\custom\\output"
 
 # 指定输出目录
 ./build-dataagent.sh /path/to/custom/output
@@ -192,7 +206,13 @@ Windows 服务器需要：
 - PowerShell 5.1 或更高版本
 - 至少 8GB 可用内存用于编译（如果在 Windows 上编译）
 
-> **注意**：如果在 Windows 上进行编译，遇到内存不足错误，请增加系统虚拟内存或在更高配置的机器上编译。编译完成后，部署过程对内存要求较低。
+> **注意**：
+>
+> 1. 如果在 Windows 上进行编译，遇到内存不足错误，请增加系统虚拟内存或在更高配置的机器上编译。编译完成后，部署过程对内存要求较低。
+> 2. 如果遇到 `MalformedInputException` 或字符编码相关错误，请在运行编译脚本前设置 `MAVEN_OPTS` 环境变量：
+>    ```powershell
+>    $env:MAVEN_OPTS="-Dfile.encoding=UTF-8 -Dsun.jnu.encoding=UTF-8"
+>    ```
 
 ### 3.2 基本安装
 
