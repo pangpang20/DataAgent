@@ -1,0 +1,15 @@
+﻿DataAgent Build Information
+============================
+Build Time: 20260128_162733
+Build Host: DESKTOP-VDC0ACA
+Build User: pangpang
+Platform: Windows
+
+Backend JAR: spring-ai-audaque-data-agent-management-1.0.0-SNAPSHOT.jar
+JAR Size: 293.60 MB
+
+Frontend Dist Size: 4.15 MB
+
+Java Version: java version "17.0.16"
+Node Version: v24.11.0
+npm Version: 11.6.1

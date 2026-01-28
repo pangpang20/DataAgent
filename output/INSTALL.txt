@@ -1,0 +1,58 @@
+﻿DataAgent 安装说明
+==================
+
+本目录包含编译好的 DataAgent 前后端文件和配置模板。
+
+目录结构：
+---------
+output/
+├── backend/                      # 后端文件
+│   ├── dataagent-backend.jar    # 后端 JAR 包
+│   └── dataagent-backend.jar.sha256  # 校验和
+├── frontend/                     # 前端文件
+│   ├── index.html
+│   └── assets/
+├── config/                       # 配置模板
+│   ├── application.yml.template  # 后端配置模板
+│   ├── nginx-dataagent.conf.template  # Nginx 配置模板
+│   └── sql/                     # 数据库初始化脚本
+│       ├── mysql/
+│       └── dameng/
+├── scripts/                      # 安装脚本
+│   ├── install-dataagent.sh     # Linux 安装脚本
+│   └── install-dataagent.ps1    # Windows 安装脚本
+├── VERSION.txt                   # 版本信息
+└── INSTALL.txt                   # 本文件
+
+Linux 安装：
+-----------
+1. 将 output 目录复制到目标服务器
+2. 运行安装脚本：
+   cd output/scripts
+   ./install-dataagent.sh --output-dir /path/to/output
+
+Windows 安装：
+-------------
+1. 将 output 目录复制到目标服务器
+2. 在 PowerShell 中运行：
+   cd output\scripts
+   .\install-dataagent.ps1 -OutputDir "C:\path\to\output"
+
+手动安装：
+---------
+如果不使用安装脚本，请参考以下步骤：
+
+1. 后端部署：
+   - 复制 backend/dataagent-backend.jar 到部署目录
+   - 修改 config/application.yml.template 并重命名为 application.yml
+   - 启动：java -jar dataagent-backend.jar
+
+2. 前端部署：
+   - 复制 frontend/* 到 Web 服务器根目录
+   - 配置 Nginx 反向代理（参考 config/nginx-dataagent.conf.template）
+
+3. 数据库初始化：
+   - MySQL: 执行 config/sql/mysql/schema.sql
+   - 达梦: 执行 config/sql/dameng/schema.sql
+
+详细文档请参考 engineering/DEPLOY_GUIDE.md
