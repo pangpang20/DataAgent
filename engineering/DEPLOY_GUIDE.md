@@ -24,9 +24,9 @@
 编译环境需要安装：
 - Java 17 或更高版本
 - Node.js 16 或更高版本
-- Yarn 包管理器
+- npm 或 Yarn 包管理器
 - Maven（项目自带 Maven Wrapper）
-- 至少 8GB 可用内存（推荐 16GB）
+- 至少 8GB 可用内存（推荐 16GB 以上）
 
 > **注意**：
 > 
@@ -40,23 +40,31 @@
 
 在项目根目录执行：
 
+#### Linux/Mac
 ```bash
 # 默认输出到 ./output 目录
 ./build-dataagent.sh
 
-# windows执行（标准模式）
-./build-dataagent.ps1
-
-# windows执行（综合模式，推荐）
-# 支持内存优化和编码优化模式
-powershell -ExecutionPolicy Bypass -File "./build-dataagent-windows-combined.ps1"
-# 内存优化模式
-powershell -ExecutionPolicy Bypass -File "./build-dataagent-windows-combined.ps1" -MemoryOptimized
-# 指定输出目录
-powershell -ExecutionPolicy Bypass -File "./build-dataagent-windows-combined.ps1" -OutputDir "C:\\path\\to\\custom\\output"
-
 # 指定输出目录
 ./build-dataagent.sh /path/to/custom/output
+```
+
+#### Windows（PowerShell）
+```powershell
+# 标准编译和打包模式（推荐）
+.\build-dataagent.ps1
+
+# 指定输出目录
+.\build-dataagent.ps1 -OutputDir "C:\Output"
+
+# 使用内存优化模式（低配置机器）
+.\build-dataagent.ps1 -OutputDir "C:\Output" -MemoryOptimized
+
+# 编码优化模式（默认启用）
+.\build-dataagent.ps1 -OutputDir "C:\Output" -EncodingOptimized
+
+# 显示帮助
+.\build-dataagent.ps1 -Help
 ```
 
 ### 1.3 编译产物
@@ -67,18 +75,25 @@ powershell -ExecutionPolicy Bypass -File "./build-dataagent-windows-combined.ps1
 output/
 ├── backend/
 │   ├── dataagent-backend.jar        # 后端 JAR 包
-│   └── dataagent-backend.jar.sha256 # 校验和
+│   └── dataagent-backend.jar.sha256 # SHA256 校验和
 ├── frontend/
 │   ├── index.html                   # 前端入口
-│   └── assets/                      # 前端资源
+│   ├── assets/                      # 前端资源
+│   └── ...                          # 其他前端文件
 ├── config/
 │   ├── application.yml.template     # 后端配置模板
 │   ├── nginx-dataagent.conf.template # Nginx 配置模板
 │   └── sql/                         # 数据库初始化脚本
 │       ├── mysql/
-│       │   └── schema.sql
+│       │   ├── schema.sql           # MySQL 初始化脚本
+│       │   └── ...
 │       └── dameng/
-│           └── schema.sql
+│           ├── schema.sql           # 达梦初始化脚本
+│           └── ...
+├── scripts/
+│   ├── build-dataagent.ps1          # Windows 一体化脚本
+│   ├── install-dataagent.sh         # Linux 安装脚本
+│   └── ...
 ├── VERSION.txt                       # 版本信息
 └── INSTALL.txt                       # 安装说明
 ```
@@ -176,27 +191,30 @@ tar -xzf dataagent-output.tar.gz
   --skip-deps
 ```
 
-### 2.8 完整参数说明
+### 2.8 完整参数说明（Linux）
 
-| 参数              | 说明                             | 默认值                          |
-| ----------------- | -------------------------------- | ------------------------------- |
-| `--output-dir`    | 编译输出目录（必需）             | -                               |
-| `--deploy-dir`    | 部署目录                         | `/opt/dataagent`                |
-| `--db-type`       | 数据库类型：`mysql` 或 `dameng`  | `mysql`                         |
-| `--db-host`       | 数据库主机                       | `127.0.0.1`                     |
-| `--db-port`       | 数据库端口                       | MySQL: `3306`<br>达梦: `5236`   |
-| `--db-name`       | 数据库名称                       | `data_agent`                    |
-| `--db-user`       | 数据库用户                       | MySQL: `root`<br>达梦: `SYSDBA` |
-| `--db-password`   | 数据库密码                       | -                               |
-| `--backend-port`  | 后端端口                         | `8065`                          |
-| `--frontend-port` | 前端端口                         | `80`                            |
-| `--vector-store`  | 向量库类型：`simple` 或 `milvus` | `simple`                        |
-| `--skip-deps`     | 跳过依赖安装                     | `false`                         |
-| `--help`          | 显示帮助信息                     | -                               |
+| 参数                  | 说明                             | 默认值                          |
+| --------------------- | -------------------------------- | ------------------------------- |
+| `--output-dir`        | 编译输出目录（必需）             | -                               |
+| `--deploy-dir`        | 部署目录                         | `/opt/dataagent`                |
+| `--db-type`           | 数据库类型：`mysql` 或 `dameng`  | `mysql`                         |
+| `--db-host`           | 数据库主机                       | `127.0.0.1`                     |
+| `--db-port`           | 数据库端口                       | MySQL: `3306`<br>达梦: `5236`   |
+| `--db-name`           | 数据库名称                       | `data_agent`                    |
+| `--db-user`           | 数据库用户                       | MySQL: `root`<br>达梦: `SYSDBA` |
+| `--db-password`       | 数据库密码                       | -                               |
+| `--backend-port`      | 后端端口                         | `8065`                          |
+| `--frontend-port`     | 前端端口                         | `80`                            |
+| `--vector-store`      | 向量库类型：`simple` 或 `milvus` | `simple`                        |
+| `--milvus-host`       | Milvus 服务器地址                | `127.0.0.1`                     |
+| `--milvus-port`       | Milvus 服务器端口                | `19530`                         |
+| `--milvus-collection` | Milvus 集合名称                  | `data_agent`                    |
+| `--skip-deps`         | 跳过依赖安装                     | `false`                         |
+| `--help`              | 显示帮助信息                     | -                               |
 
 ---
 
-## 三、安装阶段（Windows）
+## 三、Windows 端一体化部署方案
 
 ### 3.1 环境要求
 
@@ -214,21 +232,44 @@ Windows 服务器需要：
 >    $env:MAVEN_OPTS="-Dfile.encoding=UTF-8 -Dsun.jnu.encoding=UTF-8"
 >    ```
 
-### 3.2 基本安装
+### 3.2 使用 build-dataagent.ps1 一体化脚本
 
-在 PowerShell 中执行：
+`build-dataagent.ps1` 支持三种模式：
 
+#### 模式一：仅编译和打包
 ```powershell
-.\install-dataagent.ps1 -OutputDir .\output
+.\build-dataagent.ps1 -OutputDir "C:\Output"
 ```
+编译前后端，生成 output 目录，不进行部署。
 
-### 3.3 自定义安装
+#### 模式二：编译、打包并部署（推荐）
+```powershell
+.\build-dataagent.ps1 -OutputDir "C:\Output" `
+  -Deploy `
+  -DeployDir "C:\DataAgent" `
+  -DbType mysql `
+  -DbUser "root" `
+  -DbPassword "password123"
+```
+完整的编译、打包和部署流程。
 
-指定数据库配置：
+#### 模式三：仅部署（使用现有打包）
+```powershell
+.\build-dataagent.ps1 -Deploy `
+  -DeployDir "C:\DataAgent" `
+  -PackageDir "C:\Output" `
+  -DbType mysql `
+  -DbUser "root" `
+  -DbPassword "password123"
+```
+使用已有的 output 目录直接部署。
+
+### 3.3 自定义部署配置
+
+指定所有数据库参数：
 
 ```powershell
-.\install-dataagent.ps1 `
-  -OutputDir .\output `
+.\build-dataagent.ps1 -OutputDir "C:\Output" -Deploy `
   -DeployDir "C:\DataAgent" `
   -DbType mysql `
   -DbHost 192.168.1.100 `
@@ -237,14 +278,15 @@ Windows 服务器需要：
   -DbUser admin `
   -DbPassword "YourPassword123" `
   -BackendPort 8065 `
-  -FrontendPort 8080
+  -FrontendPort 8080 `
+  -VectorStore simple
 ```
 
 ### 3.4 使用达梦数据库
 
 ```powershell
-.\install-dataagent.ps1 `
-  -OutputDir .\output `
+.\build-dataagent.ps1 -OutputDir "C:\Output" -Deploy `
+  -DeployDir "C:\DataAgent" `
   -DbType dameng `
   -DbHost 192.168.1.200 `
   -DbPort 5236 `
@@ -252,9 +294,18 @@ Windows 服务器需要：
   -DbPassword "SYSDBA"
 ```
 
-### 3.5 启动前端服务
+### 3.5 使用向量库（Milvus）
 
-Windows 安装脚本不会自动启动前端服务，需要手动启动：
+```powershell
+.\build-dataagent.ps1 -OutputDir "C:\Output" -Deploy `
+  -DeployDir "C:\DataAgent" `
+  -VectorStore milvus `
+  -MilvusHost 192.168.1.150
+```
+
+### 3.6 启动前端服务
+
+部署完成后，前端服务需要手动启动：
 
 **方式一：使用 Python**
 ```powershell
@@ -272,23 +323,30 @@ npx http-server . -p 8080
 
 下载 [Nginx for Windows](http://nginx.org/en/download.html) 并配置。
 
-### 3.6 完整参数说明
+### 3.7 完整参数说明
 
-| 参数            | 说明                             | 默认值                          |
-| --------------- | -------------------------------- | ------------------------------- |
-| `-OutputDir`    | 编译输出目录（必需）             | -                               |
-| `-DeployDir`    | 部署目录                         | `C:\DataAgent`                  |
-| `-DbType`       | 数据库类型：`mysql` 或 `dameng`  | `mysql`                         |
-| `-DbHost`       | 数据库主机                       | `127.0.0.1`                     |
-| `-DbPort`       | 数据库端口                       | MySQL: `3306`<br>达梦: `5236`   |
-| `-DbName`       | 数据库名称                       | `data_agent`                    |
-| `-DbUser`       | 数据库用户                       | MySQL: `root`<br>达梦: `SYSDBA` |
-| `-DbPassword`   | 数据库密码                       | -                               |
-| `-BackendPort`  | 后端端口                         | `8065`                          |
-| `-FrontendPort` | 前端端口                         | `8080`                          |
-| `-VectorStore`  | 向量库类型：`simple` 或 `milvus` | `simple`                        |
-| `-SkipDeps`     | 跳过依赖检查                     | `false`                         |
-| `-Help`         | 显示帮助信息                     | -                               |
+| 参数                 | 说明                             | 默认值                          |
+| -------------------- | -------------------------------- | ------------------------------- |
+| `-OutputDir`         | 编译输出目录                     | `./output`                      |
+| `-Deploy`            | 启用部署模式                     | 仅编译                          |
+| `-DeployDir`         | 部署目录                         | `C:\DataAgent`                  |
+| `-PackageDir`        | 打包目录（部署模式下使用）       | 同 OutputDir                    |
+| `-DbType`            | 数据库类型：`mysql` 或 `dameng`  | `mysql`                         |
+| `-DbHost`            | 数据库主机                       | `127.0.0.1`                     |
+| `-DbPort`            | 数据库端口                       | MySQL: `3306`<br>达梦: `5236`   |
+| `-DbName`            | 数据库名称                       | `data_agent`                    |
+| `-DbUser`            | 数据库用户                       | MySQL: `root`<br>达梦: `SYSDBA` |
+| `-DbPassword`        | 数据库密码                       | -                               |
+| `-BackendPort`       | 后端端口                         | `8065`                          |
+| `-FrontendPort`      | 前端端口                         | `8080`                          |
+| `-VectorStore`       | 向量库类型：`simple` 或 `milvus` | `simple`                        |
+| `-MilvusHost`        | Milvus 服务器地址                | `127.0.0.1`                     |
+| `-MilvusPort`        | Milvus 服务器端口                | `19530`                         |
+| `-MilvusCollection`  | Milvus 集合名称                  | `data_agent`                    |
+| `-MemoryOptimized`   | 内存优化模式（编译阶段）         | 禁用                            |
+| `-EncodingOptimized` | 编码优化模式（编译阶段）         | 启用                            |
+| `-SkipDeps`          | 跳过依赖检查                     | `false`                         |
+| `-Help`              | 显示帮助信息                     | -                               |
 
 ---
 
@@ -530,23 +588,43 @@ tar -xzf dataagent-v1.0.0.tar.gz
 
 ## 十、总结
 
-| 阶段            | 脚本                    | 执行位置   | 作用                         |
-| --------------- | ----------------------- | ---------- | ---------------------------- |
-| 编译            | `build-dataagent.sh`    | 开发机器   | 编译前后端，生成 output 目录 |
-| 安装（Linux）   | `install-dataagent.sh`  | 目标服务器 | 从 output 部署到 Linux       |
-| 安装（Windows） | `install-dataagent.ps1` | 目标服务器 | 从 output 部署到 Windows     |
+### Windows 统一方案
+| 场景      | 脚本                  | 执行位置  | 作用                                 |
+| --------- | --------------------- | --------- | ------------------------------------ |
+| 编译/部署 | `build-dataagent.ps1` | 开发/目标 | 编译、打包、部署的一体化脚本（推荐） |
+
+### 跨平台方案
+| 阶段            | 脚本                   | 执行位置   | 作用                         |
+| --------------- | ---------------------- | ---------- | ---------------------------- |
+| 编译（Linux）   | `build-dataagent.sh`   | 开发机器   | 编译前后端，生成 output 目录 |
+| 安装（Linux）   | `install-dataagent.sh` | 目标服务器 | 从 output 部署到 Linux       |
+| 编译（Windows） | `build-dataagent.ps1`  | 开发机器   | 编译前后端，生成 output 目录 |
+| 部署（Windows） | `build-dataagent.ps1`  | 目标服务器 | 从 output 部署到 Windows     |
 
 **关键优势**
-- ✅ 编译与部署分离
-- ✅ 支持离线部署
-- ✅ 配置灵活（命令行参数）
-- ✅ 自动安装依赖
-- ✅ 自动备份旧版本
-- ✅ 跨平台支持（Linux + Windows）
+- ✅ Windows 一体化：编译、打包、部署统一脚本
+- ✅ 编译与部署分离：支持离线部署
+- ✅ 配置灵活：命令行参数灵活配置
+- ✅ 自动安装依赖：自动检查和配置环境
+- ✅ 自动备份旧版本：升级时自动备份
+- ✅ 跨平台支持：Linux + Windows 完整覆盖
+- ✅ 多种优化模式：支持内存优化、编码优化
 
 ---
 
-## 附录：配置文件位置
+## 附录：工程目录说明
+
+### engineering/ 目录文件
+
+| 文件                      | 平台    | 用途                              |
+| ------------------------- | ------- | --------------------------------- |
+| **`build-dataagent.ps1`** | Windows | 一体化构建脚本：编译、打包、部署  |
+| `build-dataagent.sh`      | Linux   | 编译脚本：编译前后端，生成 output |
+| `install-dataagent.sh`    | Linux   | 安装脚本：从 output 部署到 Linux  |
+| `DEPLOY_GUIDE.md`         | 通用    | 部署指南（本文件）                |
+| `MEMORY_OPTIMIZATION.md`  | 通用    | 内存优化说明                      |
+
+### 配置文件和日志位置
 
 | 文件       | Linux 路径                             | Windows 路径                         |
 | ---------- | -------------------------------------- | ------------------------------------ |
@@ -559,6 +637,24 @@ tar -xzf dataagent-v1.0.0.tar.gz
 
 ---
 
+## 快速参考
+
+### Windows 一键部署
+```powershell
+# 完整流程：编译 → 打包 → 部署 → 启动
+.\build-dataagent.ps1 -OutputDir "C:\Output" -Deploy -DeployDir "C:\DataAgent" `
+  -DbType mysql -DbUser "root" -DbPassword "password123"
+```
+
+### Linux 两步部署
+```bash
+# 步骤 1：编译（开发机）
+./build-dataagent.sh
+
+# 步骤 2：部署（目标服务器）
+./install-dataagent.sh --output-dir ./output --db-user admin --db-password 'password123'
+```
+
 ## 支持与反馈
 
 如遇问题，请查看：
@@ -566,3 +662,4 @@ tar -xzf dataagent-v1.0.0.tar.gz
 - 快速开始：`docs/QUICK_START.md`
 - 架构说明：`docs/ARCHITECTURE.md`
 - 开发指南：`docs/DEVELOPER_GUIDE.md`
+- 记忆优化：`engineering/MEMORY_OPTIMIZATION.md`
