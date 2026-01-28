@@ -56,6 +56,9 @@ BUILD_TIME=$(date +%Y%m%d_%H%M%S)
 info "源码目录: $SCRIPT_DIR"
 info "输出目录: $OUTPUT_DIR"
 
+# 设置 Maven 编码选项
+export MAVEN_OPTS="-Dfile.encoding=UTF-8 -Dsun.jnu.encoding=UTF-8"
+
 # ============================================================================
 # 检查环境
 # ============================================================================
@@ -112,6 +115,7 @@ clean_build() {
     # 清理后端
     if [ -f "./mvnw" ]; then
         info "清理后端构建产物..."
+        export MAVEN_OPTS="-Dfile.encoding=UTF-8 -Dsun.jnu.encoding=UTF-8"
         ./mvnw clean -q
     fi
     
@@ -133,6 +137,7 @@ build_backend() {
     cd "$PROJECT_ROOT"
     
     info "开始编译后端项目..."
+    export MAVEN_OPTS="-Dfile.encoding=UTF-8 -Dsun.jnu.encoding=UTF-8"
     ./mvnw clean package -DskipTests=true
     
     # 查找生成的 JAR 文件
