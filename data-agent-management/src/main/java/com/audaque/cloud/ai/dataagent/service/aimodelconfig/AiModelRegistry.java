@@ -97,7 +97,8 @@ public class AiModelRegistry {
 					// 兔底：为了防止 VectorStore Starter 启动时调用 dimensions() 报错
 					// 我们必须返回一个“哑巴”模型，而不是 null 或 抛异常
 					if (currentEmbeddingModel == null) {
-						log.warn("Using DummyEmbeddingModel for fallback with dimension: {}", defaultEmbeddingDimension);
+						log.warn("Using DummyEmbeddingModel for fallback with dimension: {}",
+								defaultEmbeddingDimension);
 						currentEmbeddingModel = new DummyEmbeddingModel(defaultEmbeddingDimension);
 					}
 				}
