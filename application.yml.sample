@@ -133,6 +133,7 @@ spring:
     vectorstore:
       milvus:
         enabled: false
+        initialize-schema: true           # 自动创建 Milvus 集合（首次启动时必须为 true）
         client:
           host: localhost
           port: 19530
@@ -145,6 +146,7 @@ spring:
       # 如果使用 Milvus，需要配置以下参数：
       # milvus:
       #   enabled: true
+      #   initialize-schema: true         # 首次启动时必须为 true，自动创建集合
       #   client:
       #     host: localhost
       #     port: 19530
