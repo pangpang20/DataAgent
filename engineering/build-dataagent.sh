@@ -649,7 +649,7 @@ deploy_backend() {
     if [ "$DB_TYPE" = "dameng" ] || [ "$DB_TYPE" = "dm" ]; then
         info "应用达梦数据库配置..."
         sed -i -e "s|platform: mysql|platform: dameng|g" \
-               -e "s|url: jdbc:mysql://127.0.0.1:3306/data_agent[^[:space:]]*|url: jdbc:dm://$ESC_DB_HOST:$DB_PORT?zeroDateTimeBehavior=convertToNull&useUnicode=true&characterEncoding=UTF-8|g" \
+               -e "s|url: jdbc:mysql://127.0.0.1:3306/data_agent[^[:space:]]*|url: jdbc:dm://$ESC_DB_HOST:$DB_PORT?zeroDateTimeBehavior=convertToNull&useUnicode=true&characterEncoding=UTF-8&socketTimeout=100000&connectTimeout=60000|g" \
                -e "s|driver-class-name: com.mysql.cj.jdbc.Driver|driver-class-name: dm.jdbc.driver.DmDriver|g" \
                -e "s|validation-query: SELECT 1|validation-query: SELECT 1 FROM DUAL|g" \
                -e "s|username: cyl|username: $ESC_DB_USER|g" \
@@ -715,6 +715,8 @@ start_backend() {
     nohup java -Xmx4g -Xms2g \
         -XX:+UseG1GC \
         -Dfile.encoding=UTF-8 \
+        -Dsun.jnu.encoding=UTF-8 \
+        -Dclient.encoding.override=UTF-8 \
         -jar dataagent-backend.jar \
         > /dev/null 2>&1 &
     
