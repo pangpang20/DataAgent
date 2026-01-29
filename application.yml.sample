@@ -233,6 +233,8 @@ management:
   health:
     elasticsearch:
       enabled: false                          # 禁用 Elasticsearch 健康检查（如果未安装 ES）
+    milvus:
+      enabled: false                          # 禁用 Milvus 健康检查（如果未安装 Milvus）
     defaults:
       enabled: true                           # 启用默认健康检查（数据库、磁盘等）
   

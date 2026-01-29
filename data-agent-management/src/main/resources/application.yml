@@ -99,6 +99,22 @@ mybatis:
     map-underscore-to-camel-case: true
     log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
 
+# Actuator 监控配置
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: always
+  health:
+    elasticsearch:
+      enabled: false  # 禁用 Elasticsearch 健康检查
+    defaults:
+      enabled: true
+
 logging:
   level:
     com.audaque.cloud.ai.dataagent.service: debug

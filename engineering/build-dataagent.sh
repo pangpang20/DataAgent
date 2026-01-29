@@ -696,6 +696,9 @@ deploy_backend() {
         # 启用 Milvus（将 enabled: false 改为 enabled: true）
         sed -i "s|enabled: false|enabled: true|g" "$DEPLOY_DIR/application.yml"
         
+        # 启用 Milvus 健康检查
+        sed -i '/health:/,/defaults:/ s|milvus:|milvus:\n      enabled: true  #|' "$DEPLOY_DIR/application.yml"
+        
         # 转义特殊字符
         ESC_MILVUS_USER=$(printf '%s\n' "$MILVUS_USERNAME" | sed 's/[[\.*^$()+?{|]/\\&/g')
         ESC_MILVUS_PASS=$(printf '%s\n' "$MILVUS_PASSWORD" | sed 's/[[\.*^$()+?{|]/\\&/g')
