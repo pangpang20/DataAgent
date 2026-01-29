@@ -162,6 +162,34 @@ detect_arch() {
     esac
 }
 
+# ============================================================================
+# GCC 版本检查
+# ============================================================================
+check_gcc_version() {
+    info "检查 GCC 版本..."
+    
+    # 检查 gcc 是否存在
+    if ! command -v gcc &> /dev/null; then
+        error "未找到 gcc，请先安装 GCC 11 或更高版本"
+    fi
+    
+    # 获取 gcc 版本
+    GCC_VERSION=$(gcc -dumpversion | cut -d. -f1)
+    
+    if [[ -z "$GCC_VERSION" ]]; then
+        error "无法获取 GCC 版本信息"
+    fi
+    
+    info "当前 GCC 版本: $GCC_VERSION"
+    
+    # 检查版本是否 >= 11
+    if [[ $GCC_VERSION -lt 11 ]]; then
+        error "GCC 版本过低 (当前: $GCC_VERSION)，Milvus 需要 GCC 11 或更高版本。请升级 GCC 或设置 gcc-11 为默认编译器。"
+    fi
+    
+    info "GCC 版本检查通过 (版本: $GCC_VERSION >= 11)"
+}
+
 
 
 # ============================================================================
@@ -226,31 +254,106 @@ deploy_milvus_local() {
         info "Milvus 已安装，跳过安装"
     fi
 
-    # 4. 启动服务 (后台运行)
-    info "启动后台服务..."
+    # 4. 创建并启动 systemd 服务
+    info "配置 systemd 服务..."
     
-    # 启动 Etcd
-    if ! pgrep -f "etcd --data-dir" > /dev/null; then
-        nohup ./bin/etcd --data-dir ./data/etcd > etcd.log 2>&1 &
-        echo $! > etcd.pid
-        info "Etcd 已启动"
-    else
-        info "Etcd 已在运行"
+    # 创建 Etcd systemd 服务
+    if [[ ! -f "/etc/systemd/system/etcd.service" ]]; then
+        info "创建 Etcd systemd 服务..."
+        sudo tee /etc/systemd/system/etcd.service > /dev/null <<EOF
+[Unit]
+Description=Etcd Server
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=$INSTALL_DIR
+ExecStart=$INSTALL_DIR/bin/etcd --data-dir $INSTALL_DIR/data/etcd
+Restart=on-failure
+RestartSec=5
+StandardOutput=append:$INSTALL_DIR/etcd.log
+StandardError=append:$INSTALL_DIR/etcd.log
+
+[Install]
+WantedBy=multi-user.target
+EOF
+        sudo systemctl daemon-reload
+        info "Etcd 服务创建完成"
     fi
     
-    # 启动 Minio
-    if ! pgrep -f "minio server" > /dev/null; then
-        export MINIO_ROOT_USER=minioadmin
-        export MINIO_ROOT_PASSWORD=minioadmin
-        nohup ./bin/minio server ./data/minio --console-address ":9001" > minio.log 2>&1 &
-        echo $! > minio.pid
-        info "Minio 已启动"
+    # 创建 Minio systemd 服务
+    if [[ ! -f "/etc/systemd/system/minio.service" ]]; then
+        info "创建 Minio systemd 服务..."
+        sudo tee /etc/systemd/system/minio.service > /dev/null <<EOF
+[Unit]
+Description=MinIO Object Storage
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=$INSTALL_DIR
+Environment="MINIO_ROOT_USER=minioadmin"
+Environment="MINIO_ROOT_PASSWORD=minioadmin"
+ExecStart=$INSTALL_DIR/bin/minio server $INSTALL_DIR/data/minio --console-address :9001
+Restart=on-failure
+RestartSec=5
+StandardOutput=append:$INSTALL_DIR/minio.log
+StandardError=append:$INSTALL_DIR/minio.log
+
+[Install]
+WantedBy=multi-user.target
+EOF
+        sudo systemctl daemon-reload
+        info "Minio 服务创建完成"
+    fi
+    
+    # 启动 Etcd 服务
+    if systemctl is-active --quiet etcd; then
+        info "Etcd 服务已在运行"
     else
-        info "Minio 已在运行"
+        info "启动 Etcd 服务..."
+        sudo systemctl start etcd
+        sudo systemctl enable etcd
+        info "Etcd 服务已启动并设置为开机自启"
+    fi
+    
+    # 启动 Minio 服务
+    if systemctl is-active --quiet minio; then
+        info "Minio 服务已在运行"
+    else
+        info "启动 Minio 服务..."
+        sudo systemctl start minio
+        sudo systemctl enable minio
+        info "Minio 服务已启动并设置为开机自启"
     fi
 
     # 等待基础组件
     sleep 5
+
+    # 配置 Milvus systemd 服务环境变量
+    info "配置 Milvus 服务环境变量..."
+    if [[ -f "/lib/systemd/system/milvus.service" ]]; then
+        MILVUS_SERVICE="/lib/systemd/system/milvus.service"
+    elif [[ -f "/usr/lib/systemd/system/milvus.service" ]]; then
+        MILVUS_SERVICE="/usr/lib/systemd/system/milvus.service"
+    else
+        warn "未找到 Milvus systemd 服务文件"
+        MILVUS_SERVICE=""
+    fi
+    
+    if [[ -n "$MILVUS_SERVICE" ]]; then
+        # 检查是否已存在 LD_LIBRARY_PATH 配置
+        if ! grep -q "LD_LIBRARY_PATH=/usr/local/gcc-11/lib64" "$MILVUS_SERVICE"; then
+            # 在 [Service] 段落的 Environment 行后添加
+            sudo sed -i '/^Environment=/a Environment="LD_LIBRARY_PATH=/usr/local/gcc-11/lib64:${LD_LIBRARY_PATH}"' "$MILVUS_SERVICE"
+            sudo systemctl daemon-reload
+            info "Milvus 服务环境变量配置完成"
+        else
+            info "Milvus 服务环境变量已配置"
+        fi
+    fi
 
     # 启动 Milvus (使用 systemd 服务)
     if systemctl is-active --quiet milvus; then
@@ -297,6 +400,7 @@ main() {
 
     detect_os
     detect_arch
+    check_gcc_version
     deploy_milvus_local
 
     echo ""
