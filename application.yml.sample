@@ -134,6 +134,7 @@ spring:
       milvus:
         enabled: false
         initialize-schema: true           # 自动创建 Milvus 集合（首次启动时必须为 true）
+        default-embedding-dimension: 1024 # 默认嵌入维度（未配置 Embedding 模型时生效）
         client:
           host: localhost
           port: 19530
@@ -147,6 +148,7 @@ spring:
       # milvus:
       #   enabled: true
       #   initialize-schema: true         # 首次启动时必须为 true，自动创建集合
+      #   default-embedding-dimension: 1024  # 默认嵌入维度（建议与实际 Embedding 模型维度一致）
       #   client:
       #     host: localhost
       #     port: 19530

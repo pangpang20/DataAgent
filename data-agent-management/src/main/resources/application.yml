@@ -50,6 +50,7 @@ spring:
       milvus:
         enabled: false
         initialize-schema: true
+        default-embedding-dimension: 1024
         client:
           host: ${MILVUS_HOST:localhost}
           port: ${MILVUS_PORT:19530}

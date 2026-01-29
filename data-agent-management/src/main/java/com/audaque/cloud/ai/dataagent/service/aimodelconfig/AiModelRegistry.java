@@ -25,6 +25,7 @@ import org.springframework.ai.document.Document;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.embedding.EmbeddingRequest;
 import org.springframework.ai.embedding.EmbeddingResponse;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -37,6 +38,9 @@ public class AiModelRegistry {
 	private final DynamicModelFactory modelFactory;
 
 	private final ModelConfigDataService modelConfigDataService;
+
+	@Value("${spring.ai.vectorstore.milvus.default-embedding-dimension:1024}")
+	private int defaultEmbeddingDimension;
 
 	// 缓存对象 (volatile 保证可见性)
 	private volatile ChatClient currentChatClient;
@@ -58,8 +62,7 @@ public class AiModelRegistry {
 							// 核心：基于新 Model 创建新 Client，彻底消除旧参数缓存
 							currentChatClient = ChatClient.builder(chatModel).build();
 						}
-					}
-					catch (Exception e) {
+					} catch (Exception e) {
 						log.error("Failed to initialize ChatClient: {}", e.getMessage(), e);
 					}
 
@@ -87,16 +90,15 @@ public class AiModelRegistry {
 						if (config != null) {
 							currentEmbeddingModel = modelFactory.createEmbeddingModel(config);
 						}
-					}
-					catch (Exception e) {
+					} catch (Exception e) {
 						log.error("Failed to initialize EmbeddingModel: {}", e.getMessage());
 					}
 
-					// 兜底：为了防止 VectorStore Starter 启动时调用 dimensions() 报错
-					// 我们必须返回一个"哑巴"模型，而不是 null 或 抛异常
+					// 兔底：为了防止 VectorStore Starter 启动时调用 dimensions() 报错
+					// 我们必须返回一个“哑巴”模型，而不是 null 或 抛异常
 					if (currentEmbeddingModel == null) {
-						log.warn("Using DummyEmbeddingModel for fallback.");
-						currentEmbeddingModel = new DummyEmbeddingModel();
+						log.warn("Using DummyEmbeddingModel for fallback with dimension: {}", defaultEmbeddingDimension);
+						currentEmbeddingModel = new DummyEmbeddingModel(defaultEmbeddingDimension);
 					}
 				}
 			}
@@ -123,6 +125,12 @@ public class AiModelRegistry {
 	// =========================================================
 	private static class DummyEmbeddingModel implements EmbeddingModel {
 
+		private final int dimensions;
+
+		public DummyEmbeddingModel(int dimensions) {
+			this.dimensions = dimensions;
+		}
+
 		@Override
 		public EmbeddingResponse call(EmbeddingRequest request) {
 			throw new RuntimeException("No active EMBEDDING model. Please configure it first!");
@@ -148,10 +156,10 @@ public class AiModelRegistry {
 			return null;
 		}
 
-		// 关键：返回一个常用维度 (1536是OpenAI的维度)，骗过向量库的初始化检查
+		// 关键：返回可配置的维度（默认 1024，适配常见中文 Embedding 模型）
 		@Override
 		public int dimensions() {
-			return 1536;
+			return this.dimensions;
 		}
 
 	}
