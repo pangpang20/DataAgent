@@ -28,9 +28,6 @@
 #   --backend-port <port>   - 后端端口（默认 8065）
 #   --frontend-port <port>  - 前端端口（默认 80）
 #   --vector-store <type>   - 向量库类型：simple | milvus（默认 simple）
-#   --memory-optimized      - 内存优化模式（低配置机器）
-#   --encoding-optimized    - 编码优化模式（默认启用）
-#   --skip-deps             - 跳过依赖检查
 #   --help                  - 显示帮助信息
 ################################################################################
 
@@ -54,9 +51,6 @@ VECTOR_STORE_TYPE="simple"
 MILVUS_HOST="127.0.0.1"
 MILVUS_PORT=19530
 MILVUS_COLLECTION="data_agent"
-MEMORY_OPTIMIZED=false
-ENCODING_OPTIMIZED=true
-SKIP_DEPS=false
 SHOW_HELP=false
 
 # ============================================================================
@@ -121,9 +115,6 @@ DataAgent Linux 编译部署脚本
   --backend-port <port>   后端端口（默认: 8065）
   --frontend-port <port>  前端端口（默认: 80）
   --vector-store <type>   向量库类型: simple | milvus（默认: simple）
-  --memory-optimized      启用内存优化模式
-  --encoding-optimized    启用编码优化模式（默认启用）
-  --skip-deps             跳过依赖检查
   --help                  显示此帮助信息
 EOF
     exit 0
@@ -184,18 +175,6 @@ parse_arguments() {
             --vector-store)
                 VECTOR_STORE_TYPE="$2"
                 shift 2
-                ;;
-            --memory-optimized)
-                MEMORY_OPTIMIZED=true
-                shift
-                ;;
-            --encoding-optimized)
-                ENCODING_OPTIMIZED=true
-                shift
-                ;;
-            --skip-deps)
-                SKIP_DEPS=true
-                shift
                 ;;
             --help)
                 SHOW_HELP=true
@@ -663,6 +642,10 @@ deploy_backend() {
         sed -i "s|password: Audaque@123|password: $ESC_DB_PASS|g" "$DEPLOY_DIR/application.yml"
     fi
     
+    # 配置端口
+    info "配置后端端口: $BACKEND_PORT"
+    sed -i "s|port: 8065|port: $BACKEND_PORT|g" "$DEPLOY_DIR/application.yml"
+    
     # 配置向量库
     info "配置向量库类型: $VECTOR_STORE_TYPE"
     sed -i "s|type: simple|type: $VECTOR_STORE_TYPE|g" "$DEPLOY_DIR/application.yml"
@@ -692,17 +675,86 @@ deploy_frontend() {
     step "部署前端"
     
     # 创建前端目录
-    sudo mkdir -p /var/www/dataagent
+    FRONTEND_DIR="$DEPLOY_DIR/frontend"
+    mkdir -p "$FRONTEND_DIR"
     
     # 复制前端文件
-    sudo rm -rf /var/www/dataagent/*
+    rm -rf "$FRONTEND_DIR"/*
     if [ -d "$PACKAGE_DIR/frontend" ]; then
-        sudo cp -r "$PACKAGE_DIR/frontend/"* /var/www/dataagent/
+        cp -r "$PACKAGE_DIR/frontend/"* "$FRONTEND_DIR/"
     else
         error "找不到前端文件目录: $PACKAGE_DIR/frontend"
     fi
     
-    info "✅ 前端文件已部署到: /var/www/dataagent/"
+    info "✅ 前端文件已部署到: $FRONTEND_DIR"
+    
+    # 配置 Nginx
+    configure_nginx
+}
+
+# 配置 Nginx
+configure_nginx() {
+    info "配置 Nginx..."
+    
+    # 获取本机 IP
+    HOST_IP=$(hostname -I | awk '{print $1}')
+    if [ -z "$HOST_IP" ]; then
+        HOST_IP=$(ip route get 1 2>/dev/null | awk '{print $7}' | head -n1)
+    fi
+    if [ -z "$HOST_IP" ]; then
+        HOST_IP="localhost"
+    fi
+    
+    # 检测 Nginx 配置目录结构
+    if [ -d "/etc/nginx/sites-available" ]; then
+        NGINX_CONFIG_DIR="/etc/nginx/sites-available"
+        NGINX_ENABLE_DIR="/etc/nginx/sites-enabled"
+        NGINX_CONFIG_FILE="$NGINX_CONFIG_DIR/dataagent"
+        USE_SITES_STYLE=true
+    else
+        NGINX_CONFIG_DIR="/etc/nginx/conf.d"
+        NGINX_CONFIG_FILE="$NGINX_CONFIG_DIR/dataagent.conf"
+        USE_SITES_STYLE=false
+        sudo mkdir -p "$NGINX_CONFIG_DIR"
+    fi
+    
+    # 复制并修改 Nginx 配置
+    NGINX_TEMPLATE="$PACKAGE_DIR/config/nginx-dataagent.conf.template"
+    NGINX_LOCAL_CONF="$DEPLOY_DIR/nginx-dataagent.conf"
+    
+    if [ ! -f "$NGINX_TEMPLATE" ]; then
+        warn "Nginx 配置模板不存在，跳过 Nginx 配置"
+        return 0
+    fi
+    
+    cp "$NGINX_TEMPLATE" "$NGINX_LOCAL_CONF"
+    
+    # 替换配置参数
+    FRONTEND_DIR="$DEPLOY_DIR/frontend"
+    sed -i "s|server 127.0.0.1:8065|server 127.0.0.1:$BACKEND_PORT|g" "$NGINX_LOCAL_CONF"
+    sed -i "s|listen 80;|listen $FRONTEND_PORT;|g" "$NGINX_LOCAL_CONF"
+    sed -i "s|server_name .*;|server_name $HOST_IP localhost;|g" "$NGINX_LOCAL_CONF"
+    sed -i "s|root .*;|root $FRONTEND_DIR;|g" "$NGINX_LOCAL_CONF"
+    sed -i "s|alias .*/uploads/;|alias $DEPLOY_DIR/uploads/;|g" "$NGINX_LOCAL_CONF"
+    
+    # 部署配置
+    sudo cp "$NGINX_LOCAL_CONF" "$NGINX_CONFIG_FILE"
+    
+    # 启用配置
+    if [ "$USE_SITES_STYLE" = true ]; then
+        sudo ln -sf "$NGINX_CONFIG_FILE" "$NGINX_ENABLE_DIR/dataagent"
+        sudo rm -f "$NGINX_ENABLE_DIR/default"
+    else
+        sudo sed -i.bak 's/^\(\s*listen\s\+80\)/# \1/' /etc/nginx/nginx.conf 2>/dev/null || true
+    fi
+    
+    # 测试配置
+    if sudo nginx -t 2>&1; then
+        info "✅ Nginx 配置测试通过"
+        sudo systemctl reload nginx
+    else
+        error "Nginx 配置测试失败"
+    fi
 }
 
 # 启动后端服务
@@ -761,7 +813,7 @@ show_deploy_summary() {
     info "  健康检查: http://$HOST_IP:$BACKEND_PORT/actuator/health"
     echo ""
     info "前端部署:"
-    info "  前端目录: /var/www/dataagent"
+    info "  前端目录: $DEPLOY_DIR/frontend"
     info "  访问地址: http://$HOST_IP:$FRONTEND_PORT"
     echo ""
     info "管理命令:"
