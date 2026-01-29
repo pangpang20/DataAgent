@@ -49,17 +49,15 @@ spring:
     vectorstore:
       milvus:
         enabled: false
+        client:
+          host: ${MILVUS_HOST:localhost}
+          port: ${MILVUS_PORT:19530}
+          username: ${MILVUS_USERNAME:root}
+          password: ${MILVUS_PASSWORD:Milvus}
+          database-name: ${MILVUS_DATABASE:default}
+        collection-name: ${MILVUS_COLLECTION:data_agent_vector}
       elasticsearch:
         enabled: false
-    # Milvus 配置示例 (当 type 为 milvus 时生效)
-    # vectorstore:
-    #   milvus:
-    #     enabled: true
-    #     client:
-    #       host: ${MILVUS_HOST:localhost}
-    #       port: ${MILVUS_PORT:19530}
-    #     collection-name: ${MILVUS_COLLECTION:data_agent_vector}
-    #     database-name: ${MILVUS_DATABASE:default}
     alibaba:
       data-agent:
         vector-store:
@@ -101,7 +99,6 @@ mybatis:
     map-underscore-to-camel-case: true
     log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
 
-# 日志配置
 logging:
   level:
     com.audaque.cloud.ai.dataagent.service: debug
@@ -110,5 +107,7 @@ logging:
     org.springframework.jdbc: debug
     # 屏蔽 Tomcat HTTP 处理器的 EOFException 日志（客户端正常关闭连接时产生）
     org.apache.coyote.http11.Http11Processor: INFO
+    # 屏蔽 favicon.ico 请求的 NoResourceFoundException 错误
+    org.springframework.web.servlet.resource.ResourceHttpRequestHandler: ERROR
     # 打印 Agent 相关的 SQL 语句（包括插入、更新操作）
     com.audaque.cloud.ai.dataagent.mapper.AgentMapper: debug

@@ -693,16 +693,8 @@ deploy_backend() {
         info "开启 Milvus 自动配置..."
         sed -i "s|\${VECTOR_STORE_EXCLUDE:[^}]*}| |g" "$DEPLOY_DIR/application.yml"
         
-        # 取消注释 Milvus 配置
-        sed -i "s|      # milvus:|      milvus:|g" "$DEPLOY_DIR/application.yml"
-        sed -i "s|        # enabled:|        enabled:|g" "$DEPLOY_DIR/application.yml"
-        sed -i "s|          # client:|          client:|g" "$DEPLOY_DIR/application.yml"
-        sed -i "s|            # host:|            host:|g" "$DEPLOY_DIR/application.yml"
-        sed -i "s|            # port:|            port:|g" "$DEPLOY_DIR/application.yml"
-        sed -i "s|            # username:|            username:|g" "$DEPLOY_DIR/application.yml"
-        sed -i "s|            # password:|            password:|g" "$DEPLOY_DIR/application.yml"
-        sed -i "s|            # database-name:|            database-name:|g" "$DEPLOY_DIR/application.yml"
-        sed -i "s|        # collection-name:|        collection-name:|g" "$DEPLOY_DIR/application.yml"
+        # 启用 Milvus（将 enabled: false 改为 enabled: true）
+        sed -i "s|enabled: false|enabled: true|g" "$DEPLOY_DIR/application.yml"
         
         # 转义特殊字符
         ESC_MILVUS_USER=$(printf '%s\n' "$MILVUS_USERNAME" | sed 's/[[\.*^$()+?{|]/\\&/g')

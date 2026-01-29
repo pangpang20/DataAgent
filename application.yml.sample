@@ -133,6 +133,13 @@ spring:
     vectorstore:
       milvus:
         enabled: false
+        client:
+          host: localhost
+          port: 19530
+          username: root
+          password: Milvus
+          database-name: default
+        collection-name: data_agent_vector
       elasticsearch:
         enabled: false
       # 如果使用 Milvus，需要配置以下参数：
@@ -246,6 +253,8 @@ logging:
     org.apache.coyote.http11.Http11Processor: INFO       # 屏蔽 Tomcat EOFException 日志
     org.apache.tomcat: WARN                              # Tomcat 其他组件
     org.elasticsearch.client: WARN                        # Elasticsearch 客户端
+    # 屏蔽 favicon.ico 请求的 NoResourceFoundException 错误
+    org.springframework.web.servlet.resource.ResourceHttpRequestHandler: ERROR
     # 打印 Agent 相关的 SQL 语句（包括插入、更新操作）
     com.audaque.cloud.ai.dataagent.mapper.AgentMapper: DEBUG
     
