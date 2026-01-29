@@ -619,6 +619,8 @@ deploy_backend() {
     
     # 创建部署目录
     sudo mkdir -p "$DEPLOY_DIR"
+    sudo mkdir -p "$DEPLOY_DIR/logs"
+    sudo mkdir -p "$DEPLOY_DIR/uploads"
     sudo chown -R $USER:$USER "$DEPLOY_DIR"
     
     # 复制后端 JAR
@@ -648,19 +650,17 @@ deploy_backend() {
     # 根据数据库类型替换配置
     if [ "$DB_TYPE" = "dameng" ] || [ "$DB_TYPE" = "dm" ]; then
         info "应用达梦数据库配置..."
-        sed -i -e "s|platform: mysql|platform: dameng|g" \
-               -e "s|url: jdbc:mysql://127.0.0.1:3306/data_agent[^[:space:]]*|url: jdbc:dm://$ESC_DB_HOST:$DB_PORT?zeroDateTimeBehavior=convertToNull&useUnicode=true&characterEncoding=UTF-8&socketTimeout=100000&connectTimeout=60000|g" \
-               -e "s|driver-class-name: com.mysql.cj.jdbc.Driver|driver-class-name: dm.jdbc.driver.DmDriver|g" \
-               -e "s|validation-query: SELECT 1|validation-query: SELECT 1 FROM DUAL|g" \
-               -e "s|username: cyl|username: $ESC_DB_USER|g" \
-               -e "s|password: Audaque@123|password: $ESC_DB_PASS|g" \
-               "$DEPLOY_DIR/application.yml"
+        sed -i "s|platform: mysql|platform: dameng|g" "$DEPLOY_DIR/application.yml"
+        sed -i "s|url: jdbc:mysql://[^?]*\?[^\n]*|url: jdbc:dm://$ESC_DB_HOST:$DB_PORT?zeroDateTimeBehavior=convertToNull\&useUnicode=true\&characterEncoding=UTF-8\&socketTimeout=100000\&connectTimeout=60000|g" "$DEPLOY_DIR/application.yml"
+        sed -i "s|driver-class-name: com.mysql.cj.jdbc.Driver|driver-class-name: dm.jdbc.driver.DmDriver|g" "$DEPLOY_DIR/application.yml"
+        sed -i "s|validation-query: SELECT 1|validation-query: SELECT 1 FROM DUAL|g" "$DEPLOY_DIR/application.yml"
+        sed -i "s|username: cyl|username: $ESC_DB_USER|g" "$DEPLOY_DIR/application.yml"
+        sed -i "s|password: Audaque@123|password: $ESC_DB_PASS|g" "$DEPLOY_DIR/application.yml"
     else
         info "应用 MySQL 数据库配置..."
-        sed -i -e "s|url: jdbc:mysql://127.0.0.1:3306/data_agent|url: jdbc:mysql://$ESC_DB_HOST:$DB_PORT/$ESC_DB_NAME?useUnicode=true&characterEncoding=utf-8&zeroDateTimeBehavior=convertToNull&transformedBitIsBoolean=true&allowMultiQueries=true&allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=Asia/Shanghai|g" \
-               -e "s|username: cyl|username: $ESC_DB_USER|g" \
-               -e "s|password: Audaque@123|password: $ESC_DB_PASS|g" \
-               "$DEPLOY_DIR/application.yml"
+        sed -i "s|url: jdbc:mysql://[^?]*\?[^\n]*|url: jdbc:mysql://$ESC_DB_HOST:$DB_PORT/$ESC_DB_NAME?useUnicode=true\&characterEncoding=utf-8\&zeroDateTimeBehavior=convertToNull\&transformedBitIsBoolean=true\&allowMultiQueries=true\&allowPublicKeyRetrieval=true\&useSSL=false\&serverTimezone=Asia/Shanghai|g" "$DEPLOY_DIR/application.yml"
+        sed -i "s|username: cyl|username: $ESC_DB_USER|g" "$DEPLOY_DIR/application.yml"
+        sed -i "s|password: Audaque@123|password: $ESC_DB_PASS|g" "$DEPLOY_DIR/application.yml"
     fi
     
     # 配置向量库
