@@ -37,30 +37,6 @@ MILVUS_PACKAGE=""
 # 架构检测
 ARCH=""
 
-# 解析参数
-while [[ $# -gt 0 ]]; do
-    case $1 in
-        --etcd-package)
-            ETCD_PACKAGE="$2"
-            shift 2
-            ;;
-        --minio-package)
-            MINIO_PACKAGE="$2"
-            shift 2
-            ;;
-        --milvus-package)
-            MILVUS_PACKAGE="$2"
-            shift 2
-            ;;
-        --help|-h)
-            show_help
-            ;;
-        *)
-            error "未知参数: $1 (使用 --help 查看帮助信息)"
-            ;;
-    esac
-done
-
 # ============================================================================
 # 颜色输出
 # ============================================================================
@@ -119,6 +95,30 @@ ${GREEN}Milvus 二进制一键安装脚本${NC}
 EOF
     exit 0
 }
+
+# 解析参数
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --etcd-package)
+            ETCD_PACKAGE="$2"
+            shift 2
+            ;;
+        --minio-package)
+            MINIO_PACKAGE="$2"
+            shift 2
+            ;;
+        --milvus-package)
+            MILVUS_PACKAGE="$2"
+            shift 2
+            ;;
+        --help|-h)
+            show_help
+            ;;
+        *)
+            error "未知参数: $1 (使用 --help 查看帮助信息)"
+            ;;
+    esac
+done
 
 # ============================================================================
 # 环境检测
