@@ -141,6 +141,9 @@ spring:
       #   client:
       #     host: localhost
       #     port: 19530
+      #     username: root
+      #     password: Milvus
+      #     database-name: default
       #   collection-name: data_agent_vector
       # 如果使用 Elasticsearch，需要配置以下参数：
       # elasticsearch:

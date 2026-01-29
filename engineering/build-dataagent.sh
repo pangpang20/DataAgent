@@ -28,6 +28,12 @@
 #   --backend-port <port>   - 后端端口（默认 8065）
 #   --frontend-port <port>  - 前端端口（默认 80）
 #   --vector-store <type>   - 向量库类型：simple | milvus（默认 simple）
+#   --milvus-host <host>    - Milvus 主机（默认 127.0.0.1）
+#   --milvus-port <port>    - Milvus 端口（默认 19530）
+#   --milvus-username <user> - Milvus 用户名（默认 root）
+#   --milvus-password <pass> - Milvus 密码（默认 Milvus）
+#   --milvus-database <db>  - Milvus 数据库（默认 default）
+#   --milvus-collection <name> - Milvus 集合名（默认 data_agent_vector）
 #   --help                  - 显示帮助信息
 ################################################################################
 
@@ -50,7 +56,10 @@ FRONTEND_PORT=80
 VECTOR_STORE_TYPE="simple"
 MILVUS_HOST="127.0.0.1"
 MILVUS_PORT=19530
-MILVUS_COLLECTION="data_agent"
+MILVUS_USERNAME="root"
+MILVUS_PASSWORD="Milvus"
+MILVUS_DATABASE="default"
+MILVUS_COLLECTION="data_agent_vector"
 SHOW_HELP=false
 
 # ============================================================================
@@ -115,6 +124,12 @@ DataAgent Linux 编译部署脚本
   --backend-port <port>   后端端口（默认: 8065）
   --frontend-port <port>  前端端口（默认: 80）
   --vector-store <type>   向量库类型: simple | milvus（默认: simple）
+  --milvus-host <host>    Milvus 主机（默认: 127.0.0.1）
+  --milvus-port <port>    Milvus 端口（默认: 19530）
+  --milvus-username <user> Milvus 用户名（默认: root）
+  --milvus-password <pass> Milvus 密码（默认: Milvus）
+  --milvus-database <db>  Milvus 数据库（默认: default）
+  --milvus-collection <name> Milvus 集合名（默认: data_agent_vector）
   --help                  显示此帮助信息
 EOF
     exit 0
@@ -174,6 +189,30 @@ parse_arguments() {
                 ;;
             --vector-store)
                 VECTOR_STORE_TYPE="$2"
+                shift 2
+                ;;
+            --milvus-host)
+                MILVUS_HOST="$2"
+                shift 2
+                ;;
+            --milvus-port)
+                MILVUS_PORT="$2"
+                shift 2
+                ;;
+            --milvus-username)
+                MILVUS_USERNAME="$2"
+                shift 2
+                ;;
+            --milvus-password)
+                MILVUS_PASSWORD="$2"
+                shift 2
+                ;;
+            --milvus-database)
+                MILVUS_DATABASE="$2"
+                shift 2
+                ;;
+            --milvus-collection)
+                MILVUS_COLLECTION="$2"
                 shift 2
                 ;;
             --help)
@@ -660,11 +699,23 @@ deploy_backend() {
         sed -i "s|          # client:|          client:|g" "$DEPLOY_DIR/application.yml"
         sed -i "s|            # host:|            host:|g" "$DEPLOY_DIR/application.yml"
         sed -i "s|            # port:|            port:|g" "$DEPLOY_DIR/application.yml"
+        sed -i "s|            # username:|            username:|g" "$DEPLOY_DIR/application.yml"
+        sed -i "s|            # password:|            password:|g" "$DEPLOY_DIR/application.yml"
+        sed -i "s|            # database-name:|            database-name:|g" "$DEPLOY_DIR/application.yml"
         sed -i "s|        # collection-name:|        collection-name:|g" "$DEPLOY_DIR/application.yml"
+        
+        # 转义特殊字符
+        ESC_MILVUS_USER=$(printf '%s\n' "$MILVUS_USERNAME" | sed 's/[[\.*^$()+?{|]/\\&/g')
+        ESC_MILVUS_PASS=$(printf '%s\n' "$MILVUS_PASSWORD" | sed 's/[[\.*^$()+?{|]/\\&/g')
+        ESC_MILVUS_DB=$(printf '%s\n' "$MILVUS_DATABASE" | sed 's/[[\.*^$()+?{|]/\\&/g')
+        ESC_MILVUS_COLL=$(printf '%s\n' "$MILVUS_COLLECTION" | sed 's/[[\.*^$()+?{|]/\\&/g')
         
         sed -i "s|host: localhost|host: $MILVUS_HOST|g" "$DEPLOY_DIR/application.yml"
         sed -i "s|port: 19530|port: $MILVUS_PORT|g" "$DEPLOY_DIR/application.yml"
-        sed -i "s|collection-name: data_agent_vector|collection-name: $MILVUS_COLLECTION|g" "$DEPLOY_DIR/application.yml"
+        sed -i "s|username: root|username: $ESC_MILVUS_USER|g" "$DEPLOY_DIR/application.yml"
+        sed -i "s|password: Milvus|password: $ESC_MILVUS_PASS|g" "$DEPLOY_DIR/application.yml"
+        sed -i "s|database-name: default|database-name: $ESC_MILVUS_DB|g" "$DEPLOY_DIR/application.yml"
+        sed -i "s|collection-name: data_agent_vector|collection-name: $ESC_MILVUS_COLL|g" "$DEPLOY_DIR/application.yml"
     fi
     
     info "✅ 后端部署完成"
