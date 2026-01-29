@@ -33,6 +33,10 @@ MINIO_VERSION="RELEASE.2024-12-18T13-15-44Z"
 ETCD_PACKAGE=""
 MINIO_PACKAGE=""
 MILVUS_PACKAGE=""
+INSTALL_DIR="/data/milvus-local"
+
+# 强制重新安装标志
+FORCE_REINSTALL=false
 
 # 架构检测
 ARCH=""
@@ -69,6 +73,7 @@ ${GREEN}Milvus 二进制一键安装脚本${NC}
     --etcd-package PATH      指定 Etcd 安装包路径 (tar.gz 格式)
     --minio-package PATH     指定 Minio 安装包路径 (二进制文件)
     --milvus-package PATH    指定 Milvus 安装包路径 (rpm 格式)
+    --force                  强制重新安装，删除现有安装和配置
     --help, -h               显示此帮助信息
 
 示例:
@@ -89,7 +94,7 @@ ${GREEN}Milvus 二进制一键安装脚本${NC}
     - Etcd 需要 tar.gz 格式的压缩包
     - Minio 需要可执行的二进制文件
     - Milvus 需要 rpm 格式的安装包
-    - 安装目录: ./milvus-local (Etcd/Minio), /var/lib/milvus (Milvus)
+    - 安装目录: ${INSTALL_DIR} (Etcd/Minio), /var/lib/milvus (Milvus)
     - 服务端口: Milvus(19530), Minio Console(9001)
 
 EOF
@@ -110,6 +115,10 @@ while [[ $# -gt 0 ]]; do
         --milvus-package)
             MILVUS_PACKAGE="$2"
             shift 2
+            ;;
+        --force)
+            FORCE_REINSTALL=true
+            shift 1
             ;;
         --help|-h)
             show_help
@@ -190,6 +199,76 @@ check_gcc_version() {
     info "GCC 版本检查通过 (版本: $GCC_VERSION >= 11)"
 }
 
+# ============================================================================
+# 强制卸载现有安装
+# ============================================================================
+force_uninstall() {
+    if [[ "$FORCE_REINSTALL" != "true" ]]; then
+        return 0
+    fi
+    
+    warn "========================================="
+    warn "  强制重新安装模式已启用"
+    warn "========================================="
+    
+    # 停止并删除服务
+    info "停止并删除现有服务..."
+    
+    if systemctl is-active --quiet etcd; then
+        sudo systemctl stop etcd
+    fi
+    if systemctl is-enabled --quiet etcd &> /dev/null; then
+        sudo systemctl disable etcd
+    fi
+    if [[ -f "/etc/systemd/system/etcd.service" ]]; then
+        sudo rm -f /etc/systemd/system/etcd.service
+        info "已删除 Etcd 服务配置"
+    fi
+    
+    if systemctl is-active --quiet minio; then
+        sudo systemctl stop minio
+    fi
+    if systemctl is-enabled --quiet minio &> /dev/null; then
+        sudo systemctl disable minio
+    fi
+    if [[ -f "/etc/systemd/system/minio.service" ]]; then
+        sudo rm -f /etc/systemd/system/minio.service
+        info "已删除 Minio 服务配置"
+    fi
+    
+    if systemctl is-active --quiet milvus; then
+        sudo systemctl stop milvus
+    fi
+    if systemctl is-enabled --quiet milvus &> /dev/null; then
+        sudo systemctl disable milvus
+    fi
+    
+    # 卸载 Milvus RPM
+    if rpm -q milvus &> /dev/null; then
+        info "卸载 Milvus RPM 包..."
+        sudo rpm -e milvus
+        info "已卸载 Milvus"
+    fi
+    
+    # 删除安装目录
+    if [[ -d "$INSTALL_DIR" ]]; then
+        info "删除安装目录 $INSTALL_DIR..."
+        sudo rm -rf "$INSTALL_DIR"
+        info "已删除安装目录"
+    fi
+    
+    # 删除 Milvus 数据目录（可选，谨慎操作）
+    if [[ -d "/var/lib/milvus" ]]; then
+        warn "删除 Milvus 数据目录 /var/lib/milvus..."
+        sudo rm -rf /var/lib/milvus
+        info "已删除 Milvus 数据目录"
+    fi
+    
+    sudo systemctl daemon-reload
+    info "强制卸载完成"
+    echo ""
+}
+
 
 
 # ============================================================================
@@ -197,7 +276,7 @@ check_gcc_version() {
 # ============================================================================
 deploy_milvus_local() {
     info "准备本地二进制部署 (Standalone 模式)..."
-    INSTALL_DIR="$(pwd)/milvus-local"
+    
     mkdir -p "$INSTALL_DIR/bin" "$INSTALL_DIR/configs" "$INSTALL_DIR/data"
     cd "$INSTALL_DIR"
 
@@ -280,6 +359,8 @@ WantedBy=multi-user.target
 EOF
         sudo systemctl daemon-reload
         info "Etcd 服务创建完成"
+    else
+        info "Etcd 服务已存在，跳过创建"
     fi
     
     # 创建 Minio systemd 服务
@@ -307,6 +388,8 @@ WantedBy=multi-user.target
 EOF
         sudo systemctl daemon-reload
         info "Minio 服务创建完成"
+    else
+        info "Minio 服务已存在，跳过创建"
     fi
     
     # 启动 Etcd 服务
@@ -331,6 +414,49 @@ EOF
 
     # 等待基础组件
     sleep 5
+
+    # 配置 Milvus 配置文件
+    info "配置 Milvus 连接本地 Etcd 和 Minio..."
+    MILVUS_CONFIG="/etc/milvus/configs/milvus.yaml"
+    if [[ -f "$MILVUS_CONFIG" ]]; then
+        # 备份原始配置
+        if [[ ! -f "${MILVUS_CONFIG}.bak" ]]; then
+            sudo cp "$MILVUS_CONFIG" "${MILVUS_CONFIG}.bak"
+            info "已备份原始配置到 ${MILVUS_CONFIG}.bak"
+        fi
+        
+        # 修改 Etcd 配置
+        if ! grep -q "endpoints: localhost:2379" "$MILVUS_CONFIG"; then
+            sudo sed -i '/^etcd:/,/^[^ ]/ s|endpoints:.*|endpoints: localhost:2379|' "$MILVUS_CONFIG"
+            info "已配置 Etcd 地址: localhost:2379"
+        fi
+        
+        # 修改 Minio 配置
+        if ! grep -q "address: localhost" "$MILVUS_CONFIG" | head -1; then
+            sudo sed -i '/^minio:/,/^[^ ]/ s|address:.*|address: localhost|' "$MILVUS_CONFIG"
+            sudo sed -i '/^minio:/,/^[^ ]/ s|port:.*|port: 9000|' "$MILVUS_CONFIG"
+            info "已配置 Minio 地址: localhost:9000"
+        fi
+        
+        if ! grep -q "accessKeyID: minioadmin" "$MILVUS_CONFIG"; then
+            sudo sed -i '/^minio:/,/^[^ ]/ s|accessKeyID:.*|accessKeyID: minioadmin|' "$MILVUS_CONFIG"
+            sudo sed -i '/^minio:/,/^[^ ]/ s|secretAccessKey:.*|secretAccessKey: minioadmin|' "$MILVUS_CONFIG"
+            info "已配置 Minio 认证信息"
+        fi
+        
+        # 配置日志路径
+        sudo mkdir -p /var/log/milvus
+        if ! grep -q "rootPath: /var/log/milvus" "$MILVUS_CONFIG"; then
+            # 在配置文件末尾的 log 段落中查找并替换 rootPath
+            # 使用更精确的匹配：在 log.file 部分查找 rootPath（注释行包含 "Root path to the log files"）
+            sudo sed -i '/# Root path to the log files/,/maxBackups:/ s|^    rootPath:.*|    rootPath: /var/log/milvus|' "$MILVUS_CONFIG"
+            info "已配置日志路径: /var/log/milvus"
+        fi
+        
+        info "Milvus 配置文件已更新"
+    else
+        warn "未找到 Milvus 配置文件: $MILVUS_CONFIG"
+    fi
 
     # 配置 Milvus systemd 服务环境变量
     info "配置 Milvus 服务环境变量..."
@@ -401,6 +527,7 @@ main() {
     detect_os
     detect_arch
     check_gcc_version
+    force_uninstall
     deploy_milvus_local
 
     echo ""
