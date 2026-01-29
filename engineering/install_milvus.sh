@@ -168,13 +168,13 @@ detect_arch() {
 check_gcc_version() {
     info "检查 GCC 版本..."
     
-    # 检查 gcc 是否存在
-    if ! command -v gcc &> /dev/null; then
+    # 检查 gcc-11 是否存在
+    if ! command -v gcc-11 &> /dev/null; then
         error "未找到 gcc，请先安装 GCC 11 或更高版本"
     fi
     
-    # 获取 gcc 版本
-    GCC_VERSION=$(gcc -dumpversion | cut -d. -f1)
+    # 获取 gcc-11版本
+    GCC_VERSION=$(gcc-11 -dumpversion | cut -d. -f1)
     
     if [[ -z "$GCC_VERSION" ]]; then
         error "无法获取 GCC 版本信息"
