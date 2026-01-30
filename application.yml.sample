@@ -134,7 +134,8 @@ spring:
       milvus:
         enabled: false
         initialize-schema: true           # 自动创建 Milvus 集合（首次启动时必须为 true）
-        default-embedding-dimension: 1024 # 默认嵌入维度（未配置 Embedding 模型时生效）
+        embedding-dimension: 1024          # Spring AI 标准配置，Milvus 集合创建时使用的嵌入维度
+        default-embedding-dimension: 1024  # 默认嵌入维度（未配置 Embedding 模型时生效）
         client:
           host: localhost
           port: 19530
