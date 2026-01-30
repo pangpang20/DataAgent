@@ -39,7 +39,7 @@ public class DynamicModelFactory {
 	@Value("${spring.ai.retry.max-attempts:5}")
 	private int maxAttempts;
 
-	@Value("#{T(java.time.Duration).parse('${spring.ai.retry.initial-interval:PT2S}').toMillis()}")
+	@Value("${spring.ai.retry.initial-interval:2000}")
 	private long initialInterval;
 
 	@Value("${spring.ai.retry.multiplier:2.0}")
