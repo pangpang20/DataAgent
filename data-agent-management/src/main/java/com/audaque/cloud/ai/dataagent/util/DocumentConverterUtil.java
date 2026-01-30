@@ -29,7 +29,8 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * Utility class for converting business objects to Document objects. Provides common
+ * Utility class for converting business objects to Document objects. Provides
+ * common
  * document conversion functionality for vector store operations.
  */
 @Slf4j
@@ -51,7 +52,8 @@ public class DocumentConverterUtil {
 
 	/**
 	 * Converts a column info object to a Document for vector storage.
-	 * @param tableInfoBO the table information containing schema details
+	 * 
+	 * @param tableInfoBO  the table information containing schema details
 	 * @param columnInfoBO the column information to convert
 	 * @return Document object with column metadata
 	 */
@@ -78,6 +80,7 @@ public class DocumentConverterUtil {
 
 	/**
 	 * Converts a table info object to a Document for vector storage.
+	 * 
 	 * @param tableInfoBO the table information to convert
 	 * @return Document object with table metadata
 	 */
@@ -97,8 +100,8 @@ public class DocumentConverterUtil {
 
 	public static List<Document> convertTablesToDocuments(String agentId, List<TableInfoBO> tables) {
 		return tables.stream()
-			.map(table -> DocumentConverterUtil.convertTableToDocumentForAgent(agentId, table))
-			.collect(Collectors.toList());
+				.map(table -> DocumentConverterUtil.convertTableToDocumentForAgent(agentId, table))
+				.collect(Collectors.toList());
 	}
 
 	public static Document convertBusinessKnowledgeToDocument(BusinessKnowledge businessKnowledge) {
@@ -134,6 +137,7 @@ public class DocumentConverterUtil {
 
 	/**
 	 * 为文档列表添加元数据，用于DOCUMENT类型知识处理
+	 * 
 	 * @param documents 原始文档列表
 	 * @param knowledge 知识对象
 	 * @return 添加了元数据的文档列表
