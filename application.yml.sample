@@ -205,7 +205,7 @@ spring:
             custom-domain: ${OSS_CUSTOM_DOMAIN:}         # 自定义域名（可选）
         
         # SQL 执行重试次数
-        max-sql-retry-count: 10
+        max-sql-retry-count: 20  # SQL生成最大重试次数，超过此次数将停止重试并显示"SQL次数生成超限"
   
   # ============================================================================
   # 文件上传配置
