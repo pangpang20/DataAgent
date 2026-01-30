@@ -82,24 +82,41 @@ public class AiModelRegistry {
 	// =========================================================
 	public EmbeddingModel getEmbeddingModel() {
 		if (currentEmbeddingModel == null) {
+			// 记录初始化前的状态
+			log.info("开始初始化全局 EmbeddingModel，当前模型为 null");
+			log.debug("正在查询数据库中激活的 EMBEDDING 模型配置...");
+
 			synchronized (this) {
 				if (currentEmbeddingModel == null) {
-					log.info("Initializing global EmbeddingModel...");
+					log.debug("进入双重检查锁定块，开始初始化 EmbeddingModel");
 					try {
 						ModelConfigDTO config = modelConfigDataService.getActiveConfigByType(ModelType.EMBEDDING);
 						if (config != null) {
+							log.info("找到激活的 Embedding 模型配置: id={}, provider={}, model_name={}, model_type={}",
+									config.getId(), config.getProvider(), config.getModelName(), config.getModelType());
+							log.debug("正在创建 EmbeddingModel 实例...");
 							currentEmbeddingModel = modelFactory.createEmbeddingModel(config);
+							log.info("EmbeddingModel 创建成功，模型维度: {}", currentEmbeddingModel.dimensions());
+						} else {
+							log.warn("数据库中未找到激活的 Embedding 模型配置，将使用默认配置");
 						}
 					} catch (Exception e) {
-						log.error("Failed to initialize EmbeddingModel: {}", e.getMessage());
+						log.error("初始化 EmbeddingModel 时发生异常: {}", e.getMessage(), e);
+						log.debug("异常堆栈详情: ", e);
 					}
 
-					// 兔底：为了防止 VectorStore Starter 启动时调用 dimensions() 报错
-					// 我们必须返回一个“哑巴”模型，而不是 null 或 抛异常
+					// 兜底：为了防止 VectorStore Starter 启动时调用 dimensions() 报错
+					// 我们必须返回一个"哑巴"模型，而不是 null 或 抛异常
 					if (currentEmbeddingModel == null) {
-						log.warn("Using DummyEmbeddingModel for fallback with dimension: {}",
+						log.warn("使用兜底的 DummyEmbeddingModel，配置维度: {}，此模型将用于创建 Milvus 集合 schema",
 								defaultEmbeddingDimension);
+						log.info("Milvus 集合 schema 将基于维度 {} 进行创建", defaultEmbeddingDimension);
 						currentEmbeddingModel = new DummyEmbeddingModel(defaultEmbeddingDimension);
+						log.debug("DummyEmbeddingModel 创建完成，dimensions() 返回: {}", currentEmbeddingModel.dimensions());
+					} else {
+						log.info("使用数据库配置的 Embedding 模型，维度: {}，此模型将用于创建 Milvus 集合 schema",
+								currentEmbeddingModel.dimensions());
+						log.debug("Milvus 集合 schema 将基于此模型的维度进行创建");
 					}
 				}
 			}
