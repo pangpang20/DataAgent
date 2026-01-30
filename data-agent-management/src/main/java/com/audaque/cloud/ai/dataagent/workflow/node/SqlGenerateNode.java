@@ -116,7 +116,10 @@ public class SqlGenerateNode implements NodeAction {
 		Flux<ChatResponse> preFlux = Flux.just(ChatResponseUtil.createResponse(displayMessage),
 				ChatResponseUtil.createPureResponse(TextType.SQL.getStartSign()));
 		Flux<ChatResponse> displayFlux = preFlux
-				.concatWith(sqlFlux.doOnNext(sqlCollector::append).map(ChatResponseUtil::createPureResponse))
+				.concatWith(sqlFlux.doOnNext(chunk -> {
+					log.debug("SqlGenerateNode received SQL chunk: [{}]", chunk);
+					sqlCollector.append(chunk);
+				}).map(ChatResponseUtil::createPureResponse))
 				.concatWith(Flux.just(ChatResponseUtil.createPureResponse(TextType.SQL.getEndSign()),
 						ChatResponseUtil.createResponse("SQL生成完成，准备执行")));
 
@@ -124,8 +127,11 @@ public class SqlGenerateNode implements NodeAction {
 				state, v -> {
 					String rawSql = sqlCollector.toString();
 					log.debug("LLM raw SQL output (before trim): [{}]", rawSql);
+					log.debug("LLM raw SQL output length: {}, isEmpty: {}", rawSql.length(), rawSql.isEmpty());
 					String sql = nl2SqlService.sqlTrim(rawSql);
 					log.debug("LLM SQL output (after trim): [{}]", sql);
+					log.debug("LLM SQL output (after trim) length: {}, isEmpty: {}", sql.length(),
+							sql == null ? "null" : sql.isEmpty());
 					// 检查SQL是否为空，只有非空时才写入state
 					if (sql != null && !sql.trim().isEmpty()) {
 						result.put(SQL_GENERATE_OUTPUT, sql);
