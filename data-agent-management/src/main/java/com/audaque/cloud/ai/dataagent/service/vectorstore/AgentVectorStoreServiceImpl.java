@@ -58,6 +58,9 @@ public class AgentVectorStoreServiceImpl implements AgentVectorStoreService {
 	@Value("${spring.ai.vectorstore.milvus.collection-name:data_agent_vector}")
 	private String collectionName;
 
+	@Value("${spring.ai.vectorstore.milvus.flush-delay-ms:1000}")
+	private int flushDelayMs;
+
 	public AgentVectorStoreServiceImpl(VectorStore vectorStore,
 			Optional<HybridRetrievalStrategy> hybridRetrievalStrategy, DataAgentProperties dataAgentProperties,
 			DynamicFilterService dynamicFilterService, Optional<MilvusServiceClient> milvusClient) {
@@ -170,6 +173,9 @@ public class AgentVectorStoreServiceImpl implements AgentVectorStoreService {
 		}
 
 		try {
+			log.debug("等待 {} ms 后执行 flush 操作以避免速率限制", flushDelayMs);
+			Thread.sleep(flushDelayMs);
+
 			FlushParam flushParam = FlushParam.newBuilder()
 					.addCollectionName(collectionName)
 					.build();
@@ -179,6 +185,9 @@ public class AgentVectorStoreServiceImpl implements AgentVectorStoreService {
 			} else {
 				log.warn("Milvus flush 返回非成功状态: {}, message: {}", response.getStatus(), response.getMessage());
 			}
+		} catch (InterruptedException e) {
+			log.warn("Flush 操作被中断: {}", e.getMessage());
+			Thread.currentThread().interrupt(); // 重新设置中断状态
 		} catch (Exception e) {
 			log.warn("Milvus flush 失败（不影响插入）: {}", e.getMessage());
 		}

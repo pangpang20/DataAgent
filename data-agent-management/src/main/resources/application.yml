@@ -58,6 +58,7 @@ spring:
           password: ${MILVUS_PASSWORD:Milvus}
           database-name: ${MILVUS_DATABASE:default}
         collection-name: ${MILVUS_COLLECTION:data_agent_vector}
+        flush-delay-ms: 2000  # Milvus flush 操作延迟（毫秒），避免速率限制
       elasticsearch:
         enabled: false
     alibaba:
