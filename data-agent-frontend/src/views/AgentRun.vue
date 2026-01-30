@@ -132,10 +132,20 @@
                     "
                     class="agent-response-block"
                   >
-                    <div class="agent-response-title">
-                      {{ nodeBlock[0].nodeName }}
+                    <div class="agent-response-header">
+                      <div class="agent-response-title">
+                        {{ nodeBlock[0].nodeName }}
+                      </div>
+                      <el-button
+                        class="toggle-button"
+                        size="small"
+                        @click="toggleNodeVisibility(index)"
+                        :icon="isNodeVisible[index] ? 'ArrowUp' : 'ArrowDown'"
+                      >
+                        {{ isNodeVisible[index] ? '收起' : '展开' }}
+                      </el-button>
                     </div>
-                    <div class="agent-response-content">
+                    <div v-show="isNodeVisible[index]" class="agent-response-content">
                       <Markdown :generating="isStreaming">
                         {{ getMarkdownContentFromNode(nodeBlock) }}
                       </Markdown>
@@ -146,10 +156,20 @@
                     v-else-if="nodeBlock.length > 0 && nodeBlock[0].textType === 'RESULT_SET'"
                     class="agent-response-block"
                   >
-                    <div class="agent-response-title">
-                      {{ nodeBlock[0].nodeName }}
+                    <div class="agent-response-header">
+                      <div class="agent-response-title">
+                        {{ nodeBlock[0].nodeName }}
+                      </div>
+                      <el-button
+                        class="toggle-button"
+                        size="small"
+                        @click="toggleNodeVisibility(index)"
+                        :icon="isNodeVisible[index] ? 'ArrowUp' : 'ArrowDown'"
+                      >
+                        {{ isNodeVisible[index] ? '收起' : '展开' }}
+                      </el-button>
                     </div>
-                    <div class="agent-response-content">
+                    <div v-show="isNodeVisible[index]" class="agent-response-content">
                       <ResultSetDisplay
                         v-if="nodeBlock[0].text"
                         :resultData="JSON.parse(nodeBlock[0].text)"
@@ -157,8 +177,25 @@
                       />
                     </div>
                   </div>
-                  <!-- 其他节点使用原来的 HTML 渲染方式 -->
-                  <div v-else v-html="generateNodeHtml(nodeBlock)"></div>
+                  <!-- 其他节点使用原来的 HTML 渲染方式，但添加展开/收缩功能 -->
+                  <div v-else>
+                    <div class="agent-response-block">
+                      <div class="agent-response-header">
+                        <div class="agent-response-title">
+                          {{ nodeBlock[0].nodeName }}
+                        </div>
+                        <el-button
+                          class="toggle-button"
+                          size="small"
+                          @click="toggleNodeVisibility(index)"
+                          :icon="isNodeVisible[index] ? 'ArrowUp' : 'ArrowDown'"
+                        >
+                          {{ isNodeVisible[index] ? '收起' : '展开' }}
+                        </el-button>
+                      </div>
+                      <div v-show="isNodeVisible[index]" class="agent-response-content" v-html="generateNodeHtml(nodeBlock)"></div>
+                    </div>
+                  </div>
                 </template>
               </div>
             </div>
@@ -167,8 +204,8 @@
 
         <!-- 人类反馈区域 -->
         <HumanFeedback
-          v-if="showHumanFeedback"
-          :request="lastRequest"
+          v-if="showHumanFeedback && lastRequest"
+          :request="lastRequest!"
           :handleFeedback="handleHumanFeedback"
         />
 
@@ -291,7 +328,7 @@
   import { ref, defineComponent, onMounted, nextTick, computed } from 'vue';
   import { useRoute } from 'vue-router';
   import { ElMessage } from 'element-plus';
-  import { Loading, Promotion, Document, Download, CircleClose } from '@element-plus/icons-vue';
+  import { Loading, Promotion, Document, Download, CircleClose, ArrowUp, ArrowDown } from '@element-plus/icons-vue';
   import hljs from 'highlight.js';
   import { marked } from 'marked';
   import DOMPurify from 'dompurify';
@@ -344,6 +381,8 @@
       Document,
       Download,
       CircleClose,
+      ArrowUp,
+      ArrowDown,
       HumanFeedback,
       ChatSessionSidebar,
       PresetQuestions,
@@ -352,7 +391,7 @@
     },
     created() {
       window.copyTextToClipboard = btn => {
-        const text = btn.previousElementSibling.textContent;
+        const text = btn.previousElementSibling?.textContent || '';
         const originalText = btn.textContent;
 
         navigator.clipboard
@@ -380,7 +419,7 @@
         const prevBtn = container.querySelector('.result-set-pagination-prev') as HTMLButtonElement;
         const nextBtn = container.querySelector('.result-set-pagination-next') as HTMLButtonElement;
         const pages = container.querySelectorAll('.result-set-page');
-
+        
         if (!currentPageElement || !prevBtn || !nextBtn || pages.length === 0) return;
 
         let currentPage = parseInt(currentPageElement.textContent || '1');
@@ -421,6 +460,7 @@
         useSessionStateManager();
       const isStreaming = ref(false);
       const nodeBlocks = ref<GraphNodeResponse[][]>([]);
+      const isNodeVisible = ref<boolean[]>([]);
       const requestOptions = ref({
         humanFeedback: false,
         nl2sqlOnly: false,
@@ -464,6 +504,19 @@
         }
       };
 
+      // 切换节点可见性
+      const toggleNodeVisibility = (index: number) => {
+        if (isNodeVisible.value[index] === undefined) {
+          // 初始化数组，确保所有节点默认为可见
+          while (isNodeVisible.value.length <= index) {
+            isNodeVisible.value.push(true);
+          }
+        }
+        isNodeVisible.value[index] = !isNodeVisible.value[index];
+      };
+
+      
+
       // 图片加载失败处理
       const handleImageError = () => {
         console.error('头像图片加载失败');
@@ -485,10 +538,15 @@
             currentMessages.value = [];
             nodeBlocks.value = [];
             isStreaming.value = false;
+            initializeNodeVisibility(0);
             return;
           }
           syncStateToView(session.id, { isStreaming, nodeBlocks });
           currentMessages.value = await ChatService.getSessionMessages(session.id);
+          // 初始化节点可见性
+          if (nodeBlocks.value) {
+            initializeNodeVisibility(nodeBlocks.value.length);
+          }
           scrollToBottom();
         } catch (error) {
           ElMessage.error('加载消息失败');
@@ -528,8 +586,8 @@
             nl2sqlOnly: requestOptions.value.nl2sqlOnly,
             plainReport: requestOptions.value.plainReport,
             rejectedPlan: false,
-            humanFeedbackContent: null,
-            threadId: sessionState.lastRequest?.threadId || null,
+            humanFeedbackContent: undefined,
+            threadId: sessionState.lastRequest?.threadId || undefined,
           };
 
           userInput.value = '';
@@ -607,7 +665,7 @@
           // 发送流式请求
           const closeStream = await GraphService.streamSearch(
             request,
-            (response: GraphNodeResponse) => {
+            async (response: GraphNodeResponse) => {
               if (response.error) {
                 ElMessage.error(`处理错误: ${response.text}`);
                 return;
@@ -738,6 +796,7 @@
               // 如果是当前显示的会话，同步到视图并滚动
               if (currentSession.value?.id === sessionId) {
                 nodeBlocks.value = sessionState.nodeBlocks;
+                initializeNodeVisibility(sessionState.nodeBlocks.length);
                 if (autoScroll.value) {
                   scrollToBottom();
                 }
@@ -756,6 +815,8 @@
               // 出错时只有当前会话才重新加载
               if (currentSession.value?.id === sessionId) {
                 isStreaming.value = false;
+                nodeBlocks.value = [];
+                initializeNodeVisibility(0);
                 await selectSession(currentSession.value);
               }
             },
@@ -829,6 +890,7 @@
                   // 如果是当前显示的会话，同步到视图
                   if (currentSession.value?.id === sessionId) {
                     isStreaming.value = false;
+                    initializeNodeVisibility(sessionState.nodeBlocks.length);
                   }
                 }
               }
@@ -1052,6 +1114,13 @@
         });
       };
 
+      // 初始化节点可见性
+      const initializeNodeVisibility = (nodeBlockLength: number) => {
+        while (isNodeVisible.value.length < nodeBlockLength) {
+          isNodeVisible.value.push(true);
+        }
+      };
+
       const handleHumanFeedback = async (
         request: GraphRequest,
         rejectedPlan: boolean,
@@ -1126,7 +1195,7 @@
                 messageType: 'html',
               };
 
-              return ChatService.saveMessage(sessionId, aiMessage).catch(error => {
+              return ChatService.saveMessage(sessionId, aiMessage).then(() => {}).catch(error => {
                 console.error('保存AI消息失败:', error);
               });
             };
@@ -1149,6 +1218,7 @@
           if (currentSession.value?.id === sessionId) {
             isStreaming.value = false;
             nodeBlocks.value = [];
+            initializeNodeVisibility(0);
           }
 
           // 重新加载会话消息以刷新显示
@@ -1164,6 +1234,7 @@
           if (currentSession.value?.id === sessionId) {
             isStreaming.value = false;
             nodeBlocks.value = [];
+            initializeNodeVisibility(0);
           }
         }
       };
@@ -1278,6 +1349,8 @@
         autoScroll,
         chatContainer,
         nodeBlocks,
+        isNodeVisible,
+        toggleNodeVisibility,
         agentId,
         showHumanFeedback,
         lastRequest,
@@ -1452,13 +1525,25 @@
     box-shadow: 0 2px 8px rgba(64, 158, 255, 0.1);
   }
 
-  .agent-response-title {
+  .agent-response-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     background: #ecf5ff;
     padding: 12px 16px;
     font-weight: 600;
     color: #409eff;
     border-bottom: 1px solid #e8e8e8;
     font-size: 14px;
+  }
+
+  .agent-response-title {
+    flex: 1;
+    margin-right: 10px;
+  }
+
+  .toggle-button {
+    margin-left: auto;
   }
 
   .agent-response-content {
