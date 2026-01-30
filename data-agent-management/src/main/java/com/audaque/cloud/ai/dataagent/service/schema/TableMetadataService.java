@@ -33,7 +33,8 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * Service for processing table metadata. This service handles fetching column details,
+ * Service for processing table metadata. This service handles fetching column
+ * details,
  * sample data, and enriching table information with metadata.
  */
 @Slf4j
@@ -47,8 +48,9 @@ public class TableMetadataService {
 
 	/**
 	 * 批量处理多个表的元数据，提高性能
-	 * @param tables 表列表
-	 * @param dbConfig 数据库配置
+	 * 
+	 * @param tables        表列表
+	 * @param dbConfig      数据库配置
 	 * @param foreignKeyMap 外键映射
 	 * @throws Exception 处理失败时抛出异常
 	 */
@@ -68,7 +70,8 @@ public class TableMetadataService {
 
 	/**
 	 * 批量获取所有表的列信息
-	 * @param tables 表列表
+	 * 
+	 * @param tables   表列表
 	 * @param dbConfig 数据库配置
 	 * @return 表名到列信息的映射
 	 * @throws Exception 获取列信息失败时抛出异常
@@ -78,21 +81,27 @@ public class TableMetadataService {
 		Map<String, List<ColumnInfoBO>> tableColumnsMap = new HashMap<>();
 		Accessor accessor = accessorFactory.getAccessorByDbConfig(dbConfig);
 
+		log.debug("开始获取 {} 个表的列信息，数据库类型: {}", tables.size(), dbConfig.getDialectType());
+
 		for (TableInfoBO table : tables) {
 			DbQueryParameter tableDqp = DbQueryParameter.from(dbConfig).setTable(table.getName());
 			List<ColumnInfoBO> columnInfoBOS = accessor.showColumns(dbConfig, tableDqp);
 			tableColumnsMap.put(table.getName(), columnInfoBOS);
+			log.debug("表 [{}] 获取到 {} 个列: {}", table.getName(), columnInfoBOS.size(),
+					columnInfoBOS.stream().map(ColumnInfoBO::getName).collect(Collectors.joining(", ")));
 		}
 
+		log.debug("列信息获取完成，共 {} 个表", tableColumnsMap.size());
 		return tableColumnsMap;
 	}
 
 	/**
 	 * 为表添加元数据信息
-	 * @param tables 表列表
-	 * @param tableColumnsMap 表名到列信息的映射
+	 * 
+	 * @param tables              表列表
+	 * @param tableColumnsMap     表名到列信息的映射
 	 * @param allTablesSampleData 表名到列样本数据的映射
-	 * @param foreignKeyMap 外键映射
+	 * @param foreignKeyMap       外键映射
 	 */
 	private void enrichTablesWithMetadata(List<TableInfoBO> tables, Map<String, List<ColumnInfoBO>> tableColumnsMap,
 			Map<String, Map<String, List<String>>> allTablesSampleData, Map<String, List<String>> foreignKeyMap) {
@@ -115,12 +124,15 @@ public class TableMetadataService {
 
 	/**
 	 * 处理列信息，包括设置表名和样本数据
-	 * @param columnInfoBOS 列信息列表
-	 * @param table 表信息
+	 * 
+	 * @param columnInfoBOS   列信息列表
+	 * @param table           表信息
 	 * @param tableSampleData 表样本数据
 	 */
 	private void processColumnInfo(List<ColumnInfoBO> columnInfoBOS, TableInfoBO table,
 			Map<String, List<String>> tableSampleData) {
+
+		log.debug("表 [{}] 开始处理列信息，共 {} 个列", table.getName(), columnInfoBOS.size());
 
 		for (ColumnInfoBO columnInfoBO : columnInfoBOS) {
 			// 设置列所属的表名
@@ -129,22 +141,30 @@ public class TableMetadataService {
 			// 获取并设置列的样本数据
 			List<String> sampleColumnValue = tableSampleData.getOrDefault(columnInfoBO.getName(), new ArrayList<>());
 			setColumnSamples(columnInfoBO, sampleColumnValue);
+
+			log.debug("  列 [{}] - 类型: {}, 主键: {}, 非空: {}, 样例数: {}",
+					columnInfoBO.getName(),
+					columnInfoBO.getType(),
+					columnInfoBO.isPrimary(),
+					columnInfoBO.isNotnull(),
+					sampleColumnValue.size());
 		}
 
 		// 保存处理过的列数据到TableInfoBO，供后续使用
 		table.setColumns(columnInfoBOS);
+		log.debug("表 [{}] 列信息处理完成", table.getName());
 	}
 
 	/**
 	 * 设置列的样本数据
-	 * @param columnInfoBO 列信息
+	 * 
+	 * @param columnInfoBO      列信息
 	 * @param sampleColumnValue 样本数据列表
 	 */
 	private void setColumnSamples(ColumnInfoBO columnInfoBO, List<String> sampleColumnValue) {
 		try {
 			columnInfoBO.setSamples(objectMapper.writeValueAsString(sampleColumnValue));
-		}
-		catch (JsonProcessingException e) {
+		} catch (JsonProcessingException e) {
 			log.error("Failed to convert sample data {} to JSON: {}, set default empty", sampleColumnValue,
 					e.getMessage());
 			columnInfoBO.setSamples("[]");
@@ -153,7 +173,8 @@ public class TableMetadataService {
 
 	/**
 	 * 设置表的主键信息
-	 * @param table 表信息
+	 * 
+	 * @param table         表信息
 	 * @param columnInfoBOS 列信息列表
 	 */
 	private void setTablePrimaryKeys(TableInfoBO table, List<ColumnInfoBO> columnInfoBOS) {
@@ -161,18 +182,18 @@ public class TableMetadataService {
 
 		if (!primaryKeyColumns.isEmpty()) {
 			List<String> columnNames = primaryKeyColumns.stream()
-				.map(ColumnInfoBO::getName)
-				.collect(Collectors.toList());
+					.map(ColumnInfoBO::getName)
+					.collect(Collectors.toList());
 			table.setPrimaryKeys(columnNames);
-		}
-		else {
+		} else {
 			table.setPrimaryKeys(new ArrayList<>());
 		}
 	}
 
 	/**
 	 * 设置表的外键信息
-	 * @param table 表信息
+	 * 
+	 * @param table         表信息
 	 * @param foreignKeyMap 外键映射
 	 */
 	private void setTableForeignKeys(TableInfoBO table, Map<String, List<String>> foreignKeyMap) {
@@ -182,7 +203,8 @@ public class TableMetadataService {
 
 	/**
 	 * 批量获取多个表的样本数据，减少数据库查询次数
-	 * @param dbConfig 数据库配置
+	 * 
+	 * @param dbConfig        数据库配置
 	 * @param tableColumnsMap 表名到列信息的映射
 	 * @return 表名到列样本数据的映射
 	 */
@@ -220,10 +242,11 @@ public class TableMetadataService {
 
 	/**
 	 * 获取单个表的样本数据
-	 * @param dbConfig 数据库配置
-	 * @param accessor 数据库访问器
+	 * 
+	 * @param dbConfig  数据库配置
+	 * @param accessor  数据库访问器
 	 * @param tableName 表名
-	 * @param columns 列信息列表
+	 * @param columns   列信息列表
 	 * @return 表的样本数据映射
 	 */
 	private Map<String, List<String>> fetchTableSampleData(DbConfigBO dbConfig, Accessor accessor, String tableName,
@@ -234,16 +257,27 @@ public class TableMetadataService {
 			String columnNames = columns.stream().map(ColumnInfoBO::getName).collect(Collectors.joining(", "));
 			String sql = SqlUtil.buildSelectSql(dbConfig.getDialectType(), tableName, columnNames, 5);
 
+			log.debug("表 [{}] 开始获取样例数据，查询列数: {}", tableName, columns.size());
+			log.debug("执行 SQL: {}", sql);
+
 			DbQueryParameter batchParam = new DbQueryParameter();
 			batchParam.setSchema(dbConfig.getSchema());
 			batchParam.setSql(sql);
 
 			ResultSetBO resultSet = accessor.executeSqlAndReturnObject(dbConfig, batchParam);
 			log.info("Embedding for table: {}, result size: {}", tableName, resultSet.getData().size());
+			log.debug("表 [{}] 查询返回 {} 行数据", tableName, resultSet.getData().size());
 
-			return processResultSet(resultSet, columns);
-		}
-		catch (Exception e) {
+			Map<String, List<String>> sampleData = processResultSet(resultSet, columns);
+			log.debug("表 [{}] 样例数据处理完成，包含 {} 个列的样本", tableName, sampleData.size());
+
+			// 打印每个列的样例数据详情
+			for (Map.Entry<String, List<String>> entry : sampleData.entrySet()) {
+				log.debug("  列 [{}] 样例数据 (共{}个): {}", entry.getKey(), entry.getValue().size(), entry.getValue());
+			}
+
+			return sampleData;
+		} catch (Exception e) {
 			log.error("Failed to fetch sample data for table: {},use empty map as default value", tableName, e);
 			return new HashMap<>();
 		}
@@ -251,30 +285,40 @@ public class TableMetadataService {
 
 	/**
 	 * 处理查询结果集，提取并格式化样本数据
+	 * 
 	 * @param resultSet 查询结果集
-	 * @param columns 列信息列表
+	 * @param columns   列信息列表
 	 * @return 处理后的样本数据
 	 */
 	private Map<String, List<String>> processResultSet(ResultSetBO resultSet, List<ColumnInfoBO> columns) {
 		Map<String, List<String>> tableSampleData = new HashMap<>();
 
 		if (resultSet == null || resultSet.getData() == null) {
+			log.debug("查询结果为空，返回空样本数据");
 			return tableSampleData;
 		}
+
+		log.debug("开始处理 {} 行查询结果", resultSet.getData().size());
 
 		// 提取原始样本数据
 		for (Map<String, String> row : resultSet.getData()) {
 			extractSampleDataFromRow(row, columns, tableSampleData);
 		}
 
+		log.debug("原始样本数据提取完成，包含 {} 个列", tableSampleData.size());
+
 		// 过滤和限制样本数据
-		return filterAndLimitSampleData(tableSampleData);
+		Map<String, List<String>> filtered = filterAndLimitSampleData(tableSampleData);
+		log.debug("样本数据过滤完成（去重、限制长度、最多3个样本）");
+
+		return filtered;
 	}
 
 	/**
 	 * 从单行数据中提取样本数据
-	 * @param row 数据行
-	 * @param columns 列信息列表
+	 * 
+	 * @param row             数据行
+	 * @param columns         列信息列表
 	 * @param tableSampleData 存储样本数据的映射
 	 */
 	private void extractSampleDataFromRow(Map<String, String> row, List<ColumnInfoBO> columns,
@@ -290,16 +334,17 @@ public class TableMetadataService {
 
 	/**
 	 * 过滤和限制样本数据，确保每列最多3个样本，并去重
+	 * 
 	 * @param tableSampleData 原始样本数据
 	 * @return 过滤后的样本数据
 	 */
 	private Map<String, List<String>> filterAndLimitSampleData(Map<String, List<String>> tableSampleData) {
 		tableSampleData.replaceAll((col, samples) -> samples.stream()
-			.filter(Objects::nonNull)
-			.distinct()
-			.limit(3)
-			.filter(s -> s.length() <= 100)
-			.collect(Collectors.toList()));
+				.filter(Objects::nonNull)
+				.distinct()
+				.limit(3)
+				.filter(s -> s.length() <= 100)
+				.collect(Collectors.toList()));
 
 		return tableSampleData;
 	}
