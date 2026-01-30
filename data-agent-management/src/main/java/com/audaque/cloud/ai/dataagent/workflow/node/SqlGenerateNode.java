@@ -122,13 +122,18 @@ public class SqlGenerateNode implements NodeAction {
 
 		Flux<GraphResponse<StreamingOutput>> generator = FluxUtil.createStreamingGeneratorWithMessages(this.getClass(),
 				state, v -> {
-					String sql = nl2SqlService.sqlTrim(sqlCollector.toString());
+					String rawSql = sqlCollector.toString();
+					log.debug("LLM raw SQL output (before trim): [{}]", rawSql);
+					String sql = nl2SqlService.sqlTrim(rawSql);
+					log.debug("LLM SQL output (after trim): [{}]", sql);
 					// 检查SQL是否为空，只有非空时才写入state
 					if (sql != null && !sql.trim().isEmpty()) {
 						result.put(SQL_GENERATE_OUTPUT, sql);
 						log.info("SQL generation successful, SQL: {}", sql);
 					} else {
-						log.warn("LLM returned empty SQL, will trigger retry in dispatcher. Count: {}", count + 1);
+						log.warn(
+								"LLM returned empty SQL, will trigger retry in dispatcher. Count: {}, Raw output length: {}",
+								count + 1, rawSql.length());
 						// 不写入SQL_GENERATE_OUTPUT，让dispatcher根据Optional.isEmpty()触发重试
 					}
 					return result;

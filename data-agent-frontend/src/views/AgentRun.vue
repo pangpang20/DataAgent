@@ -890,6 +890,8 @@
                   // 如果是当前显示的会话，同步到视图
                   if (currentSession.value?.id === sessionId) {
                     isStreaming.value = false;
+                    // 不清空nodeBlocks，保持节点可见
+                    // nodeBlocks.value = [];
                     initializeNodeVisibility(sessionState.nodeBlocks.length);
                   }
                 }
@@ -1114,10 +1116,10 @@
         });
       };
 
-      // 初始化节点可见性
+      // 初始化节点可见性（默认收起）
       const initializeNodeVisibility = (nodeBlockLength: number) => {
         while (isNodeVisible.value.length < nodeBlockLength) {
-          isNodeVisible.value.push(true);
+          isNodeVisible.value.push(false);
         }
       };
 
@@ -1209,7 +1211,8 @@
 
           // 清理流式状态
           sessionState.isStreaming = false;
-          sessionState.nodeBlocks = [];
+          // 不清空nodeBlocks，保持节点可见
+          // sessionState.nodeBlocks = [];
           sessionState.htmlReportContent = '';
           sessionState.htmlReportSize = 0;
           sessionState.markdownReportContent = '';
@@ -1217,8 +1220,9 @@
           // 如果是当前显示的会话，同步更新视图
           if (currentSession.value?.id === sessionId) {
             isStreaming.value = false;
-            nodeBlocks.value = [];
-            initializeNodeVisibility(0);
+            // 不清空nodeBlocks，保持节点可见
+            // nodeBlocks.value = [];
+            initializeNodeVisibility(sessionState.nodeBlocks.length);
           }
 
           // 重新加载会话消息以刷新显示
@@ -1233,8 +1237,9 @@
           sessionState.closeStream = null;
           if (currentSession.value?.id === sessionId) {
             isStreaming.value = false;
-            nodeBlocks.value = [];
-            initializeNodeVisibility(0);
+            // 不清空nodeBlocks，保持节点可见
+            // nodeBlocks.value = [];
+            initializeNodeVisibility(sessionState.nodeBlocks.length);
           }
         }
       };
