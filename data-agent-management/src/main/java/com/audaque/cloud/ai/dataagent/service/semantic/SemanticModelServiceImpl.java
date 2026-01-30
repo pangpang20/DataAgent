@@ -22,14 +22,19 @@ import com.audaque.cloud.ai.dataagent.entity.AgentDatasource;
 import com.audaque.cloud.ai.dataagent.entity.SemanticModel;
 import com.audaque.cloud.ai.dataagent.mapper.AgentDatasourceMapper;
 import com.audaque.cloud.ai.dataagent.mapper.SemanticModelMapper;
+import com.audaque.cloud.ai.dataagent.service.vectorstore.AgentVectorStoreService;
+import com.audaque.cloud.ai.dataagent.util.DocumentConverterUtil;
 import com.audaque.cloud.ai.dataagent.vo.BatchImportResult;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.ai.document.Document;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @AllArgsConstructor
@@ -41,6 +46,8 @@ public class SemanticModelServiceImpl implements SemanticModelService {
 	private final AgentDatasourceMapper agentDatasourceMapper;
 
 	private final SemanticModelExcelService excelService;
+
+	private final AgentVectorStoreService agentVectorStoreService;
 
 	@Override
 	public List<SemanticModel> getAll() {
@@ -101,6 +108,9 @@ public class SemanticModelServiceImpl implements SemanticModelService {
 		semanticModel.setUpdatedTime(now);
 		semanticModelMapper.insert(semanticModel);
 
+		// 同步到向量数据库
+		syncSemanticModelToVectorStore(semanticModel);
+
 		return true;
 	}
 
@@ -147,6 +157,13 @@ public class SemanticModelServiceImpl implements SemanticModelService {
 
 	@Override
 	public void deleteSemanticModel(Long id) {
+		SemanticModel semanticModel = semanticModelMapper.selectById(id);
+		if (semanticModel != null) {
+			// 从向量数据库删除
+			deleteSemanticModelFromVectorStore(semanticModel);
+		}
+
+		// 从关系数据库删除
 		semanticModelMapper.deleteById(id);
 	}
 
@@ -155,6 +172,9 @@ public class SemanticModelServiceImpl implements SemanticModelService {
 		semanticModel.setId(id);
 		semanticModel.setUpdatedTime(LocalDateTime.now());
 		semanticModelMapper.updateById(semanticModel);
+
+		// 重新同步到向量数据库
+		syncSemanticModelToVectorStore(semanticModel);
 	}
 
 	@Override
@@ -193,6 +213,10 @@ public class SemanticModelServiceImpl implements SemanticModelService {
 					existing.setDataType(item.getDataType());
 					existing.setUpdatedTime(LocalDateTime.now());
 					semanticModelMapper.updateById(existing);
+
+					// 重新同步到向量数据库
+					syncSemanticModelToVectorStore(existing);
+
 					log.info("更新语义模型: agentId={}, tableName={}, columnName={}", dto.getAgentId(), item.getTableName(),
 							item.getColumnName());
 				} else {
@@ -212,6 +236,10 @@ public class SemanticModelServiceImpl implements SemanticModelService {
 							.updatedTime(LocalDateTime.now())
 							.build();
 					semanticModelMapper.insert(newModel);
+
+					// 同步到向量数据库
+					syncSemanticModelToVectorStore(newModel);
+
 					log.info("插入语义模型: agentId={}, tableName={}, columnName={}", dto.getAgentId(), item.getTableName(),
 							item.getColumnName());
 				}
@@ -227,6 +255,52 @@ public class SemanticModelServiceImpl implements SemanticModelService {
 		}
 
 		return result;
+	}
+
+	/**
+	 * 同步语义模型到向量数据库
+	 * 
+	 * @param semanticModel 语义模型对象
+	 */
+	private void syncSemanticModelToVectorStore(SemanticModel semanticModel) {
+		try {
+			// 转换为Document
+			Document document = DocumentConverterUtil.convertSemanticModelToDocument(semanticModel);
+
+			// 添加到向量数据库
+			agentVectorStoreService.addDocuments(semanticModel.getAgentId().toString(), List.of(document));
+
+			log.info("成功同步语义模型到向量数据库: id={}, agentId={}, tableName={}, columnName={}",
+					semanticModel.getId(), semanticModel.getAgentId(),
+					semanticModel.getTableName(), semanticModel.getColumnName());
+		} catch (Exception e) {
+			log.error("同步语义模型到向量数据库失败: id={}, agentId={}",
+					semanticModel.getId(), semanticModel.getAgentId(), e);
+			// 不抛出异常，允许数据库操作成功但向量化失败
+		}
+	}
+
+	/**
+	 * 从向量数据库删除语义模型
+	 * 
+	 * @param semanticModel 语义模型对象
+	 */
+	private void deleteSemanticModelFromVectorStore(SemanticModel semanticModel) {
+		try {
+			// 构建metadata过滤条件
+			Map<String, Object> metadata = new HashMap<>();
+			metadata.put("semanticModelId", semanticModel.getId());
+
+			// 从向量数据库删除
+			agentVectorStoreService.deleteDocumentsByMetedata(semanticModel.getAgentId().toString(), metadata);
+
+			log.info("成功从向量数据库删除语义模型: id={}, agentId={}",
+					semanticModel.getId(), semanticModel.getAgentId());
+		} catch (Exception e) {
+			log.error("从向量数据库删除语义模型失败: id={}, agentId={}",
+					semanticModel.getId(), semanticModel.getAgentId(), e);
+			// 不抛出异常，允许关系数据库删除成功
+		}
 	}
 
 	@Override

@@ -21,12 +21,17 @@ import com.audaque.cloud.ai.dataagent.properties.DataAgentProperties;
 import com.audaque.cloud.ai.dataagent.dto.search.AgentSearchRequest;
 import com.audaque.cloud.ai.dataagent.dto.search.HybridSearchRequest;
 import com.audaque.cloud.ai.dataagent.service.hybrid.retrieval.HybridRetrievalStrategy;
+import io.milvus.client.MilvusServiceClient;
+import io.milvus.param.R;
+import io.milvus.param.collection.FlushParam;
+import io.milvus.grpc.FlushResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.SimpleVectorStore;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.ai.vectorstore.filter.Filter;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
@@ -48,14 +53,21 @@ public class AgentVectorStoreServiceImpl implements AgentVectorStoreService {
 
 	private final DynamicFilterService dynamicFilterService;
 
+	private final Optional<MilvusServiceClient> milvusClient;
+
+	@Value("${spring.ai.vectorstore.milvus.collection-name:data_agent_vector}")
+	private String collectionName;
+
 	public AgentVectorStoreServiceImpl(VectorStore vectorStore,
 			Optional<HybridRetrievalStrategy> hybridRetrievalStrategy, DataAgentProperties dataAgentProperties,
-			DynamicFilterService dynamicFilterService) {
+			DynamicFilterService dynamicFilterService, Optional<MilvusServiceClient> milvusClient) {
 		this.vectorStore = vectorStore;
 		this.hybridRetrievalStrategy = hybridRetrievalStrategy;
 		this.dataAgentProperties = dataAgentProperties;
 		this.dynamicFilterService = dynamicFilterService;
-		log.info("VectorStore type: {}", vectorStore.getClass().getSimpleName());
+		this.milvusClient = milvusClient;
+		log.info("VectorStore type: {}, MilvusClient present: {}",
+				vectorStore.getClass().getSimpleName(), milvusClient.isPresent());
 	}
 
 	@Override
@@ -139,9 +151,36 @@ public class AgentVectorStoreServiceImpl implements AgentVectorStoreService {
 		try {
 			vectorStore.add(documents);
 			log.info("成功向 Milvus 插入 {} 个文档", documents.size());
+
+			// 显式 flush 确保数据持久化并立即可搜索
+			flushMilvus();
 		} catch (Exception e) {
 			log.error("向 Milvus 插入文档失败: {}", e.getMessage(), e);
 			throw e;
+		}
+	}
+
+	/**
+	 * 显式 flush Milvus 集合，确保数据持久化并立即可搜索
+	 */
+	private void flushMilvus() {
+		if (milvusClient.isEmpty()) {
+			log.debug("MilvusClient not available, skip flush");
+			return;
+		}
+
+		try {
+			FlushParam flushParam = FlushParam.newBuilder()
+					.addCollectionName(collectionName)
+					.build();
+			R<FlushResponse> response = milvusClient.get().flush(flushParam);
+			if (response.getStatus() == R.Status.Success.getCode()) {
+				log.info("Milvus flush 成功，collection: {}", collectionName);
+			} else {
+				log.warn("Milvus flush 返回非成功状态: {}, message: {}", response.getStatus(), response.getMessage());
+			}
+		} catch (Exception e) {
+			log.warn("Milvus flush 失败（不影响插入）: {}", e.getMessage());
 		}
 	}
 

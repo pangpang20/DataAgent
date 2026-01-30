@@ -21,6 +21,7 @@ import com.audaque.cloud.ai.dataagent.constant.Constant;
 import com.audaque.cloud.ai.dataagent.constant.DocumentMetadataConstant;
 import com.audaque.cloud.ai.dataagent.entity.AgentKnowledge;
 import com.audaque.cloud.ai.dataagent.entity.BusinessKnowledge;
+import com.audaque.cloud.ai.dataagent.entity.SemanticModel;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.ai.document.Document;
@@ -160,6 +161,37 @@ public class DocumentConverterUtil {
 			documentsWithMetadata.add(docWithMetadata);
 		}
 		return documentsWithMetadata;
+	}
+
+	/**
+	 * 将语义模型转换为向量文档
+	 * 
+	 * @param semanticModel 语义模型对象
+	 * @return Document对象
+	 */
+	public static Document convertSemanticModelToDocument(SemanticModel semanticModel) {
+		// 构建文档内容，包含业务名称、表名、字段名、同义词、业务描述
+		String businessName = semanticModel.getBusinessName();
+		String tableName = semanticModel.getTableName();
+		String columnName = semanticModel.getColumnName();
+		String synonyms = Optional.ofNullable(semanticModel.getSynonyms()).orElse("无");
+		String businessDescription = Optional.ofNullable(semanticModel.getBusinessDescription()).orElse("无");
+		String dataType = semanticModel.getDataType();
+
+		String content = String.format(
+				"业务名称: %s, 表名: %s, 数据库字段名: %s, 字段同义词: %s, 业务描述: %s, 数据类型: %s",
+				businessName, tableName, columnName, synonyms, businessDescription, dataType);
+
+		// 构建元数据
+		Map<String, Object> metadata = new HashMap<>();
+		metadata.put(DocumentMetadataConstant.VECTOR_TYPE, DocumentMetadataConstant.SEMANTIC_MODEL);
+		metadata.put(Constant.AGENT_ID, semanticModel.getAgentId().toString());
+		metadata.put(DocumentMetadataConstant.DB_SEMANTIC_MODEL_ID, semanticModel.getId());
+		metadata.put(DocumentMetadataConstant.TABLE_NAME, tableName);
+		metadata.put("columnName", columnName);
+		metadata.put("businessName", businessName);
+
+		return new Document(UUID.randomUUID().toString(), content, metadata);
 	}
 
 	/**

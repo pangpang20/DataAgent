@@ -52,4 +52,10 @@ public final class DocumentMetadataConstant {
 	// businessTermId
 	public static final String DB_BUSINESS_TERM_ID = "businessTermId";
 
+	// semanticModel
+	public static final String SEMANTIC_MODEL = "semanticModel";
+
+	// semanticModelId
+	public static final String DB_SEMANTIC_MODEL_ID = "semanticModelId";
+
 }
