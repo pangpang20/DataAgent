@@ -39,7 +39,7 @@ public class AiModelRegistry {
 
 	private final ModelConfigDataService modelConfigDataService;
 
-	@Value("${spring.ai.vectorstore.milvus.default-embedding-dimension:1024}")
+	@Value("${spring.ai.vectorstore.milvus.embedding-dimension:1024}")
 	private int defaultEmbeddingDimension;
 
 	// 缓存对象 (volatile 保证可见性)
