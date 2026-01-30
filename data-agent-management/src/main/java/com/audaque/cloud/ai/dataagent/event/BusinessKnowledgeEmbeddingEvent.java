@@ -23,11 +23,11 @@ import java.time.Clock;
 @Getter
 public class BusinessKnowledgeEmbeddingEvent extends ApplicationEvent {
 
-	private final Long knowledgeId;
+    private final Long knowledgeId;
 
-	public BusinessKnowledgeEmbeddingEvent(Object source, Long knowledgeId) {
-		super(source, Clock.systemDefaultZone());
-		this.knowledgeId = knowledgeId;
-	}
+    public BusinessKnowledgeEmbeddingEvent(Object source, Long knowledgeId) {
+        super(source, Clock.systemDefaultZone());
+        this.knowledgeId = knowledgeId;
+    }
 
 }
