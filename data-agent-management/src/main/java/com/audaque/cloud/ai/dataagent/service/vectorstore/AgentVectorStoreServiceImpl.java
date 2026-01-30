@@ -32,10 +32,12 @@ import org.springframework.ai.vectorstore.SimpleVectorStore;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.ai.vectorstore.filter.Filter;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 
 import static com.audaque.cloud.ai.dataagent.service.vectorstore.DynamicFilterService.buildFilterExpressionString;
 
@@ -161,11 +163,25 @@ public class AgentVectorStoreServiceImpl implements AgentVectorStoreService {
 			vectorStore.add(documents);
 			log.info("成功向 Milvus 插入 {} 个文档", documents.size());
 
-			// 显式 flush 确保数据持久化并立即可搜索
-			flushMilvus();
+			// 异步 flush 确保数据持久化并立即可搜索，不阻塞当前请求线程
+			flushMilvusAsync();
 		} catch (Exception e) {
 			log.error("向 Milvus 插入文档失败: {}", e.getMessage(), e);
 			throw e;
+		}
+	}
+
+	/**
+	 * 异步 flush Milvus 集合，确保数据持久化并立即可搜索，不阻塞主线程
+	 */
+	@Async
+	public CompletableFuture<Void> flushMilvusAsync() {
+		try {
+			flushMilvus();
+			return CompletableFuture.completedFuture(null);
+		} catch (Exception e) {
+			log.error("异步 flush Milvus 失败: {}", e.getMessage(), e);
+			return CompletableFuture.failedFuture(e);
 		}
 	}
 

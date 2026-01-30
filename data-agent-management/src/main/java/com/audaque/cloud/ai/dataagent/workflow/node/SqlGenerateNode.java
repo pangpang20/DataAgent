@@ -44,10 +44,14 @@ import static com.audaque.cloud.ai.dataagent.constant.Constant.*;
 import static com.audaque.cloud.ai.dataagent.util.PlanProcessUtil.getCurrentExecutionStepInstruction;
 
 /**
- * Enhanced SQL generation node that handles SQL query regeneration with advanced
- * optimization features. This node is responsible for: - Multi-round SQL optimization and
- * refinement - Syntax validation and security analysis - Performance optimization and
- * intelligent caching - Handling execution exceptions and semantic consistency failures -
+ * Enhanced SQL generation node that handles SQL query regeneration with
+ * advanced
+ * optimization features. This node is responsible for: - Multi-round SQL
+ * optimization and
+ * refinement - Syntax validation and security analysis - Performance
+ * optimization and
+ * intelligent caching - Handling execution exceptions and semantic consistency
+ * failures -
  * Managing retry logic with schema advice - Providing streaming feedback during
  * regeneration process
  *
@@ -93,13 +97,11 @@ public class SqlGenerateNode implements NodeAction {
 			displayMessage = "检测到SQL执行异常，开始重新生成SQL...";
 			sqlFlux = handleRetryGenerateSql(state, StateUtil.getStringValue(state, SQL_GENERATE_OUTPUT, ""),
 					retryDto.reason(), promptForSql);
-		}
-		else if (retryDto.semanticFail()) {
+		} else if (retryDto.semanticFail()) {
 			displayMessage = "语义一致性校验未通过，开始重新生成SQL...";
 			sqlFlux = handleRetryGenerateSql(state, StateUtil.getStringValue(state, SQL_GENERATE_OUTPUT, ""),
 					retryDto.reason(), promptForSql);
-		}
-		else {
+		} else {
 			displayMessage = "开始生成SQL...";
 			sqlFlux = handleGenerateSql(state, promptForSql);
 		}
@@ -113,14 +115,22 @@ public class SqlGenerateNode implements NodeAction {
 		Flux<ChatResponse> preFlux = Flux.just(ChatResponseUtil.createResponse(displayMessage),
 				ChatResponseUtil.createPureResponse(TextType.SQL.getStartSign()));
 		Flux<ChatResponse> displayFlux = preFlux
-			.concatWith(sqlFlux.doOnNext(sqlCollector::append).map(ChatResponseUtil::createPureResponse))
-			.concatWith(Flux.just(ChatResponseUtil.createPureResponse(TextType.SQL.getEndSign()),
-					ChatResponseUtil.createResponse("SQL生成完成，准备执行")));
+				.concatWith(sqlFlux.doOnNext(sqlCollector::append).map(ChatResponseUtil::createPureResponse))
+				.concatWith(Flux.just(ChatResponseUtil.createPureResponse(TextType.SQL.getEndSign()),
+						ChatResponseUtil.createResponse("SQL生成完成，准备执行")));
 
 		Flux<GraphResponse<StreamingOutput>> generator = FluxUtil.createStreamingGeneratorWithMessages(this.getClass(),
 				state, v -> {
 					String sql = nl2SqlService.sqlTrim(sqlCollector.toString());
-					result.put(SQL_GENERATE_OUTPUT, sql);
+					// 检查SQL是否为空，如果为空则保留END标志，防止无限重试循环
+					if (sql != null && !sql.trim().isEmpty()) {
+						result.put(SQL_GENERATE_OUTPUT, sql);
+						log.info("SQL generation successful, length: {}", sql.length());
+					} else {
+						log.warn("LLM returned empty SQL, keeping END marker to prevent infinite retry loop. Count: {}",
+								count + 1);
+						// 保持result中的StateGraph.END值不变
+					}
 					return result;
 				}, displayFlux);
 
@@ -135,14 +145,14 @@ public class SqlGenerateNode implements NodeAction {
 		String dialect = StateUtil.getStringValue(state, DB_DIALECT_TYPE);
 
 		SqlGenerationDTO sqlGenerationDTO = SqlGenerationDTO.builder()
-			.evidence(evidence)
-			.query(userQuery)
-			.schemaDTO(schemaDTO)
-			.sql(originalSql)
-			.exceptionMessage(errorMsg)
-			.executionDescription(executionDescription)
-			.dialect(dialect)
-			.build();
+				.evidence(evidence)
+				.query(userQuery)
+				.schemaDTO(schemaDTO)
+				.sql(originalSql)
+				.exceptionMessage(errorMsg)
+				.executionDescription(executionDescription)
+				.dialect(dialect)
+				.build();
 
 		return nl2SqlService.generateSql(sqlGenerationDTO);
 	}
