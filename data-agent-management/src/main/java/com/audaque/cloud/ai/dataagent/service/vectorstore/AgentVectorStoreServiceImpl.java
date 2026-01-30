@@ -61,6 +61,12 @@ public class AgentVectorStoreServiceImpl implements AgentVectorStoreService {
 	@Value("${spring.ai.vectorstore.milvus.flush-delay-ms:1000}")
 	private int flushDelayMs;
 
+	@Value("${spring.ai.vectorstore.milvus.flush-retry-count:3}")
+	private int flushRetryCount;
+
+	@Value("${spring.ai.vectorstore.milvus.flush-initial-backoff-ms:1000}")
+	private int flushInitialBackoffMs;
+
 	public AgentVectorStoreServiceImpl(VectorStore vectorStore,
 			Optional<HybridRetrievalStrategy> hybridRetrievalStrategy, DataAgentProperties dataAgentProperties,
 			DynamicFilterService dynamicFilterService, Optional<MilvusServiceClient> milvusClient) {
@@ -172,25 +178,51 @@ public class AgentVectorStoreServiceImpl implements AgentVectorStoreService {
 			return;
 		}
 
+		// 先等待基础延迟时间
 		try {
 			log.debug("等待 {} ms 后执行 flush 操作以避免速率限制", flushDelayMs);
 			Thread.sleep(flushDelayMs);
-
-			FlushParam flushParam = FlushParam.newBuilder()
-					.addCollectionName(collectionName)
-					.build();
-			R<FlushResponse> response = milvusClient.get().flush(flushParam);
-			if (response.getStatus() == R.Status.Success.getCode()) {
-				log.info("Milvus flush 成功，collection: {}", collectionName);
-			} else {
-				log.warn("Milvus flush 返回非成功状态: {}, message: {}", response.getStatus(), response.getMessage());
-			}
 		} catch (InterruptedException e) {
-			log.warn("Flush 操作被中断: {}", e.getMessage());
+			log.warn("初始延迟等待被中断: {}", e.getMessage());
 			Thread.currentThread().interrupt(); // 重新设置中断状态
-		} catch (Exception e) {
-			log.warn("Milvus flush 失败（不影响插入）: {}", e.getMessage());
+			return;
 		}
+
+		// 执行带重试的 flush 操作
+		int attempt = 0;
+		int backoffMs = flushInitialBackoffMs;
+		while (attempt < flushRetryCount) {
+			try {
+				FlushParam flushParam = FlushParam.newBuilder()
+						.addCollectionName(collectionName)
+						.build();
+				R<FlushResponse> response = milvusClient.get().flush(flushParam);
+				if (response.getStatus() == R.Status.Success.getCode()) {
+					log.info("Milvus flush 成功，collection: {}，尝试次数: {}", collectionName, attempt + 1);
+					return; // 成功则直接返回
+				} else {
+					log.warn("Milvus flush 返回非成功状态: {}, message: {}，尝试次数: {}",
+							response.getStatus(), response.getMessage(), attempt + 1);
+				}
+			} catch (Exception e) {
+				log.warn("Milvus flush 尝试 {} 失败: {}", attempt + 1, e.getMessage());
+			}
+
+			attempt++;
+			if (attempt < flushRetryCount) {
+				try {
+					log.debug("等待 {} ms 后进行第 {} 次重试", backoffMs, attempt + 1);
+					Thread.sleep(backoffMs);
+					backoffMs *= 2; // 指数退避
+				} catch (InterruptedException ie) {
+					log.warn("Flush 重试等待被中断: {}", ie.getMessage());
+					Thread.currentThread().interrupt(); // 重新设置中断状态
+					return;
+				}
+			}
+		}
+
+		log.error("Milvus flush 达到最大重试次数 {}，操作失败", flushRetryCount);
 	}
 
 	@Override
