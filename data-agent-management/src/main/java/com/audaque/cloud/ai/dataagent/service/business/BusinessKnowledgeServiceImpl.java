@@ -40,7 +40,6 @@ import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 
-
 @Slf4j
 @Service
 @AllArgsConstructor
@@ -132,10 +131,10 @@ public class BusinessKnowledgeServiceImpl implements BusinessKnowledgeService {
 
 		// 发布向量化事件，异步处理
 		eventPublisher.publishEvent(new BusinessKnowledgeEmbeddingEvent(this, knowledge.getId()));
-		
+		log.info("Published BusinessKnowledgeEmbeddingEvent for id: {}", knowledge.getId());
 
-	
-
+		return businessKnowledgeConverter.toVo(knowledge);
+	}
 
 	@Override
 	@Transactional(rollbackFor = Exception.class)
@@ -152,10 +151,10 @@ public class BusinessKnowledgeServiceImpl implements BusinessKnowledgeService {
 			throw new RuntimeException("Failed to logically delete knowledge from database");
 		}
 
-		
-
-	
-
+		// 发布删除事件，异步清理向量数据
+		eventPublisher.publishEvent(new BusinessKnowledgeDeletionEvent(this, id));
+		log.info("Published BusinessKnowledgeDeletionEvent for id: {}", id);
+	}
 
 	@Override
 	@Transactional(rollbackFor = Exception.class)
