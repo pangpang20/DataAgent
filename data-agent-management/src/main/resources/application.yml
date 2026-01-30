@@ -58,7 +58,7 @@ spring:
           password: ${MILVUS_PASSWORD:Milvus}
           database-name: ${MILVUS_DATABASE:default}
         collection-name: ${MILVUS_COLLECTION:data_agent_vector}
-        flush-delay-ms: 2000  # Milvus flush 操作延迟（毫秒），避免速率限制
+        flush-delay-ms: 10000  # Milvus flush 操作延迟（毫秒），避免速率限制
         flush-retry-count: 3  # flush 操作重试次数
         flush-initial-backoff-ms: 1000  # flush 操作初始退避时间（毫秒）
       elasticsearch:
