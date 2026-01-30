@@ -73,7 +73,7 @@ public class DocumentConverterUtil {
 			metadata.put("samples", columnInfoBO.getSamples());
 		}
 
-		return new Document(text, metadata);
+		return new Document(UUID.randomUUID().toString(), text, metadata);
 	}
 
 	/**
@@ -92,7 +92,7 @@ public class DocumentConverterUtil {
 		metadata.put("primaryKey", Optional.ofNullable(tableInfoBO.getPrimaryKeys()).orElse(new ArrayList<>()));
 		metadata.put(DocumentMetadataConstant.VECTOR_TYPE, DocumentMetadataConstant.TABLE);
 		metadata.put(Constant.AGENT_ID, agentId);
-		return new Document(text, metadata);
+		return new Document(UUID.randomUUID().toString(), text, metadata);
 	}
 
 	public static List<Document> convertTablesToDocuments(String agentId, List<TableInfoBO> tables) {
@@ -116,7 +116,7 @@ public class DocumentConverterUtil {
 		metadata.put(Constant.AGENT_ID, businessKnowledge.getAgentId().toString());
 		metadata.put(DocumentMetadataConstant.DB_BUSINESS_TERM_ID, businessKnowledge.getId());
 
-		return new Document(content, metadata);
+		return new Document(UUID.randomUUID().toString(), content, metadata);
 	}
 
 	public static Document convertQaFaqKnowledgeToDocument(AgentKnowledge knowledge) {
@@ -129,7 +129,7 @@ public class DocumentConverterUtil {
 		metadata.put(DocumentMetadataConstant.DB_AGENT_KNOWLEDGE_ID, knowledge.getId());
 		metadata.put(DocumentMetadataConstant.CONCRETE_AGENT_KNOWLEDGE_TYPE, knowledge.getType().getCode());
 
-		return new Document(content, metadata);
+		return new Document(UUID.randomUUID().toString(), content, metadata);
 	}
 
 	/**
