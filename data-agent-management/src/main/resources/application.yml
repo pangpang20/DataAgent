@@ -49,7 +49,7 @@ spring:
     vectorstore:
       milvus:
         enabled: false
-        initialize-schema: false
+        initialize-schema: true
         default-embedding-dimension: 1024
         client:
           host: ${MILVUS_HOST:localhost}

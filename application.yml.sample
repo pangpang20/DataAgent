@@ -133,7 +133,7 @@ spring:
     vectorstore:
       milvus:
         enabled: false
-        initialize-schema: false           # 自动创建 Milvus 集合（首次启动时必须为 true）
+        initialize-schema: true           # 自动创建 Milvus 集合（首次启动时必须为 true）
         default-embedding-dimension: 1024 # 默认嵌入维度（未配置 Embedding 模型时生效）
         client:
           host: localhost

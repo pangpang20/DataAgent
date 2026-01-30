@@ -74,11 +74,11 @@ public class AgentVectorStoreServiceImpl implements AgentVectorStoreService {
 		}
 
 		HybridSearchRequest hybridRequest = HybridSearchRequest.builder()
-			.query(searchRequest.getQuery())
-			.topK(searchRequest.getTopK())
-			.similarityThreshold(searchRequest.getSimilarityThreshold())
-			.filterExpression(filter)
-			.build();
+				.query(searchRequest.getQuery())
+				.topK(searchRequest.getTopK())
+				.similarityThreshold(searchRequest.getSimilarityThreshold())
+				.filterExpression(filter)
+				.build();
 
 		if (dataAgentProperties.getVectorStore().isEnableHybridSearch() && hybridRetrievalStrategy.isPresent()) {
 			return hybridRetrievalStrategy.get().retrieve(hybridRequest);
@@ -106,15 +106,43 @@ public class AgentVectorStoreServiceImpl implements AgentVectorStoreService {
 	public void addDocuments(String agentId, List<Document> documents) {
 		Assert.notNull(agentId, "AgentId cannot be null.");
 		Assert.notEmpty(documents, "Documents cannot be empty.");
+
+		log.info("准备向 Milvus 插入 {} 个文档，agentId: {}", documents.size(), agentId);
+
 		// 校验文档中metadata中包含的agentId
-		for (Document document : documents) {
+		for (int i = 0; i < documents.size(); i++) {
+			Document document = documents.get(i);
 			Assert.notNull(document.getMetadata(), "Document metadata cannot be null.");
 			Assert.isTrue(document.getMetadata().containsKey(Constant.AGENT_ID),
 					"Document metadata must contain agentId.");
 			Assert.isTrue(document.getMetadata().get(Constant.AGENT_ID).equals(agentId),
 					"Document metadata agentId does not match.");
+
+			// 详细日志：打印每个文档的关键信息
+			if (i == 0 || log.isDebugEnabled()) {
+				log.info("文档[{}] - id: {}, content长度: {}, metadata keys: {}, vectorType: {}",
+						i,
+						document.getId(),
+						document.getText() != null ? document.getText().length() : 0,
+						document.getMetadata().keySet(),
+						document.getMetadata().get(DocumentMetadataConstant.VECTOR_TYPE));
+			}
+
+			// 检查 id 字段
+			if (document.getId() == null || document.getId().isEmpty()) {
+				log.error("文档[{}] 缺少 id 字段！metadata: {}", i, document.getMetadata());
+				throw new IllegalArgumentException("Document id cannot be null or empty at index " + i);
+			}
 		}
-		vectorStore.add(documents);
+
+		log.info("开始调用 VectorStore.add() 插入文档...");
+		try {
+			vectorStore.add(documents);
+			log.info("成功向 Milvus 插入 {} 个文档", documents.size());
+		} catch (Exception e) {
+			log.error("向 Milvus 插入文档失败: {}", e.getMessage(), e);
+			throw e;
+		}
 	}
 
 	@Override
@@ -129,8 +157,7 @@ public class AgentVectorStoreServiceImpl implements AgentVectorStoreService {
 		if (vectorStore instanceof SimpleVectorStore) {
 			// 目前SimpleVectorStore不支持通过元数据删除，使用会抛出UnsupportedOperationException,现在是通过id删除
 			batchDelDocumentsWithFilter(filterExpression);
-		}
-		else {
+		} else {
 			vectorStore.delete(filterExpression);
 		}
 
@@ -146,11 +173,11 @@ public class AgentVectorStoreServiceImpl implements AgentVectorStoreService {
 
 		do {
 			batch = vectorStore.similaritySearch(org.springframework.ai.vectorstore.SearchRequest.builder()
-				.query(DEFAULT)// 使用默认的查询字符串，因为有的嵌入模型不支持空字符串
-				.filterExpression(filterExpression)
-				.similarityThreshold(0.0)// 设置最低相似度阈值以获取元数据匹配的所有文档
-				.topK(dataAgentProperties.getVectorStore().getBatchDelTopkLimit())
-				.build());
+					.query(DEFAULT)// 使用默认的查询字符串，因为有的嵌入模型不支持空字符串
+					.filterExpression(filterExpression)
+					.similarityThreshold(0.0)// 设置最低相似度阈值以获取元数据匹配的所有文档
+					.topK(dataAgentProperties.getVectorStore().getBatchDelTopkLimit())
+					.build());
 
 			// 过滤掉已经处理过的文档，只删除未处理的文档
 			List<String> idsToDelete = new ArrayList<>();
@@ -170,8 +197,7 @@ public class AgentVectorStoreServiceImpl implements AgentVectorStoreService {
 				totalDeleted += idsToDelete.size();
 			}
 
-		}
-		while (newDocumentsCount > 0); // 只有当获取到新文档时才继续循环
+		} while (newDocumentsCount > 0); // 只有当获取到新文档时才继续循环
 
 		log.info("Deleted {} documents with filter expression: {}", totalDeleted, filterExpression);
 	}
@@ -189,12 +215,12 @@ public class AgentVectorStoreServiceImpl implements AgentVectorStoreService {
 	public List<Document> getDocumentsForAgent(String agentId, String query, String vectorType, int topK,
 			double threshold) {
 		AgentSearchRequest searchRequest = AgentSearchRequest.builder()
-			.agentId(agentId)
-			.docVectorType(vectorType)
-			.query(query)
-			.topK(topK) // 使用传入的参数
-			.similarityThreshold(threshold) // 使用传入的参数
-			.build();
+				.agentId(agentId)
+				.docVectorType(vectorType)
+				.query(query)
+				.topK(topK) // 使用传入的参数
+				.similarityThreshold(threshold) // 使用传入的参数
+				.build();
 		return search(searchRequest);
 	}
 
@@ -204,11 +230,11 @@ public class AgentVectorStoreServiceImpl implements AgentVectorStoreService {
 		if (topK == null)
 			topK = dataAgentProperties.getVectorStore().getDefaultTopkLimit();
 		SearchRequest searchRequest = SearchRequest.builder()
-			.query(DEFAULT)
-			.topK(topK)
-			.filterExpression(filterExpression)
-			.similarityThreshold(0.0)
-			.build();
+				.query(DEFAULT)
+				.topK(topK)
+				.filterExpression(filterExpression)
+				.similarityThreshold(0.0)
+				.build();
 		return vectorStore.similaritySearch(searchRequest);
 	}
 
@@ -216,11 +242,11 @@ public class AgentVectorStoreServiceImpl implements AgentVectorStoreService {
 	public boolean hasDocuments(String agentId) {
 		// 类似 MySQL 的 LIMIT 1,只检查是否存在文档
 		List<Document> docs = vectorStore.similaritySearch(org.springframework.ai.vectorstore.SearchRequest.builder()
-			.query(DEFAULT)// 使用默认的查询字符串，因为有的嵌入模型不支持空字符串
-			.filterExpression(buildFilterExpressionString(Map.of(Constant.AGENT_ID, agentId)))
-			.topK(1) // 只获取1个文档
-			.similarityThreshold(0.0)
-			.build());
+				.query(DEFAULT)// 使用默认的查询字符串，因为有的嵌入模型不支持空字符串
+				.filterExpression(buildFilterExpressionString(Map.of(Constant.AGENT_ID, agentId)))
+				.topK(1) // 只获取1个文档
+				.similarityThreshold(0.0)
+				.build());
 		return !docs.isEmpty();
 	}
 
