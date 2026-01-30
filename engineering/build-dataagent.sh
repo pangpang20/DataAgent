@@ -580,20 +580,28 @@ EOF
 stop_services() {
     step "停止现有服务"
     
-    # 停止后端服务
+    # 停止 systemd 服务
+    if systemctl is-active --quiet dataagent 2>/dev/null; then
+        info "停止 systemd 服务 (dataagent)..."
+        sudo systemctl stop dataagent
+        sleep 2
+    fi
+    
+    # 停止后端服务（兼容旧版本）
     if [ -f "$DEPLOY_DIR/backend.pid" ]; then
         BACKEND_PID=$(cat "$DEPLOY_DIR/backend.pid")
         if ps -p $BACKEND_PID > /dev/null 2>&1; then
-            info "停止后端服务 (PID: $BACKEND_PID)..."
+            info "停止后端进程 (PID: $BACKEND_PID)..."
             kill -15 $BACKEND_PID 2>/dev/null || true
             sleep 3
             
             # 强制停止
             if ps -p $BACKEND_PID > /dev/null 2>&1; then
-                warn "强制停止后端服务..."
+                warn "强制停止后端进程..."
                 kill -9 $BACKEND_PID 2>/dev/null || true
             fi
         fi
+        rm -f "$DEPLOY_DIR/backend.pid"
     fi
     
     # 检查端口占用
@@ -800,24 +808,56 @@ configure_nginx() {
     fi
 }
 
+# 创建 systemd 服务
+create_systemd_service() {
+    step "创建 systemd 服务"
+    
+    # 检测 Java 路径
+    JAVA_PATH=$(which java)
+    if [ -z "$JAVA_PATH" ]; then
+        JAVA_PATH="/usr/bin/java"
+    fi
+    
+    # 创建服务配置文件
+    SERVICE_FILE="$DEPLOY_DIR/dataagent.service"
+    cat > "$SERVICE_FILE" <<EOF
+[Unit]
+Description=DataAgent Backend Service
+After=network.target
+
+[Service]
+Type=simple
+User=$USER
+Group=$USER
+WorkingDirectory=$DEPLOY_DIR
+ExecStart=$JAVA_PATH -Xmx4g -Xms2g -XX:+UseG1GC -Dfile.encoding=UTF-8 -Dsun.jnu.encoding=UTF-8 -Dclient.encoding.override=UTF-8 -jar $DEPLOY_DIR/dataagent-backend.jar
+Restart=on-failure
+RestartSec=10s
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=dataagent
+
+
+[Install]
+WantedBy=multi-user.target
+EOF
+    
+    # 安装服务
+    sudo cp "$SERVICE_FILE" /etc/systemd/system/dataagent.service
+    sudo systemctl daemon-reload
+    
+    info "✅ systemd 服务已创建: dataagent.service"
+}
+
 # 启动后端服务
 start_backend() {
     step "启动后端服务"
     
-    cd "$DEPLOY_DIR"
+    # 启动 systemd 服务
+    sudo systemctl start dataagent
+    sudo systemctl enable dataagent
     
-    # 后台启动
-    nohup java -Xmx4g -Xms2g \
-        -XX:+UseG1GC \
-        -Dfile.encoding=UTF-8 \
-        -Dsun.jnu.encoding=UTF-8 \
-        -Dclient.encoding.override=UTF-8 \
-        -jar dataagent-backend.jar \
-        > /dev/null 2>&1 &
-    
-    BACKEND_PID=$!
-    echo $BACKEND_PID > "$DEPLOY_DIR/backend.pid"
-    info "后端服务已启动 (PID: $BACKEND_PID)"
+    info "后端服务已启动 (systemd: dataagent.service)"
     
     # 等待服务启动
     info "等待后端服务启动..."
@@ -832,7 +872,9 @@ start_backend() {
     done
     
     echo ""
-    error "后端服务启动超时，请查看日志: tail -f $DEPLOY_DIR/logs/application.log"
+    warn "后端服务启动超时，请检查服务状态:"
+    warn "  sudo systemctl status dataagent"
+    warn "  sudo journalctl -u dataagent -f"
 }
 
 # 显示部署摘要
@@ -860,8 +902,11 @@ show_deploy_summary() {
     info "  访问地址: http://$HOST_IP:$FRONTEND_PORT"
     echo ""
     info "管理命令:"
-    info "  查看后端日志: tail -f $DEPLOY_DIR/logs/application.log"
-    info "  停止后端: kill \$(cat $DEPLOY_DIR/backend.pid)"
+    info "  查看服务状态: sudo systemctl status dataagent"
+    info "  查看实时日志: sudo journalctl -u dataagent -f"
+    info "  停止服务: sudo systemctl stop dataagent"
+    info "  重启服务: sudo systemctl restart dataagent"
+    info "  禁用开机启动: sudo systemctl disable dataagent"
     echo ""
     info "配置信息:"
     info "  部署目录: $DEPLOY_DIR"
@@ -879,6 +924,7 @@ deploy_process() {
         backup_old_version
         deploy_backend
         deploy_frontend
+        create_systemd_service
         start_backend
         show_deploy_summary
     fi
