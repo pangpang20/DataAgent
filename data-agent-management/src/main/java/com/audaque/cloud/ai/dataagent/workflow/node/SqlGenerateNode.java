@@ -107,7 +107,8 @@ public class SqlGenerateNode implements NodeAction {
 		}
 
 		// 准备返回结果，同时需要清除一些状态数据
-		Map<String, Object> result = new HashMap<>(Map.of(SQL_GENERATE_OUTPUT, StateGraph.END, SQL_GENERATE_COUNT,
+		// 注意：SQL_GENERATE_OUTPUT 初始值为空，只有成功生成SQL后才会被覆盖
+		Map<String, Object> result = new HashMap<>(Map.of(SQL_GENERATE_COUNT,
 				count + 1, SQL_REGENERATE_REASON, SqlRetryDto.empty()));
 
 		// Create display flux for user experience only
@@ -122,14 +123,13 @@ public class SqlGenerateNode implements NodeAction {
 		Flux<GraphResponse<StreamingOutput>> generator = FluxUtil.createStreamingGeneratorWithMessages(this.getClass(),
 				state, v -> {
 					String sql = nl2SqlService.sqlTrim(sqlCollector.toString());
-					// 检查SQL是否为空，如果为空则保留END标志，防止无限重试循环
+					// 检查SQL是否为空，只有非空时才写入state
 					if (sql != null && !sql.trim().isEmpty()) {
 						result.put(SQL_GENERATE_OUTPUT, sql);
-						log.info("SQL generation successful, length: {}", sql.length());
+						log.info("SQL generation successful, SQL: {}", sql);
 					} else {
-						log.warn("LLM returned empty SQL, keeping END marker to prevent infinite retry loop. Count: {}",
-								count + 1);
-						// 保持result中的StateGraph.END值不变
+						log.warn("LLM returned empty SQL, will trigger retry in dispatcher. Count: {}", count + 1);
+						// 不写入SQL_GENERATE_OUTPUT，让dispatcher根据Optional.isEmpty()触发重试
 					}
 					return result;
 				}, displayFlux);

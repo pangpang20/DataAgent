@@ -15,9 +15,10 @@
  */
 package com.audaque.cloud.ai.dataagent.service.business;
 
-import com.audaque.cloud.ai.dataagent.constant.Constant;
 import com.audaque.cloud.ai.dataagent.constant.DocumentMetadataConstant;
 import com.audaque.cloud.ai.dataagent.enums.EmbeddingStatus;
+import com.audaque.cloud.ai.dataagent.event.BusinessKnowledgeDeletionEvent;
+import com.audaque.cloud.ai.dataagent.event.BusinessKnowledgeEmbeddingEvent;
 import com.audaque.cloud.ai.dataagent.util.DocumentConverterUtil;
 import com.audaque.cloud.ai.dataagent.converter.BusinessKnowledgeConverter;
 import com.audaque.cloud.ai.dataagent.dto.knowledge.businessknowledge.CreateBusinessKnowledgeDTO;
@@ -29,6 +30,7 @@ import com.audaque.cloud.ai.dataagent.vo.BusinessKnowledgeVO;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.document.Document;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
@@ -36,9 +38,7 @@ import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @Slf4j
 @Service
@@ -50,6 +50,8 @@ public class BusinessKnowledgeServiceImpl implements BusinessKnowledgeService {
 	private final AgentVectorStoreService agentVectorStoreService;
 
 	private final BusinessKnowledgeConverter businessKnowledgeConverter;
+
+	private final ApplicationEventPublisher eventPublisher;
 
 	@Override
 	public List<BusinessKnowledgeVO> getKnowledge(Long agentId) {
@@ -97,19 +99,10 @@ public class BusinessKnowledgeServiceImpl implements BusinessKnowledgeService {
 			throw new RuntimeException("Failed to add knowledge to database");
 		}
 
-		try {
-			Document document = DocumentConverterUtil.convertBusinessKnowledgeToDocument(entity);
-			agentVectorStoreService.addDocuments(entity.getAgentId().toString(), List.of(document));
-			entity.setEmbeddingStatus(EmbeddingStatus.COMPLETED);
-			entity.setErrorMsg(null);
-			businessKnowledgeMapper.updateById(entity);
-		} catch (Exception e) {
-			String errorMsg = "Failed to add to vector store: " + e.getMessage();
-			entity.setEmbeddingStatus(EmbeddingStatus.FAILED);
-			entity.setErrorMsg(errorMsg);
-			businessKnowledgeMapper.updateById(entity);
-			log.error("Failed to add knowledge to vector store for id: {}, error: {}", entity.getId(), errorMsg);
-		}
+		// 发布向量化事件，异步处理
+		eventPublisher.publishEvent(new BusinessKnowledgeEmbeddingEvent(this, entity.getId()));
+		log.info("Published BusinessKnowledgeEmbeddingEvent for id: {}", entity.getId());
+
 		return businessKnowledgeConverter.toVo(entity);
 	}
 
@@ -127,44 +120,23 @@ public class BusinessKnowledgeServiceImpl implements BusinessKnowledgeService {
 		if (StringUtils.hasText(knowledgeDTO.getSynonyms()))
 			knowledge.setSynonyms(knowledgeDTO.getSynonyms());
 
-		// 设置初始状态为处理中
-		knowledge.setEmbeddingStatus(EmbeddingStatus.PROCESSING);
+		// 设置初始状态为 PENDING，异步任务会将其改为 PROCESSING
+		knowledge.setEmbeddingStatus(EmbeddingStatus.PENDING);
+		knowledge.setUpdatedTime(LocalDateTime.now());
 
 		// 先更新数据库
 		if (businessKnowledgeMapper.updateById(knowledge) <= 0) {
 			throw new RuntimeException("Failed to update knowledge in database");
 		}
 
-		// 尝试更新向量库
-		try {
-			syncToVectorStore(knowledge);
-			knowledge.setEmbeddingStatus(EmbeddingStatus.COMPLETED);
-			knowledge.setErrorMsg(null);
-			businessKnowledgeMapper.updateById(knowledge);
-		} catch (Exception e) {
-			// 向量库更新失败，不回滚MySQL，只标记状态为失败
-			String errorMsg = "Failed to update vector store: " + e.getMessage();
-			knowledge.setEmbeddingStatus(EmbeddingStatus.FAILED);
-			knowledge.setErrorMsg(errorMsg);
-			businessKnowledgeMapper.updateById(knowledge);
-			log.error("Failed to update vector store for knowledge id: {}, error: {}", id, errorMsg);
-		}
+		// 发布向量化事件，异步处理
+		eventPublisher.publishEvent(new BusinessKnowledgeEmbeddingEvent(this, knowledge.getId()));
+		log.info("Published BusinessKnowledgeEmbeddingEvent for id: {}", knowledge.getId());
+
 		return businessKnowledgeConverter.toVo(knowledge);
 	}
 
-	/**
-	 * 更新向量库中的知识向量
-	 */
-	private void syncToVectorStore(BusinessKnowledge knowledge) {
-		// 先删除旧的向量数据
-		this.doDelVector(knowledge);
 
-		// 添加新的向量数据
-		Document newDocument = DocumentConverterUtil.convertBusinessKnowledgeToDocument(knowledge);
-		agentVectorStoreService.addDocuments(knowledge.getAgentId().toString(), List.of(newDocument));
-
-		log.info("Successfully updated vector store for knowledge id: {}", knowledge.getId());
-	}
 
 	@Override
 	@Transactional(rollbackFor = Exception.class)
@@ -176,23 +148,17 @@ public class BusinessKnowledgeServiceImpl implements BusinessKnowledgeService {
 			return;
 		}
 
-		doDelVector(knowledge);
-
+		// 执行逻辑删除
 		if (businessKnowledgeMapper.logicalDelete(id, 1, LocalDateTime.now()) <= 0) {
-			// 重新添加修复被删除的记录
-			agentVectorStoreService.addDocuments(knowledge.getAgentId().toString(),
-					List.of(DocumentConverterUtil.convertBusinessKnowledgeToDocument(knowledge)));
 			throw new RuntimeException("Failed to logically delete knowledge from database");
 		}
+
+		// 发布删除事件，异步清理向量数据
+		eventPublisher.publishEvent(new BusinessKnowledgeDeletionEvent(this, id));
+		log.info("Published BusinessKnowledgeDeletionEvent for id: {}", id);
 	}
 
-	private void doDelVector(BusinessKnowledge knowledge) {
-		Map<String, Object> metadata = new HashMap<>();
-		metadata.put(Constant.AGENT_ID, knowledge.getAgentId().toString());
-		metadata.put(DocumentMetadataConstant.DB_BUSINESS_TERM_ID, knowledge.getId());
-		metadata.put(DocumentMetadataConstant.VECTOR_TYPE, DocumentMetadataConstant.BUSINESS_TERM);
-		agentVectorStoreService.deleteDocumentsByMetedata(knowledge.getAgentId().toString(), metadata);
-	}
+
 
 	@Override
 	@Transactional(rollbackFor = Exception.class)
@@ -246,19 +212,15 @@ public class BusinessKnowledgeServiceImpl implements BusinessKnowledgeService {
 			throw new RuntimeException("BusinessKnowledge is not recalled, please recall it first.");
 		}
 
-		try {
-			syncToVectorStore(knowledge);
-			knowledge.setEmbeddingStatus(EmbeddingStatus.COMPLETED);
-			knowledge.setErrorMsg(null);
-			businessKnowledgeMapper.updateById(knowledge);
-		} catch (Exception e) {
-			// 再次失败，更新错误信息
-			knowledge.setEmbeddingStatus(EmbeddingStatus.FAILED);
-			knowledge.setErrorMsg(e.getMessage().length() > 200 ? e.getMessage().substring(0, 200) : e.getMessage());
-			businessKnowledgeMapper.updateById(knowledge);
-			throw new RuntimeException("重试失败: " + e.getMessage());
-		}
+		// 重置状态为 PENDING，异步任务会将其改为 PROCESSING
+		knowledge.setEmbeddingStatus(EmbeddingStatus.PENDING);
+		knowledge.setErrorMsg(null);
+		knowledge.setUpdatedTime(LocalDateTime.now());
+		businessKnowledgeMapper.updateById(knowledge);
 
+		// 发布向量化事件，异步处理
+		eventPublisher.publishEvent(new BusinessKnowledgeEmbeddingEvent(this, id));
+		log.info("Published retry BusinessKnowledgeEmbeddingEvent for id: {}", id);
 	}
 
 }
