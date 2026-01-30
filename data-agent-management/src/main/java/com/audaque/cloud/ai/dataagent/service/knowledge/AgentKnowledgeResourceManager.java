@@ -58,11 +58,9 @@ public class AgentKnowledgeResourceManager {
 
 		if (KnowledgeType.QA.equals(agentKnowledge.getType()) || KnowledgeType.FAQ.equals(agentKnowledge.getType())) {
 			processQaKnowledge(agentKnowledge);
-		}
-		else if (KnowledgeType.DOCUMENT.equals(agentKnowledge.getType())) {
+		} else if (KnowledgeType.DOCUMENT.equals(agentKnowledge.getType())) {
 			processDocumentKnowledge(agentKnowledge);
-		}
-		else {
+		} else {
 			throw new RuntimeException("Unsupported KnowledgeType: " + agentKnowledge.getType());
 		}
 	}
@@ -85,7 +83,7 @@ public class AgentKnowledgeResourceManager {
 
 		// 使用工具类为文档添加元数据
 		List<Document> documentsWithMetadata = DocumentConverterUtil
-			.convertAgentKnowledgeDocumentsWithMetadata(documents, knowledge);
+				.convertAgentKnowledgeDocumentsWithMetadata(documents, knowledge);
 
 		// 添加到向量存储
 		agentVectorStoreService.addDocuments(knowledge.getAgentId().toString(), documentsWithMetadata);
@@ -100,14 +98,40 @@ public class AgentKnowledgeResourceManager {
 
 		// 使用TikaDocumentReader读取文件
 		TikaDocumentReader tikaDocumentReader = new TikaDocumentReader(resource);
-		List<Document> documents = tikaDocumentReader.read();
+		List<Document> documents;
+		try {
+			documents = tikaDocumentReader.read();
+		} catch (StackOverflowError e) {
+			log.error(
+					"TikaDocumentReader read failed due to StackOverflowError, possibly caused by problematic regex in Tika when processing file: {}",
+					filePath, e);
+			throw new RuntimeException(
+					"File processing failed due to stack overflow, possibly caused by complex document structure or Tika internal regex issue: "
+							+ filePath,
+					e);
+		} catch (Exception e) {
+			log.error("TikaDocumentReader read failed for file: {}", filePath, e);
+			throw new RuntimeException("File processing failed: " + filePath, e);
+		}
 
-		return textSplitter.apply(documents);
+		try {
+			return textSplitter.apply(documents);
+		} catch (StackOverflowError e) {
+			log.error("TextSplitter apply failed due to StackOverflowError for file: {}", filePath, e);
+			throw new RuntimeException(
+					"Text splitting failed due to stack overflow, possibly caused by complex document content: "
+							+ filePath,
+					e);
+		} catch (Exception e) {
+			log.error("TextSplitter apply failed for file: {}", filePath, e);
+			throw new RuntimeException("Text splitting failed: " + filePath, e);
+		}
 	}
 
 	/**
 	 * 从向量存储中删除知识
-	 * @param agentId 代理ID
+	 * 
+	 * @param agentId     代理ID
 	 * @param knowledgeId 知识ID
 	 * @return 是否删除成功（如果资源不存在也视为成功，实现等幂操作）
 	 */
@@ -122,16 +146,14 @@ public class AgentKnowledgeResourceManager {
 			log.info("Successfully deleted knowledge from vector store, knowledgeId: {}", knowledgeId);
 			return true;
 
-		}
-		catch (Exception e) {
+		} catch (Exception e) {
 			// 检查是否是资源不存在的错误，如果是则视为删除成功（等幂操作）
 			if (e.getMessage() != null && (e.getMessage().contains("not found")
 					|| e.getMessage().contains("does not exist") || e.getMessage().contains("already deleted"))) {
 				log.info("Vector data already deleted or not found for knowledgeId: {}, treating as success",
 						knowledgeId);
 				return true;
-			}
-			else {
+			} else {
 				log.error("Failed to delete knowledge from vector store, knowledgeId: {}", knowledgeId, e);
 				return false;
 			}
@@ -140,6 +162,7 @@ public class AgentKnowledgeResourceManager {
 
 	/**
 	 * 删除知识文件
+	 * 
 	 * @param knowledge 知识对象
 	 * @return 是否删除成功（如果不是文档类型或文件不存在也视为成功）
 	 */
@@ -155,14 +178,12 @@ public class AgentKnowledgeResourceManager {
 			if (fileDeleted) {
 				log.info("Successfully deleted knowledge file, filePath: {}", knowledge.getFilePath());
 				return true;
-			}
-			else {
+			} else {
 				log.error("Failed to delete knowledge file, filePath: {}", knowledge.getFilePath());
 				return false;
 			}
 
-		}
-		catch (Exception e) {
+		} catch (Exception e) {
 			// 检查是否是文件不存在的错误，如果是则视为删除成功（等幂操作）
 			if (e.getMessage() != null
 					&& (e.getMessage().contains("not found") || e.getMessage().contains("does not exist")
@@ -170,8 +191,7 @@ public class AgentKnowledgeResourceManager {
 				log.info("File already deleted or not found, filePath: {}, treating as success",
 						knowledge.getFilePath());
 				return true;
-			}
-			else {
+			} else {
 				log.error("Exception when deleting knowledge file, filePath: {}", knowledge.getFilePath(), e);
 				return false;
 			}
