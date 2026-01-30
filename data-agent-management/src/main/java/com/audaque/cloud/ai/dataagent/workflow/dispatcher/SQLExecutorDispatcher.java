@@ -24,7 +24,6 @@ import lombok.extern.slf4j.Slf4j;
 import static com.audaque.cloud.ai.dataagent.constant.Constant.*;
 
 /**
- * @author zhangshenghang
  */
 @Slf4j
 public class SQLExecutorDispatcher implements EdgeAction {

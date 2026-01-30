@@ -32,7 +32,6 @@ import static com.audaque.cloud.ai.dataagent.constant.Constant.PLAN_CURRENT_STEP
  * util class for plan-based execution nodes Provides common functionality for nodes that
  * execute based on predefined plans
  *
- * @author zhangshenghang
  */
 public final class PlanProcessUtil {
 

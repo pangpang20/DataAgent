@@ -30,7 +30,6 @@ import java.util.*;
  * prompt
  * configurations, supports runtime configuration updates
  *
- * @author Makoto
  */
 @Slf4j
 @Service

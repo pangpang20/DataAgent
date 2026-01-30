@@ -22,8 +22,6 @@ import com.audaque.cloud.ai.dataagent.enums.BizDataSourceTypeEnum;
 import org.springframework.stereotype.Service;
 
 /**
- * @author yuluo
- * @author <a href="mailto:yuluo08290126@gmail.com">yuluo</a>
  */
 
 @Service("mysqlAccessor")

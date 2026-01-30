@@ -18,8 +18,6 @@ package com.audaque.cloud.ai.dataagent.service.code;
 /**
  * 运行Python任务的容器池接口
  *
- * @author vlsmb
- * @since 2025/7/12
  */
 public interface CodePoolExecutorService {
 

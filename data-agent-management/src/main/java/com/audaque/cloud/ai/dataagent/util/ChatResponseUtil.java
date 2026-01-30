@@ -23,7 +23,6 @@ import org.springframework.ai.chat.model.Generation;
 import java.util.List;
 
 /**
- * @author zhangshenghang
  */
 public class ChatResponseUtil {
 

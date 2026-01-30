@@ -30,7 +30,6 @@ import static com.audaque.cloud.ai.dataagent.constant.Constant.*;
 /**
  * Human feedback node for plan review and modification.
  *
- * @author Makoto
  */
 @Slf4j
 @Component

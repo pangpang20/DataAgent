@@ -51,7 +51,6 @@ import static com.audaque.cloud.ai.dataagent.util.PlanProcessUtil.getCurrentExec
  * Managing retry logic with schema advice - Providing streaming feedback during
  * regeneration process
  *
- * @author zhangshenghang
  */
 @Slf4j
 @Component

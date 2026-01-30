@@ -38,8 +38,6 @@ import org.springframework.test.context.jdbc.Sql;
  * ModelConfigMapper 测试 - MySQL 和达梦数据库兼容性验证
  * 测试 @sqlDialectResolver@now() OGNL 表达式和 LIMIT/CONCAT 语法
  *
- * @author DataAgent Team
- * @since 2026/01/22
  */
 @MybatisTest
 @TestPropertySource(properties = {

@@ -28,8 +28,6 @@ import org.testcontainers.utility.DockerImageName;
  * 2. 根据实际镜像调整配置参数
  * 3. 或者使用本地安装的达梦数据库进行集成测试
  *
- * @author DataAgent Team
- * @since 2026/01/22
  */
 @TestConfiguration
 public class DamengContainerConfiguration {

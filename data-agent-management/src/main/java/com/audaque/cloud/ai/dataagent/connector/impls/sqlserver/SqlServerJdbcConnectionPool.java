@@ -23,7 +23,6 @@ import org.springframework.stereotype.Service;
 import static com.audaque.cloud.ai.dataagent.enums.ErrorCodeEnum.*;
 
 /**
- * @author zihen
  * @date 2025/12/14 17:34
  */
 @Service("sqlServerJdbcConnectionPool")

@@ -31,8 +31,6 @@ import static com.audaque.cloud.ai.dataagent.constant.Constant.STREAM_EVENT_COMP
 import static com.audaque.cloud.ai.dataagent.constant.Constant.STREAM_EVENT_ERROR;
 
 /**
- * @author zhangshenghang
- * @author vlsmb
  */
 @Slf4j
 @RestController

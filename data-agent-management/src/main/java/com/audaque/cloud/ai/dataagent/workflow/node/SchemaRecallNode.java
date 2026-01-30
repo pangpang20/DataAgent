@@ -45,7 +45,6 @@ import static com.audaque.cloud.ai.dataagent.constant.Constant.*;
  * Retrieving column documents based on extracted keywords - Organizing schema information
  * for subsequent processing - Providing streaming feedback during recall process
  *
- * @author zhangshenghang
  */
 @Slf4j
 @Component

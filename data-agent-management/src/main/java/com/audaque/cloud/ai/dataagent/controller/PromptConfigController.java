@@ -30,7 +30,6 @@ import java.util.Map;
 /**
  * User Prompt Configuration Management
  *
- * @author Makoto
  */
 @RestController
 @RequestMapping("/api/prompt-config")

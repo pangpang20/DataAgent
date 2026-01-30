@@ -49,8 +49,6 @@ import static com.github.dockerjava.api.model.HostConfig.newHostConfig;
 /**
  * 运行Python任务的容器池（Docker实现类）
  *
- * @author vlsmb
- * @since 2025/7/12
  */
 @Slf4j
 public class DockerCodePoolExecutorService extends AbstractCodePoolExecutorService implements CodePoolExecutorService {

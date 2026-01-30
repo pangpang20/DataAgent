@@ -31,8 +31,6 @@ import java.util.List;
 /**
  * Mappers 单元测试类
  *
- * @author vlsmb
- * @since 2025/9/26
  */
 @MybatisTest
 @TestPropertySource(properties = { "spring.sql.init.mode=never" })

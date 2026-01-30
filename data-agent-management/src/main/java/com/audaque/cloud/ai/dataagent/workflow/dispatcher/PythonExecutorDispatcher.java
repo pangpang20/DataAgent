@@ -25,8 +25,6 @@ import static com.audaque.cloud.ai.dataagent.constant.Constant.*;
 import static com.alibaba.cloud.ai.graph.StateGraph.END;
 
 /**
- * @author vlsmb
- * @since 2025/7/29
  */
 @Slf4j
 public class PythonExecutorDispatcher implements EdgeAction {

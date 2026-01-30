@@ -24,8 +24,6 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 /**
  * MySQL 测试Container配置类
  *
- * @author vlsmb
- * @since 2025/9/26
  */
 @Configuration
 @Testcontainers

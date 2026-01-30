@@ -31,7 +31,6 @@ import static com.audaque.cloud.ai.dataagent.constant.Constant.QUERY_ENHANCE_NOD
 /**
  * State management utility class, providing type-safe state getting methods
  *
- * @author zhangshenghang
  */
 public class StateUtil {
 

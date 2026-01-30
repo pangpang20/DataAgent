@@ -23,8 +23,6 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import static com.audaque.cloud.ai.dataagent.constant.Constant.PROJECT_PROPERTIES_PREFIX;
 
 /**
- * @author vlsmb
- * @since 2025/7/12
  */
 @Getter
 @Setter

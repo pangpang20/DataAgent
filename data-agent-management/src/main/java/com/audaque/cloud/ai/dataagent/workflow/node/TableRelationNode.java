@@ -57,7 +57,6 @@ import static com.audaque.cloud.ai.dataagent.prompt.PromptHelper.buildSemanticMo
  * Building initial schema from documents - Processing schema selection based on input and
  * evidence - Handling schema advice for missing information
  *
- * @author zhangshenghang
  */
 @Slf4j
 @Component

@@ -18,8 +18,6 @@ package com.audaque.cloud.ai.dataagent.service.code;
 /**
  * CodeExecutor测试的代码常量
  *
- * @author vlsmb
- * @since 2025/7/29
  */
 public final class CodeTestConstant {
 

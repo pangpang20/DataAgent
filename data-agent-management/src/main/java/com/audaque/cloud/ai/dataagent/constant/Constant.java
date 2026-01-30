@@ -16,7 +16,6 @@
 package com.audaque.cloud.ai.dataagent.constant;
 
 /**
- * @author zhangshenghang
  */
 public final class Constant {
 

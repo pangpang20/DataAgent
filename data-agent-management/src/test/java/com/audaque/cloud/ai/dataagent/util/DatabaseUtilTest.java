@@ -36,8 +36,6 @@ import static org.mockito.Mockito.*;
  * DatabaseUtil 单元测试
  * 测试数据库工具类的核心功能，支持 MySQL 和达梦数据库
  *
- * @author DataAgent Team
- * @since 2026/01/22
  */
 @ExtendWith(MockitoExtension.class)
 @DisplayName("数据库工具类测试")

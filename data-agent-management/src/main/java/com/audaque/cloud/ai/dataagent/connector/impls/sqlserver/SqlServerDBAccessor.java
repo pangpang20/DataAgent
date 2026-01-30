@@ -22,7 +22,6 @@ import com.audaque.cloud.ai.dataagent.enums.BizDataSourceTypeEnum;
 import org.springframework.stereotype.Service;
 
 /**
- * @author zihen
  * @date 2025/12/14 17:34
  */
 @Service("sqlserverAccessor")

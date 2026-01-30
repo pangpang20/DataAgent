@@ -36,7 +36,6 @@ import java.util.stream.Collectors;
 import static com.audaque.cloud.ai.dataagent.util.ColumnTypeUtil.wrapType;
 
 /**
- * @author zihen
  * @date 2025/12/14 17:34
  */
 @Service

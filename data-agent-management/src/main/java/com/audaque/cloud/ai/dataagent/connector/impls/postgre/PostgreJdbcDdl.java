@@ -40,8 +40,6 @@ import java.util.stream.Collectors;
 import static com.audaque.cloud.ai.dataagent.util.ColumnTypeUtil.wrapType;
 
 /**
- * @author jiuhe
- * @since 2024/3/15
  */
 @Service
 public class PostgreJdbcDdl extends AbstractJdbcDdl {

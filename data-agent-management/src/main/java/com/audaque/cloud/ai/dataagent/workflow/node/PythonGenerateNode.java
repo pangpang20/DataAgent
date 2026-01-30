@@ -46,8 +46,6 @@ import static com.audaque.cloud.ai.dataagent.constant.Constant.*;
 /**
  * 生成Python代码的节点
  *
- * @author vlsmb
- * @since 2025/7/30
  */
 @Slf4j
 @Component

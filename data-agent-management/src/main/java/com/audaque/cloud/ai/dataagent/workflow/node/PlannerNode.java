@@ -39,7 +39,6 @@ import java.util.Map;
 import static com.audaque.cloud.ai.dataagent.constant.Constant.*;
 
 /**
- * @author zhangshenghang
  */
 @Slf4j
 @Component

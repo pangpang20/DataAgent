@@ -33,8 +33,6 @@ import java.util.Optional;
 /**
  * 数据库初始化测试
  *
- * @author vlsmb
- * @since 2025/9/26
  */
 @MybatisTest
 @ImportTestcontainers(com.audaque.cloud.ai.dataagent.MySqlContainerConfiguration.class)

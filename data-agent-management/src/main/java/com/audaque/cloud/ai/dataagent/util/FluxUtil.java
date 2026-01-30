@@ -29,8 +29,6 @@ import java.util.function.Supplier;
 import java.util.function.Function;
 
 /**
- * @author vlsmb
- * @since 2025/10/22
  */
 public final class FluxUtil {
 

@@ -18,7 +18,6 @@ package com.audaque.cloud.ai.dataagent.dto.prompt;
 /**
  * Prompt configuration request DTO
  *
- * @author Makoto
  */
 
 public record PromptConfigDTO(String id, // Configuration ID (required for update)

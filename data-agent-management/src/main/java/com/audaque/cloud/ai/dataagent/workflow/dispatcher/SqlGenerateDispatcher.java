@@ -28,7 +28,6 @@ import static com.audaque.cloud.ai.dataagent.constant.Constant.*;
 import static com.alibaba.cloud.ai.graph.StateGraph.END;
 
 /**
- * @author zhangshenghang
  */
 @Slf4j
 @Component

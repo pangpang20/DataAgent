@@ -24,8 +24,6 @@ import static org.junit.jupiter.api.Assertions.*;
  * SqlDialectResolver 单元测试
  * 测试 MySQL 和达梦数据库的 SQL 方言差异处理
  *
- * @author DataAgent Team
- * @since 2026/01/22
  */
 @DisplayName("SQL方言解析器测试")
 class SqlDialectResolverTest {

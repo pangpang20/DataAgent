@@ -35,8 +35,6 @@ import java.nio.file.Paths;
 /**
  * 文件上传控制器
  *
- * @author Makoto
- * @since 2025/9/19
  */
 @Slf4j
 @RestController

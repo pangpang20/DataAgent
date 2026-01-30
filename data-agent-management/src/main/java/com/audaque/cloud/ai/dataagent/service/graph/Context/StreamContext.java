@@ -27,8 +27,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 /**
  * 流式处理上下文，封装每个 threadId 的所有相关状态
  *
- * @author Makoto
- * @since 2025/11/28
  */
 @Data
 public class StreamContext {

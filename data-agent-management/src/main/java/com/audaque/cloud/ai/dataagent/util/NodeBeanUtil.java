@@ -26,8 +26,6 @@ import org.springframework.stereotype.Component;
 /**
  * 管理Node Bean
  *
- * @author vlsmb
- * @since 2025/9/28
  */
 @Component
 @AllArgsConstructor
