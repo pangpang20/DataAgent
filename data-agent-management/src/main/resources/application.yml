@@ -42,10 +42,11 @@ spring:
       separator: ;
       encoding: utf-8
   ai:
+    # LLM API 调用重试配置（针对 429、500、503、504 等错误）
     retry:
-      max-attempts: 5
-      initial-interval: 2000ms
-      multiplier: 2.0
+      max-attempts: 5                # 最大重试次数（包括首次调用）
+      initial-interval: 2000ms       # 初始重试间隔（支持 ms、s 等时间单位）
+      multiplier: 2.0                # 指数退避倍数（每次重试间隔为上次的 multiplier 倍）
     vectorstore:
       milvus:
         enabled: false

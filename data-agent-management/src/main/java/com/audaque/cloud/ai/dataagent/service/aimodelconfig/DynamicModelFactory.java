@@ -39,7 +39,7 @@ public class DynamicModelFactory {
 	@Value("${spring.ai.retry.max-attempts:5}")
 	private int maxAttempts;
 
-	@Value("${spring.ai.retry.initial-interval:2000}")
+	@Value("#{T(java.time.Duration).parse('${spring.ai.retry.initial-interval:PT2S}').toMillis()}")
 	private long initialInterval;
 
 	@Value("${spring.ai.retry.multiplier:2.0}")
@@ -65,10 +65,10 @@ public class DynamicModelFactory {
 
 		// 3. 构建运行时选项 (设置默认的模型名称，如 "deepseek-chat" 或 "gpt-4")
 		OpenAiChatOptions openAiChatOptions = OpenAiChatOptions.builder()
-			.model(config.getModelName())
-			.temperature(config.getTemperature())
-			.maxTokens(config.getMaxTokens())
-			.build();
+				.model(config.getModelName())
+				.temperature(config.getTemperature())
+				.maxTokens(config.getMaxTokens())
+				.build();
 
 		// 4. 创建自定义重试模板，支持 429 错误重试
 		RetryTemplate retryTemplate = createRetryTemplate();
@@ -115,7 +115,8 @@ public class DynamicModelFactory {
 	private RetryTemplate createRetryTemplate() {
 		return RetryTemplate.builder()
 				.maxAttempts(maxAttempts)
-				.exponentialBackoff(initialInterval, multiplier, initialInterval * (long) Math.pow(multiplier, maxAttempts - 1))
+				.exponentialBackoff(initialInterval, multiplier,
+						initialInterval * (long) Math.pow(multiplier, maxAttempts - 1))
 				.retryOn(WebClientResponseException.TooManyRequests.class)
 				.retryOn(WebClientResponseException.ServiceUnavailable.class)
 				.retryOn(WebClientResponseException.GatewayTimeout.class)
