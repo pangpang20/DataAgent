@@ -25,14 +25,25 @@ import org.springframework.ai.openai.OpenAiChatOptions;
 import org.springframework.ai.openai.OpenAiEmbeddingModel;
 import org.springframework.ai.openai.OpenAiEmbeddingOptions;
 import org.springframework.ai.openai.api.OpenAiApi;
-import org.springframework.ai.retry.RetryUtils;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.retry.support.RetryTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 @Slf4j
 @Service
 public class DynamicModelFactory {
+
+	@Value("${spring.ai.retry.max-attempts:5}")
+	private int maxAttempts;
+
+	@Value("${spring.ai.retry.initial-interval:2000}")
+	private long initialInterval;
+
+	@Value("${spring.ai.retry.multiplier:2.0}")
+	private double multiplier;
 
 	/**
 	 * 统一使用 OpenAiChatModel，通过 baseUrl 实现多厂商兼容
@@ -58,8 +69,16 @@ public class DynamicModelFactory {
 			.temperature(config.getTemperature())
 			.maxTokens(config.getMaxTokens())
 			.build();
-		// 4. 返回统一的 OpenAiChatModel
-		return OpenAiChatModel.builder().openAiApi(openAiApi).defaultOptions(openAiChatOptions).build();
+
+		// 4. 创建自定义重试模板，支持 429 错误重试
+		RetryTemplate retryTemplate = createRetryTemplate();
+
+		// 5. 返回统一的 OpenAiChatModel，配置重试机制
+		return OpenAiChatModel.builder()
+				.openAiApi(openAiApi)
+				.defaultOptions(openAiChatOptions)
+				.retryTemplate(retryTemplate)
+				.build();
 	}
 
 	private static void checkBasic(ModelConfigDTO config) {
@@ -83,9 +102,41 @@ public class DynamicModelFactory {
 		}
 
 		OpenAiApi openAiApi = apiBuilder.build();
+		// 使用自定义重试模板
+		RetryTemplate retryTemplate = createRetryTemplate();
 		return new OpenAiEmbeddingModel(openAiApi, MetadataMode.EMBED,
 				OpenAiEmbeddingOptions.builder().model(config.getModelName()).build(),
-				RetryUtils.DEFAULT_RETRY_TEMPLATE);
+				retryTemplate);
+	}
+
+	/**
+	 * 创建自定义重试模板，支持 429 (Too Many Requests) 和其他可重试错误
+	 */
+	private RetryTemplate createRetryTemplate() {
+		return RetryTemplate.builder()
+				.maxAttempts(maxAttempts)
+				.exponentialBackoff(initialInterval, multiplier, initialInterval * (long) Math.pow(multiplier, maxAttempts - 1))
+				.retryOn(WebClientResponseException.TooManyRequests.class)
+				.retryOn(WebClientResponseException.ServiceUnavailable.class)
+				.retryOn(WebClientResponseException.GatewayTimeout.class)
+				.retryOn(WebClientResponseException.InternalServerError.class)
+				.withListener(new org.springframework.retry.listener.RetryListenerSupport() {
+					@Override
+					public <T, E extends Throwable> void onError(
+							org.springframework.retry.RetryContext context,
+							org.springframework.retry.RetryCallback<T, E> callback,
+							Throwable throwable) {
+						if (throwable instanceof WebClientResponseException.TooManyRequests) {
+							log.warn("LLM API 速率限制 (429)，正在进行第 {} 次重试，退避时间: {} ms",
+									context.getRetryCount() + 1,
+									initialInterval * (long) Math.pow(multiplier, context.getRetryCount()));
+						} else {
+							log.warn("LLM API 调用失败，正在进行第 {} 次重试: {}",
+									context.getRetryCount() + 1, throwable.getMessage());
+						}
+					}
+				})
+				.build();
 	}
 
 }
