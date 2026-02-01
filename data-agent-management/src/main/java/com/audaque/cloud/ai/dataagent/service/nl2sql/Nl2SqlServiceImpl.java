@@ -61,25 +61,35 @@ public class Nl2SqlServiceImpl implements Nl2SqlService {
 		log.info("Generating SQL for query: {}, hasExistingSql: {}, dialect: {}",
 				sqlGenerationDTO.getExecutionDescription(), StringUtils.hasText(sql), sqlGenerationDTO.getDialect());
 
-		Flux<String> newSqlFlux;
+		Flux<ChatResponse> chatResponseFlux;
 		if (sql != null && !sql.isEmpty()) {
 			// Use professional SQL error repair prompt
 			log.debug("Using SQL error fixer for existing SQL: {}", sql);
 			String errorFixerPrompt = PromptHelper.buildSqlErrorFixerPrompt(sqlGenerationDTO);
 			log.debug("SQL error fixer prompt as follows \n {} \n", errorFixerPrompt);
-			newSqlFlux = llmService.toStringFlux(llmService.callUser(errorFixerPrompt));
-			log.info("SQL error fixing completed");
-		}
-		else {
+			chatResponseFlux = llmService.callUser(errorFixerPrompt);
+		} else {
 			// Normal SQL generation process
 			log.debug("Generating new SQL from scratch");
 			String prompt = PromptHelper.buildNewSqlGeneratorPrompt(sqlGenerationDTO);
 			log.debug("New SQL generator prompt as follows \n {} \n", prompt);
-			newSqlFlux = llmService.toStringFlux(llmService.callSystem(prompt));
-			log.info("New SQL generation completed");
+			chatResponseFlux = llmService.callSystem(prompt);
 		}
 
-		return newSqlFlux;
+		// Add detailed logging to diagnose LLM response
+		return chatResponseFlux
+				.doOnNext(response -> {
+					if (response != null && response.getResult() != null && response.getResult().getOutput() != null) {
+						String text = response.getResult().getOutput().getText();
+						log.debug("LLM ChatResponse chunk: text=[{}], textLength={}", text,
+								text != null ? text.length() : -1);
+					} else {
+						log.warn("LLM ChatResponse chunk is null or has null result/output: response={}", response);
+					}
+				})
+				.doOnComplete(() -> log.info("LLM SQL generation stream completed"))
+				.doOnError(e -> log.error("LLM SQL generation stream error", e))
+				.map(ChatResponseUtil::getText);
 	}
 
 	private Flux<ChatResponse> fineSelect(SchemaDTO schemaDTO, String sqlGenerateSchemaMissingAdvice,
@@ -101,15 +111,14 @@ public class Nl2SqlServiceImpl implements Nl2SqlService {
 				try {
 					tableList = JsonUtil.getObjectMapper().readValue(jsonContent, new TypeReference<List<String>>() {
 					});
-				}
-				catch (Exception e) {
+				} catch (Exception e) {
 					log.error("Failed to parse table selection response: {}", jsonContent, e);
 					throw new IllegalStateException(jsonContent);
 				}
 				if (tableList != null && !tableList.isEmpty()) {
 					Set<String> selectedTables = tableList.stream()
-						.map(String::toLowerCase)
-						.collect(Collectors.toSet());
+							.map(String::toLowerCase)
+							.collect(Collectors.toSet());
 					log.debug("Selected {} tables based on advice: {}", selectedTables.size(), selectedTables);
 					resultConsumer.accept(selectedTables);
 				}
@@ -135,8 +144,7 @@ public class Nl2SqlServiceImpl implements Nl2SqlService {
 			if (sqlGenerateSchemaMissingAdvice != null) {
 				log.debug("Adding tables from schema missing advice");
 				nextFlux = this.fineSelect(schemaDTO, sqlGenerateSchemaMissingAdvice, selectedTables::addAll);
-			}
-			else {
+			} else {
 				nextFlux = Flux.empty();
 			}
 			return nextFlux.doOnComplete(() -> {
@@ -146,8 +154,7 @@ public class Nl2SqlServiceImpl implements Nl2SqlService {
 					try {
 						tableList = jsonParseUtil.tryConvertToObject(jsonContent, new TypeReference<List<String>>() {
 						});
-					}
-					catch (Exception e) {
+					} catch (Exception e) {
 						// Some scenarios may prompt exceptions, such as:
 						// java.lang.IllegalStateException:
 						// Please provide database schema information so I can filter
@@ -162,7 +169,7 @@ public class Nl2SqlServiceImpl implements Nl2SqlService {
 						if (schemaDTO.getTable() != null) {
 							int originalTableCount = schemaDTO.getTable().size();
 							schemaDTO.getTable()
-								.removeIf(table -> !selectedTables.contains(table.getName().toLowerCase()));
+									.removeIf(table -> !selectedTables.contains(table.getName().toLowerCase()));
 							int finalTableCount = schemaDTO.getTable().size();
 							log.debug("Fine selection completed: {} -> {} tables, selected tables: {}",
 									originalTableCount, finalTableCount, selectedTables);
@@ -172,8 +179,8 @@ public class Nl2SqlServiceImpl implements Nl2SqlService {
 				dtoConsumer.accept(schemaDTO);
 			});
 		}, flux -> flux.map(ChatResponseUtil::getText)
-			.collect(StringBuilder::new, StringBuilder::append)
-			.map(StringBuilder::toString));
+				.collect(StringBuilder::new, StringBuilder::append)
+				.map(StringBuilder::toString));
 	}
 
 }
