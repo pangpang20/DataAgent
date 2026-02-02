@@ -220,6 +220,14 @@ public class JsonParseUtil {
 			return trimmed;
 		}
 		if (trimmed.startsWith("{")) {
+			// LLM有时返回JSON对象而不是数组，尝试提取表名转换为数组
+			// 如: {"table": "ORDERS"} -> ["ORDERS"]
+			// 如: {"tables": ["ORDERS", "PRODUCTS"]} -> ["ORDERS", "PRODUCTS"]
+			String converted = convertJsonObjectToArray(trimmed);
+			if (converted != null) {
+				log.info("Converted JSON object to array: {} -> {}", trimmed, converted);
+				return converted;
+			}
 			return trimmed;
 		}
 		
@@ -422,6 +430,68 @@ public class JsonParseUtil {
 		}
 		
 		return "[" + String.join(", ", quoted) + "]";
+	}
+
+	/**
+	 * 将JSON对象转换为字符串数组
+	 * LLM有时返回 {"table": "ORDERS"} 或 {"tables": ["A", "B"]} 格式
+	 * 需要提取其中的表名并转换为数组格式
+	 */
+	private String convertJsonObjectToArray(String json) {
+		if (json == null || json.isEmpty()) {
+			return null;
+		}
+		
+		try {
+			// 解析为Map
+			@SuppressWarnings("unchecked")
+			Map<String, Object> map = JsonUtil.getObjectMapper().readValue(json, Map.class);
+			
+			List<String> tables = new ArrayList<>();
+			
+			// 查找可能包含表名的字段
+			String[] possibleKeys = {"table", "tables", "Table", "Tables", "TABLE", "TABLES", 
+									  "tableName", "tableNames", "name", "names"};
+			
+			for (String key : possibleKeys) {
+				Object value = map.get(key);
+				if (value != null) {
+					if (value instanceof String) {
+						// 单个表名
+						String tableName = ((String) value).trim();
+						if (!tableName.isEmpty()) {
+							tables.add(tableName);
+						}
+					} else if (value instanceof List) {
+						// 表名数组
+						@SuppressWarnings("unchecked")
+						List<Object> list = (List<Object>) value;
+						for (Object item : list) {
+							if (item instanceof String) {
+								String tableName = ((String) item).trim();
+								if (!tableName.isEmpty()) {
+									tables.add(tableName);
+								}
+							}
+						}
+					}
+					
+					if (!tables.isEmpty()) {
+						break; // 找到了就不继续查找
+					}
+				}
+			}
+			
+			if (!tables.isEmpty()) {
+				// 转换为JSON数组
+				return JsonUtil.getObjectMapper().writeValueAsString(tables);
+			}
+			
+		} catch (Exception e) {
+			log.debug("Failed to parse JSON object for conversion: {}", e.getMessage());
+		}
+		
+		return null;
 	}
 
 	/**
