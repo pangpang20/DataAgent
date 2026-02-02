@@ -143,3 +143,16 @@ display the full name (first and last name ) of employee with ID and name of the
 {evidence}
 
 【Answer】
+**立即输出JSON数组，不要任何其他内容：**
+
+---
+**重要提醒：必须严格按照JSON数组格式输出！**
+- ✅ 正确格式：["table1", "table2"]
+- ✅ 单表格式：["ORDERS"]
+- ✅ 空表格式：[]
+- ❌ **禁止**输出：ORDERS
+- ❌ **禁止**输出：{"table":"ORDERS"}
+- ❌ **禁止**输出：表：ORDERS
+- ❌ **禁止**输出任何解释、思考过程或Markdown标记
+
+请直接输出JSON数组：
