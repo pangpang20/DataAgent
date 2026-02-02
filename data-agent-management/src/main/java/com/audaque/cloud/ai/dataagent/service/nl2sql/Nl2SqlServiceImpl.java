@@ -55,9 +55,22 @@ public class Nl2SqlServiceImpl implements Nl2SqlService {
 
 	@Override
 	public Flux<ChatResponse> performSemanticConsistency(SemanticConsistencyDTO semanticConsistencyDTO) {
+		log.info("Starting semantic consistency check - user_query: {}, dialect: {}, SQL length: {}",
+				semanticConsistencyDTO.getUserQuery(),
+				semanticConsistencyDTO.getDialect(),
+				semanticConsistencyDTO.getSql() != null ? semanticConsistencyDTO.getSql().length() : 0);
+		
 		String semanticConsistencyPrompt = PromptHelper.buildSemanticConsistenPrompt(semanticConsistencyDTO);
+		log.debug("Semantic consistency prompt built, length: {} chars", semanticConsistencyPrompt.length());
 		log.debug("semanticConsistencyPrompt as follows \n {} \n", semanticConsistencyPrompt);
-		return llmService.callUser(semanticConsistencyPrompt);
+		
+		Flux<ChatResponse> responseFlux = llmService.callUser(semanticConsistencyPrompt);
+		log.debug("Semantic consistency LLM call initiated");
+		
+		return responseFlux
+				.doOnNext(response -> log.debug("Received semantic consistency response chunk"))
+				.doOnComplete(() -> log.info("Semantic consistency check completed"))
+				.doOnError(e -> log.error("Semantic consistency check failed", e));
 	}
 
 	@Override
@@ -99,47 +112,71 @@ public class Nl2SqlServiceImpl implements Nl2SqlService {
 
 	private Flux<ChatResponse> fineSelect(SchemaDTO schemaDTO, String sqlGenerateSchemaMissingAdvice,
 			Consumer<Set<String>> resultConsumer) {
-		log.debug("Fine selecting tables based on advice: {}", sqlGenerateSchemaMissingAdvice);
+		log.info("Starting fine selection with advice - advice: {}, available tables: {}",
+				sqlGenerateSchemaMissingAdvice,
+				schemaDTO != null && schemaDTO.getTable() != null ? schemaDTO.getTable().size() : 0);
+		
 		String schemaInfo = buildMixMacSqlDbPrompt(schemaDTO, true);
+		log.debug("Schema info built for advice-based selection, length: {} chars", schemaInfo.length());
+		
 		String prompt = " 建议：" + sqlGenerateSchemaMissingAdvice
 				+ " \n 请按照建议进行返回相关表的名称，只返回建议中提到的表名，返回格式为：[\"a\",\"b\",\"c\"] \n " + schemaInfo;
+		log.debug("Built table selection with advice prompt, total length: {} chars", prompt.length());
 		log.debug("Built table selection with advice prompt as follows \n {} \n", prompt);
+		
 		StringBuilder sb = new StringBuilder();
-		return llmService.callUser(prompt).doOnNext(r -> {
-			String text = r.getResult().getOutput().getText();
-			sb.append(text);
-		}).doOnComplete(() -> {
-			String content = sb.toString();
-			if (!content.trim().isEmpty()) {
-				String jsonContent = MarkdownParserUtil.extractText(content);
-				List<String> tableList;
-				try {
-					tableList = JsonUtil.getObjectMapper().readValue(jsonContent, new TypeReference<List<String>>() {
-					});
-				} catch (Exception e) {
-					log.error("Failed to parse table selection response: {}", jsonContent, e);
-					throw new IllegalStateException(jsonContent);
-				}
-				if (tableList != null && !tableList.isEmpty()) {
-					Set<String> selectedTables = tableList.stream()
-							.map(String::toLowerCase)
-							.collect(Collectors.toSet());
-					log.debug("Selected {} tables based on advice: {}", selectedTables.size(), selectedTables);
-					resultConsumer.accept(selectedTables);
-				}
-			}
-			log.debug("No tables selected based on advice");
-			resultConsumer.accept(new HashSet<>());
-		});
+		return llmService.callUser(prompt)
+				.doOnNext(r -> {
+					String text = r.getResult().getOutput().getText();
+					log.debug("Received advice-based selection chunk: {}", text);
+					sb.append(text);
+				})
+				.doOnComplete(() -> {
+					String content = sb.toString();
+					log.debug("Advice-based selection stream completed, full content length: {} chars", content.length());
+					
+					if (!content.trim().isEmpty()) {
+						String jsonContent = MarkdownParserUtil.extractText(content);
+						log.debug("Extracted JSON content: {}", jsonContent);
+						
+						List<String> tableList;
+						try {
+							tableList = JsonUtil.getObjectMapper().readValue(jsonContent, new TypeReference<List<String>>() {});
+							log.debug("Successfully parsed table list: {}", tableList);
+						} catch (Exception e) {
+							log.error("Failed to parse table selection response: {}", jsonContent, e);
+							throw new IllegalStateException(jsonContent);
+						}
+						
+						if (tableList != null && !tableList.isEmpty()) {
+							Set<String> selectedTables = tableList.stream()
+									.map(String::toLowerCase)
+									.collect(Collectors.toSet());
+							log.info("Advice-based selection completed: selected {} tables: {}", selectedTables.size(), selectedTables);
+							resultConsumer.accept(selectedTables);
+							return;
+						}
+					}
+					
+					log.debug("No tables selected based on advice");
+					resultConsumer.accept(new HashSet<>());
+				})
+				.doOnError(e -> log.error("Advice-based selection failed", e));
 	}
 
 	@Override
 	public Flux<ChatResponse> fineSelect(SchemaDTO schemaDTO, String query, String evidence,
 			String sqlGenerateSchemaMissingAdvice, DbConfigBO specificDbConfig, Consumer<SchemaDTO> dtoConsumer) {
-		log.debug("Fine selecting schema for query: {} with evidences and specificDbConfig: {}", query,
-				specificDbConfig != null ? specificDbConfig.getUrl() : "default");
+		log.info("=== Starting fine selection (non-streaming) ===");
+		log.info("Query: {}", query);
+		log.info("Evidence: {}", evidence != null ? evidence : "(none)");
+		log.info("Schema missing advice: {}", sqlGenerateSchemaMissingAdvice != null ? sqlGenerateSchemaMissingAdvice : "(none)");
+		log.info("DB config: {}", specificDbConfig != null ? specificDbConfig.getUrl() : "default");
+		log.info("Available tables count: {}", schemaDTO != null && schemaDTO.getTable() != null ? schemaDTO.getTable().size() : 0);
 
+		// 构建 Prompt
 		String prompt = buildMixSelectorPrompt(evidence, query, schemaDTO);
+		log.info("Mix selector prompt built successfully, length: {} chars", prompt.length());
 		log.debug("Built schema fine selection prompt as follows \n {} \n", prompt);
 
 		Set<String> selectedTables = new HashSet<>();
@@ -147,53 +184,90 @@ public class Nl2SqlServiceImpl implements Nl2SqlService {
 		// 使用非流式调用 + temperature=0 + JSON严格模式
 		// 这是内部控制逻辑，不需要流式输出，避免90%的解析异常
 		return Mono.fromCallable(() -> {
-			log.debug("Calling LLM for fine selection with non-streaming mode and temperature=0");
+			log.info("Calling LLM for fine selection with non-streaming mode and temperature=0");
 			
-			// 非流式调用，直接获取完整响应
-			ChatResponse response = aiModelRegistry.getChatClient()
-					.prompt()
-					.user(prompt)
-					.options(OpenAiChatOptions.builder()
-							.temperature(0.0)  // 温度为0，确保结果稳定
-							.build())
-					.call()
-					.chatResponse();
-			
-			String content = response.getResult().getOutput().getText();
-			log.debug("LLM fine selection response: {}", content);
-			
-			// 处理响应
-			if (!content.trim().isEmpty()) {
-				String jsonContent = MarkdownParserUtil.extractText(content);
-				List<String> tableList;
-				try {
-					tableList = jsonParseUtil.tryConvertToObject(jsonContent, new TypeReference<List<String>>() {});
-				} catch (Exception e) {
-					log.error("Failed to parse fine selection response: {}", jsonContent, e);
-					throw new IllegalStateException(jsonContent);
+			try {
+				// 非流式调用，直接获取完整响应
+				ChatResponse response = aiModelRegistry.getChatClient()
+						.prompt()
+						.user(prompt)
+						.options(OpenAiChatOptions.builder()
+								.temperature(0.0)  // 温度为0，确保结果稳定
+								.build())
+						.call()
+						.chatResponse();
+				
+				String content = response.getResult().getOutput().getText();
+				log.info("LLM fine selection response received, length: {} chars", content.length());
+				log.debug("LLM fine selection response: {}", content);
+				
+				// 处理响应
+				if (!content.trim().isEmpty()) {
+					String jsonContent = MarkdownParserUtil.extractText(content);
+					log.debug("Extracted JSON content: {}", jsonContent);
+					
+					List<String> tableList;
+					try {
+						tableList = jsonParseUtil.tryConvertToObject(jsonContent, new TypeReference<List<String>>() {});
+						log.info("Successfully parsed table list, count: {}", tableList != null ? tableList.size() : 0);
+						log.debug("Parsed table list: {}", tableList);
+					} catch (Exception e) {
+						log.error("Failed to parse fine selection response: {}", jsonContent, e);
+						throw new IllegalStateException("JSON parse failed: " + jsonContent, e);
+					}
+					
+					if (tableList != null && !tableList.isEmpty()) {
+						selectedTables.addAll(tableList.stream().map(String::toLowerCase).collect(Collectors.toSet()));
+						log.info("Selected tables (lowercase): {}", selectedTables);
+						
+						if (schemaDTO.getTable() != null) {
+							int originalTableCount = schemaDTO.getTable().size();
+							log.debug("Filtering schema tables from {} tables", originalTableCount);
+							
+							schemaDTO.getTable()
+									.removeIf(table -> {
+										boolean shouldRemove = !selectedTables.contains(table.getName().toLowerCase());
+										if (shouldRemove) {
+											log.debug("Removing table: {}", table.getName());
+										}
+										return shouldRemove;
+									});
+							
+							int finalTableCount = schemaDTO.getTable().size();
+							log.info("Fine selection filter completed: {} -> {} tables", originalTableCount, finalTableCount);
+							log.info("Remaining tables: {}", 
+									schemaDTO.getTable().stream().map(t -> t.getName()).collect(Collectors.toList()));
+						}
+					} else {
+						log.warn("Table list is null or empty after parsing");
+					}
+				} else {
+					log.warn("LLM response content is empty");
 				}
 				
-				if (tableList != null && !tableList.isEmpty()) {
-					selectedTables.addAll(tableList.stream().map(String::toLowerCase).collect(Collectors.toSet()));
-					if (schemaDTO.getTable() != null) {
-						int originalTableCount = schemaDTO.getTable().size();
-						schemaDTO.getTable()
-								.removeIf(table -> !selectedTables.contains(table.getName().toLowerCase()));
-						int finalTableCount = schemaDTO.getTable().size();
-						log.debug("Fine selection completed: {} -> {} tables, selected tables: {}",
-								originalTableCount, finalTableCount, selectedTables);
-					}
+				// 处理schema missing advice(如果有)
+				if (sqlGenerateSchemaMissingAdvice != null) {
+					log.info("Processing schema missing advice: {}", sqlGenerateSchemaMissingAdvice);
+					this.fineSelect(schemaDTO, sqlGenerateSchemaMissingAdvice, additionalTables -> {
+						log.info("Adding {} additional tables from advice: {}", additionalTables.size(), additionalTables);
+						selectedTables.addAll(additionalTables);
+					}).blockLast();
+					log.info("Schema missing advice processing completed");
 				}
+				
+				log.info("=== Fine selection completed successfully ===");
+				log.info("Final selected tables count: {}", selectedTables.size());
+				log.info("Final selected tables: {}", selectedTables);
+				
+				dtoConsumer.accept(schemaDTO);
+				return response;
+				
+			} catch (Exception e) {
+				log.error("=== Fine selection failed with exception ===", e);
+				log.error("Exception type: {}", e.getClass().getName());
+				log.error("Exception message: {}", e.getMessage());
+				throw e;
 			}
-			
-			// 处理schema missing advice(如果有)
-			if (sqlGenerateSchemaMissingAdvice != null) {
-				log.debug("Adding tables from schema missing advice");
-				this.fineSelect(schemaDTO, sqlGenerateSchemaMissingAdvice, selectedTables::addAll).blockLast();
-			}
-			
-			dtoConsumer.accept(schemaDTO);
-			return response;
 		}).flux();
 	}
 
