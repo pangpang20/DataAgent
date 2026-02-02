@@ -198,14 +198,25 @@ public class JsonParseUtil {
 		
 		// 已经是JSON格式，直接返回
 		if (trimmed.startsWith("[") && !trimmed.startsWith("[Answer]")) {
-			// 检查是否是混乱的JSON格式（如 [{"QUERY_BUILDER","select...  ）
-			if (trimmed.startsWith("[{") && !isValidJsonArrayOfObjects(trimmed)) {
-				log.debug("Detected malformed JSON array with objects, attempting extraction");
-				String extracted = extractTableNamesFromMalformedJson(trimmed);
+			// 检查是否是JSON对象数组，如 [{"table":"ORDERS"}]
+			if (trimmed.startsWith("[{")) {
+				// 先尝试从JSON对象数组中提取表名
+				String extracted = extractTableNamesFromJsonObjectArray(trimmed);
 				if (extracted != null) {
-					log.info("Extracted table names from malformed JSON: {} -> {}", 
-						trimmed.substring(0, Math.min(100, trimmed.length())) + "...", extracted);
+					log.info("Extracted table names from JSON object array: {} -> {}", 
+						trimmed.substring(0, Math.min(100, trimmed.length())), extracted);
 					return extracted;
+				}
+				
+				// 如果上面处理失败，尝试处理混乱的JSON格式
+				if (!isValidJsonArrayOfObjects(trimmed)) {
+					log.debug("Detected malformed JSON array with objects, attempting extraction");
+					extracted = extractTableNamesFromMalformedJson(trimmed);
+					if (extracted != null) {
+						log.info("Extracted table names from malformed JSON: {} -> {}", 
+							trimmed.substring(0, Math.min(100, trimmed.length())) + "...", extracted);
+						return extracted;
+					}
 				}
 			}
 			
@@ -522,6 +533,61 @@ public class JsonParseUtil {
 		// 如果没找到结束标签，说明可能没有思考过程，直接返回原文本（去除首尾空格）
 		log.debug("Think end tag not found, returning original text");
 		return text.trim();
+	}
+
+	/**
+	 * 从JSON对象数组中提取表名
+	 * 处理类似 [{"table":"ORDERS"},{"table":"PRODUCTS"}] 的格式
+	 * 或 [{"table":"ORDERS","where":"..."}] 的格式
+	 */
+	private String extractTableNamesFromJsonObjectArray(String json) {
+		try {
+			// 解析为List<Map>
+			@SuppressWarnings("unchecked")
+			List<Map<String, Object>> list = JsonUtil.getObjectMapper().readValue(json, 
+					new com.fasterxml.jackson.core.type.TypeReference<List<Map<String, Object>>>() {});
+			
+			List<String> tables = new ArrayList<>();
+			
+			// 可能包含表名的字段名
+			String[] possibleKeys = {"table", "tables", "Table", "Tables", "TABLE", "TABLES", 
+									  "tableName", "tableNames", "name", "names"};
+			
+			for (Map<String, Object> item : list) {
+				for (String key : possibleKeys) {
+					Object value = item.get(key);
+					if (value != null) {
+						if (value instanceof String) {
+							String tableName = ((String) value).trim();
+							if (!tableName.isEmpty() && !tables.contains(tableName)) {
+								tables.add(tableName);
+							}
+						} else if (value instanceof List) {
+							@SuppressWarnings("unchecked")
+							List<Object> valueList = (List<Object>) value;
+							for (Object v : valueList) {
+								if (v instanceof String) {
+									String tableName = ((String) v).trim();
+									if (!tableName.isEmpty() && !tables.contains(tableName)) {
+										tables.add(tableName);
+									}
+								}
+							}
+						}
+						break; // 找到了就跳出当前key循环
+					}
+				}
+			}
+			
+			if (!tables.isEmpty()) {
+				return JsonUtil.getObjectMapper().writeValueAsString(tables);
+			}
+			
+		} catch (Exception e) {
+			log.debug("Failed to extract table names from JSON object array: {}", e.getMessage());
+		}
+		
+		return null;
 	}
 
 	/**
