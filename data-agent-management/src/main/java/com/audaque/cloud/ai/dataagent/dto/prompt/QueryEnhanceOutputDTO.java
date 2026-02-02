@@ -15,15 +15,20 @@
  */
 package com.audaque.cloud.ai.dataagent.dto.prompt;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.List;
 
-// 对应 模板query-enhancement.txt的输出
+/**
+ * 查询增强输出 DTO
+ * 对应 query-enhancement.txt 模板的输出
+ */
 @Data
 @NoArgsConstructor
+@JsonIgnoreProperties(ignoreUnknown = true)  // 忽略LLM返回的未知字段
 public class QueryEnhanceOutputDTO {
 
 	// 经LLM重写后的 规范化查询

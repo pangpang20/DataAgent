@@ -191,6 +191,11 @@ public class JsonParseUtil {
 		
 		String trimmed = text.trim();
 		
+		// 首先移除JSON中的尾部逗号（LLM 常见错误）
+		// 例如: ["a", "b",] -> ["a", "b"]
+		// 例如: {"key": ["a",]} -> {"key": ["a"]}
+		trimmed = removeTrailingCommas(trimmed);
+		
 		// 已经是JSON格式，直接返回
 		if (trimmed.startsWith("[") && !trimmed.startsWith("[Answer]")) {
 			// 检查是否是混乱的JSON格式（如 [{"QUERY_BUILDER","select...  ）
@@ -333,6 +338,32 @@ public class JsonParseUtil {
 		}
 		
 		return trimmed;
+	}
+
+	/**
+	 * 移除JSON字符串中的尾部逗号
+	 * LLM经常在数组或对象的最后一个元素后添加逗号，这是非法的JSON语法
+	 * 例如: ["a", "b",] -> ["a", "b"]
+	 * 例如: {"key": "value",} -> {"key": "value"}
+	 */
+	private String removeTrailingCommas(String json) {
+		if (json == null || json.isEmpty()) {
+			return json;
+		}
+		
+		String original = json;
+		
+		// 移除数组中的尾部逗号: ,] 或 , ] 或 ,\n] 等
+		json = json.replaceAll(",\\s*]", "]");
+		
+		// 移除对象中的尾部逗号: ,} 或 , } 或 ,\n} 等
+		json = json.replaceAll(",\\s*}", "}");
+		
+		if (!original.equals(json)) {
+			log.debug("Removed trailing commas from JSON");
+		}
+		
+		return json;
 	}
 
 	/**
