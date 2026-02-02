@@ -30,6 +30,7 @@ import reactor.core.publisher.Flux;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -46,6 +47,23 @@ public class JsonParseUtil {
 	private static final int MAX_RETRY_COUNT = 3;
 
 	private static final String THINK_END_TAG = "</think>";
+
+	/**
+	 * SQL关键字和DataAgent系统表名 - 用于过滤混乱的LLM输出
+	 */
+	private static final Set<String> SQL_KEYWORDS = Set.of(
+		"select", "from", "where", "and", "or", "join", "on", "group", "by", 
+		"order", "having", "limit", "offset", "insert", "update", "delete",
+		"sum", "count", "avg", "max", "min", "between", "in", "like",
+		"as", "left", "right", "inner", "outer", "full", "cross"
+	);
+	
+	private static final Set<String> SYSTEM_TABLE_NAMES = Set.of(
+		"agents", "agent_datasources", "agent_datasource_tables",
+		"databases", "schemas", "chat_messages", "chat_sessions",
+		"model_configs", "preset_questions", "user_prompt_configs",
+		"semantic_models", "logical_relations", "business_terms"
+	);
 
 	public <T> T tryConvertToObject(String json, Class<T> clazz) {
 		Assert.hasText(json, "Input JSON string cannot be null or empty");
@@ -164,6 +182,7 @@ public class JsonParseUtil {
 	 * 预处理常见的自然语言格式，尝试转换为JSON格式
 	 * 处理类似 "表：ORDERS,PRODUCT_CATEGORIES  条件：..." 的格式
 	 * 以及 "[Answer] \"orders\", \"products\"  【说明】..." 的格式
+	 * 以及 LLM返回的混乱JSON格式
 	 */
 	private String preprocessNaturalLanguage(String text) {
 		if (text == null || text.trim().isEmpty()) {
@@ -174,6 +193,16 @@ public class JsonParseUtil {
 		
 		// 已经是JSON格式，直接返回
 		if (trimmed.startsWith("[") && !trimmed.startsWith("[Answer]")) {
+			// 检查是否是混乱的JSON格式（如 [{"QUERY_BUILDER","select...  ）
+			if (trimmed.startsWith("[{") && !isValidJsonArrayOfObjects(trimmed)) {
+				log.debug("Detected malformed JSON array with objects, attempting extraction");
+				String extracted = extractTableNamesFromMalformedJson(trimmed);
+				if (extracted != null) {
+					log.info("Extracted table names from malformed JSON: {} -> {}", 
+						trimmed.substring(0, Math.min(100, trimmed.length())) + "...", extracted);
+					return extracted;
+				}
+			}
 			return trimmed;
 		}
 		if (trimmed.startsWith("{")) {
@@ -325,6 +354,92 @@ public class JsonParseUtil {
 		// 如果没找到结束标签，说明可能没有思考过程，直接返回原文本（去除首尾空格）
 		log.debug("Think end tag not found, returning original text");
 		return text.trim();
+	}
+
+	/**
+	 * 检查是否是有效的JSON数组（包含对象）
+	 * 简单检查：确认格式类似 [{ "key": "value" }]
+	 */
+	private boolean isValidJsonArrayOfObjects(String json) {
+		if (json == null || json.length() < 4) {
+			return false;
+		}
+		
+		// 快速检查：在第一个 { 后应该有 "key": 的模式
+		// 如果是 [{"QUERY_BUILDER","select... 这种格式，就不是有效的
+		int firstBrace = json.indexOf('{');
+		if (firstBrace == -1) {
+			return false;
+		}
+		
+		// 查找第一个引号后是否跟着冒号（键值对标识）
+		String afterBrace = json.substring(firstBrace + 1).trim();
+		// 正常的JSON对象应该是 "key": value 的格式
+		// 检查是否匹配 "xxx": 的模式
+		Pattern validPattern = Pattern.compile("^\"[^\"]+\"\\s*:");
+		return validPattern.matcher(afterBrace).find();
+	}
+
+	/**
+	 * 从混乱的JSON格式中提取表名
+	 * 处理类似 [{"QUERY_BUILDER","select...","STUDIES","products,agents..."}] 的格式
+	 */
+	private String extractTableNamesFromMalformedJson(String json) {
+		try {
+			// 提取所有看起来像表名的字符串
+			// 表名特征：大写字母开头，可能包含下划线，不包含SQL关键字
+			Pattern tablePattern = Pattern.compile("\"([A-Z][A-Z0-9_]*)\"(?!\\s*:)");
+			Matcher matcher = tablePattern.matcher(json);
+			
+			List<String> potentialTables = new ArrayList<>();
+			while (matcher.find()) {
+				String candidate = matcher.group(1);
+				// 过滤掉SQL关键字和系统表名
+				if (!SQL_KEYWORDS.contains(candidate.toLowerCase()) 
+					&& !SYSTEM_TABLE_NAMES.contains(candidate.toLowerCase())
+					&& !candidate.contains("(") 
+					&& candidate.length() > 1) {
+					// 还要过滤一些明显不是表名的内容
+					if (!candidate.equals("QUERY_BUILDER") 
+						&& !candidate.equals("STUDIES") 
+						&& !candidate.startsWith("INTER")
+						&& !potentialTables.contains(candidate)) {
+						potentialTables.add(candidate);
+					}
+				}
+			}
+			
+			// 如果没找到大写表名，尝试查找小写表名
+			if (potentialTables.isEmpty()) {
+				Pattern lowerPattern = Pattern.compile("\"([a-z][a-z0-9_]*)\"(?!\\s*:)");
+				Matcher lowerMatcher = lowerPattern.matcher(json);
+				while (lowerMatcher.find()) {
+					String candidate = lowerMatcher.group(1);
+					if (!SQL_KEYWORDS.contains(candidate.toLowerCase()) 
+						&& !SYSTEM_TABLE_NAMES.contains(candidate.toLowerCase())
+						&& !candidate.contains("(")
+						&& candidate.length() > 2
+						&& !potentialTables.contains(candidate)) {
+						potentialTables.add(candidate);
+					}
+				}
+			}
+			
+			if (!potentialTables.isEmpty()) {
+				StringBuilder jsonArray = new StringBuilder("[");
+				for (int i = 0; i < potentialTables.size(); i++) {
+					if (i > 0) {
+						jsonArray.append(", ");
+					}
+					jsonArray.append("\"").append(potentialTables.get(i)).append("\"");
+				}
+				jsonArray.append("]");
+				return jsonArray.toString();
+			}
+		} catch (Exception e) {
+			log.debug("Failed to extract table names from malformed JSON", e);
+		}
+		return null;
 	}
 
 }
