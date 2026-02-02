@@ -13,7 +13,37 @@ DataAgent支持从外部目录加载Prompt模板文件,提供以下优势:
 
 ## 配置方式
 
-### 方式1: 环境变量(推荐)
+### 方式1: application.yml配置（推荐）
+
+在`application.yml`中配置外部Prompt目录：
+
+```yaml
+spring:
+  ai:
+    alibaba:
+      data-agent:
+        prompt:
+          # 支持绝对路径
+          external-dir: /opt/dataagent/prompts
+          # 或相对路径（相对于应用启动目录）
+          # external-dir: ./prompts
+```
+
+**Windows环境示例：**
+```yaml
+spring:
+  ai:
+    alibaba:
+      data-agent:
+        prompt:
+          external-dir: C:/dataagent/prompts
+          # 或使用双反斜杠
+          # external-dir: C:\\dataagent\\prompts
+```
+
+> **优势**：配置集中管理，方便统一维护和版本控制
+
+### 方式2: 环境变量
 
 设置环境变量 `DATAAGENT_PROMPT_DIR` 指向外部Prompt目录:
 
@@ -31,7 +61,7 @@ $env:DATAAGENT_PROMPT_DIR="C:\dataagent\prompts"
 
 ### 方式2: JVM系统属性
 
-在启动JAR时通过 `-D` 参数指定:
+在启动JAR时通过 `-D` 参数指定：
 
 ```bash
 java -Ddataagent.prompt.dir=/opt/dataagent/prompts -jar data-agent-management.jar
@@ -39,11 +69,12 @@ java -Ddataagent.prompt.dir=/opt/dataagent/prompts -jar data-agent-management.ja
 
 ### 优先级
 
-如果同时配置了环境变量和系统属性,优先级如下:
+如果同时配置了多个方式，优先级如下：
 
-1. 环境变量 `DATAAGENT_PROMPT_DIR` (最高优先级)
-2. 系统属性 `dataagent.prompt.dir`
-3. JAR内部资源 (默认回退)
+1. **application.yml 配置** `spring.ai.alibaba.data-agent.prompt.external-dir` (最高优先级)
+2. **环境变量** `DATAAGENT_PROMPT_DIR`
+3. **JVM系统属性** `dataagent.prompt.dir`
+4. **JAR内部资源** (默认回退)
 
 ## 准备外部Prompt目录
 
@@ -214,17 +245,24 @@ git add *.txt
 git commit -m "Initial prompt templates"
 ```
 
-### 2. 部署流程
+### 1. 部署流程
 
-在生产环境部署时:
+在生产环境部署时：
 
 ```bash
-# 1. 设置环境变量
-echo 'export DATAAGENT_PROMPT_DIR=/opt/dataagent/prompts' >> /etc/profile.d/dataagent.sh
-
-# 2. 准备Prompt目录
+# 1. 准备Prompt目录
 mkdir -p /opt/dataagent/prompts
 cp prompts/*.txt /opt/dataagent/prompts/
+
+# 2. 配置 application.yml
+cat >> /opt/dataagent/application.yml << 'EOF'
+spring:
+  ai:
+    alibaba:
+      data-agent:
+        prompt:
+          external-dir: /opt/dataagent/prompts
+EOF
 
 # 3. 启动服务
 java -jar data-agent-management.jar
@@ -235,7 +273,7 @@ curl http://localhost:8080/api/prompt-config/external-dir
 
 ### 3. 热更新工作流
 
-修改Prompt的推荐流程:
+修改Prompt的推荐流程：
 
 ```bash
 # 1. 编辑Prompt文件
@@ -279,12 +317,22 @@ grep "Prompt cache cleared" application.log
 
 **检查步骤:**
 
-1. 确认环境变量是否正确设置:
+1. 首先检查application.yml配置：
+```yaml
+spring:
+  ai:
+    alibaba:
+      data-agent:
+        prompt:
+          external-dir: /opt/dataagent/prompts  # 确认路径正确
+```
+
+2. 如果使用环境变量，确认设置：
 ```bash
 echo $DATAAGENT_PROMPT_DIR
 ```
 
-2. 确认文件路径和名称:
+3. 确认文件路径和名称：
 ```bash
 ls -l $DATAAGENT_PROMPT_DIR/*.txt
 ```

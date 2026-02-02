@@ -29,6 +29,11 @@ public class DataAgentProperties {
 	private LlmServiceEnum llmServiceType = LlmServiceEnum.STREAM;
 
 	/**
+	 * Prompt模板配置
+	 */
+	private PromptProperties prompt = new PromptProperties();
+
+	/**
 	 * spring.ai.alibaba.data-agent.embedding-batch.encoding-type=cl100k_base
 	 * spring.ai.alibaba.data-agent.embedding-batch.max-token-count=2000
 	 * spring.ai.alibaba.data-agent.embedding-batch.reserve-percentage=0.2
@@ -195,6 +200,20 @@ public class DataAgentProperties {
 		 * Elasticsearch最小分数阈值，用于es执行关键词搜索时过滤相关性较低的文档
 		 */
 		private double elasticsearchMinScore = 0.5;
+
+	}
+
+	@Getter
+	@Setter
+	public static class PromptProperties {
+
+		/**
+		 * 外部Prompt目录路径
+		 * 支持绝对路径：/opt/dataagent/prompts 或 C:\\dataagent\\prompts
+		 * 支持相对路径：./prompts 或 prompts（相对于应用启动目录）
+		 * 未配置或为空则使用JAR内部资源
+		 */
+		private String externalDir;
 
 	}
 

@@ -66,6 +66,13 @@ spring:
         enabled: false
     alibaba:
       data-agent:
+        # Prompt模板配置
+        prompt:
+          # 外部Prompt目录路径（可选）
+          # 配置后优先从外部目录加载Prompt模板，未配置则使用JAR内部资源
+          # 支持绝对路径：/opt/dataagent/prompts 或 C:\dataagent\prompts
+          # 支持相对路径：./prompts 或 prompts（相对于应用启动目录）
+          external-dir: ${DATAAGENT_PROMPT_DIR:}
         vector-store:
           # 向量库类型：simple (内存), milvus
           type: ${VECTOR_STORE_TYPE:simple}

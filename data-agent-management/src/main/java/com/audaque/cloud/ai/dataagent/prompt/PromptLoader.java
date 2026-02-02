@@ -15,8 +15,10 @@
  */
 package com.audaque.cloud.ai.dataagent.prompt;
 
+import com.audaque.cloud.ai.dataagent.properties.DataAgentProperties;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.StreamUtils;
+import org.springframework.util.StringUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -28,34 +30,54 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Prompt loader, used to load prompt templates from file system
+ * 支持从外部目录或JAR内部加载Prompt模板
  *
  */
 @Slf4j
 public class PromptLoader {
 
 	/**
-	 * 外部Prompt目录路径，可通过环境变量或系统属性配置
-	 * 优先级: 环境变量 DATAAGENT_PROMPT_DIR > 系统属性 dataagent.prompt.dir
+	 * 外部Prompt目录路径，通过DataAgentProperties配置
+	 * 优先级: application.yml > 环境变量 DATAAGENT_PROMPT_DIR > 系统属性 dataagent.prompt.dir
 	 */
-	private static final String EXTERNAL_PROMPT_DIR;
+	private static String externalPromptDir;
 	
-	static {
-		// 优先读取环境变量
-		String envDir = System.getenv("DATAAGENT_PROMPT_DIR");
-		if (envDir != null && !envDir.trim().isEmpty()) {
-			EXTERNAL_PROMPT_DIR = envDir.trim();
-			log.info("Using external prompt directory from environment: {}", EXTERNAL_PROMPT_DIR);
-		} else {
-			// 否则读取系统属性
-			String sysDir = System.getProperty("dataagent.prompt.dir");
-			if (sysDir != null && !sysDir.trim().isEmpty()) {
-				EXTERNAL_PROMPT_DIR = sysDir.trim();
-				log.info("Using external prompt directory from system property: {}", EXTERNAL_PROMPT_DIR);
-			} else {
-				EXTERNAL_PROMPT_DIR = null;
-				log.debug("No external prompt directory configured, will use internal resources");
+	/**
+	 * 初始化外部Prompt目录配置
+	 * 此方法由Spring容器启动时调用
+	 * @param properties DataAgent配置属性
+	 */
+	public static void initialize(DataAgentProperties properties) {
+		if (properties != null && properties.getPrompt() != null) {
+			String configuredDir = properties.getPrompt().getExternalDir();
+			
+			// 优先使用application.yml中的配置
+			if (StringUtils.hasText(configuredDir)) {
+				externalPromptDir = configuredDir.trim();
+				log.info("Using external prompt directory from application.yml: {}", externalPromptDir);
+				return;
 			}
 		}
+		
+		// 回退到环境变量
+		String envDir = System.getenv("DATAAGENT_PROMPT_DIR");
+		if (StringUtils.hasText(envDir)) {
+			externalPromptDir = envDir.trim();
+			log.info("Using external prompt directory from environment variable: {}", externalPromptDir);
+			return;
+		}
+		
+		// 最后尝试系统属性
+		String sysDir = System.getProperty("dataagent.prompt.dir");
+		if (StringUtils.hasText(sysDir)) {
+			externalPromptDir = sysDir.trim();
+			log.info("Using external prompt directory from system property: {}", externalPromptDir);
+			return;
+		}
+		
+		// 未配置任何外部目录
+		externalPromptDir = null;
+		log.debug("No external prompt directory configured, will use internal resources");
 	}
 	
 	private static final String PROMPT_PATH_PREFIX = "prompts/";
@@ -73,7 +95,7 @@ public class PromptLoader {
 	public static String loadPrompt(String promptName) {
 		return promptCache.computeIfAbsent(promptName, name -> {
 			// 1. 尝试从外部目录加载
-			if (EXTERNAL_PROMPT_DIR != null) {
+			if (externalPromptDir != null) {
 				String externalContent = loadFromExternalDir(name);
 				if (externalContent != null) {
 					return externalContent;
@@ -92,7 +114,7 @@ public class PromptLoader {
 	 */
 	private static String loadFromExternalDir(String promptName) {
 		try {
-			Path externalFile = Paths.get(EXTERNAL_PROMPT_DIR, promptName + ".txt");
+			Path externalFile = Paths.get(externalPromptDir, promptName + ".txt");
 			
 			if (Files.exists(externalFile) && Files.isRegularFile(externalFile)) {
 				String content = Files.readString(externalFile, StandardCharsets.UTF_8);
@@ -165,7 +187,7 @@ public class PromptLoader {
 	 * @return external directory path, null if not configured
 	 */
 	public static String getExternalPromptDir() {
-		return EXTERNAL_PROMPT_DIR;
+		return externalPromptDir;
 	}
 
 }

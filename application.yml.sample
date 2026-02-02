@@ -169,6 +169,37 @@ spring:
     # DataAgent 专属配置
     alibaba:
       data-agent:
+        # ====================================================================
+        # Prompt 模板配置
+        # ====================================================================
+        prompt:
+          # 外部 Prompt 目录路径（可选，用于无需重新编译即可修改 Prompt 模板）
+          # 未配置或为空时，使用 JAR 包内部的 Prompt 资源
+          # 配置后优先从外部目录加载，外部文件不存在时自动回退到 JAR 内部资源
+          # 
+          # 支持格式：
+          #   绝对路径：
+          #     Linux/macOS:  /opt/dataagent/prompts
+          #     Windows:      C:\dataagent\prompts 或 C:/dataagent/prompts
+          #   相对路径（相对于应用启动目录）：
+          #     ./prompts 或 prompts
+          # 
+          # 使用步骤：
+          #   1. 从源码或 JAR 包中复制 Prompt 模板到外部目录
+          #   2. 配置此参数指向该目录
+          #   3. 修改 Prompt 后调用热更新 API：
+          #      curl -X POST http://localhost:8065/api/prompt-config/reload-all
+          # 
+          # 详细文档：docs/EXTERNAL_PROMPTS_GUIDE.md
+          external-dir:                         # 默认为空，使用 JAR 内部资源
+          # 示例（生产环境）：
+          # external-dir: /opt/dataagent/prompts
+          # 示例（Windows）：
+          # external-dir: C:/dataagent/prompts
+        
+        # ====================================================================
+        # 向量库配置
+        # ====================================================================
         # 向量库类型：simple（内存）, milvus, elasticsearch
         vector-store:
           type: simple                      # 默认使用内存向量库
