@@ -323,6 +323,15 @@ public class JsonParseUtil {
 			}
 		}
 		
+		// 处理单个表名的情况（如 "ORDERS" 或 "orders"）
+		// 表名特征：字母和下划线组成，不包含空格、特殊字符
+		if (trimmed.matches("^[A-Za-z][A-Za-z0-9_]*$")) {
+			log.debug("Detected single table name format: {}", trimmed);
+			String result = "[\"" + trimmed + "\"]";
+			log.info("Converted single table name to JSON array: {} -> {}", trimmed, result);
+			return result;
+		}
+		
 		return trimmed;
 	}
 
