@@ -135,3 +135,10 @@ display the full name (first and last name ) of employee with ID and name of the
 {evidence}
 
 【Answer】
+
+重要提醒：
+1. 只输出JSON数组格式，例如：["table1", "table2"]
+2. 禁止输出JSON对象（包含thought_process、execution_plan等字段）
+3. 禁止输出任何解释、说明或思考过程
+4. 如果只有一个表，输出：["table_name"]
+5. 如果没有相关表，输出：[]
