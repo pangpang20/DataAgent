@@ -203,7 +203,7 @@ public class PromptHelper {
 	/**
 	 * 构建优化提示词部分内容
 	 * @param optimizationConfigs 优化配置列表
-	 * @param params 模板参数
+	 * @param params 模板参数（不再使用，保留签名兼容性）
 	 * @return 优化部分的内容
 	 */
 	private static String buildOptimizationSection(List<UserPromptConfig> optimizationConfigs,
@@ -217,7 +217,8 @@ public class PromptHelper {
 		result.append("## 优化要求\n");
 
 		for (UserPromptConfig config : optimizationConfigs) {
-			String optimizationContent = renderOptimizationPrompt(config.getOptimizationPrompt(), params);
+			// 不再走 ST 编译，直接作为纯文本拼接
+			String optimizationContent = renderOptimizationPrompt(config.getOptimizationPrompt());
 			if (!optimizationContent.trim().isEmpty()) {
 				result.append("- ").append(optimizationContent).append("\n");
 			}
@@ -290,22 +291,12 @@ public class PromptHelper {
 	}
 
 	/**
-	 * 渲染优化提示词模板
-	 * @param optimizationPrompt 优化提示词模板
-	 * @param params 参数
-	 * @return 渲染后的内容
+	 * 渲染优化提示词（纯文本，不再走 ST 编译）
+	 * @param optimizationPrompt 优化提示词内容
+	 * @return 原始内容
 	 */
-	private static String renderOptimizationPrompt(String optimizationPrompt, Map<String, Object> params) {
-		if (optimizationPrompt == null || optimizationPrompt.trim().isEmpty()) {
-			return "";
-		}
-		try {
-			return new PromptTemplate(optimizationPrompt).render(params);
-		}
-		catch (Exception e) {
-			// 如果模板渲染失败，直接返回原始内容
-			return optimizationPrompt;
-		}
+	private static String renderOptimizationPrompt(String optimizationPrompt) {
+		return optimizationPrompt == null ? "" : optimizationPrompt;
 	}
 
 }
