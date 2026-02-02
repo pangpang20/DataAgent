@@ -208,7 +208,7 @@ public class Nl2SqlServiceImpl implements Nl2SqlService {
 					String jsonContent = MarkdownParserUtil.extractText(content);
 					log.debug("Extracted JSON content: {}", jsonContent);
 					
-					List<String> tableList;
+					List<String> tableList = null;
 					try {
 						// 尝试直接解析为 List<String> (旧格式)
 						tableList = jsonParseUtil.tryConvertToObject(jsonContent, new TypeReference<List<String>>() {});
