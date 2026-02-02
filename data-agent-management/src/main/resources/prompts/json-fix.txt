@@ -14,11 +14,11 @@
 ## 特殊情况处理：
 10. **如果输入是自然语言描述**（如"表：ORDERS,PRODUCT_CATEGORIES  条件：..."）：
     - 提取其中的关键信息（表名、值等）
-    - 转换为标准JSON数组格式：["值1", "值2"]
-    - 示例："表：ORDERS,PRODUCTS" → ["ORDERS", "PRODUCTS"]
+    - 转换为标准JSON数组格式
+    - 示例："表：ORDERS,PRODUCTS" 应转换为 JSON数组包含ORDERS和PRODUCTS两个元素
 11. **如果输入是错误的JSON类型**（如应该是数组但是对象）：
     - 将对象的key提取为数组元素
-    - 示例：{"ORDERS":"[ORDERS]"} → ["ORDERS"]
+    - 示例：对象格式应转换为只包含key的数组
 
 错误的JSON字符串：
 {json_string}
