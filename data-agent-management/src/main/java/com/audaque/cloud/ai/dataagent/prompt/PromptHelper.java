@@ -35,6 +35,19 @@ import static com.audaque.cloud.ai.dataagent.util.ReportTemplateUtil.cleanJsonEx
 
 public class PromptHelper {
 
+	/**
+	 * 清理字符串中的引号，避免 ST4 模板解析冲突
+	 * @param str 原始字符串
+	 * @return 清理后的字符串
+	 */
+	private static String cleanQuotes(String str) {
+		if (str == null) {
+			return null;
+		}
+		// 移除头尾的双引号
+		return str.replaceAll("^\"", "").replaceAll("\"$", "");
+	}
+
 	public static String buildMixSelectorPrompt(String evidence, String question, SchemaDTO schemaDTO) {
 		String schemaInfo = buildMixMacSqlDbPrompt(schemaDTO, true);
 		Map<String, Object> params = new HashMap<>();
@@ -61,12 +74,13 @@ public class PromptHelper {
 
 	public static String buildMixMacSqlTablePrompt(TableDTO tableDTO, Boolean withColumnType) {
 		StringBuilder sb = new StringBuilder();
-		// sb.append("# Table:
-		// ").append(tableDTO.getName()).append(StringUtils.isBlank(tableDTO.getDescription())
-		// ? "" : ", " + tableDTO.getDescription()).append("\n");
-		sb.append("# Table: ").append(tableDTO.getName());
-		if (!StringUtils.equals(tableDTO.getName(), tableDTO.getDescription())) {
-			sb.append(StringUtils.isBlank(tableDTO.getDescription()) ? "" : ", " + tableDTO.getDescription())
+		// 清理表名中的引号，避免 ST4 模板解析冲突
+		String cleanTableName = cleanQuotes(tableDTO.getName());
+		String cleanTableDesc = cleanQuotes(tableDTO.getDescription());
+		
+		sb.append("# Table: ").append(cleanTableName);
+		if (!StringUtils.equals(cleanTableName, cleanTableDesc)) {
+			sb.append(StringUtils.isBlank(cleanTableDesc) ? "" : ", " + cleanTableDesc)
 				.append("\n");
 		}
 		else {
@@ -76,12 +90,16 @@ public class PromptHelper {
 		List<String> columnLines = new ArrayList<>();
 		for (ColumnDTO columnDTO : tableDTO.getColumn()) {
 			StringBuilder line = new StringBuilder();
+			// 清理列名中的引号
+			String cleanColumnName = cleanQuotes(columnDTO.getName());
+			String cleanColumnDesc = cleanQuotes(columnDTO.getDescription());
+			
 			line.append("(")
-				.append(columnDTO.getName())
+				.append(cleanColumnName)
 				.append(BooleanUtils.isTrue(withColumnType)
 						? ":" + StringUtils.defaultString(columnDTO.getType(), "").toUpperCase(Locale.ROOT) : "");
-			if (!StringUtils.equals(columnDTO.getDescription(), columnDTO.getName())) {
-				line.append(", ").append(StringUtils.defaultString(columnDTO.getDescription(), ""));
+			if (!StringUtils.equals(cleanColumnDesc, cleanColumnName)) {
+				line.append(", ").append(StringUtils.defaultString(cleanColumnDesc, ""));
 			}
 			if (CollectionUtils.isNotEmpty(tableDTO.getPrimaryKeys())
 					&& tableDTO.getPrimaryKeys().contains(columnDTO.getName())) {
@@ -92,7 +110,7 @@ public class PromptHelper {
 				.stream()
 				.filter(d -> !StringUtils.isEmpty(d))
 				.collect(Collectors.toList());
-			if (CollectionUtils.isNotEmpty(enumData) && !"id".equals(columnDTO.getName())) {
+			if (CollectionUtils.isNotEmpty(enumData) && !"id".equals(cleanColumnName)) {
 				line.append(", Examples: [");
 				List<String> data = new ArrayList<>(enumData.subList(0, Math.min(3, enumData.size())));
 				line.append(StringUtils.join(data, ",")).append("]");
