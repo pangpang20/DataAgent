@@ -63,3 +63,5 @@ uploads/*
 # qoder_agent/
 *.log
 output/
+
+.codeartsdoer
