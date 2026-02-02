@@ -208,6 +208,15 @@ public class JsonParseUtil {
 					return extracted;
 				}
 			}
+			
+			// 处理不带引号的数组格式，如 [PRODUCTS, ORDERS] -> ["PRODUCTS", "ORDERS"]
+			// LLM有时会输出不带引号的数组元素
+			String fixed = fixUnquotedArrayElements(trimmed);
+			if (!fixed.equals(trimmed)) {
+				log.info("Fixed unquoted array elements: {} -> {}", trimmed, fixed);
+				return fixed;
+			}
+			
 			return trimmed;
 		}
 		if (trimmed.startsWith("{")) {
@@ -364,6 +373,55 @@ public class JsonParseUtil {
 		}
 		
 		return json;
+	}
+
+	/**
+	 * 修复不带引号的数组元素
+	 * LLM有时会输出 [PRODUCTS, ORDERS] 这样不带引号的格式
+	 * 需要转换为 ["PRODUCTS", "ORDERS"]
+	 */
+	private String fixUnquotedArrayElements(String json) {
+		if (json == null || json.isEmpty()) {
+			return json;
+		}
+		
+		// 必须是数组格式
+		if (!json.startsWith("[") || !json.endsWith("]")) {
+			return json;
+		}
+		
+		// 提取数组内容
+		String content = json.substring(1, json.length() - 1).trim();
+		if (content.isEmpty()) {
+			return json; // 空数组
+		}
+		
+		// 如果已经有引号，可能是合法的JSON，不处理
+		if (content.contains("\"")) {
+			return json;
+		}
+		
+		// 按逗号分割并为每个元素添加引号
+		String[] parts = content.split(",");
+		List<String> quoted = new ArrayList<>();
+		for (String part : parts) {
+			String trimmed = part.trim();
+			if (!trimmed.isEmpty()) {
+				// 只处理看起来像表名的元素（字母、数字、下划线）
+				if (trimmed.matches("[A-Za-z][A-Za-z0-9_]*")) {
+					quoted.add("\"" + trimmed + "\"");
+				} else {
+					// 不像表名，返回原始内容
+					return json;
+				}
+			}
+		}
+		
+		if (quoted.isEmpty()) {
+			return json;
+		}
+		
+		return "[" + String.join(", ", quoted) + "]";
 	}
 
 	/**

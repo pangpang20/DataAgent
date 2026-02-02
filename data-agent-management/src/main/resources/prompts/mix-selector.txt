@@ -17,6 +17,14 @@
 
 重要提示：输出格式示例见下方【Answer】部分，严格按照该格式输出表名的JSON数组。
 
+**重要：必须输出带双引号的JSON数组！**
+- 多表示例: ["table1", "table2"]
+- 单表示例: ["table1"]
+- 空表示例: []
+- 禁止输出不带引号的格式如: [table1]
+- 禁止输出JSON对象
+- 禁止输出任何解释或Markdown标记
+
 以下样例供你参考：
 
 【DB_ID】 station_weather
@@ -144,15 +152,5 @@ display the full name (first and last name ) of employee with ID and name of the
 
 【Answer】
 **立即输出JSON数组，不要任何其他内容：**
-
----
-**重要提醒：必须严格按照JSON数组格式输出！**
-- 正确格式示例: [table1, table2]
-- 单表格式示例: [ORDERS]
-- 空表格式示例: []
-- 禁止输出裸表名: ORDERS
-- 禁止输出JSON对象
-- 禁止输出带“表：”前缀的文本
-- 禁止输出任何解释、思考过程或Markdown标记
 
 请直接输出JSON数组：
