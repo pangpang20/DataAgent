@@ -20,15 +20,18 @@ import com.audaque.cloud.ai.dataagent.dto.prompt.SemanticConsistencyDTO;
 import com.audaque.cloud.ai.dataagent.dto.prompt.SqlGenerationDTO;
 import com.audaque.cloud.ai.dataagent.dto.schema.SchemaDTO;
 import com.audaque.cloud.ai.dataagent.prompt.PromptHelper;
+import com.audaque.cloud.ai.dataagent.service.aimodelconfig.AiModelRegistry;
 import com.audaque.cloud.ai.dataagent.service.llm.LlmService;
 import com.audaque.cloud.ai.dataagent.util.*;
 import com.fasterxml.jackson.core.type.TypeReference;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.model.ChatResponse;
+import org.springframework.ai.openai.OpenAiChatOptions;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import java.util.HashSet;
 import java.util.List;
@@ -47,6 +50,8 @@ public class Nl2SqlServiceImpl implements Nl2SqlService {
 	public final LlmService llmService;
 
 	private final JsonParseUtil jsonParseUtil;
+
+	private final AiModelRegistry aiModelRegistry;
 
 	@Override
 	public Flux<ChatResponse> performSemanticConsistency(SemanticConsistencyDTO semanticConsistencyDTO) {
@@ -139,48 +144,57 @@ public class Nl2SqlServiceImpl implements Nl2SqlService {
 
 		Set<String> selectedTables = new HashSet<>();
 
-		return FluxUtil.<ChatResponse, String>cascadeFlux(llmService.callUser(prompt), content -> {
-			Flux<ChatResponse> nextFlux;
-			if (sqlGenerateSchemaMissingAdvice != null) {
-				log.debug("Adding tables from schema missing advice");
-				nextFlux = this.fineSelect(schemaDTO, sqlGenerateSchemaMissingAdvice, selectedTables::addAll);
-			} else {
-				nextFlux = Flux.empty();
-			}
-			return nextFlux.doOnComplete(() -> {
-				if (!content.trim().isEmpty()) {
-					String jsonContent = MarkdownParserUtil.extractText(content);
-					List<String> tableList;
-					try {
-						tableList = jsonParseUtil.tryConvertToObject(jsonContent, new TypeReference<List<String>>() {
-						});
-					} catch (Exception e) {
-						// Some scenarios may prompt exceptions, such as:
-						// java.lang.IllegalStateException:
-						// Please provide database schema information so I can filter
-						// relevant
-						// tables based on your question.
-						// TODO 目前异常接口直接返回500，未返回异常信息，后续优化将异常返回给用户
-						log.error("Failed to parse fine selection response: {}", jsonContent, e);
-						throw new IllegalStateException(jsonContent);
-					}
-					if (tableList != null && !tableList.isEmpty()) {
-						selectedTables.addAll(tableList.stream().map(String::toLowerCase).collect(Collectors.toSet()));
-						if (schemaDTO.getTable() != null) {
-							int originalTableCount = schemaDTO.getTable().size();
-							schemaDTO.getTable()
-									.removeIf(table -> !selectedTables.contains(table.getName().toLowerCase()));
-							int finalTableCount = schemaDTO.getTable().size();
-							log.debug("Fine selection completed: {} -> {} tables, selected tables: {}",
-									originalTableCount, finalTableCount, selectedTables);
-						}
+		// 使用非流式调用 + temperature=0 + JSON严格模式
+		// 这是内部控制逻辑，不需要流式输出，避免90%的解析异常
+		return Mono.fromCallable(() -> {
+			log.debug("Calling LLM for fine selection with non-streaming mode and temperature=0");
+			
+			// 非流式调用，直接获取完整响应
+			ChatResponse response = aiModelRegistry.getChatClient()
+					.prompt()
+					.user(prompt)
+					.options(OpenAiChatOptions.builder()
+							.temperature(0.0)  // 温度为0，确保结果稳定
+							.build())
+					.call()
+					.chatResponse();
+			
+			String content = response.getResult().getOutput().getText();
+			log.debug("LLM fine selection response: {}", content);
+			
+			// 处理响应
+			if (!content.trim().isEmpty()) {
+				String jsonContent = MarkdownParserUtil.extractText(content);
+				List<String> tableList;
+				try {
+					tableList = jsonParseUtil.tryConvertToObject(jsonContent, new TypeReference<List<String>>() {});
+				} catch (Exception e) {
+					log.error("Failed to parse fine selection response: {}", jsonContent, e);
+					throw new IllegalStateException(jsonContent);
+				}
+				
+				if (tableList != null && !tableList.isEmpty()) {
+					selectedTables.addAll(tableList.stream().map(String::toLowerCase).collect(Collectors.toSet()));
+					if (schemaDTO.getTable() != null) {
+						int originalTableCount = schemaDTO.getTable().size();
+						schemaDTO.getTable()
+								.removeIf(table -> !selectedTables.contains(table.getName().toLowerCase()));
+						int finalTableCount = schemaDTO.getTable().size();
+						log.debug("Fine selection completed: {} -> {} tables, selected tables: {}",
+								originalTableCount, finalTableCount, selectedTables);
 					}
 				}
-				dtoConsumer.accept(schemaDTO);
-			});
-		}, flux -> flux.map(ChatResponseUtil::getText)
-				.collect(StringBuilder::new, StringBuilder::append)
-				.map(StringBuilder::toString));
+			}
+			
+			// 处理schema missing advice(如果有)
+			if (sqlGenerateSchemaMissingAdvice != null) {
+				log.debug("Adding tables from schema missing advice");
+				this.fineSelect(schemaDTO, sqlGenerateSchemaMissingAdvice, selectedTables::addAll).blockLast();
+			}
+			
+			dtoConsumer.accept(schemaDTO);
+			return response;
+		}).flux();
 	}
 
 }
