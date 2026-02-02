@@ -228,28 +228,7 @@ const agentId = ${id};
     },
     body: JSON.stringify({ role: 'user', content: '你好', messageType: 'text' }),
   });
-`);
-      });
-
-      // 生成嵌入代码
-      const embedCode = computed(() => {
-        const base = window.location.origin;
-        const id = resolvedAgentId.value;
-        const config = embedConfig.value;
-        const configJson = JSON.stringify({
-          agentId: id,
-          apiKey: '<your_api_key>',
-          title: config.title,
-          position: config.position,
-          primaryColor: config.primaryColor,
-          welcomeMessage: config.welcomeMessage,
-        }, null, 2);
-        
-        return `<!-- 将以下代码添加到您的网页 </body> 标签之前 -->
-<script>
-  window.DataAgentConfig = ${configJson};
-</script>
-<script src="${base}/widget.js"></script>`;
+})();`;
       });
 
       const pyExample = computed(() => {
@@ -280,6 +259,29 @@ requests.post(
     json={"role": "user", "content": "你好", "messageType": "text"},
 )
 `;
+      });
+
+      // 生成嵌入代码
+      const embedCode = computed(() => {
+        const base = window.location.origin;
+        const id = resolvedAgentId.value;
+        const config = embedConfig.value;
+        const configJson = JSON.stringify({
+          agentId: id,
+          apiKey: '<your_api_key>',
+          title: config.title,
+          position: config.position,
+          primaryColor: config.primaryColor,
+          welcomeMessage: config.welcomeMessage,
+        }, null, 2);
+        
+        const scriptOpen = '<script>';
+        const scriptClose = '<' + '/script>';
+        return `<!-- 将以下代码添加到您的网页 </body> 标签之前 -->
+${scriptOpen}
+  window.DataAgentConfig = ${configJson};
+${scriptClose}
+${scriptOpen} src="${base}/widget.js"${scriptClose}`;
       });
 
       const loadApiKey = async () => {
