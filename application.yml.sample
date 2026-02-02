@@ -257,15 +257,16 @@ logging:
   level:
     root: INFO                                            # 根日志级别
     com.audaque.cloud.ai.dataagent.service: DEBUG         # 业务服务日志
+    com.audaque.cloud.ai.dataagent.service.graph: DEBUG   # 流式输出处理详细日志(排查流中断问题)
     com.audaque.cloud.ai.dataagent.workflow.node: DEBUG   # 工作流节点日志
     com.alibaba.cloud.ai.mapper: DEBUG                    # MyBatis Mapper 日志
-    org.springframework.jdbc: DEBUG                       # JDBC 日志（查看所有 SQL）
+    org.springframework.jdbc: DEBUG                       # JDBC 日志(查看所有 SQL)
     org.apache.coyote.http11.Http11Processor: INFO       # 屏蔽 Tomcat EOFException 日志
     org.apache.tomcat: WARN                              # Tomcat 其他组件
     org.elasticsearch.client: WARN                        # Elasticsearch 客户端
     # 屏蔽 favicon.ico 请求的 NoResourceFoundException 错误
     org.springframework.web.servlet.resource.ResourceHttpRequestHandler: ERROR
-    # 打印 Agent 相关的 SQL 语句（包括插入、更新操作）
+    # 打印 Agent 相关的 SQL 语句(包括插入、更新操作)
     com.audaque.cloud.ai.dataagent.mapper.AgentMapper: DEBUG
     
     # 生产环境建议：

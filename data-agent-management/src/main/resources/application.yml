@@ -124,12 +124,13 @@ management:
 logging:
   level:
     com.audaque.cloud.ai.dataagent.service: debug
+    com.audaque.cloud.ai.dataagent.service.graph: debug  # 流式输出处理详细日志
     com.audaque.cloud.ai.dataagent.workflow.node: debug
     com.alibaba.cloud.ai.mapper: debug
     org.springframework.jdbc: debug
-    # 屏蔽 Tomcat HTTP 处理器的 EOFException 日志（客户端正常关闭连接时产生）
+    # 屏蔽 Tomcat HTTP 处理器的 EOFException 日志(客户端正常关闭连接时产生)
     org.apache.coyote.http11.Http11Processor: INFO
     # 屏蔽 favicon.ico 请求的 NoResourceFoundException 错误
     org.springframework.web.servlet.resource.ResourceHttpRequestHandler: ERROR
-    # 打印 Agent 相关的 SQL 语句（包括插入、更新操作）
+    # 打印 Agent 相关的 SQL 语句(包括插入、更新操作)
     com.audaque.cloud.ai.dataagent.mapper.AgentMapper: debug
