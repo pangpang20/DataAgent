@@ -132,6 +132,8 @@ logging:
   level:
     com.audaque.cloud.ai.dataagent.service: debug
     com.audaque.cloud.ai.dataagent.service.graph: debug  # 流式输出处理详细日志
+    com.audaque.cloud.ai.dataagent.service.nl2sql: debug  # NL2SQL 服务详细日志
+    com.audaque.cloud.ai.dataagent.prompt: debug  # Prompt 构建详细日志
     com.audaque.cloud.ai.dataagent.workflow.node: debug
     com.alibaba.cloud.ai.mapper: debug
     org.springframework.jdbc: debug

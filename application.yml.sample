@@ -289,6 +289,8 @@ logging:
     root: INFO                                            # 根日志级别
     com.audaque.cloud.ai.dataagent.service: DEBUG         # 业务服务日志
     com.audaque.cloud.ai.dataagent.service.graph: DEBUG   # 流式输出处理详细日志(排查流中断问题)
+    com.audaque.cloud.ai.dataagent.service.nl2sql: DEBUG  # NL2SQL 服务详细日志(追踪 SQL 生成流程)
+    com.audaque.cloud.ai.dataagent.prompt: DEBUG          # Prompt 构建详细日志(追踪模板渲染和引号清理)
     com.audaque.cloud.ai.dataagent.workflow.node: DEBUG   # 工作流节点日志
     com.alibaba.cloud.ai.mapper: DEBUG                    # MyBatis Mapper 日志
     org.springframework.jdbc: DEBUG                       # JDBC 日志(查看所有 SQL)
