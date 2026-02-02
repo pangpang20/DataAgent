@@ -35,6 +35,8 @@ import reactor.core.publisher.Mono;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -208,12 +210,30 @@ public class Nl2SqlServiceImpl implements Nl2SqlService {
 					
 					List<String> tableList;
 					try {
+						// 尝试直接解析为 List<String> (旧格式)
 						tableList = jsonParseUtil.tryConvertToObject(jsonContent, new TypeReference<List<String>>() {});
-						log.info("Successfully parsed table list, count: {}", tableList != null ? tableList.size() : 0);
+						log.info("Successfully parsed table list (old format), count: {}", tableList != null ? tableList.size() : 0);
 						log.debug("Parsed table list: {}", tableList);
 					} catch (Exception e) {
-						log.error("Failed to parse fine selection response: {}", jsonContent, e);
-						throw new IllegalStateException("JSON parse failed: " + jsonContent, e);
+						// 如果解析失败,尝试解析为新格式: List<Map<String, Object>>
+						log.warn("Failed to parse as List<String>, trying new format with table objects");
+						try {
+							List<Map<String, Object>> tableObjects = jsonParseUtil.tryConvertToObject(jsonContent, new TypeReference<List<Map<String, Object>>>() {});
+							log.info("Successfully parsed table objects (new format), count: {}", tableObjects != null ? tableObjects.size() : 0);
+							log.debug("Parsed table objects: {}", tableObjects);
+							
+							// 从对象中提取 table 字段
+							if (tableObjects != null) {
+								tableList = tableObjects.stream()
+										.map(obj -> (String) obj.get("table"))
+										.filter(Objects::nonNull)
+										.collect(Collectors.toList());
+								log.info("Extracted table names from objects: {}", tableList);
+							}
+						} catch (Exception e2) {
+							log.error("Failed to parse fine selection response as both formats: {}", jsonContent, e2);
+							throw new IllegalStateException("JSON parse failed: " + jsonContent, e2);
+						}
 					}
 					
 					if (tableList != null && !tableList.isEmpty()) {
