@@ -145,7 +145,7 @@
                         {{ isNodeVisible[index] ? '收起' : '展开' }}
                       </el-button>
                     </div>
-                    <div v-show="isNodeVisible[index]" class="agent-response-content">
+                    <div v-show="autoExpandNodes || isNodeVisible[index]" class="agent-response-content">
                       <Markdown :generating="isStreaming">
                         {{ getMarkdownContentFromNode(nodeBlock) }}
                       </Markdown>
@@ -169,7 +169,7 @@
                         {{ isNodeVisible[index] ? '收起' : '展开' }}
                       </el-button>
                     </div>
-                    <div v-show="isNodeVisible[index]" class="agent-response-content">
+                    <div v-show="autoExpandNodes || isNodeVisible[index]" class="agent-response-content">
                       <ResultSetDisplay
                         v-if="nodeBlock[0].text"
                         :resultData="JSON.parse(nodeBlock[0].text)"
@@ -193,7 +193,7 @@
                           {{ isNodeVisible[index] ? '收起' : '展开' }}
                         </el-button>
                       </div>
-                      <div v-show="isNodeVisible[index]" class="agent-response-content" v-html="generateNodeHtml(nodeBlock)"></div>
+                      <div v-show="autoExpandNodes || isNodeVisible[index]" class="agent-response-content" v-html="generateNodeHtml(nodeBlock)"></div>
                     </div>
                   </div>
                 </template>
@@ -260,6 +260,10 @@
               <div class="switch-item">
                 <span class="switch-label">自动Scroll</span>
                 <el-switch v-model="autoScroll" />
+              </div>
+              <div class="switch-item">
+                <span class="switch-label">自动展开节点</span>
+                <el-switch v-model="autoExpandNodes" @change="handleAutoExpandChange" />
               </div>
               <div class="switch-item">
                 <span class="switch-label">显示SQL结果</span>
@@ -476,6 +480,7 @@
         }
       };
       const autoScroll = ref(true);
+      const autoExpandNodes = ref(false);
       const chatContainer = ref<HTMLElement | null>(null);
 
       // 人工反馈相关数据
@@ -506,6 +511,10 @@
 
       // 切换节点可见性
       const toggleNodeVisibility = (index: number) => {
+        // 如果自动展开节点开关开启，则不允许手动切换
+        if (autoExpandNodes.value) {
+          return;
+        }
         if (isNodeVisible.value[index] === undefined) {
           // 初始化数组，确保所有节点默认为可见
           while (isNodeVisible.value.length <= index) {
@@ -1116,11 +1125,21 @@
         });
       };
 
-      // 初始化节点可见性（默认收起）
+      // 初始化节点可见性（默认收起，除非开启自动展开）
       const initializeNodeVisibility = (nodeBlockLength: number) => {
         while (isNodeVisible.value.length < nodeBlockLength) {
-          isNodeVisible.value.push(false);
+          isNodeVisible.value.push(autoExpandNodes.value);
         }
+      };
+
+      // 处理自动展开节点开关变化
+      const handleAutoExpandChange = (value: boolean) => {
+        // 当开关状态改变时，更新所有现有节点的可见性
+        if (value) {
+          // 开启自动展开：将所有节点设为展开状态
+          isNodeVisible.value = isNodeVisible.value.map(() => true);
+        }
+        // 关闭自动展开时不做任何操作，保持各节点的当前状态
       };
 
       const handleHumanFeedback = async (
@@ -1355,7 +1374,9 @@
         chatContainer,
         nodeBlocks,
         isNodeVisible,
+        autoExpandNodes,
         toggleNodeVisibility,
+        handleAutoExpandChange,
         agentId,
         showHumanFeedback,
         lastRequest,

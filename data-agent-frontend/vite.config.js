@@ -21,6 +21,34 @@ export default defineConfig(({ mode }) => {
   // 开发环境的后端地址
   const backendUrl = process.env.VITE_BACKEND_URL || 'http://localhost:8065';
 
+  // Widget 构建模式
+  const isWidgetBuild = process.env.BUILD_WIDGET === 'true';
+
+  if (isWidgetBuild) {
+    return {
+      plugins: [vue()],
+      resolve: {
+        alias: {
+          '@': resolve(__dirname, 'src'),
+        },
+      },
+      build: {
+        outDir: 'dist',
+        lib: {
+          entry: resolve(__dirname, 'src/widget.ts'),
+          name: 'DataAgentWidget',
+          fileName: () => 'widget.js',
+          formats: ['iife'],
+        },
+        rollupOptions: {
+          output: {
+            inlineDynamicImports: true,
+          },
+        },
+      },
+    };
+  }
+
   return {
     plugins: [vue()],
     resolve: {

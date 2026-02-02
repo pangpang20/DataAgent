@@ -79,6 +79,53 @@
         <el-tab-pane label="Python" name="py">
           <pre class="code"><code>{{ pyExample }}</code></pre>
         </el-tab-pane>
+        <el-tab-pane label="网页嵌入" name="embed">
+          <div class="embed-section">
+            <p class="embed-desc">
+              在您的网站中添加以下代码，即可嵌入 AI 智能体聊天窗口。窗口将显示为页面右下角的浮动按钮。
+            </p>
+            <div class="embed-config">
+              <el-form label-width="120px" size="default">
+                <el-form-item label="窗口标题">
+                  <el-input v-model="embedConfig.title" placeholder="AI 助手" />
+                </el-form-item>
+                <el-form-item label="按钮位置">
+                  <el-select v-model="embedConfig.position" style="width:100%">
+                    <el-option label="右下角" value="bottom-right" />
+                    <el-option label="左下角" value="bottom-left" />
+                  </el-select>
+                </el-form-item>
+                <el-form-item label="主题色">
+                  <el-color-picker v-model="embedConfig.primaryColor" />
+                </el-form-item>
+                <el-form-item label="欢迎消息">
+                  <el-input
+                    v-model="embedConfig.welcomeMessage"
+                    type="textarea"
+                    :rows="2"
+                    placeholder="您好！我是 Audaque DataAgent AI 助手，有什么可以帮您的吗？"
+                  />
+                </el-form-item>
+              </el-form>
+            </div>
+            <div class="embed-code-wrapper">
+              <div class="embed-code-header">
+                <span>嵌入代码</span>
+                <el-button size="small" @click="handleCopyEmbedCode">
+                  <el-icon><DocumentCopy /></el-icon>
+                  复制代码
+                </el-button>
+              </div>
+              <pre class="code"><code>{{ embedCode }}</code></pre>
+            </div>
+            <el-alert
+              type="warning"
+              :closable="false"
+              show-icon
+              title="注意：请确保已生成并启用 API Key，否则嵌入的聊天窗口将无法正常工作。"
+            />
+          </div>
+        </el-tab-pane>
       </el-tabs>
     </section>
   </div>
@@ -88,6 +135,7 @@
   import { defineComponent, ref, computed, onMounted } from 'vue';
   import { useRoute } from 'vue-router';
   import { ElMessage, ElMessageBox } from 'element-plus';
+  import { DocumentCopy } from '@element-plus/icons-vue';
   import AgentService from '@/services/agent';
 
   export default defineComponent({
@@ -115,6 +163,14 @@
         fetch: false,
       });
       const exampleTab = ref('curl');
+
+      // 嵌入配置
+      const embedConfig = ref({
+        title: 'AI 助手',
+        position: 'bottom-right',
+        primaryColor: '#409EFF',
+        welcomeMessage: '您好！我是 AI 助手，有什么可以帮您的吗？',
+      });
 
       const maskKey = (key: string) => {
         if (!key) return '';
@@ -172,7 +228,28 @@ const agentId = ${id};
     },
     body: JSON.stringify({ role: 'user', content: '你好', messageType: 'text' }),
   });
-})();`;
+`);
+      });
+
+      // 生成嵌入代码
+      const embedCode = computed(() => {
+        const base = window.location.origin;
+        const id = resolvedAgentId.value;
+        const config = embedConfig.value;
+        const configJson = JSON.stringify({
+          agentId: id,
+          apiKey: '<your_api_key>',
+          title: config.title,
+          position: config.position,
+          primaryColor: config.primaryColor,
+          welcomeMessage: config.welcomeMessage,
+        }, null, 2);
+        
+        return `<!-- 将以下代码添加到您的网页 </body> 标签之前 -->
+<script>
+  window.DataAgentConfig = ${configJson};
+</script>
+<script src="${base}/widget.js"></script>`;
       });
 
       const pyExample = computed(() => {
@@ -319,6 +396,16 @@ requests.post(
         }
       };
 
+      // 复制嵌入代码
+      const handleCopyEmbedCode = async () => {
+        try {
+          await navigator.clipboard.writeText(embedCode.value);
+          ElMessage.success('嵌入代码已复制到剪贴板');
+        } catch (e) {
+          ElMessage.error('复制失败');
+        }
+      };
+
       onMounted(() => {
         loadApiKey();
       });
@@ -334,12 +421,16 @@ requests.post(
         curlExample,
         jsExample,
         pyExample,
+        embedConfig,
+        embedCode,
         handleGenerate,
         handleReset,
         handleDelete,
         handleCopy,
         handleToggle,
         toggleMask,
+        handleCopyEmbedCode,
+        DocumentCopy,
       };
     },
   });
@@ -402,5 +493,35 @@ requests.post(
 
   .tag {
     margin-left: 6px;
+  }
+
+  .embed-section {
+    margin-top: 16px;
+  }
+
+  .embed-desc {
+    color: #666;
+    margin-bottom: 20px;
+    line-height: 1.6;
+  }
+
+  .embed-config {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+  }
+
+  .embed-code-wrapper {
+    margin-bottom: 16px;
+  }
+
+  .embed-code-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    font-weight: 600;
+    color: #333;
   }
 </style>

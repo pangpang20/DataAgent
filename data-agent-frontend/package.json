@@ -5,6 +5,8 @@
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "build": "vite build",
+    "build:widget": "BUILD_WIDGET=true vite build",
+    "build:all": "vite build && BUILD_WIDGET=true vite build",
     "preview": "vite preview",
     "serve": "vite preview",
     "lint": "eslint . --ext .vue,.js,.ts,.jsx,.tsx --fix",
