@@ -480,7 +480,7 @@
         }
       };
       const autoScroll = ref(true);
-      const autoExpandNodes = ref(false);
+      const autoExpandNodes = ref(true);
       const chatContainer = ref<HTMLElement | null>(null);
 
       // 人工反馈相关数据
