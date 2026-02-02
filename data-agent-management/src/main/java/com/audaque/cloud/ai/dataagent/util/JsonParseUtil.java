@@ -72,6 +72,11 @@ public class JsonParseUtil {
 	private <T> T tryConvertToObjectInternal(String json, JsonParserFunction<T> parser) {
 		log.info("Trying to convert JSON to object: {}", json);
 		String currentJson = removeThinkTags(json);
+		
+		// 首先尝试预处理常见的自然语言格式
+		currentJson = preprocessNaturalLanguage(currentJson);
+		log.debug("After preprocessing: {}", currentJson);
+		
 		Exception lastException = null;
 		ObjectMapper objectMapper = JsonUtil.getObjectMapper();
 
@@ -80,6 +85,7 @@ public class JsonParseUtil {
 		}
 		catch (JsonProcessingException e) {
 			log.warn("Initial parsing failed, preparing to call LLM: {}", e.getMessage());
+			lastException = e;
 		}
 
 		for (int i = 0; i < MAX_RETRY_COUNT; i++) {
@@ -148,6 +154,57 @@ public class JsonParseUtil {
 			log.error("Exception occurred while calling LLM fix service", e);
 			return json;
 		}
+	}
+
+	/**
+	 * 预处理常见的自然语言格式，尝试转换为JSON格式
+	 * 处理类似 "表：ORDERS,PRODUCT_CATEGORIES  条件：..." 的格式
+	 */
+	private String preprocessNaturalLanguage(String text) {
+		if (text == null || text.trim().isEmpty()) {
+			return text;
+		}
+		
+		String trimmed = text.trim();
+		
+		// 已经是JSON格式，直接返回
+		if (trimmed.startsWith("[") || trimmed.startsWith("{")) {
+			return trimmed;
+		}
+		
+		// 处理 "表：A,B,C" 或 "Tables: A, B, C" 的格式
+		// 匹配中文或英文的 "表：" 或 "tables:" （不区分大小写）
+		if (trimmed.matches("(?i).*?(表：|tables?:|table\\s*:).*")) {
+			log.debug("Detected natural language format with table prefix");
+			
+			// 提取 "表：" 或 "tables:" 后面的部分
+			String tablesPart = trimmed.replaceFirst("(?i).*?(表：|tables?:|table\\s*:)", "").trim();
+			
+			// 移除后面的条件部分（如果存在）
+			tablesPart = tablesPart.split("(条件：|条件:|?条件|conditions?:)")[0].trim();
+			
+			// 按逗号分割表名
+			String[] tables = tablesPart.split("[,，\\s]+");
+			
+			// 构建JSON数组
+			StringBuilder jsonArray = new StringBuilder("[");
+			for (int i = 0; i < tables.length; i++) {
+				String table = tables[i].trim();
+				if (!table.isEmpty()) {
+					if (jsonArray.length() > 1) {
+						jsonArray.append(", ");
+					}
+					jsonArray.append("\"").append(table).append("\"");
+				}
+			}
+			jsonArray.append("]");
+			
+			String result = jsonArray.toString();
+			log.info("Converted natural language format to JSON: {} -> {}", trimmed, result);
+			return result;
+		}
+		
+		return trimmed;
 	}
 
 	/**

@@ -2,8 +2,20 @@
 [Instruction]:
 1. 排除与用户问题完全不相关的table
 2. 保留可能对回答用户问题有帮助的表
-3. 结果输出一个JSON数组，但**不要使用任何多余的符号**，特别是Markdown标记
-4. 直接输出结果，不要做多余的分析
+3. **必须严格按照JSON数组格式输出**，格式为：["表名1", "表名2", "表名3"]
+4. **禁止使用任何额外的文字、符号或Markdown标记**（如```json```）
+5. **禁止输出自然语言描述**（如"表："、"条件："等）
+6. 直接输出JSON数组，不要做任何分析或解释
+
+# 错误示例（禁止）：
+❌ 表：ORDERS,PRODUCT_CATEGORIES  条件：ORDER_STATUS=completed
+❌ ```json
+["ORDERS", "PRODUCT_CATEGORIES"]
+```
+❌ {"tables": ["ORDERS"]}
+
+# 正确示例（必须严格遵循）：
+✅ ["ORDERS", "PRODUCT_CATEGORIES", "ORDER_ITEMS"]
 
 以下样例供你参考：
 
