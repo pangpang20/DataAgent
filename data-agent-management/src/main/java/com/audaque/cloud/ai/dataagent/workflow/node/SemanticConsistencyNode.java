@@ -62,6 +62,9 @@ public class SemanticConsistencyNode implements NodeAction {
 		// Get current execution step and SQL query
 		String sql = StateUtil.getStringValue(state, SQL_GENERATE_OUTPUT);
 		String userQuery = StateUtil.getCanonicalQuery(state);
+		
+		log.debug("[SemanticConsistencyNode] Input SQL for validation: [{}]", sql);
+		log.debug("[SemanticConsistencyNode] Dialect: {}, UserQuery: {}", dialect, userQuery);
 
 		SemanticConsistencyDTO semanticConsistencyDTO = SemanticConsistencyDTO.builder()
 			.dialect(dialect)
@@ -72,11 +75,18 @@ public class SemanticConsistencyNode implements NodeAction {
 			.evidence(evidence)
 			.build();
 		log.info("Starting semantic consistency validation - SQL: {}", sql);
+		log.debug("[SemanticConsistencyNode] Execution description: {}", getCurrentExecutionStepInstruction(state));
 		Flux<ChatResponse> validationResultFlux = nl2SqlService.performSemanticConsistency(semanticConsistencyDTO);
 
 		Flux<GraphResponse<StreamingOutput>> generator = FluxUtil.createStreamingGeneratorWithMessages(this.getClass(),
 				state, "开始语义一致性校验", "语义一致性校验完成", validationResult -> {
-					boolean isPassed = !validationResult.startsWith("不通过");
+					log.debug("[SemanticConsistencyNode] Raw LLM validation result: [{}]", validationResult);
+					log.debug("[SemanticConsistencyNode] Validation result length: {}", 
+						validationResult != null ? validationResult.length() : "null");
+					
+					// 更严格的判定逻辑：只有明确包含 "通过" 且不包含 "不通过" 才视为通过
+					boolean isPassed = parseValidationResult(validationResult);
+					
 					Map<String, Object> result = buildValidationResult(isPassed, validationResult);
 					log.info("[{}] Semantic consistency validation result: {}, passed: {}",
 							this.getClass().getSimpleName(), validationResult, isPassed);
@@ -84,6 +94,63 @@ public class SemanticConsistencyNode implements NodeAction {
 				}, validationResultFlux);
 
 		return Map.of(SEMANTIC_CONSISTENCY_NODE_OUTPUT, generator);
+	}
+
+	/**
+	 * Parse validation result from LLM response
+	 * Only returns true if result clearly indicates "通过" and does NOT contain "不通过"
+	 * All other cases (including SQL statements, unclear responses) return false
+	 * @param validationResult The raw validation result from LLM
+	 * @return true if passed, false otherwise
+	 */
+	private boolean parseValidationResult(String validationResult) {
+		if (validationResult == null || validationResult.trim().isEmpty()) {
+			log.warn("[SemanticConsistencyNode] Validation result is null or empty, treating as failed");
+			return false;
+		}
+		
+		String trimmed = validationResult.trim();
+		
+		// Check if result contains "不通过" - definitely failed
+		if (trimmed.contains("不通过")) {
+			log.debug("[SemanticConsistencyNode] Result contains '不通过', validation failed");
+			return false;
+		}
+		
+		// Check if result contains "通过" - might be passed
+		if (trimmed.contains("通过")) {
+			// But if it looks like SQL (contains SELECT, FROM, WHERE, etc.), treat as failed
+			if (containsSqlKeywords(trimmed)) {
+				log.warn("[SemanticConsistencyNode] Result contains '通过' but also SQL keywords, " +
+						"LLM returned SQL instead of validation result. Treating as failed.");
+				log.warn("[SemanticConsistencyNode] Suspicious result: {}", 
+					trimmed.length() > 200 ? trimmed.substring(0, 200) + "..." : trimmed);
+				return false;
+			}
+			
+			log.debug("[SemanticConsistencyNode] Result contains '通过' and no SQL keywords, validation passed");
+			return true;
+		}
+		
+		// If result doesn't contain "通过" or "不通过", treat as failed
+		log.warn("[SemanticConsistencyNode] Result does not contain '通过' or '不通过', treating as failed");
+		log.warn("[SemanticConsistencyNode] Unexpected result format: {}", 
+			trimmed.length() > 200 ? trimmed.substring(0, 200) + "..." : trimmed);
+		return false;
+	}
+	
+	/**
+	 * Check if text contains SQL keywords
+	 * @param text Text to check
+	 * @return true if contains SQL keywords
+	 */
+	private boolean containsSqlKeywords(String text) {
+		String upperText = text.toUpperCase();
+		return upperText.contains("SELECT ") || 
+			   upperText.contains(" FROM ") || 
+			   upperText.contains(" WHERE ") ||
+			   upperText.contains(" GROUP BY ") ||
+			   upperText.contains(" ORDER BY ");
 	}
 
 	/**

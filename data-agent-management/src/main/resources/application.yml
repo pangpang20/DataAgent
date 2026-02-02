@@ -134,7 +134,9 @@ logging:
     com.audaque.cloud.ai.dataagent.service.graph: debug  # 流式输出处理详细日志
     com.audaque.cloud.ai.dataagent.service.nl2sql: debug  # NL2SQL 服务详细日志
     com.audaque.cloud.ai.dataagent.prompt: debug  # Prompt 构建详细日志
-    com.audaque.cloud.ai.dataagent.workflow.node: debug
+    com.audaque.cloud.ai.dataagent.workflow.node: debug  # 工作流节点详细日志（SqlExecuteNode、SemanticConsistencyNode等）
+    com.audaque.cloud.ai.dataagent.util: debug  # 工具类详细日志（MarkdownParserUtil等）
+    com.audaque.cloud.ai.dataagent.workflow.dispatcher: debug  # 调度器详细日志
     com.alibaba.cloud.ai.mapper: debug
     org.springframework.jdbc: debug
     # 屏蔽 Tomcat HTTP 处理器的 EOFException 日志(客户端正常关闭连接时产生)

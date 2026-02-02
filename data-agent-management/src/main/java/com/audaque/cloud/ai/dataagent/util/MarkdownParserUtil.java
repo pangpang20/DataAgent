@@ -28,7 +28,7 @@ public class MarkdownParserUtil {
 		// Find the start of a code block (3 or more backticks)
 		int startIndex = -1;
 		int delimiterLength = 0;
-
+	
 		for (int i = 0; i <= markdownCode.length() - 3; i++) {
 			if (markdownCode.substring(i, i + 3).equals("```")) {
 				startIndex = i;
@@ -40,11 +40,12 @@ public class MarkdownParserUtil {
 				break;
 			}
 		}
-
+	
 		if (startIndex == -1) {
-			return markdownCode; // No code block found
+			// No triple backtick code block found, try single backtick
+			return removeSingleBackticks(markdownCode);
 		}
-
+	
 		// Skip the opening delimiter and optional language specification
 		int contentStart = startIndex + delimiterLength;
 		while (contentStart < markdownCode.length() && markdownCode.charAt(contentStart) != '\n') {
@@ -53,18 +54,40 @@ public class MarkdownParserUtil {
 		if (contentStart < markdownCode.length() && markdownCode.charAt(contentStart) == '\n') {
 			contentStart++; // Skip the newline after language spec
 		}
-
+	
 		// Find the closing delimiter
 		String closingDelimiter = "`".repeat(delimiterLength);
 		int endIndex = markdownCode.indexOf(closingDelimiter, contentStart);
-
+	
 		if (endIndex == -1) {
 			// No closing delimiter found, return from content start to end
 			return markdownCode.substring(contentStart);
 		}
-
+	
 		// Extract just the content between delimiters
 		return markdownCode.substring(contentStart, endIndex);
+	}
+	
+	/**
+	 * Remove single backticks from the beginning and end of the text.
+	 * This handles cases where LLM wraps SQL with single backticks like `SELECT ...`
+	 * @param text The text that may have single backticks
+	 * @return The text with leading and trailing single backticks removed
+	 */
+	private static String removeSingleBackticks(String text) {
+		if (text == null || text.isEmpty()) {
+			return text;
+		}
+			
+		String trimmed = text.trim();
+			
+		// Check if text starts and ends with single backtick
+		if (trimmed.startsWith("`") && trimmed.endsWith("`") && trimmed.length() > 1) {
+			// Remove the first and last backtick
+			return trimmed.substring(1, trimmed.length() - 1);
+		}
+			
+		return trimmed;
 	}
 
 }

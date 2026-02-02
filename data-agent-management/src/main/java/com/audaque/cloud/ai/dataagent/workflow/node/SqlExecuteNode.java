@@ -86,20 +86,33 @@ public class SqlExecuteNode implements NodeAction {
 		Integer currentStep = PlanProcessUtil.getCurrentStepNumber(state);
 
 		String sqlQuery = StateUtil.getStringValue(state, SQL_GENERATE_OUTPUT);
+		log.debug("[SqlExecuteNode] Raw SQL from state (before trim): [{}]", sqlQuery);
+		log.debug("[SqlExecuteNode] Raw SQL length: {}, isEmpty: {}", 
+			sqlQuery != null ? sqlQuery.length() : "null", 
+			sqlQuery == null ? "null" : sqlQuery.isEmpty());
+		
 		sqlQuery = nl2SqlService.sqlTrim(sqlQuery);
-
-		log.info("Executing SQL query: {}", sqlQuery);
+		
+		log.debug("[SqlExecuteNode] SQL after trim: [{}]", sqlQuery);
+		log.debug("[SqlExecuteNode] SQL after trim length: {}, isEmpty: {}", 
+			sqlQuery != null ? sqlQuery.length() : "null", 
+			sqlQuery == null ? "null" : sqlQuery.isEmpty());
+		log.info("Executing SQL query: `{}`", sqlQuery);
 
 		// Get the agent ID from the state
 		String agentIdStr = StateUtil.getStringValue(state, Constant.AGENT_ID);
+		log.debug("[SqlExecuteNode] Agent ID from state: {}", agentIdStr);
 		if (agentIdStr == null || agentIdStr.trim().isEmpty()) {
 			throw new IllegalStateException("Agent ID cannot be empty.");
 		}
 
 		Integer agentId = Integer.valueOf(agentIdStr);
+		log.debug("[SqlExecuteNode] Current step: {}, Agent ID: {}", currentStep, agentId);
 
 		// Dynamically get the data source configuration for an agent
 		DbConfigBO dbConfig = databaseUtil.getAgentDbConfig(agentId);
+		log.debug("[SqlExecuteNode] DB config retrieved: url={}, schema={}, dialectType={}", 
+			dbConfig.getUrl(), dbConfig.getSchema(), dbConfig.getDialectType());
 
 		return executeSqlQuery(state, currentStep, sqlQuery, dbConfig, agentId);
 	}
@@ -120,16 +133,22 @@ public class SqlExecuteNode implements NodeAction {
 	@SuppressWarnings("unchecked")
 	private Map<String, Object> executeSqlQuery(OverAllState state, Integer currentStep, String sqlQuery,
 			DbConfigBO dbConfig, Integer agentId) {
+		log.debug("[SqlExecuteNode] Entering executeSqlQuery - step: {}, agentId: {}", currentStep, agentId);
+		log.debug("[SqlExecuteNode] SQL to execute: `{}`", sqlQuery);
+		
 		// Execute business logic first - actual SQL execution
 		DbQueryParameter dbQueryParameter = new DbQueryParameter();
 		dbQueryParameter.setSql(sqlQuery);
 		dbQueryParameter.setSchema(dbConfig.getSchema());
+		log.debug("[SqlExecuteNode] DbQueryParameter created with schema: {}", dbConfig.getSchema());
 
 		Accessor dbAccessor = databaseUtil.getAgentAccessor(agentId);
+		log.debug("[SqlExecuteNode] DB accessor obtained: {}", dbAccessor.getClass().getSimpleName());
 		final Map<String, Object> result = new HashMap<>();
 
 		// 先返回流式数据，在执行数据库查询
 		Flux<ChatResponse> displayFlux = Flux.create(emitter -> {
+			log.debug("[SqlExecuteNode] Starting streaming output emission");
 			emitter.next(ChatResponseUtil.createResponse("开始执行SQL..."));
 			emitter.next(ChatResponseUtil.createResponse("执行SQL查询："));
 			emitter.next(ChatResponseUtil.createPureResponse(TextType.SQL.getStartSign()));
@@ -138,15 +157,25 @@ public class SqlExecuteNode implements NodeAction {
 			ResultBO resultBO = ResultBO.builder().build();
 
 			try {
+				log.debug("[SqlExecuteNode] Executing SQL via accessor: {}", sqlQuery);
+				log.debug("[SqlExecuteNode] DB config: url={}, schema={}", dbConfig.getUrl(), dbConfig.getSchema());
 				// Execute SQL query and get results immediately
 				ResultSetBO resultSetBO = dbAccessor.executeSqlAndReturnObject(dbConfig, dbQueryParameter);
+				log.debug("[SqlExecuteNode] SQL execution successful, result set obtained");
+				log.debug("[SqlExecuteNode] Result columns: {}", resultSetBO.getColumn());
+				log.debug("[SqlExecuteNode] Result data size: {}", 
+					resultSetBO.getData() != null ? resultSetBO.getData().size() : "null");
 				// 调用大模型获取图表配置信息并填充到ResultSetBO中
+				log.debug("[SqlExecuteNode] Enriching result with chart config");
 				DisplayStyleBO displayStyleBO = enrichResultSetWithChartConfig(state, resultSetBO);
+				log.debug("[SqlExecuteNode] Chart config enrichment completed, display type: {}", 
+					displayStyleBO != null ? displayStyleBO.getType() : "null");
 				resultBO.setResultSet(resultSetBO);
 				resultBO.setDisplayStyle(displayStyleBO);
 
 				String strResultSetJson = JsonUtil.getObjectMapper().writeValueAsString(resultSetBO);
 				String strResultJson = JsonUtil.getObjectMapper().writeValueAsString(resultBO);
+				log.debug("[SqlExecuteNode] Result JSON length: {}", strResultJson.length());
 
 				// 数据执行成功
 				emitter.next(ChatResponseUtil.createResponse("执行SQL完成"));
@@ -168,6 +197,7 @@ public class SqlExecuteNode implements NodeAction {
 				ExecutionStep.ToolParameters currentStepParams = PlanProcessUtil.getCurrentExecutionStep(state)
 					.getToolParameters();
 				currentStepParams.setSqlQuery(sqlQuery);
+				log.debug("[SqlExecuteNode] SQL written back to current step params");
 
 				// Prepare the final result object
 				// Store List of SQL query results for use by code execution node
@@ -175,14 +205,21 @@ public class SqlExecuteNode implements NodeAction {
 				result.putAll(Map.of(SQL_EXECUTE_NODE_OUTPUT, updatedResults, SQL_REGENERATE_REASON,
 						SqlRetryDto.empty(), SQL_RESULT_LIST_MEMORY, resultSetBO.getData(), PLAN_CURRENT_STEP,
 						currentStep + 1, SQL_GENERATE_COUNT, 0));
+				log.debug("[SqlExecuteNode] Result map prepared, next step: {}", currentStep + 1);
 			}
 			catch (Exception e) {
 				String errorMessage = e.getMessage();
-				log.error("SQL execution failed - SQL as follows: \n {} \n ", sqlQuery, e);
+				log.error("[SqlExecuteNode] SQL execution failed - SQL as follows: \n`{}`\n", sqlQuery, e);
+				log.error("[SqlExecuteNode] Error type: {}, Error message: {}", 
+					e.getClass().getSimpleName(), errorMessage);
+				log.debug("[SqlExecuteNode] DB config used: url={}, schema={}, dialectType={}", 
+					dbConfig.getUrl(), dbConfig.getSchema(), dbConfig.getDialectType());
 				result.put(SQL_REGENERATE_REASON, SqlRetryDto.sqlExecute(errorMessage));
+				log.debug("[SqlExecuteNode] SqlRetryDto created with error message");
 				emitter.next(ChatResponseUtil.createResponse("SQL执行失败: " + errorMessage));
 			}
 			finally {
+				log.debug("[SqlExecuteNode] Completing streaming output emission");
 				emitter.complete();
 			}
 		});
@@ -191,6 +228,7 @@ public class SqlExecuteNode implements NodeAction {
 		// result
 		Flux<GraphResponse<StreamingOutput>> generator = FluxUtil.createStreamingGeneratorWithMessages(this.getClass(),
 				state, v -> result, displayFlux);
+		log.debug("[SqlExecuteNode] Streaming generator created, returning result map");
 
 		return Map.of(SQL_EXECUTE_NODE_OUTPUT, generator);
 	}
@@ -201,22 +239,27 @@ public class SqlExecuteNode implements NodeAction {
 	 * @param resultSetBO SQL执行结果
 	 */
 	private DisplayStyleBO enrichResultSetWithChartConfig(OverAllState state, ResultSetBO resultSetBO) {
+		log.debug("[SqlExecuteNode] Entering enrichResultSetWithChartConfig");
 		// 创建ResultDisplayStyleBO对象
 		DisplayStyleBO displayStyle = new DisplayStyleBO();
 		if (!this.properties.isEnableSqlResultChart()) {
-			log.debug("Sql result chart is disabled, set display style as table default");
+			log.debug("[SqlExecuteNode] SQL result chart is disabled, set display style as table default");
 			displayStyle.setType("table");
 			return displayStyle;
 		}
+		log.debug("[SqlExecuteNode] Chart enrichment enabled, proceeding with LLM call");
 
 		try {
 			// 获取用户查询
 			String userQuery = StateUtil.getCanonicalQuery(state);
+			log.debug("[SqlExecuteNode] User query for chart config: {}", userQuery);
 
 			// 将SQL结果转换为JSON字符串，限制数据量以避免提示词过长
 			String sqlResultJson = JsonUtil.getObjectMapper()
 				.writeValueAsString(resultSetBO.getData() != null
 						? resultSetBO.getData().stream().limit(SAMPLE_DATA_NUMBER).toList() : null);
+			log.debug("[SqlExecuteNode] Sample data JSON length: {} (limited to {} rows)", 
+				sqlResultJson.length(), SAMPLE_DATA_NUMBER);
 
 			// 构建用户提示词，包含SQL结果数据
 			String userPrompt = String.format("""
@@ -239,13 +282,18 @@ public class SqlExecuteNode implements NodeAction {
 			log.debug("Built chart config generation user prompt as follows \n {} \n", userPrompt);
 
 			// 调用LLM生成图表配置（使用系统提示词和用户提示词）
+			log.debug("[SqlExecuteNode] Calling LLM for chart config generation");
 			String chartConfigJson = llmService.toStringFlux(llmService.call(systemPrompt, userPrompt))
 				.collect(StringBuilder::new, StringBuilder::append)
 				.map(StringBuilder::toString)
 				.block(Duration.ofMillis(properties.getEnrichSqlResultTimeout()));
+			log.debug("[SqlExecuteNode] LLM returned chart config, length: {}", 
+				chartConfigJson != null ? chartConfigJson.length() : "null");
 
 			if (chartConfigJson != null && !chartConfigJson.trim().isEmpty()) {
+				log.debug("[SqlExecuteNode] Raw chart config from LLM: [{}]", chartConfigJson.trim());
 				String content = MarkdownParserUtil.extractText(chartConfigJson.trim());
+				log.debug("[SqlExecuteNode] Extracted chart config content: [{}]", content);
 				// 解析JSON并填充到ResultSetBO中
 				Map<String, Object> chartConfig = JsonUtil.getObjectMapper().readValue(content, Map.class);
 
@@ -273,18 +321,19 @@ public class SqlExecuteNode implements NodeAction {
 						displayStyle.setY((List<String>) yValue);
 					}
 				}
-				log.debug("Successfully enriched ResultSetBO with chart config: type={}, title={}, x={}, y={}",
+				log.debug("[SqlExecuteNode] Successfully enriched ResultSetBO with chart config: type={}, title={}, x={}, y={}",
 						displayStyle.getType(), displayStyle.getTitle(), displayStyle.getX(), displayStyle.getY());
 				return displayStyle;
 			}
 			else {
-				log.warn("LLM returned empty chart config, using default settings");
+				log.warn("[SqlExecuteNode] LLM returned empty chart config, using default settings");
 			}
 		}
 		catch (Exception e) {
-			log.error("Failed to enrich ResultSetBO with chart config", e);
+			log.error("[SqlExecuteNode] Failed to enrich ResultSetBO with chart config: {}", e.getMessage(), e);
 			// 不抛出异常，允许流程继续执行
 		}
+		log.debug("[SqlExecuteNode] Returning null display style");
 		return null;
 	}
 
