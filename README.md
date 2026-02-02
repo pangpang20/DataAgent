@@ -421,14 +421,14 @@ sudo systemctl restart nginx
 
 ## 📚 文档导航
 
-| 文档                                        | 此文档包含的内容                                                   |
-| :------------------------------------------ | :----------------------------------------------------------------- |
-| [快速开始](docs/QUICK_START.md)             | 环境要求、数据库导入、基础配置、系统初体验                         |
-| [架构设计](docs/ARCHITECTURE.md)            | 系统分层架构、StateGraph与工作流设计、核心模块时序图               |
-| [开发者指南](docs/DEVELOPER_GUIDE.md)       | 开发环境搭建、详细配置手册、代码规范、扩展开发(向量库/模型)        |
-| [高级功能](docs/ADVANCED_FEATURES.md)       | API Key 调用、MCP 服务器配置、自定义混合检索策略、Python执行器配置 |
-| [知识配置最佳实践](docs/KNOWLEDGE_USAGE.md) | 语义模型，业务知识，智能体知识的解释和使用                         |
-| [📝 外部Prompt配置指南](docs/EXTERNAL_PROMPTS_GUIDE.md) | 外部Prompt目录配置、热更新、版本控制，无需重编译修改Prompt模板           |
+| 文档                                                   | 此文档包含的内容                                                   |
+| :----------------------------------------------------- | :----------------------------------------------------------------- |
+| [快速开始](docs/QUICK_START.md)                        | 环境要求、数据库导入、基础配置、系统初体验                         |
+| [架构设计](docs/ARCHITECTURE.md)                       | 系统分层架构、StateGraph与工作流设计、核心模块时序图               |
+| [开发者指南](docs/DEVELOPER_GUIDE.md)                  | 开发环境搭建、详细配置手册、代码规范、扩展开发(向量库/模型)        |
+| [高级功能](docs/ADVANCED_FEATURES.md)                  | API Key 调用、MCP 服务器配置、自定义混合检索策略、Python执行器配置 |
+| [知识配置最佳实践](docs/KNOWLEDGE_USAGE.md)            | 语义模型，业务知识，智能体知识的解释和使用                         |
+| [📝 外部Prompt配置指南](docs/EXTERNAL_PROMPTS_GUIDE.md) | 外部Prompt目录配置、热更新、版本控制，无需重编译修改Prompt模板     |
 
 ## 📄 许可证
 

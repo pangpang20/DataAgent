@@ -253,7 +253,7 @@ public class JsonParseUtil {
 			String tablesPart = trimmed.replaceFirst("(?i).*?(表：|tables?:|table\\s*:)", "").trim();
 			
 			// 移除后面的条件部分（如果存在）
-			tablesPart = tablesPart.split("(条件：|条件:|?条件|conditions?:)")[0].trim();
+			tablesPart = tablesPart.split("(条件：|条件:|\\?条件|conditions?:)")[0].trim();
 			
 			// 按逗号分割表名
 			String[] tables = tablesPart.split("[,，\\s]+");
