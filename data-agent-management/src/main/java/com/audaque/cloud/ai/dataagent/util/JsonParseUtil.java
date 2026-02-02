@@ -27,7 +27,11 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 import reactor.core.publisher.Flux;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * JSON解析工具类，支持自动修复格式错误的JSON
@@ -159,6 +163,7 @@ public class JsonParseUtil {
 	/**
 	 * 预处理常见的自然语言格式，尝试转换为JSON格式
 	 * 处理类似 "表：ORDERS,PRODUCT_CATEGORIES  条件：..." 的格式
+	 * 以及 "[Answer] \"orders\", \"products\"  【说明】..." 的格式
 	 */
 	private String preprocessNaturalLanguage(String text) {
 		if (text == null || text.trim().isEmpty()) {
@@ -168,8 +173,46 @@ public class JsonParseUtil {
 		String trimmed = text.trim();
 		
 		// 已经是JSON格式，直接返回
-		if (trimmed.startsWith("[") || trimmed.startsWith("{")) {
+		if (trimmed.startsWith("[") && !trimmed.startsWith("[Answer]")) {
 			return trimmed;
+		}
+		if (trimmed.startsWith("{")) {
+			return trimmed;
+		}
+		
+		// 处理 "[Answer] \"table1\", \"table2\"  【说明】..." 的格式
+		if (trimmed.matches("(?i).*?\\[answer\\].*")) {
+			log.debug("Detected [Answer] format");
+			
+			// 提取 [Answer] 和 【说明】 之间的内容
+			String answerPart = trimmed.replaceFirst("(?i).*?\\[answer\\]\\s*", "").trim();
+			
+			// 移除后面的说明部分（如果存在）
+			answerPart = answerPart.split("[【\\[]?[说明Explanation].*")[0].trim();
+			
+			// 提取所有带引号的值
+			Pattern pattern = Pattern.compile("\"([^\"]+)\"");
+			Matcher matcher = pattern.matcher(answerPart);
+			List<String> tables = new ArrayList<>();
+			while (matcher.find()) {
+				tables.add(matcher.group(1));
+			}
+			
+			if (!tables.isEmpty()) {
+				// 构建JSON数组
+				StringBuilder jsonArray = new StringBuilder("[");
+				for (int i = 0; i < tables.size(); i++) {
+					if (i > 0) {
+						jsonArray.append(", ");
+					}
+					jsonArray.append("\"").append(tables.get(i)).append("\"");
+				}
+				jsonArray.append("]");
+				
+				String result = jsonArray.toString();
+				log.info("Converted [Answer] format to JSON: {} -> {}", trimmed, result);
+				return result;
+			}
 		}
 		
 		// 处理 "表：A,B,C" 或 "Tables: A, B, C" 的格式
