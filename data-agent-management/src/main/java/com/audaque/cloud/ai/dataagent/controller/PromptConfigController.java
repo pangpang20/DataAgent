@@ -17,6 +17,7 @@ package com.audaque.cloud.ai.dataagent.controller;
 
 import com.audaque.cloud.ai.dataagent.dto.prompt.PromptConfigDTO;
 import com.audaque.cloud.ai.dataagent.entity.UserPromptConfig;
+import com.audaque.cloud.ai.dataagent.prompt.PromptLoader;
 import com.audaque.cloud.ai.dataagent.service.prompt.UserPromptService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -331,6 +332,63 @@ public class PromptConfigController {
 			response.put("success", false);
 			response.put("message", "更新显示顺序失败");
 		}
+
+		return ResponseEntity.ok(response);
+	}
+
+	/**
+	 * 获取外部Prompt目录配置信息
+	 * @return 外部目录路径和状态信息
+	 */
+	@GetMapping("/external-dir")
+	public ResponseEntity<Map<String, Object>> getExternalPromptDir() {
+		String externalDir = PromptLoader.getExternalPromptDir();
+		int cacheSize = PromptLoader.getCacheSize();
+
+		Map<String, Object> response = new HashMap<>();
+		response.put("success", true);
+		response.put("externalDir", externalDir);
+		response.put("configured", externalDir != null);
+		response.put("cacheSize", cacheSize);
+		response.put("message", externalDir != null 
+			? "外部Prompt目录已配置: " + externalDir 
+			: "未配置外部Prompt目录,使用JAR内部资源");
+
+		return ResponseEntity.ok(response);
+	}
+
+	/**
+	 * 清空所有Prompt缓存(热更新)
+	 * @return 操作结果
+	 */
+	@PostMapping("/reload-all")
+	public ResponseEntity<Map<String, Object>> reloadAllPrompts() {
+		logger.info("请求重新加载所有Prompt缓存");
+		int oldCacheSize = PromptLoader.getCacheSize();
+		PromptLoader.clearCache();
+
+		Map<String, Object> response = new HashMap<>();
+		response.put("success", true);
+		response.put("message", "已清空所有Prompt缓存,下次调用时将重新加载");
+		response.put("clearedCount", oldCacheSize);
+
+		return ResponseEntity.ok(response);
+	}
+
+	/**
+	 * 重新加载指定Prompt缓存
+	 * @param promptName Prompt名称(如: intent-recognition, mix-selector)
+	 * @return 操作结果
+	 */
+	@PostMapping("/reload/{promptName}")
+	public ResponseEntity<Map<String, Object>> reloadPrompt(@PathVariable("promptName") String promptName) {
+		logger.info("请求重新加载Prompt: {}", promptName);
+		PromptLoader.reloadPrompt(promptName);
+
+		Map<String, Object> response = new HashMap<>();
+		response.put("success", true);
+		response.put("message", "已清空Prompt缓存: " + promptName + ",下次调用时将重新加载");
+		response.put("promptName", promptName);
 
 		return ResponseEntity.ok(response);
 	}

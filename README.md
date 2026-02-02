@@ -191,12 +191,17 @@ cp data-agent-management/target/spring-ai-audaque-data-agent-management-*.jar /o
 ```bash
 cd /opt/dataagent
 
+# 配置外部Prompt目录（可选，用于无需重新编译即可修改Prompt）
+export DATAAGENT_PROMPT_DIR=/opt/dataagent/prompts
+
 # Spring Boot 会自动加载同级目录或 config/ 子目录的 application.yml
 java -jar dataagent-backend.jar
 
-# 或指定配置文件路径
-java -jar dataagent-backend.jar --spring.config.location=./application.yml
+# 或指定配置文件路径和Prompt目录
+java -Ddataagent.prompt.dir=/opt/dataagent/prompts -jar dataagent-backend.jar --spring.config.location=./application.yml
 ```
+
+> **外部Prompt配置说明**: 如需在运行时修改Prompt模板而无需重新编译JAR包，可配置外部Prompt目录。详见 [📝 外部Prompt配置指南](docs/EXTERNAL_PROMPTS_GUIDE.md)。
 
 **方式2：使用环境变量（敏感信息推荐）**
 
@@ -288,6 +293,9 @@ StandardError=append:/var/log/dataagent/error.log
 
 # 环境变量（可选）
 Environment="DATA_AGENT_DATASOURCE_PASSWORD=your_password"
+
+# 外部Prompt目录配置（可选，用于运行时修改Prompt）
+Environment="DATAAGENT_PROMPT_DIR=/opt/dataagent/prompts"
 
 # 如需强制使用 IPv4，可添加：
 # Environment="JAVA_OPTS=-Djava.net.preferIPv4Stack=true"
@@ -420,6 +428,7 @@ sudo systemctl restart nginx
 | [开发者指南](docs/DEVELOPER_GUIDE.md)       | 开发环境搭建、详细配置手册、代码规范、扩展开发(向量库/模型)        |
 | [高级功能](docs/ADVANCED_FEATURES.md)       | API Key 调用、MCP 服务器配置、自定义混合检索策略、Python执行器配置 |
 | [知识配置最佳实践](docs/KNOWLEDGE_USAGE.md) | 语义模型，业务知识，智能体知识的解释和使用                         |
+| [📝 外部Prompt配置指南](docs/EXTERNAL_PROMPTS_GUIDE.md) | 外部Prompt目录配置、热更新、版本控制，无需重编译修改Prompt模板           |
 
 ## 📄 许可证
 
