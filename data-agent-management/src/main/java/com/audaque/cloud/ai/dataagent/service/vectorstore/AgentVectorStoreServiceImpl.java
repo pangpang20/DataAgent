@@ -38,6 +38,8 @@ import org.springframework.util.Assert;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 
 import static com.audaque.cloud.ai.dataagent.service.vectorstore.DynamicFilterService.buildFilterExpressionString;
 
@@ -68,6 +70,11 @@ public class AgentVectorStoreServiceImpl implements AgentVectorStoreService {
 
 	@Value("${spring.ai.vectorstore.milvus.flush-initial-backoff-ms:1000}")
 	private int flushInitialBackoffMs;
+
+	@Value("${spring.ai.vectorstore.milvus.flush-max-concurrency:1}")
+	private int flushMaxConcurrency;
+
+	private final Semaphore flushSemaphore = new Semaphore(flushMaxConcurrency);
 
 	public AgentVectorStoreServiceImpl(VectorStore vectorStore,
 			Optional<HybridRetrievalStrategy> hybridRetrievalStrategy, DataAgentProperties dataAgentProperties,
@@ -194,51 +201,74 @@ public class AgentVectorStoreServiceImpl implements AgentVectorStoreService {
 			return;
 		}
 
-		// 先等待基础延迟时间
+		// 使用信号量控制并发 flush 操作，避免超出 Milvus 速率限制
 		try {
-			log.debug("等待 {} ms 后执行 flush 操作以避免速率限制", flushDelayMs);
-			Thread.sleep(flushDelayMs);
+			if (!flushSemaphore.tryAcquire(10, TimeUnit.SECONDS)) {
+				log.warn("无法获取 flush 信号量，在 10 秒内超时，跳过本次 flush 操作");
+				return;
+			}
 		} catch (InterruptedException e) {
-			log.warn("初始延迟等待被中断: {}", e.getMessage());
-			Thread.currentThread().interrupt(); // 重新设置中断状态
+			log.warn("获取 flush 信号量被中断: {}", e.getMessage());
+			Thread.currentThread().interrupt();
 			return;
 		}
 
-		// 执行带重试的 flush 操作
-		int attempt = 0;
-		int backoffMs = flushInitialBackoffMs;
-		while (attempt < flushRetryCount) {
+		try {
+			// 先等待基础延迟时间
 			try {
-				FlushParam flushParam = FlushParam.newBuilder()
-						.addCollectionName(collectionName)
-						.build();
-				R<FlushResponse> response = milvusClient.get().flush(flushParam);
-				if (response.getStatus() == R.Status.Success.getCode()) {
-					log.info("Milvus flush 成功，collection: {}，尝试次数: {}", collectionName, attempt + 1);
-					return; // 成功则直接返回
-				} else {
-					log.warn("Milvus flush 返回非成功状态: {}, message: {}，尝试次数: {}",
-							response.getStatus(), response.getMessage(), attempt + 1);
-				}
-			} catch (Exception e) {
-				log.warn("Milvus flush 尝试 {} 失败: {}", attempt + 1, e.getMessage());
+				log.debug("等待 {} ms 后执行 flush 操作以避免速率限制", flushDelayMs);
+				Thread.sleep(flushDelayMs);
+			} catch (InterruptedException e) {
+				log.warn("初始延迟等待被中断: {}", e.getMessage());
+				Thread.currentThread().interrupt(); // 重新设置中断状态
+				return;
 			}
 
-			attempt++;
-			if (attempt < flushRetryCount) {
+			// 执行带重试的 flush 操作
+			int attempt = 0;
+			int backoffMs = flushInitialBackoffMs;
+			while (attempt < flushRetryCount) {
 				try {
-					log.debug("等待 {} ms 后进行第 {} 次重试", backoffMs, attempt + 1);
-					Thread.sleep(backoffMs);
-					backoffMs *= 2; // 指数退避
-				} catch (InterruptedException ie) {
-					log.warn("Flush 重试等待被中断: {}", ie.getMessage());
-					Thread.currentThread().interrupt(); // 重新设置中断状态
-					return;
+					FlushParam flushParam = FlushParam.newBuilder()
+							.addCollectionName(collectionName)
+							.build();
+					R<FlushResponse> response = milvusClient.get().flush(flushParam);
+					if (response.getStatus() == R.Status.Success.getCode()) {
+						log.info("Milvus flush 成功，collection: {}，尝试次数: {}", collectionName, attempt + 1);
+						return; // 成功则直接返回
+					} else {
+						log.warn("Milvus flush 返回非成功状态: {}, message: {}，尝试次数: {}",
+								response.getStatus(), response.getMessage(), attempt + 1);
+					}
+				} catch (Exception e) {
+					String errorMessage = e.getMessage();
+					if (errorMessage != null && errorMessage.contains("rate limit exceeded")) {
+						log.warn("检测到速率限制错误，等待更长时间后重试: {}", errorMessage);
+						// 如果是速率限制错误，使用更长的退避时间
+						backoffMs = Math.max(backoffMs, 15000); // 至少等待15秒
+					}
+					log.warn("Milvus flush 尝试 {} 失败: {}", attempt + 1, e.getMessage());
+				}
+
+				attempt++;
+				if (attempt < flushRetryCount) {
+					try {
+						log.debug("等待 {} ms 后进行第 {} 次重试", backoffMs, attempt + 1);
+						Thread.sleep(backoffMs);
+						backoffMs = (int) (backoffMs * 2.5); // 更激进的指数退避（从2倍改为2.5倍）
+					} catch (InterruptedException ie) {
+						log.warn("Flush 重试等待被中断: {}", ie.getMessage());
+						Thread.currentThread().interrupt(); // 重新设置中断状态
+						return;
+					}
 				}
 			}
-		}
 
-		log.error("Milvus flush 达到最大重试次数 {}，操作失败", flushRetryCount);
+			log.error("Milvus flush 达到最大重试次数 {}，操作失败", flushRetryCount);
+		} finally {
+			// 释放信号量
+			flushSemaphore.release();
+		}
 	}
 
 	@Override
