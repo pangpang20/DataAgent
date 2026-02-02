@@ -247,6 +247,53 @@ public class JsonParseUtil {
 			return result;
 		}
 		
+		// 处理逗号分隔的混合格式（如 "station, order_items, [station.map_to_table('province_city')], [products]"）
+		// 这是最后的兜底处理：如果包含逗号且没有明显的JSON结构标记
+		if (trimmed.contains(",") && !trimmed.contains(":") && !trimmed.contains("{")) {
+			log.debug("Detected comma-separated mixed format");
+			
+			// 按逗号分割
+			String[] parts = trimmed.split(",");
+			List<String> tables = new ArrayList<>();
+			
+			for (String part : parts) {
+				String cleaned = part.trim();
+				
+				// 移除外层方括号（如果存在）
+				if (cleaned.startsWith("[") && cleaned.endsWith("]")) {
+					cleaned = cleaned.substring(1, cleaned.length() - 1).trim();
+				}
+				
+				// 提取函数调用中的表名（如 "station.map_to_table('province_city')" -> "station"）
+				if (cleaned.contains(".") && cleaned.contains("(")) {
+					// 提取点号前面的表名
+					String tableName = cleaned.split("\\.")[0].trim();
+					if (!tableName.isEmpty() && !tables.contains(tableName)) {
+						tables.add(tableName);
+					}
+				} else if (!cleaned.isEmpty()) {
+					// 普通表名
+					tables.add(cleaned);
+				}
+			}
+			
+			if (!tables.isEmpty()) {
+				// 构建JSON数组
+				StringBuilder jsonArray = new StringBuilder("[");
+				for (int i = 0; i < tables.size(); i++) {
+					if (i > 0) {
+						jsonArray.append(", ");
+					}
+					jsonArray.append("\"").append(tables.get(i)).append("\"");
+				}
+				jsonArray.append("]");
+				
+				String result = jsonArray.toString();
+				log.info("Converted comma-separated mixed format to JSON: {} -> {}", trimmed, result);
+				return result;
+			}
+		}
+		
 		return trimmed;
 	}
 
