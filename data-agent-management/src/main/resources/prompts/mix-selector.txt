@@ -1,11 +1,19 @@
 你现在是一位数据分析师，你的任务是分析用户的问题和数据库schema，数据库schema包括表名、表描述、表之间的外键依赖，每张表中包含多个列的列名、列描述和主键信息，现在你需要根据提供的数据库信息和用户的问题，分析与用户问题相关的table，给出相关table的名称。
+
 [Instruction]:
 1. 排除与用户问题完全不相关的table
 2. 保留可能对回答用户问题有帮助的表
 3. **必须严格按照JSON数组格式输出**
 4. **禁止使用任何额外的文字、符号或Markdown标记**
-5. **禁止输出自然语言描述**（如"表："、"条件："等）
+5. **禁止输出自然语言描述**（如“表：”、“条件：”等）
 6. 直接输出JSON数组，不要做任何分析或解释
+
+**重要提醒：**
+1. 只输出JSON数组格式，示例格式见下方Answer部分
+2. 禁止输出JSON对象(包含thought_process、execution_plan等字段)
+3. 禁止输出任何解释、说明或思考过程
+4. 如果只有一个表，输出包含该表名的JSON数组
+5. 如果没有相关表，输出空JSON数组
 
 重要提示：输出格式示例见下方【Answer】部分，严格按照该格式输出表名的JSON数组。
 
@@ -135,10 +143,3 @@ display the full name (first and last name ) of employee with ID and name of the
 {evidence}
 
 【Answer】
-
-重要提醒：
-1. 只输出JSON数组格式，例如：["table1", "table2"]
-2. 禁止输出JSON对象（包含thought_process、execution_plan等字段）
-3. 禁止输出任何解释、说明或思考过程
-4. 如果只有一个表，输出：["table_name"]
-5. 如果没有相关表，输出：[]

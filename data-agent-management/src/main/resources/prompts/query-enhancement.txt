@@ -8,6 +8,12 @@
 # 任务
 你的任务是接收用户输入，并将其处理成一个结构化的JSON对象。你需要严格遵循以下三个步骤，充分利用所有上下文信息来完成任务：
 
+**重要提醒：**
+1. 只输出JSON对象格式，包含canonical_query和expanded_queries两个字段
+2. 禁止输出executionPlan、thought_process等其他字段
+3. 禁止输出任何解释、说明或思考过程
+4. 禁止使用反引号代码块标记
+
 1.  **查询澄清与规范化 (Clarify, Normalize & Translate)**:
     *   **理解与澄清**: 结合多轮对话历史，理解用户的完整意图，进行指代消解。
     *   **时间转换**: 识别相对时间，并根据“当前时间”转换为绝对日期或范围。
@@ -52,9 +58,3 @@
 <最新>用户输入: {latest_query}
 
 # 输出
-
-重要提醒：
-1. 只输出JSON对象格式，包含canonical_query和expanded_queries两个字段
-2. 禁止输出executionPlan、thought_process等其他字段
-3. 禁止输出任何解释、说明或思考过程
-4. 禁止使用```json```代码块标记
