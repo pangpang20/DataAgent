@@ -49,12 +49,12 @@ public class PythonAnalyzeNode implements NodeAction {
 
 	@Override
 	public Map<String, Object> apply(OverAllState state) throws Exception {
-		log.info("[PythonAnalyzeNode] Starting Python analysis for current step: {}", 
-			PlanProcessUtil.getCurrentStepNumber(state));
-		log.debug("[PythonAnalyzeNode] State details - userQuery: {}, pythonOutput length: {}, isFallbackMode: {}", 
-			StateUtil.getCanonicalQuery(state), 
-			StateUtil.getStringValue(state, PYTHON_EXECUTE_NODE_OUTPUT, "").length(),
-			StateUtil.getObjectValue(state, PYTHON_FALLBACK_MODE, Boolean.class, false));
+		log.info("[PythonAnalyzeNode] Starting Python analysis for current step: {}",
+				PlanProcessUtil.getCurrentStepNumber(state));
+		log.debug("[PythonAnalyzeNode] State details - userQuery: {}, pythonOutput length: {}, isFallbackMode: {}",
+				StateUtil.getCanonicalQuery(state),
+				StateUtil.getStringValue(state, PYTHON_EXECUTE_NODE_OUTPUT, "").length(),
+				StateUtil.getObjectValue(state, PYTHON_FALLBACK_MODE, Boolean.class, false));
 
 		// Get context
 		String userQuery = StateUtil.getCanonicalQuery(state);
@@ -87,7 +87,7 @@ public class PythonAnalyzeNode implements NodeAction {
 		}
 
 		String systemPrompt = PromptConstant.getPythonAnalyzePromptTemplate()
-			.render(Map.of("python_output", pythonOutput, "user_query", userQuery));
+				.render(Map.of("python_output", pythonOutput, "user_query", userQuery));
 
 		Flux<ChatResponse> pythonAnalyzeFlux = llmService.callSystem(systemPrompt);
 
