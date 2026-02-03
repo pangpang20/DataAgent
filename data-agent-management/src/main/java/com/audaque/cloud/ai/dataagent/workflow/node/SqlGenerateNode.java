@@ -67,22 +67,44 @@ public class SqlGenerateNode implements NodeAction {
 
 	@Override
 	public Map<String, Object> apply(OverAllState state) throws Exception {
-		// 判断是否达到最大尝试次数
+		// Get current fine-grained error counters
 		int count = state.value(SQL_GENERATE_COUNT, 0);
+		int syntaxErrorCount = state.value(SQL_SYNTAX_ERROR_COUNT, 0);
+		int semanticErrorCount = state.value(SQL_SEMANTIC_ERROR_COUNT, 0);
+		int executionErrorCount = state.value(SQL_EXECUTION_ERROR_COUNT, 0);
+
+		log.debug("Current retry status - Total: {}, Syntax: {}, Semantic: {}, Execution: {}",
+				count, syntaxErrorCount, semanticErrorCount, executionErrorCount);
+
+		// Check if maximum retry count reached (using total count as final safeguard)
+		// Note: Fine-grained thresholds are checked in SqlGenerateDispatcher
+		// This check acts as a fallback to prevent infinite loops
 		if (count >= properties.getMaxSqlRetryCount()) {
 			ExecutionStep executionStep = PlanProcessUtil.getCurrentExecutionStep(state);
-			String sqlGenerateOutput = String.format("步骤[%d]中，SQL次数生成超限，最大尝试次数：%d，已尝试次数:%d，该步骤内容: \n %s",
-					executionStep.getStep(), properties.getMaxSqlRetryCount(), count,
+			String sqlGenerateOutput = String.format(
+					"Step [%d] SQL generation limit exceeded.\n" +
+							"Total attempts: %d/%d\n" +
+							"Error breakdown - Syntax: %d, Semantic: %d, Execution: %d\n" +
+							"Step description: %s",
+					executionStep.getStep(),
+					count, properties.getMaxSqlRetryCount(),
+					syntaxErrorCount, semanticErrorCount, executionErrorCount,
 					executionStep.getToolParameters().getInstruction());
-			log.error("SQL generation failed, reason: {}", sqlGenerateOutput);
+
+			log.error(
+					"SQL generation failed after {} attempts - Syntax errors: {}, Semantic errors: {}, Execution errors: {}",
+					count, syntaxErrorCount, semanticErrorCount, executionErrorCount);
+			log.error("Final error message: {}", sqlGenerateOutput);
+
 			Flux<ChatResponse> preFlux = Flux.just(ChatResponseUtil.createResponse(sqlGenerateOutput));
 			Flux<GraphResponse<StreamingOutput>> generator = FluxUtil.createStreamingGeneratorWithMessages(
-					this.getClass(), state, "正在进行重试评估...", "重试评估完成！",
+					this.getClass(), state, "Evaluating retry status...", "Retry evaluation completed.",
 					retryOutput -> Map.of(SQL_GENERATE_OUTPUT, StateGraph.END, SQL_GENERATE_COUNT, 0), preFlux);
 			// reset the sql generate count
 			return Map.of(SQL_GENERATE_OUTPUT, generator);
 		}
 
+		// Get current execution step and SQL query
 		// 获取planner分配的当前执行步骤的sql任务要求，每个步骤的sql任务是不同的。
 		// 不要拿 user query 这个总体的大任务。
 		String promptForSql = getCurrentExecutionStepInstruction(state);
@@ -93,13 +115,8 @@ public class SqlGenerateNode implements NodeAction {
 		SqlRetryDto retryDto = StateUtil.getObjectValue(state, SQL_REGENERATE_REASON, SqlRetryDto.class,
 				SqlRetryDto.empty());
 
-		// Get current fine-grained error counters for logging and tracking
-		int syntaxErrorCount = state.value(SQL_SYNTAX_ERROR_COUNT, 0);
-		int semanticErrorCount = state.value(SQL_SEMANTIC_ERROR_COUNT, 0);
-		int executionErrorCount = state.value(SQL_EXECUTION_ERROR_COUNT, 0);
-
-		log.debug("Current error counters - Syntax: {}, Semantic: {}, Execution: {}",
-				syntaxErrorCount, semanticErrorCount, executionErrorCount);
+		log.debug("Retry context - Error type: {}, Total attempts: {}",
+				retryDto.errorType(), count);
 
 		if (retryDto.sqlExecuteFail()) {
 			displayMessage = "检测到SQL执行异常，开始重新生成SQL...";
