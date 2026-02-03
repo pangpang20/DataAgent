@@ -56,43 +56,43 @@
 
 **通过格式**:
 ```json
-{
+\{
   "is_passed": true,
   "missing_conditions": [],
   "hallucinated_fields": [],
   "syntax_errors": []
-}
+\}
 ```
 
 **不通过格式**:
 ```json
-{
+\{
   "is_passed": false,
   "missing_conditions": [
-    {
+    \{
       "type": "time_filter",
       "expected": "WHERE ORDER_DATE >= '2025-01-01' AND ORDER_DATE <= '2025-12-31'",
       "reason": "用户问题中明确提到'2025年'"
-    },
-    {
+    \},
+    \{
       "type": "status_filter",
       "expected": "WHERE STATUS = 'completed'",
       "reason": "业务知识定义销售额为已完成订单"
-    }
+    \}
   ],
   "hallucinated_fields": [
-    {
+    \{
       "field_name": "user_age",
       "reason": "Schema中不存在此字段"
-    }
+    \}
   ],
   "syntax_errors": [
-    {
+    \{
       "error_type": "missing_group_by",
       "reason": "指令要求按月分组，但SQL缺少GROUP BY子句"
-    }
+    \}
   ]
-}
+\}
 ```
 
 **字段说明**:
