@@ -190,7 +190,7 @@ public class SemanticModelServiceImpl implements SemanticModelService {
 		try {
 			datasourceId = findDatasourceIdByAgentId(dto.getAgentId());
 		} catch (Exception e) {
-			log.error("获取数据源ID失败: agentId={}", dto.getAgentId(), e);
+			log.error("Failed to get datasource ID: agentId={}", dto.getAgentId(), e);
 			result.setFailCount(dto.getItems().size());
 			result.addError("获取数据源ID失败: " + e.getMessage());
 			return result;
@@ -217,7 +217,8 @@ public class SemanticModelServiceImpl implements SemanticModelService {
 					// 重新同步到向量数据库
 					syncSemanticModelToVectorStore(existing);
 
-					log.info("更新语义模型: agentId={}, tableName={}, columnName={}", dto.getAgentId(), item.getTableName(),
+					log.info("Updated semantic model: agentId={}, tableName={}, columnName={}", dto.getAgentId(),
+							item.getTableName(),
 							item.getColumnName());
 				} else {
 					// 插入新记录
@@ -240,13 +241,15 @@ public class SemanticModelServiceImpl implements SemanticModelService {
 					// 同步到向量数据库
 					syncSemanticModelToVectorStore(newModel);
 
-					log.info("插入语义模型: agentId={}, tableName={}, columnName={}", dto.getAgentId(), item.getTableName(),
+					log.info("Inserted semantic model: agentId={}, tableName={}, columnName={}", dto.getAgentId(),
+							item.getTableName(),
 							item.getColumnName());
 				}
 
 				result.setSuccessCount(result.getSuccessCount() + 1);
 			} catch (Exception e) {
-				log.error("导入第{}条记录失败: tableName={}, columnName={}", i + 1, item.getTableName(), item.getColumnName(),
+				log.error("Failed to import record {}: tableName={}, columnName={}", i + 1, item.getTableName(),
+						item.getColumnName(),
 						e);
 				result.setFailCount(result.getFailCount() + 1);
 				result.addError(String.format("第%d条记录失败 (%s.%s): %s", i + 1, item.getTableName(), item.getColumnName(),
@@ -270,11 +273,12 @@ public class SemanticModelServiceImpl implements SemanticModelService {
 			// 添加到向量数据库
 			agentVectorStoreService.addDocuments(semanticModel.getAgentId().toString(), List.of(document));
 
-			log.info("成功同步语义模型到向量数据库: id={}, agentId={}, tableName={}, columnName={}",
+			log.info(
+					"Successfully synced semantic model to vector store: id={}, agentId={}, tableName={}, columnName={}",
 					semanticModel.getId(), semanticModel.getAgentId(),
 					semanticModel.getTableName(), semanticModel.getColumnName());
 		} catch (Exception e) {
-			log.error("同步语义模型到向量数据库失败: id={}, agentId={}",
+			log.error("Failed to sync semantic model to vector store: id={}, agentId={}",
 					semanticModel.getId(), semanticModel.getAgentId(), e);
 			// 不抛出异常，允许数据库操作成功但向量化失败
 		}
@@ -294,10 +298,10 @@ public class SemanticModelServiceImpl implements SemanticModelService {
 			// 从向量数据库删除
 			agentVectorStoreService.deleteDocumentsByMetedata(semanticModel.getAgentId().toString(), metadata);
 
-			log.info("成功从向量数据库删除语义模型: id={}, agentId={}",
+			log.info("Successfully deleted semantic model from vector store: id={}, agentId={}",
 					semanticModel.getId(), semanticModel.getAgentId());
 		} catch (Exception e) {
-			log.error("从向量数据库删除语义模型失败: id={}, agentId={}",
+			log.error("Failed to delete semantic model from vector store: id={}, agentId={}",
 					semanticModel.getId(), semanticModel.getAgentId(), e);
 			// 不抛出异常，允许关系数据库删除成功
 		}
@@ -305,7 +309,7 @@ public class SemanticModelServiceImpl implements SemanticModelService {
 
 	@Override
 	public BatchImportResult importFromExcel(MultipartFile file, Long agentId) {
-		log.info("开始Excel导入: agentId={}, 文件名={}", agentId, file.getOriginalFilename());
+		log.info("Starting Excel import: agentId={}, filename={}", agentId, file.getOriginalFilename());
 
 		try {
 			// 解析Excel文件
@@ -319,12 +323,13 @@ public class SemanticModelServiceImpl implements SemanticModelService {
 
 			// 执行批量导入
 			BatchImportResult result = batchImport(dto);
-			log.info("Excel导入完成: 总数={}, 成功={}, 失败={}", result.getTotal(), result.getSuccessCount(),
+			log.info("Excel import completed: total={}, success={}, failed={}", result.getTotal(),
+					result.getSuccessCount(),
 					result.getFailCount());
 
 			return result;
 		} catch (Exception e) {
-			log.error("Excel导入失败", e);
+			log.error("Excel import failed", e);
 			BatchImportResult result = BatchImportResult.builder().total(0).successCount(0).failCount(0).build();
 			result.addError("Excel导入失败: " + e.getMessage());
 			return result;

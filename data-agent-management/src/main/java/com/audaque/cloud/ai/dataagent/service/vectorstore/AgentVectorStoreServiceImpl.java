@@ -137,7 +137,7 @@ public class AgentVectorStoreServiceImpl implements AgentVectorStoreService {
 		Assert.notNull(agentId, "AgentId cannot be null.");
 		Assert.notEmpty(documents, "Documents cannot be empty.");
 
-		log.info("准备向 Milvus 插入 {} 个文档，agentId: {}", documents.size(), agentId);
+		log.info("Preparing to insert {} documents into Milvus, agentId: {}", documents.size(), agentId);
 
 		// 校验文档中metadata中包含的agentId
 		for (int i = 0; i < documents.size(); i++) {
@@ -150,7 +150,7 @@ public class AgentVectorStoreServiceImpl implements AgentVectorStoreService {
 
 			// 详细日志：打印每个文档的关键信息
 			if (i == 0 || log.isDebugEnabled()) {
-				log.info("文档[{}] - id: {}, content长度: {}, metadata keys: {}, vectorType: {}",
+				log.info("Document[{}] - id: {}, contentLength: {}, metadata keys: {}, vectorType: {}",
 						i,
 						document.getId(),
 						document.getText() != null ? document.getText().length() : 0,
@@ -160,20 +160,20 @@ public class AgentVectorStoreServiceImpl implements AgentVectorStoreService {
 
 			// 检查 id 字段
 			if (document.getId() == null || document.getId().isEmpty()) {
-				log.error("文档[{}] 缺少 id 字段！metadata: {}", i, document.getMetadata());
+				log.error("Document[{}] missing id field! metadata: {}", i, document.getMetadata());
 				throw new IllegalArgumentException("Document id cannot be null or empty at index " + i);
 			}
 		}
 
-		log.info("开始调用 VectorStore.add() 插入文档...");
+		log.info("Starting VectorStore.add() to insert documents...");
 		try {
 			vectorStore.add(documents);
-			log.info("成功向 Milvus 插入 {} 个文档", documents.size());
+			log.info("Successfully inserted {} documents into Milvus", documents.size());
 
 			// 异步 flush 确保数据持久化并立即可搜索，不阻塞当前请求线程
 			flushMilvusAsync();
 		} catch (Exception e) {
-			log.error("向 Milvus 插入文档失败: {}", e.getMessage(), e);
+			log.error("Failed to insert documents into Milvus: {}", e.getMessage(), e);
 			throw e;
 		}
 	}
@@ -187,7 +187,7 @@ public class AgentVectorStoreServiceImpl implements AgentVectorStoreService {
 			flushMilvus();
 			return CompletableFuture.completedFuture(null);
 		} catch (Exception e) {
-			log.error("异步 flush Milvus 失败: {}", e.getMessage(), e);
+			log.error("Async flush Milvus failed: {}", e.getMessage(), e);
 			return CompletableFuture.failedFuture(e);
 		}
 	}
@@ -204,11 +204,11 @@ public class AgentVectorStoreServiceImpl implements AgentVectorStoreService {
 		// 使用信号量控制并发 flush 操作，避免超出 Milvus 速率限制
 		try {
 			if (!flushSemaphore.tryAcquire(10, TimeUnit.SECONDS)) {
-				log.warn("无法获取 flush 信号量，在 10 秒内超时，跳过本次 flush 操作");
+				log.warn("Cannot acquire flush semaphore, timed out after 10 seconds, skipping this flush operation");
 				return;
 			}
 		} catch (InterruptedException e) {
-			log.warn("获取 flush 信号量被中断: {}", e.getMessage());
+			log.warn("Acquiring flush semaphore interrupted: {}", e.getMessage());
 			Thread.currentThread().interrupt();
 			return;
 		}
@@ -216,10 +216,10 @@ public class AgentVectorStoreServiceImpl implements AgentVectorStoreService {
 		try {
 			// 先等待基础延迟时间
 			try {
-				log.debug("等待 {} ms 后执行 flush 操作以避免速率限制", flushDelayMs);
+				log.debug("Waiting {} ms before flush operation to avoid rate limiting", flushDelayMs);
 				Thread.sleep(flushDelayMs);
 			} catch (InterruptedException e) {
-				log.warn("初始延迟等待被中断: {}", e.getMessage());
+				log.warn("Initial delay wait interrupted: {}", e.getMessage());
 				Thread.currentThread().interrupt(); // 重新设置中断状态
 				return;
 			}
@@ -234,37 +234,37 @@ public class AgentVectorStoreServiceImpl implements AgentVectorStoreService {
 							.build();
 					R<FlushResponse> response = milvusClient.get().flush(flushParam);
 					if (response.getStatus() == R.Status.Success.getCode()) {
-						log.info("Milvus flush 成功，collection: {}，尝试次数: {}", collectionName, attempt + 1);
+						log.info("Milvus flush successful, collection: {}, attempt: {}", collectionName, attempt + 1);
 						return; // 成功则直接返回
 					} else {
-						log.warn("Milvus flush 返回非成功状态: {}, message: {}，尝试次数: {}",
+						log.warn("Milvus flush returned non-success status: {}, message: {}, attempt: {}",
 								response.getStatus(), response.getMessage(), attempt + 1);
 					}
 				} catch (Exception e) {
 					String errorMessage = e.getMessage();
 					if (errorMessage != null && errorMessage.contains("rate limit exceeded")) {
-						log.warn("检测到速率限制错误，等待更长时间后重试: {}", errorMessage);
+						log.warn("Rate limit error detected, waiting longer before retry: {}", errorMessage);
 						// 如果是速率限制错误，使用更长的退避时间
 						backoffMs = Math.max(backoffMs, 15000); // 至少等待15秒
 					}
-					log.warn("Milvus flush 尝试 {} 失败: {}", attempt + 1, e.getMessage());
+					log.warn("Milvus flush attempt {} failed: {}", attempt + 1, e.getMessage());
 				}
 
 				attempt++;
 				if (attempt < flushRetryCount) {
 					try {
-						log.debug("等待 {} ms 后进行第 {} 次重试", backoffMs, attempt + 1);
+						log.debug("Waiting {} ms before retry attempt {}", backoffMs, attempt + 1);
 						Thread.sleep(backoffMs);
 						backoffMs = (int) (backoffMs * 2.5); // 更激进的指数退避（从2倍改为2.5倍）
 					} catch (InterruptedException ie) {
-						log.warn("Flush 重试等待被中断: {}", ie.getMessage());
+						log.warn("Flush retry wait interrupted: {}", ie.getMessage());
 						Thread.currentThread().interrupt(); // 重新设置中断状态
 						return;
 					}
 				}
 			}
 
-			log.error("Milvus flush 达到最大重试次数 {}，操作失败", flushRetryCount);
+			log.error("Milvus flush reached maximum retry count {}, operation failed", flushRetryCount);
 		} finally {
 			// 释放信号量
 			flushSemaphore.release();

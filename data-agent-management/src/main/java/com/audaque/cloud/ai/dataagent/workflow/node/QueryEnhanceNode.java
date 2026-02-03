@@ -48,17 +48,24 @@ public class QueryEnhanceNode implements NodeAction {
 
 	@Override
 	public Map<String, Object> apply(OverAllState state) throws Exception {
+		log.info("[QueryEnhanceNode] Starting query enhancement process");
+		log.debug("[QueryEnhanceNode] Processing query enhancement for state: {}", state.hashCode());
 
 		// 获取用户输入
 		String userInput = StateUtil.getStringValue(state, INPUT_KEY);
-		log.info("User input for query enhance: {}", userInput);
+		log.info("[QueryEnhanceNode] User input for query enhance: {}", userInput);
+		log.debug("[QueryEnhanceNode] User input length: {}", userInput != null ? userInput.length() : 0);
 
 		String evidence = StateUtil.getStringValue(state, EVIDENCE);
 		String multiTurn = StateUtil.getStringValue(state, MULTI_TURN_CONTEXT, "(无)");
+		
+		log.debug("[QueryEnhanceNode] Context details - evidence length: {}, multiTurn: {}", 
+			evidence != null ? evidence.length() : 0, multiTurn);
 
 		// 构建查询处理提示
 		String prompt = PromptHelper.buildQueryEnhancePrompt(multiTurn, userInput, evidence);
-		log.debug("Built query enhance prompt as follows \n {} \n", prompt);
+		log.debug("[QueryEnhanceNode] Built query enhance prompt, length: {}", prompt.length());
+		log.trace("[QueryEnhanceNode] Prompt content: {}", prompt);
 
 		// 调用LLM进行查询处理
 		Flux<ChatResponse> responseFlux = llmService.callUser(prompt);
@@ -75,18 +82,21 @@ public class QueryEnhanceNode implements NodeAction {
 	}
 
 	private Map<String, Object> handleQueryEnhance(String llmOutput) {
+		log.debug("[QueryEnhanceNode] Handling LLM output, length: {}", llmOutput.length());
+		
 		// 获取处理结果
 		String enhanceResult = MarkdownParserUtil.extractRawText(llmOutput.trim());
-		log.info("Query enhance result: {}", enhanceResult);
+		log.info("[QueryEnhanceNode] Query enhance result: {}", enhanceResult);
+		log.debug("[QueryEnhanceNode] Enhanced result length: {}", enhanceResult.length());
 
 		// 解析处理结果，转成 QueryProcessOutputDTO
 		QueryEnhanceOutputDTO queryEnhanceOutputDTO = null;
 		try {
 			queryEnhanceOutputDTO = jsonParseUtil.tryConvertToObject(enhanceResult, QueryEnhanceOutputDTO.class);
-			log.info("Successfully parsed query enhance result: {}", queryEnhanceOutputDTO);
+			log.info("[QueryEnhanceNode] Successfully parsed query enhance result: {}", queryEnhanceOutputDTO);
 		}
 		catch (Exception e) {
-			log.error("Failed to parse query enhance result: {}", enhanceResult, e);
+			log.error("[QueryEnhanceNode] Failed to parse query enhance result: {}", enhanceResult, e);
 		}
 
 		if (queryEnhanceOutputDTO == null)

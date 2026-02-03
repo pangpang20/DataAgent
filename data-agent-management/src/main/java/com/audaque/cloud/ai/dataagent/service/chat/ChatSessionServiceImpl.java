@@ -37,12 +37,22 @@ public class ChatSessionServiceImpl implements ChatSessionService {
 	 */
 	@Override
 	public List<ChatSession> findByAgentId(Integer agentId) {
-		return chatSessionMapper.selectByAgentId(agentId);
+		log.debug("Finding sessions for agentId: {}", agentId);
+		List<ChatSession> sessions = chatSessionMapper.selectByAgentId(agentId);
+		log.debug("Found {} sessions for agentId: {}", sessions != null ? sessions.size() : 0, agentId);
+		return sessions;
 	}
 
 	@Override
 	public ChatSession findBySessionId(String sessionId) {
-		return chatSessionMapper.selectBySessionId(sessionId);
+		log.debug("Finding session by sessionId: {}", sessionId);
+		ChatSession session = chatSessionMapper.selectBySessionId(sessionId);
+		if (session == null) {
+			log.warn("Session not found for sessionId: {}", sessionId);
+		} else {
+			log.debug("Found session: {} for agentId: {}", sessionId, session.getAgentId());
+		}
+		return session;
 	}
 
 	/**
@@ -51,14 +61,16 @@ public class ChatSessionServiceImpl implements ChatSessionService {
 	@Override
 	public ChatSession createSession(Integer agentId, String title, Long userId) {
 		String sessionId = UUID.randomUUID().toString();
+		log.info("Creating new chat session for agentId: {}, userId: {}, title: {}", agentId, userId, title);
 
-		ChatSession session = new ChatSession(sessionId, agentId, title != null ? title : "新会话", "active", userId);
+		ChatSession session = new ChatSession(sessionId, agentId, title != null ? title : "New Session", "active",
+				userId);
 		LocalDateTime now = LocalDateTime.now();
 		session.setCreateTime(now);
 		session.setUpdateTime(now);
 		chatSessionMapper.insert(session);
 
-		log.info("Created new chat session: {} for agent: {}", sessionId, agentId);
+		log.info("Successfully created chat session: {} for agent: {}", sessionId, agentId);
 		return session;
 	}
 
@@ -67,9 +79,10 @@ public class ChatSessionServiceImpl implements ChatSessionService {
 	 */
 	@Override
 	public void clearSessionsByAgentId(Integer agentId) {
+		log.info("Clearing all sessions for agentId: {}", agentId);
 		LocalDateTime now = LocalDateTime.now();
 		int updated = chatSessionMapper.softDeleteByAgentId(agentId, now);
-		log.info("Cleared {} sessions for agent: {}", updated, agentId);
+		log.info("Successfully cleared {} sessions for agent: {}", updated, agentId);
 	}
 
 	/**
@@ -77,18 +90,21 @@ public class ChatSessionServiceImpl implements ChatSessionService {
 	 */
 	@Override
 	public void updateSessionTime(String sessionId) {
+		log.debug("Updating session time for sessionId: {}", sessionId);
 		LocalDateTime now = LocalDateTime.now();
 		chatSessionMapper.updateSessionTime(sessionId, now);
+		log.debug("Successfully updated session time for sessionId: {}", sessionId);
 	}
 
 	/**
-	 * 置顶/取消置顶会话
+	 * Pin/Unpin session
 	 */
 	@Override
 	public void pinSession(String sessionId, boolean isPinned) {
+		log.info("Updating pin status for session: {} to: {}", sessionId, isPinned);
 		LocalDateTime now = LocalDateTime.now();
 		chatSessionMapper.updatePinStatus(sessionId, isPinned, now);
-		log.info("Updated pin status for session: {} to: {}", sessionId, isPinned);
+		log.info("Successfully updated pin status for session: {}", sessionId);
 	}
 
 	/**
@@ -96,9 +112,10 @@ public class ChatSessionServiceImpl implements ChatSessionService {
 	 */
 	@Override
 	public void renameSession(String sessionId, String newTitle) {
+		log.info("Renaming session: {} to: {}", sessionId, newTitle);
 		LocalDateTime now = LocalDateTime.now();
 		chatSessionMapper.updateTitle(sessionId, newTitle, now);
-		log.info("Renamed session: {} to: {}", sessionId, newTitle);
+		log.info("Successfully renamed session: {}", sessionId);
 	}
 
 	/**
@@ -106,9 +123,10 @@ public class ChatSessionServiceImpl implements ChatSessionService {
 	 */
 	@Override
 	public void deleteSession(String sessionId) {
+		log.info("Deleting session: {}", sessionId);
 		LocalDateTime now = LocalDateTime.now();
 		chatSessionMapper.softDeleteById(sessionId, now);
-		log.info("Deleted session: {}", sessionId);
+		log.info("Successfully deleted session: {}", sessionId);
 	}
 
 }

@@ -81,17 +81,17 @@ public class TableMetadataService {
 		Map<String, List<ColumnInfoBO>> tableColumnsMap = new HashMap<>();
 		Accessor accessor = accessorFactory.getAccessorByDbConfig(dbConfig);
 
-		log.debug("开始获取 {} 个表的列信息，数据库类型: {}", tables.size(), dbConfig.getDialectType());
+		log.debug("Starting to get column info for {} tables, dialect: {}", tables.size(), dbConfig.getDialectType());
 
 		for (TableInfoBO table : tables) {
 			DbQueryParameter tableDqp = DbQueryParameter.from(dbConfig).setTable(table.getName());
 			List<ColumnInfoBO> columnInfoBOS = accessor.showColumns(dbConfig, tableDqp);
 			tableColumnsMap.put(table.getName(), columnInfoBOS);
-			log.debug("表 [{}] 获取到 {} 个列: {}", table.getName(), columnInfoBOS.size(),
+			log.debug("Table [{}] retrieved {} columns: {}", table.getName(), columnInfoBOS.size(),
 					columnInfoBOS.stream().map(ColumnInfoBO::getName).collect(Collectors.joining(", ")));
 		}
 
-		log.debug("列信息获取完成，共 {} 个表", tableColumnsMap.size());
+		log.debug("Column info retrieval completed, total {} tables", tableColumnsMap.size());
 		return tableColumnsMap;
 	}
 
@@ -132,7 +132,8 @@ public class TableMetadataService {
 	private void processColumnInfo(List<ColumnInfoBO> columnInfoBOS, TableInfoBO table,
 			Map<String, List<String>> tableSampleData) {
 
-		log.debug("表 [{}] 开始处理列信息，共 {} 个列", table.getName(), columnInfoBOS.size());
+		log.debug("Table [{}] starting to process column info, total {} columns", table.getName(),
+				columnInfoBOS.size());
 
 		for (ColumnInfoBO columnInfoBO : columnInfoBOS) {
 			// 设置列所属的表名
@@ -142,7 +143,7 @@ public class TableMetadataService {
 			List<String> sampleColumnValue = tableSampleData.getOrDefault(columnInfoBO.getName(), new ArrayList<>());
 			setColumnSamples(columnInfoBO, sampleColumnValue);
 
-			log.debug("  列 [{}] - 类型: {}, 主键: {}, 非空: {}, 样例数: {}",
+			log.debug("  Column [{}] - type: {}, primary: {}, notNull: {}, sampleCount: {}",
 					columnInfoBO.getName(),
 					columnInfoBO.getType(),
 					columnInfoBO.isPrimary(),
@@ -152,7 +153,7 @@ public class TableMetadataService {
 
 		// 保存处理过的列数据到TableInfoBO，供后续使用
 		table.setColumns(columnInfoBOS);
-		log.debug("表 [{}] 列信息处理完成", table.getName());
+		log.debug("Table [{}] column info processing completed", table.getName());
 	}
 
 	/**
@@ -257,8 +258,8 @@ public class TableMetadataService {
 			String columnNames = columns.stream().map(ColumnInfoBO::getName).collect(Collectors.joining(", "));
 			String sql = SqlUtil.buildSelectSql(dbConfig.getDialectType(), tableName, columnNames, 5);
 
-			log.debug("表 [{}] 开始获取样例数据，查询列数: {}", tableName, columns.size());
-			log.debug("执行 SQL: {}", sql);
+			log.debug("Table [{}] starting to fetch sample data, columns: {}", tableName, columns.size());
+			log.debug("Executing SQL: {}", sql);
 
 			DbQueryParameter batchParam = new DbQueryParameter();
 			batchParam.setSchema(dbConfig.getSchema());
@@ -266,14 +267,15 @@ public class TableMetadataService {
 
 			ResultSetBO resultSet = accessor.executeSqlAndReturnObject(dbConfig, batchParam);
 			log.info("Embedding for table: {}, result size: {}", tableName, resultSet.getData().size());
-			log.debug("表 [{}] 查询返回 {} 行数据", tableName, resultSet.getData().size());
+			log.debug("Table [{}] query returned {} rows", tableName, resultSet.getData().size());
 
 			Map<String, List<String>> sampleData = processResultSet(resultSet, columns);
-			log.debug("表 [{}] 样例数据处理完成，包含 {} 个列的样本", tableName, sampleData.size());
+			log.debug("Table [{}] sample data processing completed, contains {} columns", tableName, sampleData.size());
 
 			// 打印每个列的样例数据详情
 			for (Map.Entry<String, List<String>> entry : sampleData.entrySet()) {
-				log.debug("  列 [{}] 样例数据 (共{}个): {}", entry.getKey(), entry.getValue().size(), entry.getValue());
+				log.debug("  Column [{}] sample data (total {}): {}", entry.getKey(), entry.getValue().size(),
+						entry.getValue());
 			}
 
 			return sampleData;
@@ -294,22 +296,22 @@ public class TableMetadataService {
 		Map<String, List<String>> tableSampleData = new HashMap<>();
 
 		if (resultSet == null || resultSet.getData() == null) {
-			log.debug("查询结果为空，返回空样本数据");
+			log.debug("Query result is empty, returning empty sample data");
 			return tableSampleData;
 		}
 
-		log.debug("开始处理 {} 行查询结果", resultSet.getData().size());
+		log.debug("Starting to process {} rows of query results", resultSet.getData().size());
 
 		// 提取原始样本数据
 		for (Map<String, String> row : resultSet.getData()) {
 			extractSampleDataFromRow(row, columns, tableSampleData);
 		}
 
-		log.debug("原始样本数据提取完成，包含 {} 个列", tableSampleData.size());
+		log.debug("Raw sample data extraction completed, contains {} columns", tableSampleData.size());
 
 		// 过滤和限制样本数据
 		Map<String, List<String>> filtered = filterAndLimitSampleData(tableSampleData);
-		log.debug("样本数据过滤完成（去重、限制长度、最多3个样本）");
+		log.debug("Sample data filtering completed (deduplication, length limit, max 3 samples)");
 
 		return filtered;
 	}

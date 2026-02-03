@@ -53,14 +53,15 @@ public class OssFileStorageServiceImpl implements FileStorageService {
 	public void init() {
 		this.ossClient = new OSSClientBuilder().build(ossProperties.getEndpoint(), ossProperties.getAccessKeyId(),
 				ossProperties.getAccessKeySecret());
-		log.info("OSS客户端初始化完成，endpoint: {}, bucket: {}", ossProperties.getEndpoint(), ossProperties.getBucketName());
+		log.info("OSS client initialized, endpoint: {}, bucket: {}", ossProperties.getEndpoint(),
+				ossProperties.getBucketName());
 	}
 
 	@PreDestroy
 	public void destroy() {
 		if (ossClient != null) {
 			ossClient.shutdown();
-			log.info("OSS客户端已关闭");
+			log.info("OSS client shutdown complete");
 		}
 	}
 
@@ -68,7 +69,7 @@ public class OssFileStorageServiceImpl implements FileStorageService {
 	public String storeFile(MultipartFile file, String subPath) {
 		try {
 			if (file == null || file.isEmpty()) {
-				log.warn("文件为空，无法上传到OSS");
+				log.warn("File is empty, cannot upload to OSS");
 				return null;
 			}
 
@@ -88,16 +89,14 @@ public class OssFileStorageServiceImpl implements FileStorageService {
 
 			try (InputStream inputStream = file.getInputStream()) {
 				ossClient.putObject(ossProperties.getBucketName(), objectKey, inputStream, metadata);
-				log.info("文件上传成功: {}", objectKey);
+				log.info("File uploaded successfully: {}", objectKey);
 				return objectKey;
-			}
-			catch (IOException e) {
-				log.error("文件存储失败，获取输入流错误", e);
+			} catch (IOException e) {
+				log.error("File storage failed, input stream error", e);
 				throw new RuntimeException("文件存储失败: " + e.getMessage(), e);
 			}
-		}
-		catch (Exception e) {
-			log.error("文件存储失败，上传OSS失败", e);
+		} catch (Exception e) {
+			log.error("File storage failed, OSS upload error", e);
 			throw new RuntimeException("文件存储失败: " + e.getMessage(), e);
 		}
 	}
@@ -105,22 +104,20 @@ public class OssFileStorageServiceImpl implements FileStorageService {
 	@Override
 	public boolean deleteFile(String filePath) {
 		if (!StringUtils.hasText(filePath)) {
-			log.info("删除文件失败，路径为空");
+			log.info("Delete file failed, path is empty");
 			return false;
 		}
 		try {
 			if (ossClient.doesObjectExist(ossProperties.getBucketName(), filePath)) {
 				ossClient.deleteObject(ossProperties.getBucketName(), filePath);
-				log.info("成功从OSS删除文件: {}", filePath);
-			}
-			else {
-				// 删除是个等幂的操作，不存在也是当做被删除了
-				log.info("OSS中文件不存在，跳过删除，视为成功: {}", filePath);
+				log.info("File deleted from OSS successfully: {}", filePath);
+			} else {
+				// Deletion is idempotent, treat non-existence as success
+				log.info("File not found in OSS, skipping deletion (idempotent): {}", filePath);
 			}
 			return true;
-		}
-		catch (Exception e) {
-			log.error("从OSS删除文件失败: {}", filePath, e);
+		} catch (Exception e) {
+			log.error("Failed to delete file from OSS: {}", filePath, e);
 			return false;
 		}
 	}
@@ -136,9 +133,8 @@ public class OssFileStorageServiceImpl implements FileStorageService {
 					ossProperties.getEndpoint().replace("https://", "").replace("http://", ""));
 			return bucketDomain + "/" + filePath;
 
-		}
-		catch (Exception e) {
-			log.error("生成OSS文件URL失败: {}", filePath, e);
+		} catch (Exception e) {
+			log.error("Failed to generate OSS file URL: {}", filePath, e);
 			return filePath;
 		}
 	}
@@ -146,7 +142,7 @@ public class OssFileStorageServiceImpl implements FileStorageService {
 	@Override
 	public Resource getFileResource(String filePath) {
 		// TODO 实现
-		log.error("Getting resource from oss not implement");
+		log.error("Getting resource from OSS not implemented");
 		return null;
 	}
 

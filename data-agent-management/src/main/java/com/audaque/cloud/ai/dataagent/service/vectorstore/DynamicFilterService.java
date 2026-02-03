@@ -40,6 +40,7 @@ public class DynamicFilterService {
 	private final BusinessKnowledgeMapper businessKnowledgeMapper;
 
 	public Filter.Expression buildDynamicFilter(String agentId, String vectorType) {
+		log.debug("Building dynamic filter for agentId: {}, vectorType: {}", agentId, vectorType);
 		FilterExpressionBuilder b = new FilterExpressionBuilder();
 		List<Filter.Expression> conditions = new ArrayList<>();
 
@@ -59,6 +60,7 @@ public class DynamicFilterService {
 				}
 				else {
 					// 加入 ID 过滤
+					log.debug("Adding knowledge ID filter, total {} valid knowledge IDs", validIds.size());
 					conditions.add(b.in(DocumentMetadataConstant.DB_AGENT_KNOWLEDGE_ID, validIds.toArray()).build());
 				}
 				break;
@@ -74,6 +76,7 @@ public class DynamicFilterService {
 				}
 				else {
 					// 添加 ID 过滤
+					log.debug("Adding business term ID filter, total {} valid business term IDs", recalledBusinessKnowledgeIds.size());
 					conditions
 						.add(b.in(DocumentMetadataConstant.DB_BUSINESS_TERM_ID, recalledBusinessKnowledgeIds.toArray())
 							.build());
@@ -87,7 +90,9 @@ public class DynamicFilterService {
 		}
 
 		// 组合所有条件
-		return combineWithAnd(conditions);
+		Filter.Expression result = combineWithAnd(conditions);
+		log.debug("Dynamic filter built successfully with {} conditions", conditions.size());
+		return result;
 	}
 
 	/**
@@ -127,8 +132,10 @@ public class DynamicFilterService {
 
 	public static String buildFilterExpressionString(Map<String, Object> filterMap) {
 		if (filterMap == null || filterMap.isEmpty()) {
+			log.debug("Filter map is empty, returning null");
 			return null;
 		}
+		log.debug("Building filter expression string from {} filter entries", filterMap.size());
 
 		// 验证键名是否合法（只包含字母、数字和下划线）
 		for (String key : filterMap.keySet()) {
@@ -198,6 +205,7 @@ public class DynamicFilterService {
 	}
 
 	public static Filter.Expression buildFilterExpressionForSearchTables(String agentId, List<String> tableNames) {
+		log.debug("Building table search filter for agentId: {}, table count: {}", agentId, tableNames != null ? tableNames.size() : 0);
 		FilterExpressionBuilder b = new FilterExpressionBuilder();
 		List<Filter.Expression> conditions = new ArrayList<>();
 
@@ -215,10 +223,13 @@ public class DynamicFilterService {
 			log.warn("Table names list is empty. Returning empty filter signal.");
 			return null;
 		}
-		return combineWithAnd(conditions);
+		Filter.Expression result = combineWithAnd(conditions);
+		log.debug("Table search filter built successfully");
+		return result;
 	}
 
 	public Filter.Expression buildFilterExpressionForSearchColumns(String agentId, List<String> upstreamTableNames) {
+		log.debug("Building column search filter for agentId: {}, upstream table count: {}", agentId, upstreamTableNames != null ? upstreamTableNames.size() : 0);
 		if (upstreamTableNames == null || upstreamTableNames.isEmpty()) {
 			log.warn("Upstream table names list is empty. Returning empty filter signal.");
 			return null;
@@ -236,7 +247,9 @@ public class DynamicFilterService {
 		// 3. TableName 条件
 		conditions.add(b.in(DocumentMetadataConstant.TABLE_NAME, upstreamTableNames.toArray()).build());
 
-		return combineWithAnd(conditions);
+		Filter.Expression result = combineWithAnd(conditions);
+		log.debug("Column search filter built successfully with {} upstream tables", upstreamTableNames.size());
+		return result;
 	}
 
 }

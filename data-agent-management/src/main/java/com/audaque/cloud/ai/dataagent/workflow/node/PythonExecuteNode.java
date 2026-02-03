@@ -87,7 +87,7 @@ public class PythonExecuteNode implements NodeAction {
 
 				// 检查是否超过最大重试次数
 				if (triesCount >= codeExecutorProperties.getPythonMaxTriesCount()) {
-					log.error("Python执行失败且已超过最大重试次数（已尝试次数：{}），启动降级兜底逻辑。错误信息: {}", triesCount, errorMsg);
+					log.error("Python execution failed and exceeded maximum retry count (attempts: {}), activating fallback logic. Error: {}", triesCount, errorMsg);
 
 					String fallbackOutput = "{}";
 

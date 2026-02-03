@@ -17,6 +17,7 @@ package com.audaque.cloud.ai.dataagent.workflow.dispatcher;
 
 import com.alibaba.cloud.ai.graph.OverAllState;
 import com.alibaba.cloud.ai.graph.action.EdgeAction;
+import lombok.extern.slf4j.Slf4j;
 
 import static com.alibaba.cloud.ai.graph.StateGraph.END;
 
@@ -24,17 +25,21 @@ import static com.alibaba.cloud.ai.graph.StateGraph.END;
  * Dispatcher for human feedback node routing.
  *
  */
+@Slf4j
 public class HumanFeedbackDispatcher implements EdgeAction {
 
 	@Override
 	public String apply(OverAllState state) throws Exception {
+		log.debug("[HumanFeedbackDispatcher] Processing state: {}", state);
 		String nextNode = (String) state.value("human_next_node", END);
 
 		// 如果是等待反馈状态，返回END让图暂停
 		if ("WAIT_FOR_FEEDBACK".equals(nextNode)) {
+			log.info("[HumanFeedbackDispatcher] Waiting for feedback, pausing workflow");
 			return END;
 		}
 
+		log.info("[HumanFeedbackDispatcher] Routing to next node: {}", nextNode);
 		return nextNode;
 	}
 

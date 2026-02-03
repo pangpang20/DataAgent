@@ -35,17 +35,17 @@ public class SemanticModelExcelService {
 	 * 解析Excel文件
 	 */
 	public List<SemanticModelImportItem> parseExcel(MultipartFile file) throws IOException {
-		log.info("开始解析Excel文件: {}", file.getOriginalFilename());
+		log.info("Starting to parse Excel file: {}", file.getOriginalFilename());
 
 		try {
 			// 使用 EasyExcel 同步读取，自动根据 @ExcelProperty 注解映射列
 			List<SemanticModelImportItem> items = EasyExcel.read(file.getInputStream())
-				.head(SemanticModelImportItem.class)
-				.sheet()
-				.doReadSync();
+					.head(SemanticModelImportItem.class)
+					.sheet()
+					.doReadSync();
 
 			if (items == null || items.isEmpty()) {
-				throw new IllegalArgumentException("Excel文件中没有有效数据");
+				throw new IllegalArgumentException("No valid data in Excel file");
 			}
 
 			// 验证必填字段
@@ -54,16 +54,16 @@ public class SemanticModelExcelService {
 				int rowNum = i + 2;
 
 				if (item.getTableName() == null || item.getTableName().trim().isEmpty()) {
-					throw new IllegalArgumentException("第" + rowNum + "行：表名不能为空");
+					throw new IllegalArgumentException("Row " + rowNum + ": Table name cannot be empty");
 				}
 				if (item.getColumnName() == null || item.getColumnName().trim().isEmpty()) {
-					throw new IllegalArgumentException("第" + rowNum + "行：字段名不能为空");
+					throw new IllegalArgumentException("Row " + rowNum + ": Column name cannot be empty");
 				}
 				if (item.getBusinessName() == null || item.getBusinessName().trim().isEmpty()) {
-					throw new IllegalArgumentException("第" + rowNum + "行：业务名称不能为空");
+					throw new IllegalArgumentException("Row " + rowNum + ": Business name cannot be empty");
 				}
 				if (item.getDataType() == null || item.getDataType().trim().isEmpty()) {
-					throw new IllegalArgumentException("第" + rowNum + "行：数据类型不能为空");
+					throw new IllegalArgumentException("Row " + rowNum + ": Data type cannot be empty");
 				}
 
 				// 清理字段值
@@ -79,12 +79,11 @@ public class SemanticModelExcelService {
 				}
 			}
 
-			log.info("成功解析Excel文件，共{}条记录", items.size());
+			log.info("Successfully parsed Excel file, total {} records", items.size());
 			return items;
-		}
-		catch (Exception e) {
-			log.error("解析Excel文件失败: {}", file.getOriginalFilename(), e);
-			throw new IOException("解析Excel文件失败: " + e.getMessage(), e);
+		} catch (Exception e) {
+			log.error("Failed to parse Excel file: {}", file.getOriginalFilename(), e);
+			throw new IOException("Failed to parse Excel file: " + e.getMessage(), e);
 		}
 	}
 

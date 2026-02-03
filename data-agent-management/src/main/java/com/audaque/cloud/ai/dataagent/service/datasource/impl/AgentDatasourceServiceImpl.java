@@ -75,8 +75,7 @@ public class AgentDatasourceServiceImpl implements AgentDatasourceService {
 			// Call the original initialization method
 			return schemaService.schema(agentIdStr, schemaInitRequest);
 
-		}
-		catch (Exception e) {
+		} catch (Exception e) {
 			log.error("Failed to initialize schema for agent: {} with datasource: {}", agentId, datasourceId, e);
 			throw new RuntimeException("Failed to initialize schema for agent " + agentId + ": " + e.getMessage(), e);
 		}
@@ -85,51 +84,62 @@ public class AgentDatasourceServiceImpl implements AgentDatasourceService {
 	@Override
 	public List<AgentDatasource> getAgentDatasource(Integer agentId) {
 		Assert.notNull(agentId, "Agent ID cannot be null");
-		List<AgentDatasource> adentDatasources = agentDatasourceMapper.selectByAgentIdWithDatasource(agentId);
+		log.debug("Getting datasources for agentId: {}", agentId);
 
-		// Manually fill in the data source information (since MyBatis Plus does not
-		// directly support complex join query result mapping)
-		for (AgentDatasource agentDatasource : adentDatasources) {
+		List<AgentDatasource> agentDatasources = agentDatasourceMapper.selectByAgentIdWithDatasource(agentId);
+		log.debug("Found {} datasource relations for agentId: {}", agentDatasources.size(), agentId);
+
+		// Manually fill in the data source information
+		for (AgentDatasource agentDatasource : agentDatasources) {
 			if (agentDatasource.getDatasourceId() != null) {
 				Datasource datasource = datasourceService.getDatasourceById(agentDatasource.getDatasourceId());
 				agentDatasource.setDatasource(datasource);
+				log.debug("Filled datasource info for relation id: {}, datasource: {}",
+						agentDatasource.getId(), datasource != null ? datasource.getName() : "null");
 			}
-			// 获取选中的数据表
+			// Get selected tables
 			int id = agentDatasource.getId();
 			List<String> tables = tablesMapper.getAgentDatasourceTables(id);
 			agentDatasource.setSelectTables(Optional.ofNullable(tables).orElse(List.of()));
+			log.debug("Loaded {} selected tables for relation id: {}", agentDatasource.getSelectTables().size(), id);
 		}
 
-		return adentDatasources;
+		return agentDatasources;
 	}
 
 	@Override
 	@Transactional
 	public AgentDatasource addDatasourceToAgent(Integer agentId, Integer datasourceId) {
-		// First, disable other data sources for this agent (an agent can only have one
-		// enabled data source)
-		agentDatasourceMapper.disableAllByAgentId(agentId);
+		log.info("Adding datasource: {} to agent: {}", datasourceId, agentId);
+
+		// First, disable other data sources for this agent
+		int disabled = agentDatasourceMapper.disableAllByAgentId(agentId);
+		log.debug("Disabled {} existing datasources for agent: {}", disabled, agentId);
 
 		// Check if an association already exists
 		AgentDatasource existing = agentDatasourceMapper.selectByAgentIdAndDatasourceId(agentId, datasourceId);
 
 		AgentDatasource result;
 		if (existing != null) {
+			log.debug("Existing relation found, activating relation id: {}", existing.getId());
 			// If it exists, activate the association
 			agentDatasourceMapper.enableRelation(agentId, datasourceId);
 
-			// 删除已有的表
+			// Remove existing tables
 			tablesMapper.removeAllTables(existing.getId());
+			log.debug("Removed all tables from existing relation id: {}", existing.getId());
 
 			// Query and return the updated association
 			result = agentDatasourceMapper.selectByAgentIdAndDatasourceId(agentId, datasourceId);
-		}
-		else {
+			log.info("Activated existing datasource relation for agent: {}, datasource: {}", agentId, datasourceId);
+		} else {
+			log.debug("Creating new datasource relation for agent: {}, datasource: {}", agentId, datasourceId);
 			// If it does not exist, create a new association
 			AgentDatasource agentDatasource = new AgentDatasource(agentId, datasourceId);
 			agentDatasource.setIsActive(1);
 			agentDatasourceMapper.createNewRelationEnabled(agentId, datasourceId);
 			result = agentDatasource;
+			log.info("Created new datasource relation for agent: {}, datasource: {}", agentId, datasourceId);
 		}
 		result.setSelectTables(List.of());
 		return result;
@@ -137,16 +147,24 @@ public class AgentDatasourceServiceImpl implements AgentDatasourceService {
 
 	@Override
 	public void removeDatasourceFromAgent(Integer agentId, Integer datasourceId) {
+		log.info("Removing datasource: {} from agent: {}", datasourceId, agentId);
 		agentDatasourceMapper.removeRelation(agentId, datasourceId);
+		log.info("Successfully removed datasource: {} from agent: {}", datasourceId, agentId);
 	}
 
 	@Override
 	public AgentDatasource toggleDatasourceForAgent(Integer agentId, Integer datasourceId, Boolean isActive) {
+		log.info("Toggling datasource: {} for agent: {} to active: {}", datasourceId, agentId, isActive);
+
 		// If enabling data source, first check if there are other enabled data sources
 		if (isActive) {
 			int activeCount = agentDatasourceMapper.countActiveByAgentIdExcluding(agentId, datasourceId);
+			log.debug("Found {} other active datasources for agent: {}", activeCount, agentId);
 			if (activeCount > 0) {
-				throw new RuntimeException("同一智能体下只能启用一个数据源，请先禁用其他数据源后再启用此数据源");
+				log.error("Cannot enable datasource: {} for agent: {} - other datasources are active", datasourceId,
+						agentId);
+				throw new RuntimeException(
+						"Only one datasource can be active per agent. Please disable other datasources first.");
 			}
 		}
 
@@ -154,29 +172,40 @@ public class AgentDatasourceServiceImpl implements AgentDatasourceService {
 		int updated = agentDatasourceMapper.updateRelation(agentId, datasourceId, isActive ? 1 : 0);
 
 		if (updated == 0) {
-			throw new RuntimeException("未找到相关的数据源关联记录");
+			log.error("Datasource relation not found for agent: {}, datasource: {}", agentId, datasourceId);
+			throw new RuntimeException("Datasource relation not found");
 		}
 
-		// Return the updated association record
-		return agentDatasourceMapper.selectByAgentIdAndDatasourceId(agentId, datasourceId);
+		AgentDatasource result = agentDatasourceMapper.selectByAgentIdAndDatasourceId(agentId, datasourceId);
+		log.info("Successfully toggled datasource: {} for agent: {} to active: {}", datasourceId, agentId, isActive);
+		return result;
 	}
 
 	@Override
 	@Transactional
 	public void updateDatasourceTables(Integer agentId, Integer datasourceId, List<String> tables) {
+		log.info("Updating datasource tables for agent: {}, datasource: {}, table count: {}",
+				agentId, datasourceId, tables != null ? tables.size() : 0);
+
 		if (agentId == null || datasourceId == null || tables == null) {
-			throw new IllegalArgumentException("参数不能为空");
+			log.error("Invalid parameters - agentId: {}, datasourceId: {}, tables: {}", agentId, datasourceId, tables);
+			throw new IllegalArgumentException("Parameters cannot be null");
 		}
+
 		AgentDatasource datasource = agentDatasourceMapper.selectByAgentIdAndDatasourceId(agentId, datasourceId);
 		if (datasource == null) {
-			throw new IllegalArgumentException("未找到对应的数据源关联记录");
+			log.error("Datasource relation not found for agent: {}, datasource: {}", agentId, datasourceId);
+			throw new IllegalArgumentException("Datasource relation not found");
 		}
+
 		if (tables.isEmpty()) {
+			log.debug("Removing all tables from relation id: {}", datasource.getId());
 			tablesMapper.removeAllTables(datasource.getId());
-		}
-		else {
+		} else {
+			log.debug("Updating {} tables for relation id: {}", tables.size(), datasource.getId());
 			tablesMapper.updateAgentDatasourceTables(datasource.getId(), tables);
 		}
+		log.info("Successfully updated datasource tables for agent: {}, datasource: {}", agentId, datasourceId);
 	}
 
 }

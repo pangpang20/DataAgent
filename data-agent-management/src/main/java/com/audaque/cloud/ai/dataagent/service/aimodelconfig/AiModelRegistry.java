@@ -83,40 +83,46 @@ public class AiModelRegistry {
 	public EmbeddingModel getEmbeddingModel() {
 		if (currentEmbeddingModel == null) {
 			// 记录初始化前的状态
-			log.info("开始初始化全局 EmbeddingModel，当前模型为 null");
-			log.debug("正在查询数据库中激活的 EMBEDDING 模型配置...");
+			log.info("Starting to initialize global EmbeddingModel, current model is null");
+			log.debug("Querying active EMBEDDING model config from database...");
 
 			synchronized (this) {
 				if (currentEmbeddingModel == null) {
-					log.debug("进入双重检查锁定块，开始初始化 EmbeddingModel");
+					log.debug("Entering double-checked locking block, starting EmbeddingModel initialization");
 					try {
 						ModelConfigDTO config = modelConfigDataService.getActiveConfigByType(ModelType.EMBEDDING);
 						if (config != null) {
-							log.info("找到激活的 Embedding 模型配置: id={}, provider={}, model_name={}, model_type={}",
+							log.info(
+									"Found active Embedding model config: id={}, provider={}, model_name={}, model_type={}",
 									config.getId(), config.getProvider(), config.getModelName(), config.getModelType());
-							log.debug("正在创建 EmbeddingModel 实例...");
+							log.debug("Creating EmbeddingModel instance...");
 							currentEmbeddingModel = modelFactory.createEmbeddingModel(config);
-							log.info("EmbeddingModel 创建成功，模型维度: {}", currentEmbeddingModel.dimensions());
+							log.info("EmbeddingModel created successfully, dimensions: {}",
+									currentEmbeddingModel.dimensions());
 						} else {
-							log.warn("数据库中未找到激活的 Embedding 模型配置，将使用默认配置");
+							log.warn("No active Embedding model config found in database, will use default config");
 						}
 					} catch (Exception e) {
-						log.error("初始化 EmbeddingModel 时发生异常: {}", e.getMessage(), e);
-						log.debug("异常堆栈详情: ", e);
+						log.error("Exception occurred while initializing EmbeddingModel: {}", e.getMessage(), e);
+						log.debug("Exception stack trace: ", e);
 					}
 
 					// 兜底：为了防止 VectorStore Starter 启动时调用 dimensions() 报错
 					// 我们必须返回一个"哑巴"模型，而不是 null 或 抛异常
 					if (currentEmbeddingModel == null) {
-						log.warn("使用兜底的 DummyEmbeddingModel，配置维度: {}，此模型将用于创建 Milvus 集合 schema",
+						log.warn(
+								"Using fallback DummyEmbeddingModel, configured dimensions: {}, this model will be used for Milvus collection schema",
 								defaultEmbeddingDimension);
-						log.info("Milvus 集合 schema 将基于维度 {} 进行创建", defaultEmbeddingDimension);
+						log.info("Milvus collection schema will be created based on dimension {}",
+								defaultEmbeddingDimension);
 						currentEmbeddingModel = new DummyEmbeddingModel(defaultEmbeddingDimension);
-						log.debug("DummyEmbeddingModel 创建完成，dimensions() 返回: {}", currentEmbeddingModel.dimensions());
-					} else {
-						log.info("使用数据库配置的 Embedding 模型，维度: {}，此模型将用于创建 Milvus 集合 schema",
+						log.debug("DummyEmbeddingModel creation completed, dimensions() returns: {}",
 								currentEmbeddingModel.dimensions());
-						log.debug("Milvus 集合 schema 将基于此模型的维度进行创建");
+					} else {
+						log.info(
+								"Using database configured Embedding model, dimensions: {}, this model will be used for Milvus collection schema",
+								currentEmbeddingModel.dimensions());
+						log.debug("Milvus collection schema will be created based on this model's dimensions");
 					}
 				}
 			}

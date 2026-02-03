@@ -29,13 +29,13 @@ public class SemanticConsistenceDispatcher implements EdgeAction {
 	@Override
 	public String apply(OverAllState state) {
 		Boolean validate = (Boolean) state.value(SEMANTIC_CONSISTENCY_NODE_OUTPUT).orElse(false);
-		log.info("语义一致性校验结果: {}，跳转节点配置", validate);
+		log.info("Semantic consistency validation result: {}, routing to next node", validate);
 		if (validate) {
-			log.info("语义一致性校验通过，跳转到SQL运行节点。");
+			log.info("Semantic consistency validation passed, routing to SQL execution node");
 			return SQL_EXECUTE_NODE;
 		}
 		else {
-			log.info("语义一致性校验未通过，跳转到SQL生成节点。");
+			log.info("Semantic consistency validation failed, routing to SQL generation node");
 			return SQL_GENERATE_NODE;
 		}
 	}

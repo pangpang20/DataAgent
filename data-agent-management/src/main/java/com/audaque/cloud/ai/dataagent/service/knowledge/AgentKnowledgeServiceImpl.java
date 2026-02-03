@@ -55,13 +55,21 @@ public class AgentKnowledgeServiceImpl implements AgentKnowledgeService {
 
 	@Override
 	public AgentKnowledgeVO getKnowledgeById(Integer id) {
+		log.debug("Getting agent knowledge by id: {}", id);
 		AgentKnowledge agentKnowledge = agentKnowledgeMapper.selectById(id);
-		return agentKnowledge == null ? null : agentKnowledgeConverter.toVo(agentKnowledge);
+		if (agentKnowledge == null) {
+			log.warn("Agent knowledge not found for id: {}", id);
+			return null;
+		}
+		log.debug("Found agent knowledge: {} (type: {})", agentKnowledge.getTitle(), agentKnowledge.getType());
+		return agentKnowledgeConverter.toVo(agentKnowledge);
 	}
 
 	@Override
 	@Transactional
 	public AgentKnowledgeVO createKnowledge(CreateKnowledgeDTO createKnowledgeDto) {
+		log.info("Creating agent knowledge: title={}, type={}, agentId={}",
+				createKnowledgeDto.getTitle(), createKnowledgeDto.getType(), createKnowledgeDto.getAgentId());
 		String storagePath = null;
 		checkCreateKnowledgeDto(createKnowledgeDto);
 
@@ -69,8 +77,7 @@ public class AgentKnowledgeServiceImpl implements AgentKnowledgeService {
 			// 将文件保存到磁盘
 			try {
 				storagePath = fileStorageService.storeFile(createKnowledgeDto.getFile(), AGENT_KNOWLEDGE_FILE_PATH);
-			}
-			catch (Exception e) {
+			} catch (Exception e) {
 				log.error("Failed to store file, agentId:{} title:{} type:{} ", createKnowledgeDto.getAgentId(),
 						createKnowledgeDto.getTitle(), createKnowledgeDto.getType());
 				throw new RuntimeException("Failed to store file.");
@@ -86,14 +93,16 @@ public class AgentKnowledgeServiceImpl implements AgentKnowledgeService {
 		}
 
 		eventPublisher.publishEvent(new AgentKnowledgeEmbeddingEvent(this, knowledge.getId()));
-		log.info("Knowledge created and event published. Id: {}", knowledge.getId());
+		log.info("Successfully created knowledge and published embedding event. Id: {}", knowledge.getId());
 
 		return agentKnowledgeConverter.toVo(knowledge);
 	}
 
 	private static void checkCreateKnowledgeDto(CreateKnowledgeDTO createKnowledgeDto) {
+		log.debug("Validating create knowledge DTO: type={}", createKnowledgeDto.getType());
 		if (createKnowledgeDto.getType().equals(KnowledgeType.DOCUMENT.getCode())
 				&& createKnowledgeDto.getFile() == null) {
+			log.error("Validation failed: File is required for document type");
 			throw new RuntimeException("File is required for document type.");
 		}
 		if (createKnowledgeDto.getType().equals(KnowledgeType.QA.getCode())
@@ -159,6 +168,8 @@ public class AgentKnowledgeServiceImpl implements AgentKnowledgeService {
 
 	@Override
 	public PageResult<AgentKnowledgeVO> queryByConditionsWithPage(AgentKnowledgeQueryDTO queryDTO) {
+		log.debug("Querying agent knowledge with page: pageNum={}, pageSize={}, agentId={}",
+				queryDTO.getPageNum(), queryDTO.getPageSize(), queryDTO.getAgentId());
 
 		int offset = (queryDTO.getPageNum() - 1) * queryDTO.getPageSize();
 
@@ -172,6 +183,8 @@ public class AgentKnowledgeServiceImpl implements AgentKnowledgeService {
 		pageResult.setPageNum(queryDTO.getPageNum());
 		pageResult.setPageSize(queryDTO.getPageSize());
 		pageResult.calculateTotalPages();
+		log.debug("Query completed: total={}, pages={}, returned {} records",
+				total, pageResult.getTotalPages(), dataListVO.size());
 
 		return pageResult;
 	}
@@ -199,9 +212,15 @@ public class AgentKnowledgeServiceImpl implements AgentKnowledgeService {
 	@Override
 	@Transactional
 	public void retryEmbedding(Integer id) {
+		log.info("Retrying embedding for knowledge id: {}", id);
 		AgentKnowledge knowledge = agentKnowledgeMapper.selectById(id);
+		if (knowledge == null) {
+			log.error("Knowledge not found for retry embedding: {}", id);
+			throw new RuntimeException("Knowledge not found.");
+		}
 		if (knowledge.getEmbeddingStatus().equals(EmbeddingStatus.PROCESSING)) {
-			throw new RuntimeException("BusinessKnowledge is processing, please wait.");
+			log.warn("Cannot retry embedding - knowledge is already processing: {}", id);
+			throw new RuntimeException("Knowledge is processing, please wait.");
 		}
 
 		// 非召回的不处理

@@ -43,21 +43,21 @@ public class SqlGenerateDispatcher implements EdgeAction {
 			int currentCount = state.value(SQL_GENERATE_COUNT, properties.getMaxSqlRetryCount());
 			// 生成失败，重新生成
 			if (currentCount < properties.getMaxSqlRetryCount()) {
-				log.info("SQL 生成失败，开始重试，当前次数: {}", currentCount);
+				log.info("SQL generation failed, starting retry, current attempt: {}", currentCount);
 				return SQL_GENERATE_NODE;
 			}
-			log.error("SQL 生成失败，达到最大重试次数，结束流程");
+			log.error("SQL generation failed, reached maximum retry count, ending workflow");
 			return END;
 		}
 		String sqlGenerateOutput = (String) optional.get();
-		log.info("SQL 生成结果: {}", sqlGenerateOutput);
+		log.info("SQL generation result: {}", sqlGenerateOutput);
 
 		if (END.equals(sqlGenerateOutput)) {
-			log.info("检测到流程结束标志: {}", END);
+			log.info("Detected workflow end flag: {}", END);
 			return END;
 		}
 		else {
-			log.info("SQL生成成功，进入语义一致性检查节点: {}", SEMANTIC_CONSISTENCY_NODE);
+			log.info("SQL generation successful, entering semantic consistency check node: {}", SEMANTIC_CONSISTENCY_NODE);
 			return SEMANTIC_CONSISTENCY_NODE;
 		}
 	}

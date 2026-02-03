@@ -39,7 +39,7 @@ public class PythonExecutorDispatcher implements EdgeAction {
 	public String apply(OverAllState state) throws Exception {
 		boolean isFallbackMode = StateUtil.getObjectValue(state, PYTHON_FALLBACK_MODE, Boolean.class, false);
 		if (isFallbackMode) {
-			log.warn("Python执行进入降级模式，跳过重试直接进入分析节点");
+			log.warn("Python execution entered fallback mode, skipping retry and routing to analyze node");
 			return PYTHON_ANALYZE_NODE;
 		}
 
@@ -50,7 +50,7 @@ public class PythonExecutorDispatcher implements EdgeAction {
 			log.error("Python Executor Node Error: {}", message);
 			int tries = StateUtil.getObjectValue(state, PYTHON_TRIES_COUNT, Integer.class, 0);
 			if (tries >= codeExecutorProperties.getPythonMaxTriesCount()) {
-				log.error("Python执行失败且已超过最大重试次数（已尝试次数：{}），流程终止", tries);
+				log.error("Python execution failed and exceeded maximum retry count (attempts: {}), workflow terminated", tries);
 				return END;
 			}
 			else {

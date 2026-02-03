@@ -403,14 +403,14 @@ public class DatasourceServiceImpl implements DatasourceService {
 				seen.add(key);
 				uniqueRelations.add(logicalRelation);
 			} else {
-				log.warn("跳过重复的逻辑外键: {} -> {}", logicalRelation.getSourceTableName(),
+				log.warn("Skipping duplicate logical foreign key: {} -> {}", logicalRelation.getSourceTableName(),
 						logicalRelation.getTargetTableName());
 			}
 		}
 
 		int duplicateCount = logicalRelations.size() - uniqueRelations.size();
 		if (duplicateCount > 0) {
-			log.warn("检测到并去重了 {} 条重复的逻辑外键", duplicateCount);
+			log.warn("Detected and deduplicated {} duplicate logical foreign keys", duplicateCount);
 		}
 
 		// 插入或更新去重后的外键列表

@@ -40,7 +40,8 @@ public class UserPromptServiceImpl implements UserPromptService {
 
 	@Override
 	public UserPromptConfig saveOrUpdateConfig(PromptConfigDTO configDTO) {
-		log.info("保存或更新提示词优化配置：{}", configDTO);
+		log.info("Saving or updating prompt config: name={}, type={}, agentId={}",
+				configDTO.name(), configDTO.promptType(), configDTO.agentId());
 
 		UserPromptConfig config;
 		if (configDTO.id() != null) {
@@ -97,74 +98,110 @@ public class UserPromptServiceImpl implements UserPromptService {
 			userPromptConfigMapper.insert(config);
 		}
 
-		// 如果配置启用，直接启用该配置（支持多个配置同时启用）
+		// Enable config if enabled flag is set
 		if (Boolean.TRUE.equals(config.getEnabled())) {
 			userPromptConfigMapper.enableById(config.getId());
-			log.info("已启用提示词类型 [{}] 的配置：{}", config.getPromptType(), config.getId());
+			log.info("Enabled prompt config [{}]: id={}", config.getPromptType(), config.getId());
 		}
+
+		log.info("Successfully saved prompt config: id={}, name={}", config.getId(), config.getName());
 
 		return config;
 	}
 
 	@Override
 	public UserPromptConfig getConfigById(String id) {
-		return userPromptConfigMapper.selectById(id);
+		log.debug("Getting prompt config by id: {}", id);
+		UserPromptConfig config = userPromptConfigMapper.selectById(id);
+		if (config == null) {
+			log.warn("Prompt config not found for id: {}", id);
+		} else {
+			log.debug("Found prompt config: {} (type: {})", config.getName(), config.getPromptType());
+		}
+		return config;
 	}
 
 	@Override
 	public List<UserPromptConfig> getActiveConfigsByType(String promptType, Long agentId) {
-		return userPromptConfigMapper.getActiveConfigsByType(promptType, agentId);
+		log.debug("Getting active prompt configs for type: {}, agentId: {}", promptType, agentId);
+		List<UserPromptConfig> configs = userPromptConfigMapper.getActiveConfigsByType(promptType, agentId);
+		log.debug("Found {} active configs for type: {}", configs.size(), promptType);
+		return configs;
 	}
 
 	@Override
 	public UserPromptConfig getActiveConfigByType(String promptType, Long agentId) {
-		return userPromptConfigMapper.selectActiveByPromptType(promptType, agentId);
+		log.debug("Getting active prompt config for type: {}, agentId: {}", promptType, agentId);
+		UserPromptConfig config = userPromptConfigMapper.selectActiveByPromptType(promptType, agentId);
+		if (config == null) {
+			log.debug("No active config found for type: {}, agentId: {}", promptType, agentId);
+		} else {
+			log.debug("Found active config: {} for type: {}", config.getName(), promptType);
+		}
+		return config;
 	}
 
 	@Override
 	public List<UserPromptConfig> getAllConfigs() {
-		return userPromptConfigMapper.selectAll();
+		log.debug("Getting all prompt configs");
+		List<UserPromptConfig> configs = userPromptConfigMapper.selectAll();
+		log.debug("Found {} prompt configs", configs.size());
+		return configs;
 	}
 
 	@Override
 	public List<UserPromptConfig> getConfigsByType(String promptType, Long agentId) {
-		return userPromptConfigMapper.getConfigsByType(promptType, agentId);
+		log.debug("Getting prompt configs for type: {}, agentId: {}", promptType, agentId);
+		List<UserPromptConfig> configs = userPromptConfigMapper.getConfigsByType(promptType, agentId);
+		log.debug("Found {} configs for type: {}", configs.size(), promptType);
+		return configs;
 	}
 
 	@Override
 	public boolean deleteConfig(String id) {
+		log.info("Deleting prompt config id: {}", id);
 		UserPromptConfig config = userPromptConfigMapper.selectById(id);
 		if (config != null) {
-			// 从数据库删除
 			int deleted = userPromptConfigMapper.deleteById(id);
 			if (deleted > 0) {
-				log.info("已删除配置：{}", id);
+				log.info("Successfully deleted prompt config: {} (name: {})", id, config.getName());
 				return true;
+			} else {
+				log.error("Failed to delete prompt config: {}", id);
 			}
+		} else {
+			log.warn("Prompt config not found for deletion: {}", id);
 		}
 		return false;
 	}
 
 	@Override
 	public boolean enableConfig(String id) {
+		log.info("Enabling prompt config id: {}", id);
 		UserPromptConfig config = userPromptConfigMapper.selectById(id);
 		if (config != null) {
-			// Enable the current configuration (支持多个配置同时启用)
 			int updated = userPromptConfigMapper.enableById(id);
 			if (updated > 0) {
-				log.info("已启用配置：{}", id);
+				log.info("Successfully enabled prompt config: {} (name: {})", id, config.getName());
 				return true;
+			} else {
+				log.error("Failed to enable prompt config: {}", id);
 			}
+		} else {
+			log.warn("Prompt config not found for enabling: {}", id);
 		}
 		return false;
 	}
 
 	@Override
 	public boolean disableConfig(String id) {
+		log.info("Disabling prompt config id: {}", id);
 		int updated = userPromptConfigMapper.disableById(id);
 		if (updated > 0) {
-			log.info("已禁用配置：{}", id);
+			log.info("Successfully disabled prompt config: {}", id);
 			return true;
+		} else {
+			log.warn("Failed to disable prompt config: {} - config not found or already disabled", id);
 		}
 		return false;
 	}
@@ -176,44 +213,60 @@ public class UserPromptServiceImpl implements UserPromptService {
 
 	@Override
 	public boolean enableConfigs(List<String> ids) {
+		log.info("Batch enabling {} prompt configs", ids.size());
+		int successCount = 0;
 		for (String id : ids) {
-			userPromptConfigMapper.enableById(id);
+			int updated = userPromptConfigMapper.enableById(id);
+			if (updated > 0) {
+				successCount++;
+			}
 		}
-		log.info("批量启用配置成功：{}", ids);
-		return true;
+		log.info("Batch enable completed: {}/{} configs enabled", successCount, ids.size());
+		return successCount == ids.size();
 	}
 
 	@Override
 	public boolean disableConfigs(List<String> ids) {
+		log.info("Batch disabling {} prompt configs", ids.size());
+		int successCount = 0;
 		for (String id : ids) {
-			userPromptConfigMapper.disableById(id);
+			int updated = userPromptConfigMapper.disableById(id);
+			if (updated > 0) {
+				successCount++;
+			}
 		}
-		log.info("批量禁用配置成功：{}", ids);
-		return true;
+		log.info("Batch disable completed: {}/{} configs disabled", successCount, ids.size());
+		return successCount == ids.size();
 	}
 
 	@Override
 	public boolean updatePriority(String id, Integer priority) {
+		log.info("Updating priority for prompt config: {} to {}", id, priority);
 		UserPromptConfig config = userPromptConfigMapper.selectById(id);
 		if (config != null) {
 			config.setPriority(priority);
 			config.setUpdateTime(LocalDateTime.now());
 			userPromptConfigMapper.updateById(config);
-			log.info("更新配置优先级成功：{} -> {}", id, priority);
+			log.info("Successfully updated priority for config: {} to {}", id, priority);
 			return true;
+		} else {
+			log.warn("Prompt config not found for priority update: {}", id);
 		}
 		return false;
 	}
 
 	@Override
 	public boolean updateDisplayOrder(String id, Integer displayOrder) {
+		log.info("Updating display order for prompt config: {} to {}", id, displayOrder);
 		UserPromptConfig config = userPromptConfigMapper.selectById(id);
 		if (config != null) {
 			config.setDisplayOrder(displayOrder);
 			config.setUpdateTime(LocalDateTime.now());
 			userPromptConfigMapper.updateById(config);
-			log.info("更新配置显示顺序成功：{} -> {}", id, displayOrder);
+			log.info("Successfully updated display order for config: {} to {}", id, displayOrder);
 			return true;
+		} else {
+			log.warn("Prompt config not found for display order update: {}", id);
 		}
 		return false;
 	}

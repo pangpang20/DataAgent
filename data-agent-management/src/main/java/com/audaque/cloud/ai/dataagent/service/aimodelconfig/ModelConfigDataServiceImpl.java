@@ -41,37 +41,59 @@ public class ModelConfigDataServiceImpl implements ModelConfigDataService {
 
 	@Override
 	public ModelConfig findById(Integer id) {
-		return modelConfigMapper.findById(id);
+		log.debug("Finding model config by id: {}", id);
+		ModelConfig config = modelConfigMapper.findById(id);
+		if (config == null) {
+			log.warn("Model config not found for id: {}", id);
+		} else {
+			log.debug("Found model config: {} (type: {})", config.getModelName(), config.getModelType());
+		}
+		return config;
 	}
 
 	@Transactional(rollbackFor = Exception.class)
 	@Override
 	public void switchActiveStatus(Integer id, ModelType type) {
-		// 1. 禁用同类型其他配置
-		modelConfigMapper.deactivateOthers(type.getCode(), id);
+		log.info("Switching active status for model config id: {} to type: {}", id, type);
 
-		// 2. 启用当前配置
+		// 1. Deactivate other configs of same type
+		int deactivated = modelConfigMapper.deactivateOthers(type.getCode(), id);
+		log.debug("Deactivated {} other configs of type: {}", deactivated, type);
+
+		// 2. Activate current config
 		ModelConfig entity = modelConfigMapper.findById(id);
 		if (entity != null) {
 			entity.setIsActive(true);
 			entity.setUpdatedTime(LocalDateTime.now());
 			modelConfigMapper.updateById(entity);
+			log.info("Successfully activated model config: {} (id: {}) for type: {}",
+					entity.getModelName(), id, type);
+		} else {
+			log.warn("Model config not found for id: {} when switching active status", id);
 		}
 	}
 
 	@Override
 	public List<ModelConfigDTO> listConfigs() {
-		return modelConfigMapper.findAll().stream().map(ModelConfigConverter::toDTO).collect(Collectors.toList());
+		log.debug("Listing all model configs");
+		List<ModelConfigDTO> configs = modelConfigMapper.findAll().stream()
+				.map(ModelConfigConverter::toDTO)
+				.collect(Collectors.toList());
+		log.debug("Found {} model configs", configs.size());
+		return configs;
 	}
 
 	@Override
 	public void addConfig(ModelConfigDTO dto) {
+		log.info("Adding new model config: {} (provider: {}, type: {})",
+				dto.getModelName(), dto.getProvider(), dto.getModelType());
 		clean(dto);
-		// 只存库，不切换
 		modelConfigMapper.insert(toEntity(dto));
+		log.info("Successfully added model config: {}", dto.getModelName());
 	}
 
 	private void clean(ModelConfigDTO dto) {
+		log.debug("Cleaning model config DTO: {}", dto.getModelName());
 		dto.setModelName(dto.getModelName().trim());
 		dto.setBaseUrl(dto.getBaseUrl().trim());
 		dto.setApiKey(dto.getApiKey().trim());
@@ -81,31 +103,41 @@ public class ModelConfigDataServiceImpl implements ModelConfigDataService {
 		if (dto.getEmbeddingsPath() != null) {
 			dto.setEmbeddingsPath(dto.getEmbeddingsPath().trim());
 		}
+		log.debug("Cleaned model config DTO successfully");
 	}
 
 	/**
-	 * 更新配置到数据库 (不处理热切换) 返回更新后的实体，以便上层业务判断是否需要刷新内存
+	 * Update config in database (without hot switch)
+	 * Returns updated entity for upper layer to decide whether to refresh memory
 	 */
 	@Transactional(rollbackFor = Exception.class)
 	@Override
 	public ModelConfig updateConfigInDb(ModelConfigDTO dto) {
+		log.info("Updating model config in database, id: {}", dto.getId());
 		clean(dto);
-		// 1. 查旧数据
+
+		// 1. Query old data
 		ModelConfig entity = modelConfigMapper.findById(dto.getId());
 		if (entity == null) {
-			throw new RuntimeException("配置不存在");
+			log.error("Model config not found for id: {}", dto.getId());
+			throw new RuntimeException("Config not found");
+		}
+		log.debug("Found existing config: {} (type: {})", entity.getModelName(), entity.getModelType());
+
+		// Model type cannot be changed
+		if (!entity.getModelType().getCode().equals(dto.getModelType())) {
+			log.error("Attempted to change model type from {} to {} for id: {}",
+					entity.getModelType(), dto.getModelType(), dto.getId());
+			throw new RuntimeException("Model type cannot be modified");
 		}
 
-		// 不准更改模型类型
-		if (!entity.getModelType().getCode().equals(dto.getModelType()))
-			throw new RuntimeException("模型类型不允许修改");
-
-		// 2. 合并字段
+		// 2. Merge fields
 		mergeDtoToEntity(dto, entity);
 		entity.setUpdatedTime(LocalDateTime.now());
 
-		// 3. 更新数据库
+		// 3. Update database
 		modelConfigMapper.updateById(entity);
+		log.info("Successfully updated model config: {} (id: {})", entity.getModelName(), dto.getId());
 
 		return entity;
 	}
@@ -128,33 +160,42 @@ public class ModelConfigDataServiceImpl implements ModelConfigDataService {
 
 	@Override
 	public void deleteConfig(Integer id) {
-		// 1. 先查询是否存在
+		log.info("Deleting model config id: {}", id);
+
+		// 1. Check if exists
 		ModelConfig entity = modelConfigMapper.findById(id);
 		if (entity == null) {
-			throw new RuntimeException("配置不存在");
+			log.error("Model config not found for id: {}", id);
+			throw new RuntimeException("Config not found");
 		}
+		log.debug("Found config to delete: {} (active: {})", entity.getModelName(), entity.getIsActive());
 
-		// 2. 如果是激活状态，禁止删除
+		// 2. Cannot delete if active
 		if (Boolean.TRUE.equals(entity.getIsActive())) {
-			throw new RuntimeException("该配置当前正在使用中，无法删除！请先激活其他配置，再进行删除操作。");
+			log.error("Cannot delete active config: {} (id: {})", entity.getModelName(), id);
+			throw new RuntimeException("Cannot delete active config. Please activate another config first.");
 		}
 
-		// 3. 执行删除逻辑
+		// 3. Perform logical deletion
 		entity.setIsDeleted(1);
 		entity.setUpdatedTime(LocalDateTime.now());
 		int updated = modelConfigMapper.updateById(entity);
 		if (updated == 0) {
-			throw new RuntimeException("删除失败");
+			log.error("Failed to delete config id: {}", id);
+			throw new RuntimeException("Delete failed");
 		}
+		log.info("Successfully deleted model config: {} (id: {})", entity.getModelName(), id);
 	}
 
 	@Override
 	public ModelConfigDTO getActiveConfigByType(ModelType modelType) {
+		log.debug("Getting active config for model type: {}", modelType);
 		ModelConfig entity = modelConfigMapper.selectActiveByType(modelType.getCode());
 		if (entity == null) {
-			log.warn("Activation model configuration of type [{}] not found, attempting to downgrade...", modelType);
+			log.warn("Active model configuration of type [{}] not found", modelType);
 			return null;
 		}
+		log.debug("Found active config: {} for type: {}", entity.getModelName(), modelType);
 		return toDTO(entity);
 	}
 

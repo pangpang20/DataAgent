@@ -49,6 +49,12 @@ public class PythonAnalyzeNode implements NodeAction {
 
 	@Override
 	public Map<String, Object> apply(OverAllState state) throws Exception {
+		log.info("[PythonAnalyzeNode] Starting Python analysis for current step: {}", 
+			PlanProcessUtil.getCurrentStepNumber(state));
+		log.debug("[PythonAnalyzeNode] State details - userQuery: {}, pythonOutput length: {}, isFallbackMode: {}", 
+			StateUtil.getCanonicalQuery(state), 
+			StateUtil.getStringValue(state, PYTHON_EXECUTE_NODE_OUTPUT, "").length(),
+			StateUtil.getObjectValue(state, PYTHON_FALLBACK_MODE, Boolean.class, false));
 
 		// Get context
 		String userQuery = StateUtil.getCanonicalQuery(state);
@@ -64,7 +70,8 @@ public class PythonAnalyzeNode implements NodeAction {
 		if (isFallbackMode) {
 			// 降级模式
 			String fallbackMessage = "Python 高级分析功能暂时不可用，出现错误";
-			log.warn("Python分析节点检测到降级模式，返回固定提示信息");
+			log.warn("[PythonAnalyzeNode] Detected fallback mode, returning fixed message");
+			log.debug("[PythonAnalyzeNode] Fallback message: {}", fallbackMessage);
 
 			Flux<ChatResponse> fallbackFlux = Flux.just(ChatResponseUtil.createResponse(fallbackMessage));
 
@@ -72,7 +79,7 @@ public class PythonAnalyzeNode implements NodeAction {
 					this.getClass(), state, "正在处理分析结果...\n", "\n处理完成。", aiResponse -> {
 						Map<String, String> updatedSqlResult = PlanProcessUtil.addStepResult(sqlExecuteResult,
 								currentStep, fallbackMessage);
-						log.info("python fallback message: {}", fallbackMessage);
+						log.info("[PythonAnalyzeNode] Python fallback message: {}", fallbackMessage);
 						return Map.of(SQL_EXECUTE_NODE_OUTPUT, updatedSqlResult, PLAN_CURRENT_STEP, currentStep + 1);
 					}, fallbackFlux);
 
@@ -88,7 +95,7 @@ public class PythonAnalyzeNode implements NodeAction {
 				state, "正在分析代码运行结果...\n", "\n结果分析完成。", aiResponse -> {
 					Map<String, String> updatedSqlResult = PlanProcessUtil.addStepResult(sqlExecuteResult, currentStep,
 							aiResponse);
-					log.info("python analyze result: {}", aiResponse);
+					log.info("[PythonAnalyzeNode] Python analysis result: {}", aiResponse);
 					return Map.of(SQL_EXECUTE_NODE_OUTPUT, updatedSqlResult, PLAN_CURRENT_STEP, currentStep + 1);
 				}, pythonAnalyzeFlux);
 

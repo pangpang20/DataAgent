@@ -32,11 +32,11 @@ public class SQLExecutorDispatcher implements EdgeAction {
 	public String apply(OverAllState state) {
 		SqlRetryDto retryDto = StateUtil.getObjectValue(state, SQL_REGENERATE_REASON, SqlRetryDto.class);
 		if (retryDto.sqlExecuteFail()) {
-			log.warn("SQL运行失败，需要重新生成！");
+			log.warn("SQL execution failed, need to regenerate SQL");
 			return SQL_GENERATE_NODE;
 		}
 		else {
-			log.info("SQL运行成功，返回PlanExecutorNode。");
+			log.info("SQL execution successful, routing to PlanExecutorNode");
 			return PLAN_EXECUTOR_NODE;
 		}
 	}

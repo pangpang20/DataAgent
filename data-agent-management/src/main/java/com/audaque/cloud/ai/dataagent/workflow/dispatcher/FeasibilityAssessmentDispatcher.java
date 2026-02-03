@@ -35,11 +35,11 @@ public class FeasibilityAssessmentDispatcher implements EdgeAction {
 		String value = state.value(FEASIBILITY_ASSESSMENT_NODE_OUTPUT, END);
 
 		if (value != null && value.contains("【需求类型】：《数据分析》")) {
-			log.info("[FeasibilityAssessmentNodeDispatcher]需求类型为数据分析，进入PlannerNode节点");
+			log.info("[FeasibilityAssessmentNodeDispatcher] Requirement type is data analysis, routing to PlannerNode");
 			return PLANNER_NODE;
 		}
 		else {
-			log.info("[FeasibilityAssessmentNodeDispatcher]需求类型非数据分析，返回END节点");
+			log.info("[FeasibilityAssessmentNodeDispatcher] Requirement type is not data analysis, routing to END");
 			return END;
 		}
 	}

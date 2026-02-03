@@ -36,16 +36,21 @@ public class ChatMessageServiceImpl implements ChatMessageService {
 
 	@Override
 	public List<ChatMessage> findBySessionId(String sessionId) {
-		return chatMessageMapper.selectBySessionId(sessionId);
+		log.debug("Finding messages for sessionId: {}", sessionId);
+		List<ChatMessage> messages = chatMessageMapper.selectBySessionId(sessionId);
+		log.debug("Found {} messages for sessionId: {}", messages != null ? messages.size() : 0, sessionId);
+		return messages;
 	}
 
 	@Override
 	public ChatMessage saveMessage(ChatMessage message) {
+		log.debug("Saving message for session: {}, role: {}", message.getSessionId(), message.getRole());
 		if (message.getCreateTime() == null) {
 			message.setCreateTime(LocalDateTime.now());
+			log.debug("Set createTime to current time");
 		}
 		chatMessageMapper.insert(message);
-		log.info("Saved message: {} for session: {}", message.getId(), message.getSessionId());
+		log.info("Successfully saved message id: {} for session: {}", message.getId(), message.getSessionId());
 		return message;
 	}
 

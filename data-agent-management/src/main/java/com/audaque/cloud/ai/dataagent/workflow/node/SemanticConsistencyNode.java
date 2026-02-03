@@ -54,6 +54,8 @@ public class SemanticConsistencyNode implements NodeAction {
 
 	@Override
 	public Map<String, Object> apply(OverAllState state) throws Exception {
+		log.info("[SemanticConsistencyNode] Starting semantic consistency validation");
+		log.debug("[SemanticConsistencyNode] Processing state for validation");
 
 		// Get necessary input parameters
 		String evidence = StateUtil.getStringValue(state, EVIDENCE);
@@ -63,8 +65,10 @@ public class SemanticConsistencyNode implements NodeAction {
 		String sql = StateUtil.getStringValue(state, SQL_GENERATE_OUTPUT);
 		String userQuery = StateUtil.getCanonicalQuery(state);
 		
-		log.debug("[SemanticConsistencyNode] Input SQL for validation: [{}]", sql);
-		log.debug("[SemanticConsistencyNode] Dialect: {}, UserQuery: {}", dialect, userQuery);
+		log.debug("[SemanticConsistencyNode] Input SQL for validation: [{}], length: {}", 
+			sql, sql != null ? sql.length() : 0);
+		log.debug("[SemanticConsistencyNode] Dialect: {}, UserQuery: {}, Evidence length: {}", 
+			dialect, userQuery, evidence != null ? evidence.length() : 0);
 
 		SemanticConsistencyDTO semanticConsistencyDTO = SemanticConsistencyDTO.builder()
 			.dialect(dialect)
@@ -74,7 +78,8 @@ public class SemanticConsistencyNode implements NodeAction {
 			.userQuery(userQuery)
 			.evidence(evidence)
 			.build();
-		log.info("Starting semantic consistency validation - SQL: {}", sql);
+		log.info("[SemanticConsistencyNode] Starting semantic consistency validation - SQL length: {}", 
+			sql != null ? sql.length() : 0);
 		log.debug("[SemanticConsistencyNode] Execution description: {}", getCurrentExecutionStepInstruction(state));
 		Flux<ChatResponse> validationResultFlux = nl2SqlService.performSemanticConsistency(semanticConsistencyDTO);
 
@@ -113,7 +118,7 @@ public class SemanticConsistencyNode implements NodeAction {
 		
 		// Check if result contains "不通过" - definitely failed
 		if (trimmed.contains("不通过")) {
-			log.debug("[SemanticConsistencyNode] Result contains '不通过', validation failed");
+			log.debug("[SemanticConsistencyNode] Result contains 'FAIL', validation failed");
 			return false;
 		}
 		
@@ -121,19 +126,19 @@ public class SemanticConsistencyNode implements NodeAction {
 		if (trimmed.contains("通过")) {
 			// But if it looks like SQL (contains SELECT, FROM, WHERE, etc.), treat as failed
 			if (containsSqlKeywords(trimmed)) {
-				log.warn("[SemanticConsistencyNode] Result contains '通过' but also SQL keywords, " +
+				log.warn("[SemanticConsistencyNode] Result contains 'PASS' but also SQL keywords, " +
 						"LLM returned SQL instead of validation result. Treating as failed.");
 				log.warn("[SemanticConsistencyNode] Suspicious result: {}", 
 					trimmed.length() > 200 ? trimmed.substring(0, 200) + "..." : trimmed);
 				return false;
 			}
 			
-			log.debug("[SemanticConsistencyNode] Result contains '通过' and no SQL keywords, validation passed");
+			log.debug("[SemanticConsistencyNode] Result contains 'PASS' and no SQL keywords, validation passed");
 			return true;
 		}
 		
 		// If result doesn't contain "通过" or "不通过", treat as failed
-		log.warn("[SemanticConsistencyNode] Result does not contain '通过' or '不通过', treating as failed");
+		log.warn("[SemanticConsistencyNode] Result does not contain 'PASS' or 'FAIL', treating as failed");
 		log.warn("[SemanticConsistencyNode] Unexpected result format: {}", 
 			trimmed.length() > 200 ? trimmed.substring(0, 200) + "..." : trimmed);
 		return false;

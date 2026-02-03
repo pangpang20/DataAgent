@@ -128,11 +128,11 @@ public class DynamicModelFactory {
 							org.springframework.retry.RetryCallback<T, E> callback,
 							Throwable throwable) {
 						if (throwable instanceof WebClientResponseException.TooManyRequests) {
-							log.warn("LLM API 速率限制 (429)，正在进行第 {} 次重试，退避时间: {} ms",
+							log.warn("LLM API rate limit (429), retrying attempt {}, backoff: {} ms",
 									context.getRetryCount() + 1,
 									initialInterval * (long) Math.pow(multiplier, context.getRetryCount()));
 						} else {
-							log.warn("LLM API 调用失败，正在进行第 {} 次重试: {}",
+							log.warn("LLM API call failed, retrying attempt {}: {}",
 									context.getRetryCount() + 1, throwable.getMessage());
 						}
 					}
