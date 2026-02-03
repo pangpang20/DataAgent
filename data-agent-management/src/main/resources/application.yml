@@ -99,7 +99,13 @@ spring:
             endpoint: ${OSS_ENDPOINT:}
             bucket-name: ${OSS_BUCKET_NAME:}
             custom-domain: ${OSS_CUSTOM_DOMAIN:}
-        max-sql-retry-count: 20  # SQL生成最大重试次数，超过此次数将停止重试并显示“SQL次数生成超限”
+        max-sql-retry-count: 20  # SQL生成最大重试次数，超过此次数将停止重试并显示"SQL次数生成超限"，未知错误类型时的总重试次数上限
+                
+        # Fine-grained retry thresholds for different SQL error types
+        # Different error types require different retry strategies for optimal performance
+        max-sql-syntax-error-retry: 10      # Syntax errors: typically LLM output format issues (e.g., markdown parsing failures)
+        max-sql-semantic-error-retry: 10    # Semantic errors: business logic misunderstandings (e.g., missing time filters)
+        max-sql-execution-error-retry: 10   # Execution errors: SQL runtime issues (e.g., non-existent fields, type conflicts)
   servlet:
     multipart:
       max-file-size: 10MB

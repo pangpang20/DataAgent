@@ -39,4 +39,12 @@ public class SqlGenerationDTO {
 
 	private String dialect;
 
+	/**
+	 * Retry count for dynamic temperature adjustment
+	 * - Initial generation: 0
+	 * - First retry: 1
+	 * - And so on...
+	 */
+	private int retryCount;
+
 }

@@ -51,6 +51,28 @@ public class DataAgentProperties {
 	private int maxSqlRetryCount = 10;
 
 	/**
+	 * Fine-grained retry thresholds for different error types
+	 * Syntax errors: typically LLM output format issues, excessive retries are
+	 * meaningless
+	 */
+	private int maxSqlSyntaxErrorRetry = 10;
+
+	/**
+	 * Semantic errors: need more rounds to understand business rules
+	 */
+	private int maxSqlSemanticErrorRetry = 10;
+
+	/**
+	 * Execution errors: such as non-existent fields, syntax conflicts, etc.
+	 */
+	private int maxSqlExecutionErrorRetry = 10;
+
+	/**
+	 * Semantic consistency pass threshold (0.0-1.0)
+	 */
+	private double sqlSemanticPassThreshold = 0.8;
+
+	/**
 	 * sql优化最多次数
 	 */
 	private int maxSqlOptimizeCount = 10;

@@ -130,13 +130,11 @@ public class EvidenceRecallNode implements NodeAction {
 
 			// 返回结果
 			return Map.of(EVIDENCE, evidence);
-		}
-		catch (Exception e) {
+		} catch (Exception e) {
 			log.error("Error occurred while getting evidences", e);
 			sink.tryEmitError(e);
 			return Map.of(EVIDENCE, "");
-		}
-		finally {
+		} finally {
 			sink.tryEmitComplete();
 		}
 	}
@@ -149,28 +147,46 @@ public class EvidenceRecallNode implements NodeAction {
 	}
 
 	private DocumentRetrievalResult retrieveDocuments(String agentId, String standaloneQuery) {
-		// 获取业务知识文档
+		// Get business knowledge documents with configurable top_k and threshold
 		List<Document> businessTermDocuments = vectorStoreService
-			.getDocumentsForAgent(agentId, standaloneQuery, DocumentMetadataConstant.BUSINESS_TERM)
-			.stream()
-			.toList();
+				.getDocumentsForAgent(agentId, standaloneQuery, DocumentMetadataConstant.BUSINESS_TERM)
+				.stream()
+				.toList();
 
-		// 获取智能体知识文档
+		// Get agent knowledge documents with configurable top_k and threshold
 		List<Document> agentKnowledgeDocuments = vectorStoreService
-			.getDocumentsForAgent(agentId, standaloneQuery, DocumentMetadataConstant.AGENT_KNOWLEDGE)
-			.stream()
-			.toList();
+				.getDocumentsForAgent(agentId, standaloneQuery, DocumentMetadataConstant.AGENT_KNOWLEDGE)
+				.stream()
+				.toList();
 
-		// 合并所有证据文档
+		// Merge all evidence documents
 		List<Document> allDocuments = new ArrayList<>();
 		if (!businessTermDocuments.isEmpty())
 			allDocuments.addAll(businessTermDocuments);
 		if (!agentKnowledgeDocuments.isEmpty())
 			allDocuments.addAll(agentKnowledgeDocuments);
 
-		// 添加文档检索日志
-		log.info("Retrieved documents for agent {}: {} business term docs, {} agent knowledge docs, total {} docs",
-				agentId, businessTermDocuments.size(), agentKnowledgeDocuments.size(), allDocuments.size());
+		// Log detailed retrieval statistics
+		log.info(
+				"Retrieved documents for agent {} with query '{}': {} business term docs, {} agent knowledge docs, total {} docs",
+				agentId, standaloneQuery, businessTermDocuments.size(), agentKnowledgeDocuments.size(),
+				allDocuments.size());
+
+		if (!businessTermDocuments.isEmpty()) {
+			log.debug("Business term documents preview: {}",
+					businessTermDocuments.stream()
+							.limit(3)
+							.map(d -> d.getText().substring(0, Math.min(50, d.getText().length())))
+							.toList());
+		}
+
+		if (!agentKnowledgeDocuments.isEmpty()) {
+			log.debug("Agent knowledge documents preview: {}",
+					agentKnowledgeDocuments.stream()
+							.limit(3)
+							.map(d -> d.getText().substring(0, Math.min(50, d.getText().length())))
+							.toList());
+		}
 
 		return new DocumentRetrievalResult(businessTermDocuments, agentKnowledgeDocuments, allDocuments);
 	}
@@ -229,8 +245,7 @@ public class EvidenceRecallNode implements NodeAction {
 			// 根据知识类型调用不同的处理方法
 			if (KnowledgeType.FAQ.getCode().equals(knowledgeType) || KnowledgeType.QA.getCode().equals(knowledgeType)) {
 				processFaqOrQaKnowledge(doc, i, result);
-			}
-			else {
+			} else {
 				processDocumentKnowledge(doc, i, result);
 			}
 		}
@@ -260,18 +275,15 @@ public class EvidenceRecallNode implements NodeAction {
 					result.append("] Q: ").append(content).append(" A: ").append(knowledge.getContent()).append("\n");
 
 					log.debug("Successfully processed {} knowledge with title: {}", knowledgeType, title);
-				}
-				else {
+				} else {
 					log.warn("Knowledge not found for id: {}", knowledgeId);
 				}
-			}
-			catch (Exception e) {
+			} catch (Exception e) {
 				log.error("Error getting knowledge by id: {}", knowledgeId, e);
 				// 如果获取失败，使用原始内容
 				result.append(index + 1).append(". [来源: 知识库] ").append(content).append("\n");
 			}
-		}
-		else {
+		} else {
 			// 如果没有知识ID，使用原始内容
 			log.error("No knowledge id found for agent knowledge document: {}", doc.getId());
 			result.append(index + 1).append(". [来源: 知识库] ").append(content).append("\n");
@@ -300,12 +312,10 @@ public class EvidenceRecallNode implements NodeAction {
 
 					log.debug("Successfully processed {} knowledge with title: {}, source file: {}", knowledgeType,
 							title, sourceFilename);
-				}
-				else {
+				} else {
 					log.warn("Knowledge not found for id: {}", knowledgeId);
 				}
-			}
-			catch (Exception e) {
+			} catch (Exception e) {
 				log.error("Error getting knowledge by id: {}", knowledgeId, e);
 			}
 		}
@@ -353,8 +363,7 @@ public class EvidenceRecallNode implements NodeAction {
 			log.info("For getting evidence, successfully parsed EvidenceQueryRewriteDTO from LLM response: {}",
 					evidenceQueryRewriteDTO);
 			return evidenceQueryRewriteDTO.getStandaloneQuery();
-		}
-		catch (Exception e) {
+		} catch (Exception e) {
 			log.error("Failed to parse EvidenceQueryRewriteDTO from LLM response", e);
 		}
 		return null;

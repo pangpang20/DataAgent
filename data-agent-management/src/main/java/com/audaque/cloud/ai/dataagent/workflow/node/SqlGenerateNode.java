@@ -93,23 +93,49 @@ public class SqlGenerateNode implements NodeAction {
 		SqlRetryDto retryDto = StateUtil.getObjectValue(state, SQL_REGENERATE_REASON, SqlRetryDto.class,
 				SqlRetryDto.empty());
 
+		// Get current fine-grained error counters for logging and tracking
+		int syntaxErrorCount = state.value(SQL_SYNTAX_ERROR_COUNT, 0);
+		int semanticErrorCount = state.value(SQL_SEMANTIC_ERROR_COUNT, 0);
+		int executionErrorCount = state.value(SQL_EXECUTION_ERROR_COUNT, 0);
+
+		log.debug("Current error counters - Syntax: {}, Semantic: {}, Execution: {}",
+				syntaxErrorCount, semanticErrorCount, executionErrorCount);
+
 		if (retryDto.sqlExecuteFail()) {
 			displayMessage = "检测到SQL执行异常，开始重新生成SQL...";
+			log.info("SQL execution failed, retrying - error type: {}, reason: {}", retryDto.errorType(),
+					retryDto.reason());
 			sqlFlux = handleRetryGenerateSql(state, StateUtil.getStringValue(state, SQL_GENERATE_OUTPUT, ""),
 					retryDto.reason(), promptForSql);
 		} else if (retryDto.semanticFail()) {
 			displayMessage = "语义一致性校验未通过，开始重新生成SQL...";
+			log.info("Semantic consistency check failed, retrying - error type: {}, reason: {}", retryDto.errorType(),
+					retryDto.reason());
 			sqlFlux = handleRetryGenerateSql(state, StateUtil.getStringValue(state, SQL_GENERATE_OUTPUT, ""),
 					retryDto.reason(), promptForSql);
 		} else {
 			displayMessage = "开始生成SQL...";
+			log.info("Starting initial SQL generation for step {}", count + 1);
 			sqlFlux = handleGenerateSql(state, promptForSql);
 		}
 
 		// 准备返回结果，同时需要清除一些状态数据
 		// 注意：SQL_GENERATE_OUTPUT 初始值为空，只有成功生成SQL后才会被覆盖
-		Map<String, Object> result = new HashMap<>(Map.of(SQL_GENERATE_COUNT,
-				count + 1, SQL_REGENERATE_REASON, SqlRetryDto.empty()));
+		Map<String, Object> result = new HashMap<>();
+		result.put(SQL_GENERATE_COUNT, count + 1);
+		result.put(SQL_REGENERATE_REASON, SqlRetryDto.empty());
+
+		// Update fine-grained error counters based on retry type
+		if (retryDto.errorType() == SqlRetryDto.ErrorType.SYNTAX) {
+			result.put(SQL_SYNTAX_ERROR_COUNT, syntaxErrorCount + 1);
+			log.debug("Incrementing syntax error counter: {} -> {}", syntaxErrorCount, syntaxErrorCount + 1);
+		} else if (retryDto.errorType() == SqlRetryDto.ErrorType.SEMANTIC) {
+			result.put(SQL_SEMANTIC_ERROR_COUNT, semanticErrorCount + 1);
+			log.debug("Incrementing semantic error counter: {} -> {}", semanticErrorCount, semanticErrorCount + 1);
+		} else if (retryDto.errorType() == SqlRetryDto.ErrorType.EXECUTION) {
+			result.put(SQL_EXECUTION_ERROR_COUNT, executionErrorCount + 1);
+			log.debug("Incrementing execution error counter: {} -> {}", executionErrorCount, executionErrorCount + 1);
+		}
 
 		// Create display flux for user experience only
 		StringBuilder sqlCollector = new StringBuilder();
@@ -154,6 +180,9 @@ public class SqlGenerateNode implements NodeAction {
 		SchemaDTO schemaDTO = StateUtil.getObjectValue(state, TABLE_RELATION_OUTPUT, SchemaDTO.class);
 		String userQuery = StateUtil.getCanonicalQuery(state);
 		String dialect = StateUtil.getStringValue(state, DB_DIALECT_TYPE);
+		int retryCount = state.value(SQL_GENERATE_COUNT, 0);
+
+		log.debug("Building SQL generation DTO with retry count: {}", retryCount);
 
 		SqlGenerationDTO sqlGenerationDTO = SqlGenerationDTO.builder()
 				.evidence(evidence)
@@ -163,6 +192,7 @@ public class SqlGenerateNode implements NodeAction {
 				.exceptionMessage(errorMsg)
 				.executionDescription(executionDescription)
 				.dialect(dialect)
+				.retryCount(retryCount)
 				.build();
 
 		return nl2SqlService.generateSql(sqlGenerationDTO);

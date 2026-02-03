@@ -24,6 +24,26 @@
 {question}
 {evidence}
 
+## 6. 历史失败记录 (如果有)
+*如果有多次尝试失败，这里会显示之前的失败记录。请避免重复相同的错误。*
+
+## 7. 参考成功案例
+*下面是类似问题的正确 SQL 示例，可以作为参考：*
+
+### 示例 A: 常见字段名错误修复
+**错误**: SELECT user_age FROM users WHERE ...
+**错误原因**: 字段名应为 `age`，而不是 `user_age`
+**修复**: SELECT `age` FROM `users` WHERE ...
+
+### 示例 B: 日期函数方言错误
+**MySQL 正确**: DATE_FORMAT(`order_date`, '%Y-%m')
+**PostgreSQL 正确**: TO_CHAR(order_date, 'YYYY-MM')
+**SQL Server 正确**: FORMAT(order_date, 'yyyy-MM')
+
+### 示例 C: 聚合函数缺少 GROUP BY
+**错误**: SELECT `region`, SUM(`amount`) FROM `orders`
+**修复**: SELECT `region`, SUM(`amount`) FROM `orders` GROUP BY `region`
+
 # 修复策略
 ## 方言纠正：严格检查是否使用了不符合 {dialect} 的函数或语法（例如引号用法、日期处理、分页）。
 ## Schema 对齐：如果报错提示“Column not found”，请在 Schema 中寻找最接近的正确列名。

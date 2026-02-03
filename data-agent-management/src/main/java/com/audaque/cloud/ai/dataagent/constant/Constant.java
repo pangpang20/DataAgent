@@ -63,6 +63,16 @@ public final class Constant {
 
 	public static final String SQL_GENERATE_COUNT = "SQL_GENERATE_COUNT";
 
+	// Fine-grained error counters for different SQL error types
+	public static final String SQL_SYNTAX_ERROR_COUNT = "SQL_SYNTAX_ERROR_COUNT";
+
+	public static final String SQL_SEMANTIC_ERROR_COUNT = "SQL_SEMANTIC_ERROR_COUNT";
+
+	public static final String SQL_EXECUTION_ERROR_COUNT = "SQL_EXECUTION_ERROR_COUNT";
+
+	// History of failed SQL attempts for learning
+	public static final String SQL_FAILURE_HISTORY = "SQL_FAILURE_HISTORY";
+
 	// 重新生成SQL的原因
 	public static final String SQL_REGENERATE_REASON = "SQL_REGENERATE_REASON";
 
@@ -131,7 +141,8 @@ public final class Constant {
 	// 标记是否进入Python执行失败的降级模式（超过最大重试次数后触发）
 	public static final String PYTHON_FALLBACK_MODE = "PYTHON_FALLBACK_MODE";
 
-	// If code execution succeeds, output code running result; if fails, output error
+	// If code execution succeeds, output code running result; if fails, output
+	// error
 	// information
 	public static final String PYTHON_EXECUTE_NODE_OUTPUT = "PYTHON_EXECUTE_NODE_OUTPUT";
 

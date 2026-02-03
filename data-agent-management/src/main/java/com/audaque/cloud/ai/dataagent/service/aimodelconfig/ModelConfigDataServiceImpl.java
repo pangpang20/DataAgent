@@ -57,8 +57,8 @@ public class ModelConfigDataServiceImpl implements ModelConfigDataService {
 		log.info("Switching active status for model config id: {} to type: {}", id, type);
 
 		// 1. Deactivate other configs of same type
-		int deactivated = modelConfigMapper.deactivateOthers(type.getCode(), id);
-		log.debug("Deactivated {} other configs of type: {}", deactivated, type);
+		modelConfigMapper.deactivateOthers(type.getCode(), id);
+		log.debug("Deactivated other configs of type: {}", type);
 
 		// 2. Activate current config
 		ModelConfig entity = modelConfigMapper.findById(id);

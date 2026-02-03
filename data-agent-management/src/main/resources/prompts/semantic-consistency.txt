@@ -52,8 +52,60 @@
 **{execution_description}**
 
 # 输出格式
-请严格只返回以下两种格式之一：
-1、通过
-2、不通过。[具体原因，请简明扼要指出是字段错误、逻辑错误还是语法错误]"
+请以严格的 JSON 格式返回结果，以便系统自动化处理和分析：
 
-请严格只返回"通过"或"不通过"， 如果是不通过，要附上具体原因"。
+**通过格式**:
+```json
+{
+  "is_passed": true,
+  "missing_conditions": [],
+  "hallucinated_fields": [],
+  "syntax_errors": []
+}
+```
+
+**不通过格式**:
+```json
+{
+  "is_passed": false,
+  "missing_conditions": [
+    {
+      "type": "time_filter",
+      "expected": "WHERE ORDER_DATE >= '2025-01-01' AND ORDER_DATE <= '2025-12-31'",
+      "reason": "用户问题中明确提到'2025年'"
+    },
+    {
+      "type": "status_filter",
+      "expected": "WHERE STATUS = 'completed'",
+      "reason": "业务知识定义销售额为已完成订单"
+    }
+  ],
+  "hallucinated_fields": [
+    {
+      "field_name": "user_age",
+      "reason": "Schema中不存在此字段"
+    }
+  ],
+  "syntax_errors": [
+    {
+      "error_type": "missing_group_by",
+      "reason": "指令要求按月分组，但SQL缺少GROUP BY子句"
+    }
+  ]
+}
+```
+
+**字段说明**:
+- `is_passed`: boolean, 是否通过语义一致性检查
+- `missing_conditions`: array, 缺少的过滤条件列表
+  - `type`: 条件类型（time_filter, status_filter, region_filter 等）
+  - `expected`: 期望的SQL条件
+  - `reason`: 缺少原因
+- `hallucinated_fields`: array, Schema中不存在的幻觉字段
+  - `field_name`: 字段名
+  - `reason`: 原因说明
+- `syntax_errors`: array, 语法错误列表
+  - `error_type`: 错误类型
+  - `reason`: 错误说明
+
+**重要**: 必须输出合法的JSON格式，不要包含任何其他文本或Markdown标记。

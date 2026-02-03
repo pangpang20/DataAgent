@@ -15,18 +15,40 @@
  */
 package com.audaque.cloud.ai.dataagent.dto.datasource;
 
-public record SqlRetryDto(String reason, boolean semanticFail, boolean sqlExecuteFail) {
+/**
+ * SQL retry context with error type classification
+ * 
+ * @param reason         error reason description
+ * @param semanticFail   indicates semantic consistency check failure
+ * @param sqlExecuteFail indicates SQL execution failure
+ * @param errorType      specific error type: SYNTAX, SEMANTIC, EXECUTION
+ */
+public record SqlRetryDto(String reason, boolean semanticFail, boolean sqlExecuteFail, ErrorType errorType) {
+
+	/**
+	 * Error type enumeration for fine-grained retry control
+	 */
+	public enum ErrorType {
+		SYNTAX, // SQL syntax error (e.g., LLM output format issues)
+		SEMANTIC, // Semantic consistency check failure
+		EXECUTION, // SQL execution error (e.g., non-existent fields, syntax conflicts)
+		UNKNOWN // Unknown or unclassified error
+	}
 
 	public static SqlRetryDto semantic(String reason) {
-		return new SqlRetryDto(reason, true, false);
+		return new SqlRetryDto(reason, true, false, ErrorType.SEMANTIC);
 	}
 
 	public static SqlRetryDto sqlExecute(String reason) {
-		return new SqlRetryDto(reason, false, true);
+		return new SqlRetryDto(reason, false, true, ErrorType.EXECUTION);
+	}
+
+	public static SqlRetryDto sqlSyntax(String reason) {
+		return new SqlRetryDto(reason, false, true, ErrorType.SYNTAX);
 	}
 
 	public static SqlRetryDto empty() {
-		return new SqlRetryDto("", false, false);
+		return new SqlRetryDto("", false, false, ErrorType.UNKNOWN);
 	}
 
 }
