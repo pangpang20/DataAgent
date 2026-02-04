@@ -21,6 +21,9 @@
       <img src="/logo.png" alt="AI助手" class="chat-button-logo" />
     </div>
 
+    <!-- 遮罩层 -->
+    <div v-if="isOpen && !isMaximized" class="overlay" @click="toggleChat"></div>
+
     <!-- 聊天窗口 -->
     <div v-if="isOpen" class="chat-window" :style="windowStyle">
       <!-- 头部 -->
@@ -233,14 +236,14 @@
       }));
 
       const windowStyle = computed(() => {
-        const baseStyle: Record<string, any> = {
+        const baseStyle: Record<string, string> = {
           borderColor: props.config.primaryColor || '#409EFF',
         };
         
         if (isMaximized.value) {
           return {
             ...baseStyle,
-            position: 'fixed',
+            position: 'fixed' as const,
             top: '0',
             left: '0',
             right: '0',
@@ -248,11 +251,19 @@
             width: '100vw',
             height: '100vh',
             borderRadius: '0',
-            zIndex: '10000',
+            zIndex: '2147483647',
           };
         }
         
-        return baseStyle;
+        // Centered modal window
+        return {
+          ...baseStyle,
+          position: 'fixed' as const,
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          zIndex: '2147483647',
+        };
       });
 
       const sendButtonStyle = computed(() => ({
@@ -488,6 +499,23 @@
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   }
 
+  /* 遮罩层样式 */
+  .overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 2147483646; /* 比窗口低一层 */
+    animation: fadeIn 0.2s ease-in-out;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
   .chat-button {
     width: 50px;
     height: 50px;
@@ -515,17 +543,31 @@
   }
 
   .chat-window {
-    position: fixed; /* 添加固定定位 */
-    width: 360px;
-    height: 520px;
+    position: fixed;
+    width: 500px;
+    height: 600px;
+    max-width: 90vw;
+    max-height: 90vh;
     background: white;
     border-radius: 12px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
     display: flex;
     flex-direction: column;
     overflow: hidden;
     border: 2px solid #409EFF;
-    z-index: 2147483647; /* 添加 z-index，确保在最顶层 */
+    z-index: 2147483647;
+    animation: slideIn 0.3s ease-out;
+  }
+
+  @keyframes slideIn {
+    from {
+      opacity: 0;
+      transform: translate(-50%, -45%);
+    }
+    to {
+      opacity: 1;
+      transform: translate(-50%, -50%);
+    }
   }
 
   .chat-header {
