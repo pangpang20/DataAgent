@@ -67,4 +67,4 @@ output/
 .codeartsdoer
 logs/
 # Frontend build artifacts in backend
-data-agent-management/src/main/resources/static/
+# data-agent-management/src/main/resources/static/
