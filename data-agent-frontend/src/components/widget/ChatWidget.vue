@@ -486,7 +486,7 @@
   .chat-widget {
     position: fixed;
     bottom: 20px;
-    z-index: 9999;
+    z-index: 2147483647; /* 使用最大的 z-index 值，确保在最顶层 */
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   }
 
@@ -517,6 +517,7 @@
   }
 
   .chat-window {
+    position: fixed; /* 添加固定定位 */
     width: 360px;
     height: 520px;
     background: white;
@@ -526,6 +527,7 @@
     flex-direction: column;
     overflow: hidden;
     border: 2px solid #409EFF;
+    z-index: 2147483647; /* 添加 z-index，确保在最顶层 */
   }
 
   .chat-header {
