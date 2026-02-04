@@ -21,8 +21,8 @@
       v-if="!isOpen" 
       class="chat-button" 
       :style="buttonPositionStyle"
-      @mousedown="startDrag"
-      @click="handleButtonClick"
+      @mousedown.prevent="startDrag"
+      @touchstart.prevent="startDragTouch"
     >
       <img src="/logo.png" alt="AI助手" class="chat-button-logo" draggable="false" />
     </div>
@@ -234,11 +234,14 @@
       // Initialize button position from localStorage or default to bottom-right
       const initButtonPosition = () => {
         const saved = localStorage.getItem('widget-button-position');
+        console.log('[Widget] Initializing button position, saved:', saved);
         if (saved) {
           try {
             buttonPosition.value = JSON.parse(saved);
+            console.log('[Widget] Loaded saved position:', buttonPosition.value);
           } catch (e) {
             // Default to bottom-right
+            console.warn('[Widget] Failed to parse saved position, using default');
             buttonPosition.value = { 
               x: window.innerWidth - 70, 
               y: window.innerHeight - 70 
@@ -246,11 +249,13 @@
           }
         } else {
           // Default to bottom-right (20px from edges)
+          console.log('[Widget] No saved position, using default bottom-right');
           buttonPosition.value = { 
             x: window.innerWidth - 70, 
             y: window.innerHeight - 70 
           };
         }
+        console.log('[Widget] Button position set to:', buttonPosition.value);
       };
       
       const baseUrl = computed(() => props.config.baseUrl || window.location.origin);
@@ -276,21 +281,48 @@
 
       // Drag event handlers
       const startDrag = (e: MouseEvent) => {
+        console.log('[Widget] Mouse down - starting drag tracking');
+        console.log('[Widget] Current button position:', buttonPosition.value);
+        console.log('[Widget] Mouse position:', { clientX: e.clientX, clientY: e.clientY });
+        
         isDragging.value = true;
         hasDragged.value = false;
         dragStart.value = {
           x: e.clientX - buttonPosition.value.x,
           y: e.clientY - buttonPosition.value.y,
         };
+        console.log('[Widget] Drag offset calculated:', dragStart.value);
         
         document.addEventListener('mousemove', onDrag);
         document.addEventListener('mouseup', stopDrag);
-        e.preventDefault();
+        console.log('[Widget] Event listeners attached (mousemove, mouseup)');
+      };
+
+      // Touch support for mobile
+      const startDragTouch = (e: TouchEvent) => {
+        if (e.touches.length !== 1) return;
+        const touch = e.touches[0];
+        console.log('[Widget] Touch start - starting drag tracking');
+        console.log('[Widget] Touch position:', { clientX: touch.clientX, clientY: touch.clientY });
+        
+        isDragging.value = true;
+        hasDragged.value = false;
+        dragStart.value = {
+          x: touch.clientX - buttonPosition.value.x,
+          y: touch.clientY - buttonPosition.value.y,
+        };
+        
+        document.addEventListener('touchmove', onDragTouch, { passive: false });
+        document.addEventListener('touchend', stopDragTouch);
+        console.log('[Widget] Touch event listeners attached');
       };
 
       const onDrag = (e: MouseEvent) => {
         if (!isDragging.value) return;
         
+        if (!hasDragged.value) {
+          console.log('[Widget] First mouse move detected - marking as dragged');
+        }
         hasDragged.value = true;
         const newX = Math.max(0, Math.min(window.innerWidth - 50, e.clientX - dragStart.value.x));
         const newY = Math.max(0, Math.min(window.innerHeight - 50, e.clientY - dragStart.value.y));
@@ -298,13 +330,61 @@
         buttonPosition.value = { x: newX, y: newY };
       };
 
+      const onDragTouch = (e: TouchEvent) => {
+        if (!isDragging.value || e.touches.length !== 1) return;
+        e.preventDefault();
+        
+        if (!hasDragged.value) {
+          console.log('[Widget] First touch move detected - marking as dragged');
+        }
+        const touch = e.touches[0];
+        hasDragged.value = true;
+        const newX = Math.max(0, Math.min(window.innerWidth - 50, touch.clientX - dragStart.value.x));
+        const newY = Math.max(0, Math.min(window.innerHeight - 50, touch.clientY - dragStart.value.y));
+        
+        buttonPosition.value = { x: newX, y: newY };
+      };
+
       const stopDrag = () => {
+        console.log('[Widget] Mouse up - stopping drag');
+        console.log('[Widget] hasDragged:', hasDragged.value);
+        console.log('[Widget] Final position:', buttonPosition.value);
+        
+        const wasDragging = isDragging.value;
         isDragging.value = false;
         document.removeEventListener('mousemove', onDrag);
         document.removeEventListener('mouseup', stopDrag);
         
         // Save position to localStorage
         localStorage.setItem('widget-button-position', JSON.stringify(buttonPosition.value));
+        console.log('[Widget] Position saved to localStorage');
+        
+        // If not dragged, open chat (click behavior)
+        if (!hasDragged.value && wasDragging) {
+          console.log('[Widget] No drag detected - treating as click, opening chat');
+          toggleChat();
+        } else {
+          console.log('[Widget] Drag completed - chat will not open');
+        }
+      };
+
+      const stopDragTouch = () => {
+        console.log('[Widget] Touch end - stopping drag');
+        console.log('[Widget] hasDragged:', hasDragged.value);
+        
+        const wasDragging = isDragging.value;
+        isDragging.value = false;
+        document.removeEventListener('touchmove', onDragTouch);
+        document.removeEventListener('touchend', stopDragTouch);
+        
+        // Save position to localStorage
+        localStorage.setItem('widget-button-position', JSON.stringify(buttonPosition.value));
+        
+        // If not dragged, open chat (tap behavior)
+        if (!hasDragged.value && wasDragging) {
+          console.log('[Widget] No drag detected - treating as tap, opening chat');
+          toggleChat();
+        }
       };
 
       const handleButtonClick = () => {
@@ -355,10 +435,13 @@
       }));
 
       const toggleChat = () => {
+        console.log('[Widget] toggleChat called, current isOpen:', isOpen.value);
         isOpen.value = !isOpen.value;
+        console.log('[Widget] Chat is now:', isOpen.value ? 'OPEN' : 'CLOSED');
         if (isOpen.value) {
           isMaximized.value = false;
           if (!sessionId.value) {
+            console.log('[Widget] No session, creating new session...');
             createSession();
             loadPresetQuestions();
           }
@@ -547,15 +630,20 @@
 
       // Initialize on mount
       onMounted(() => {
+        console.log('[Widget] Component mounted');
+        console.log('[Widget] Window size:', { width: window.innerWidth, height: window.innerHeight });
         initButtonPosition();
         // Handle window resize
         window.addEventListener('resize', initButtonPosition);
+        console.log('[Widget] Resize listener attached');
       });
 
       onUnmounted(() => {
         window.removeEventListener('resize', initButtonPosition);
         document.removeEventListener('mousemove', onDrag);
         document.removeEventListener('mouseup', stopDrag);
+        document.removeEventListener('touchmove', onDragTouch);
+        document.removeEventListener('touchend', stopDragTouch);
       });
 
       return {
@@ -581,6 +669,7 @@
         sendPresetQuestion,
         toggleNodeVisibility,
         startDrag,
+        startDragTouch,
         handleButtonClick,
       };
     },
