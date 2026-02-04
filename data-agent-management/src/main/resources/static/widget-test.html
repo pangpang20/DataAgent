@@ -151,7 +151,7 @@
             // Frontend dev server: redirect to backend
             baseUrl = window.location.protocol + '//' + window.location.hostname + ':8065';
         }
-            
+
         // TODO: 根据实际部署环境修改以下配置
         window.DataAgentConfig = {
             "agentId": 2,
@@ -171,6 +171,11 @@
         // 动态加载 widget.js,避免缓存
         var script = document.createElement('script');
         script.src = window.DataAgentConfig.baseUrl + '/widget.js?v=' + Date.now();
+        script.type = 'text/javascript';
+        // Disable cache completely
+        script.setAttribute('cache-control', 'no-cache, no-store, must-revalidate');
+        script.setAttribute('pragma', 'no-cache');
+        script.setAttribute('expires', '0');
         document.body.appendChild(script);
     </script>
 </body>

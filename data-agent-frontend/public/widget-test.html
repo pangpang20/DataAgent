@@ -171,6 +171,11 @@
         // 动态加载 widget.js,避免缓存
         var script = document.createElement('script');
         script.src = window.DataAgentConfig.baseUrl + '/widget.js?v=' + Date.now();
+        script.type = 'text/javascript';
+        // Disable cache completely
+        script.setAttribute('cache-control', 'no-cache, no-store, must-revalidate');
+        script.setAttribute('pragma', 'no-cache');
+        script.setAttribute('expires', '0');
         document.body.appendChild(script);
     </script>
 </body>
