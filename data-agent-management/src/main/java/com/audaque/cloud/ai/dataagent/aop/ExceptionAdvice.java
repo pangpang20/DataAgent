@@ -35,8 +35,22 @@ public class ExceptionAdvice {
 			return null; // 不返回响应,因为客户端已断开
 		}
 		
+		// 忽略 favicon.ico 404 错误
+		if (isFaviconNotFoundException(e)) {
+			log.debug("Favicon not found (ignored): {}", e.getMessage());
+			return ResponseEntity.notFound().build();
+		}
+		
 		log.error("An error occurred: ", e);
 		return ResponseEntity.internalServerError().body(ApiResponse.error("An error occurred: " + e.getMessage()));
+	}
+	
+	/**
+	 * 判断是否为 favicon 404 错误
+	 */
+	private boolean isFaviconNotFoundException(Exception e) {
+		String message = e.getMessage();
+		return message != null && message.contains("favicon.ico");
 	}
 	
 	/**

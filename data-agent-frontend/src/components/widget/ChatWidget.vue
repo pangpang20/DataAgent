@@ -28,11 +28,21 @@
       <!-- 头部 -->
       <div class="chat-header" :style="headerStyle">
         <div class="chat-title">{{ config.title }}</div>
-        <button class="close-button" @click="toggleChat">
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
-          </svg>
-        </button>
+        <div class="header-buttons">
+          <button class="header-button" @click="toggleMaximize" :title="isMaximized ? '还原' : '最大化'">
+            <svg v-if="!isMaximized" viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+              <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
+            </svg>
+            <svg v-else viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+              <path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/>
+            </svg>
+          </button>
+          <button class="header-button close-button" @click="toggleChat">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+              <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+            </svg>
+          </button>
+        </div>
       </div>
 
       <!-- 消息区域 -->
@@ -195,6 +205,7 @@
     },
     setup(props) {
       const isOpen = ref(false);
+      const isMaximized = ref(false);
       const messages = ref<Message[]>([]);
       const userInput = ref('');
       const isLoading = ref(false);
@@ -225,9 +236,28 @@
         backgroundColor: props.config.primaryColor || '#409EFF',
       }));
 
-      const windowStyle = computed(() => ({
-        borderColor: props.config.primaryColor || '#409EFF',
-      }));
+      const windowStyle = computed(() => {
+        const baseStyle: Record<string, any> = {
+          borderColor: props.config.primaryColor || '#409EFF',
+        };
+        
+        if (isMaximized.value) {
+          return {
+            ...baseStyle,
+            position: 'fixed',
+            top: '0',
+            left: '0',
+            right: '0',
+            bottom: '0',
+            width: '100vw',
+            height: '100vh',
+            borderRadius: '0',
+            zIndex: '10000',
+          };
+        }
+        
+        return baseStyle;
+      });
 
       const sendButtonStyle = computed(() => ({
         backgroundColor: props.config.primaryColor || '#409EFF',
@@ -235,10 +265,17 @@
 
       const toggleChat = () => {
         isOpen.value = !isOpen.value;
-        if (isOpen.value && !sessionId.value) {
-          createSession();
-          loadPresetQuestions();
+        if (isOpen.value) {
+          isMaximized.value = false; // 重新打开时重置为非最大化
+          if (!sessionId.value) {
+            createSession();
+            loadPresetQuestions();
+          }
         }
+      };
+
+      const toggleMaximize = () => {
+        isMaximized.value = !isMaximized.value;
       };
 
       const loadPresetQuestions = async () => {
@@ -423,6 +460,7 @@
 
       return {
         isOpen,
+        isMaximized,
         messages,
         userInput,
         isLoading,
@@ -437,6 +475,7 @@
         windowStyle,
         sendButtonStyle,
         toggleChat,
+        toggleMaximize,
         sendMessage,
         sendPresetQuestion,
         toggleNodeVisibility,
@@ -498,12 +537,18 @@
     font-weight: 600;
   }
 
-  .close-button {
+  .header-buttons {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .header-button {
     background: none;
     border: none;
     color: white;
     cursor: pointer;
-    padding: 4px;
+    padding: 6px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -511,7 +556,7 @@
     transition: background-color 0.2s;
   }
 
-  .close-button:hover {
+  .header-button:hover {
     background-color: rgba(255, 255, 255, 0.2);
   }
 
