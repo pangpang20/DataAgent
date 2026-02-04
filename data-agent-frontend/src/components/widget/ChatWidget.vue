@@ -16,9 +16,15 @@
 
 <template>
   <div class="chat-widget" :class="{ open: isOpen }" :style="positionStyle">
-    <!-- 浮动按钮 -->
-    <div v-if="!isOpen" class="chat-button" @click="toggleChat" :style="buttonStyle">
-      <img src="/logo.png" alt="AI助手" class="chat-button-logo" />
+    <!-- 浮动按钮 - 支持拖拽 -->
+    <div 
+      v-if="!isOpen" 
+      class="chat-button" 
+      :style="buttonPositionStyle"
+      @mousedown="startDrag"
+      @click="handleButtonClick"
+    >
+      <img src="/logo.png" alt="AI助手" class="chat-button-logo" draggable="false" />
     </div>
 
     <!-- 遮罩层 -->
@@ -157,7 +163,7 @@
 </template>
 
 <script lang="ts">
-  import { defineComponent, ref, computed, onMounted, nextTick, watch } from 'vue';
+  import { defineComponent, ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue';
   import axios from 'axios';
   import ResultSetDisplay from '../run/ResultSetDisplay.vue';
   import Markdown from '../run/Markdown.vue';
@@ -219,6 +225,34 @@
       const nodeBlocks = ref<StreamNodeData[][]>([]);
       const isNodeVisible = ref<Record<number, boolean>>({});
       
+      // Drag support - 拖拽支持
+      const isDragging = ref(false);
+      const hasDragged = ref(false);
+      const buttonPosition = ref({ x: 0, y: 0 });
+      const dragStart = ref({ x: 0, y: 0 });
+      
+      // Initialize button position from localStorage or default to bottom-right
+      const initButtonPosition = () => {
+        const saved = localStorage.getItem('widget-button-position');
+        if (saved) {
+          try {
+            buttonPosition.value = JSON.parse(saved);
+          } catch (e) {
+            // Default to bottom-right
+            buttonPosition.value = { 
+              x: window.innerWidth - 70, 
+              y: window.innerHeight - 70 
+            };
+          }
+        } else {
+          // Default to bottom-right (20px from edges)
+          buttonPosition.value = { 
+            x: window.innerWidth - 70, 
+            y: window.innerHeight - 70 
+          };
+        }
+      };
+      
       const baseUrl = computed(() => props.config.baseUrl || window.location.origin);
 
       const positionStyle = computed(() => {
@@ -230,6 +264,56 @@
       });
 
       const buttonStyle = computed(() => ({}));
+
+      // Button position style for draggable button
+      const buttonPositionStyle = computed(() => ({
+        left: `${buttonPosition.value.x}px`,
+        top: `${buttonPosition.value.y}px`,
+        right: 'auto',
+        bottom: 'auto',
+        cursor: isDragging.value ? 'grabbing' : 'grab',
+      }));
+
+      // Drag event handlers
+      const startDrag = (e: MouseEvent) => {
+        isDragging.value = true;
+        hasDragged.value = false;
+        dragStart.value = {
+          x: e.clientX - buttonPosition.value.x,
+          y: e.clientY - buttonPosition.value.y,
+        };
+        
+        document.addEventListener('mousemove', onDrag);
+        document.addEventListener('mouseup', stopDrag);
+        e.preventDefault();
+      };
+
+      const onDrag = (e: MouseEvent) => {
+        if (!isDragging.value) return;
+        
+        hasDragged.value = true;
+        const newX = Math.max(0, Math.min(window.innerWidth - 50, e.clientX - dragStart.value.x));
+        const newY = Math.max(0, Math.min(window.innerHeight - 50, e.clientY - dragStart.value.y));
+        
+        buttonPosition.value = { x: newX, y: newY };
+      };
+
+      const stopDrag = () => {
+        isDragging.value = false;
+        document.removeEventListener('mousemove', onDrag);
+        document.removeEventListener('mouseup', stopDrag);
+        
+        // Save position to localStorage
+        localStorage.setItem('widget-button-position', JSON.stringify(buttonPosition.value));
+      };
+
+      const handleButtonClick = () => {
+        // Only toggle chat if not dragged
+        if (!hasDragged.value) {
+          toggleChat();
+        }
+        hasDragged.value = false;
+      };
 
       const headerStyle = computed(() => ({
         backgroundColor: props.config.primaryColor || '#409EFF',
@@ -461,6 +545,19 @@
         scrollToBottom();
       });
 
+      // Initialize on mount
+      onMounted(() => {
+        initButtonPosition();
+        // Handle window resize
+        window.addEventListener('resize', initButtonPosition);
+      });
+
+      onUnmounted(() => {
+        window.removeEventListener('resize', initButtonPosition);
+        document.removeEventListener('mousemove', onDrag);
+        document.removeEventListener('mouseup', stopDrag);
+      });
+
       return {
         isOpen,
         isMaximized,
@@ -474,6 +571,7 @@
         isNodeVisible,
         positionStyle,
         buttonStyle,
+        buttonPositionStyle,
         headerStyle,
         windowStyle,
         sendButtonStyle,
@@ -482,6 +580,8 @@
         sendMessage,
         sendPresetQuestion,
         toggleNodeVisibility,
+        startDrag,
+        handleButtonClick,
       };
     },
   });
@@ -513,8 +613,6 @@
 
   .chat-button {
     position: fixed;
-    right: 20px;
-    bottom: 20px;
     width: 50px;
     height: 50px;
     border-radius: 50%;
@@ -523,11 +621,16 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    cursor: pointer;
+    cursor: grab;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    transition: transform 0.2s, box-shadow 0.2s;
+    transition: box-shadow 0.2s;
     overflow: hidden;
     z-index: 2147483647;
+    user-select: none;
+  }
+
+  .chat-button:active {
+    cursor: grabbing;
   }
 
   .chat-button-logo {
@@ -537,7 +640,6 @@
   }
 
   .chat-button:hover {
-    transform: scale(1.05);
     box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
   }
 
