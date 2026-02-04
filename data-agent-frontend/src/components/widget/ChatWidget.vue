@@ -504,9 +504,9 @@
   }
 
   .chat-button-logo {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
+    width: 50px;
+    height: 50px;
+    object-fit: contain;
   }
 
   .chat-button:hover {
