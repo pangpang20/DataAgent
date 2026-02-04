@@ -64,29 +64,29 @@
       <el-row style="display: flex; justify-content: space-between; align-items: center">
         <el-col :span="12">
           <el-button
-            v-if="selectedRows.length > 0"
             @click="handleBatchEnable"
             type="success"
             plain
+            :disabled="selectedRows.length === 0"
           >
-            批量启用 ({{ selectedRows.length }})
+            批量启用{{ selectedRows.length > 0 ? ` (${selectedRows.length})` : '' }}
           </el-button>
           <el-button
-            v-if="selectedRows.length > 0"
             @click="handleBatchDisable"
             type="warning"
             plain
+            :disabled="selectedRows.length === 0"
           >
-            批量禁用 ({{ selectedRows.length }})
+            批量禁用{{ selectedRows.length > 0 ? ` (${selectedRows.length})` : '' }}
           </el-button>
           <el-button
-            v-if="selectedRows.length > 0"
             @click="handleBatchDelete"
             type="danger"
             plain
             :icon="Delete"
+            :disabled="selectedRows.length === 0"
           >
-            批量删除 ({{ selectedRows.length }})
+            批量删除{{ selectedRows.length > 0 ? ` (${selectedRows.length})` : '' }}
           </el-button>
         </el-col>
         <el-col :span="12" style="text-align: right">
