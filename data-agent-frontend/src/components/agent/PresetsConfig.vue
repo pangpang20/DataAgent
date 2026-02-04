@@ -339,10 +339,23 @@
             return;
           }
 
+          // IMPORTANT: Load all questions (without filters) before save
+          const allQuestionsResponse = await presetQuestionService.queryPage(props.agentId, {
+            pageNum: 1,
+            pageSize: 1000, // Get all questions
+          });
+
+          if (!allQuestionsResponse.success) {
+            ElMessage.error('获取完整列表失败');
+            return;
+          }
+
+          const allQuestions = allQuestionsResponse.data;
           let questionsToSave: PresetQuestionDTO[] = [];
 
           if (isEdit.value && currentEditId.value) {
-            questionsToSave = presetQuestionList.value.map(q => {
+            // Edit mode: update the specific question in the full list
+            questionsToSave = allQuestions.map(q => {
               const dto: PresetQuestionDTO = {
                 question: q.id === currentEditId.value ? questionForm.value.question : q.question,
               };
@@ -354,8 +367,9 @@
               return dto;
             });
           } else {
+            // Add mode: append new question to the full list
             questionsToSave = [
-              ...presetQuestionList.value.map(q => ({
+              ...allQuestions.map(q => ({
                 question: q.question,
                 isActive: q.isActive === true,
               })),

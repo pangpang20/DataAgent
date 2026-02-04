@@ -37,7 +37,7 @@
 
       <!-- 消息区域 -->
       <div class="chat-messages" ref="messagesContainer">
-        <div v-if="messages.length === 0 && !isStreaming" class="welcome-section">
+        <div v-if="messages.length === 0" class="welcome-section">
           <div class="welcome-message">
             {{ config.welcomeMessage }}
           </div>
@@ -53,65 +53,15 @@
             </div>
           </div>
         </div>
-        
-        <!-- 历史消息 -->
         <div 
           v-for="(msg, index) in messages" 
-          :key="msg.id || index" 
-          class="message-wrapper"
+          :key="index" 
+          class="message" 
+          :class="msg.role"
         >
-          <!-- Result Set 消息 -->
-          <div v-if="msg.messageType === 'result-set'" class="result-set-message">
-            <ResultSetDisplay
-              v-if="msg.content"
-              :resultData="JSON.parse(msg.content)"
-              :pageSize="10"
-            />
-          </div>
-          <!-- Markdown 报告消息 -->
-          <div v-else-if="msg.messageType === 'markdown-report'" class="markdown-report-message">
-            <Markdown>
-              {{ msg.content }}
-            </Markdown>
-          </div>
-          <!-- 普通文本消息 -->
-          <div v-else :class="['message', msg.role]">
-            <div class="message-content" v-html="msg.content"></div>
-          </div>
+          <div class="message-content">{{ msg.content }}</div>
         </div>
-        
-        <!-- 流式响应显示 -->
-        <div v-if="isStreaming" class="streaming-response">
-          <div class="streaming-header">
-            <span class="loading-dot">●</span>
-            <span>AI 正在思考...</span>
-          </div>
-          <div v-for="(nodeBlock, index) in nodeBlocks" :key="index" class="node-block">
-            <div class="node-header" @click="toggleNodeVisibility(index)">
-              <span class="node-title">{{ nodeBlock[0]?.nodeName || 'Processing' }}</span>
-              <span class="node-toggle">{{ isNodeVisible[index] ? '▼' : '▶' }}</span>
-            </div>
-            <div v-show="isNodeVisible[index]" class="node-content">
-              <!-- Result Set 节点 -->
-              <ResultSetDisplay
-                v-if="nodeBlock[0]?.textType === 'RESULT_SET' && nodeBlock[0]?.text"
-                :resultData="JSON.parse(nodeBlock[0].text)"
-                :pageSize="10"
-              />
-              <!-- Markdown 节点 -->
-              <Markdown
-                v-else-if="nodeBlock[0]?.textType === 'MARK_DOWN' && nodeBlock[0]?.text"
-                :generating="isStreaming"
-              >
-                {{ nodeBlock[0].text }}
-              </Markdown>
-              <!-- 普通文本节点 -->
-              <div v-else class="node-text" v-html="nodeBlock[0]?.text || ''"></div>
-            </div>
-          </div>
-        </div>
-        
-        <div v-if="isLoading && !isStreaming" class="message assistant">
+        <div v-if="isLoading" class="message assistant">
           <div class="message-content">
             <div class="typing-indicator">
               <span></span>
@@ -183,10 +133,6 @@
 
   export default defineComponent({
     name: 'ChatWidget',
-    components: {
-      ResultSetDisplay,
-      Markdown,
-    },
     props: {
       config: {
         type: Object as () => WidgetConfig,
@@ -262,10 +208,6 @@
         sendMessage();
       };
 
-      const toggleNodeVisibility = (index: number) => {
-        isNodeVisible.value[index] = !isNodeVisible.value[index];
-      };
-
       const scrollToBottom = () => {
         nextTick(() => {
           if (messagesContainer.value) {
@@ -314,9 +256,6 @@
         scrollToBottom();
 
         isLoading.value = true;
-        isStreaming.value = true;
-        nodeBlocks.value = [];
-        isNodeVisible.value = {};
 
         try {
           // 保存用户消息到后端
@@ -340,24 +279,23 @@
             `${baseUrl.value}/nl2sql/chat/stream?sessionId=${sessionId.value}&message=${encodeURIComponent(messageContent)}`
           );
 
-          const nodeMap: Record<string, StreamNodeData[]> = {};
+          let assistantMessage = '';
           
           eventSource.onmessage = (event) => {
             try {
               const data = JSON.parse(event.data);
-              
-              if (data.type === 'node') {
-                const nodeName = data.nodeName || 'Unknown';
-                if (!nodeMap[nodeName]) {
-                  nodeMap[nodeName] = [];
-                  isNodeVisible.value[Object.keys(nodeMap).length - 1] = true;
+              if (data.type === 'text' && data.content) {
+                assistantMessage += data.content;
+                // 更新最后一条助手消息
+                const lastMsg = messages.value[messages.value.length - 1];
+                if (lastMsg && lastMsg.role === 'assistant') {
+                  lastMsg.content = assistantMessage;
+                } else {
+                  messages.value.push({
+                    role: 'assistant',
+                    content: assistantMessage,
+                  });
                 }
-                nodeMap[nodeName].push({
-                  nodeName: data.nodeName,
-                  text: data.text || '',
-                  textType: data.textType || 'TEXT',
-                });
-                nodeBlocks.value = Object.values(nodeMap);
                 scrollToBottom();
               }
             } catch (e) {
@@ -368,45 +306,28 @@
           eventSource.onerror = () => {
             eventSource.close();
             isLoading.value = false;
-            isStreaming.value = false;
-            loadHistoryMessages();
+            if (!assistantMessage) {
+              messages.value.push({
+                role: 'assistant',
+                content: '抱歉，出现了一些问题，请稍后再试。',
+              });
+            }
+            scrollToBottom();
           };
 
           eventSource.addEventListener('done', () => {
             eventSource.close();
             isLoading.value = false;
-            isStreaming.value = false;
-            loadHistoryMessages();
           });
 
         } catch (error) {
           console.error('Send message error:', error);
           isLoading.value = false;
-          isStreaming.value = false;
           messages.value.push({
             role: 'assistant',
             content: '抱歉，发送消息失败，请稍后再试。',
           });
           scrollToBottom();
-        }
-      };
-
-      const loadHistoryMessages = async () => {
-        if (!sessionId.value) return;
-        try {
-          const response = await axios.get(
-            `${baseUrl.value}/api/sessions/${sessionId.value}/messages`,
-            {
-              headers: {
-                'X-API-Key': props.config.apiKey,
-              },
-            }
-          );
-          messages.value = response.data || [];
-          nodeBlocks.value = [];
-          scrollToBottom();
-        } catch (error) {
-          console.error('Load history messages error:', error);
         }
       };
 
@@ -421,9 +342,6 @@
         isLoading,
         messagesContainer,
         presetQuestions,
-        isStreaming,
-        nodeBlocks,
-        isNodeVisible,
         positionStyle,
         buttonStyle,
         headerStyle,
@@ -432,7 +350,6 @@
         toggleChat,
         sendMessage,
         sendPresetQuestion,
-        toggleNodeVisibility,
       };
     },
   });
@@ -550,88 +467,6 @@
     border-color: #409EFF;
     color: #409EFF;
     transform: translateX(4px);
-  }
-
-  .message-wrapper {
-    margin-bottom: 12px;
-  }
-
-  .result-set-message,
-  .markdown-report-message {
-    margin: 8px 0;
-    background: white;
-    border-radius: 8px;
-    padding: 12px;
-    border: 1px solid #e5e7eb;
-  }
-
-  .streaming-response {
-    margin: 12px 0;
-  }
-
-  .streaming-header {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 12px;
-    background: #f0f9ff;
-    border-radius: 6px;
-    margin-bottom: 12px;
-    font-size: 14px;
-    color: #409EFF;
-  }
-
-  .loading-dot {
-    animation: pulse 1.5s ease-in-out infinite;
-  }
-
-  @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
-  }
-
-  .node-block {
-    margin: 8px 0;
-    background: white;
-    border: 1px solid #e5e7eb;
-    border-radius: 6px;
-    overflow: hidden;
-  }
-
-  .node-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px 14px;
-    background: #f5f7fa;
-    cursor: pointer;
-    user-select: none;
-    transition: background-color 0.2s;
-  }
-
-  .node-header:hover {
-    background: #ebeef5;
-  }
-
-  .node-title {
-    font-size: 13px;
-    font-weight: 500;
-    color: #606266;
-  }
-
-  .node-toggle {
-    font-size: 12px;
-    color: #909399;
-  }
-
-  .node-content {
-    padding: 12px 14px;
-    font-size: 14px;
-    line-height: 1.6;
-  }
-
-  .node-text {
-    color: #333;
   }
 
   .message {

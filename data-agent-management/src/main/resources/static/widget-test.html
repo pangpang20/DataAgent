@@ -80,7 +80,7 @@
                 // Get baseUrl from backend API
                 const response = await fetch('/api/config/baseUrl');
                 const config = await response.json();
-                
+
                 // Configure widget with dynamic baseUrl
                 window.DataAgentConfig = {
                     "agentId": 1,  // 请替换为实际的 Agent ID
@@ -91,12 +91,12 @@
                     "welcomeMessage": "您好！我是 AI 助手，有什么可以帮您的吗？",
                     "baseUrl": config.baseUrl  // 从后端动态获取
                 };
-                
+
                 // Load widget script
                 const script = document.createElement('script');
                 script.src = '/widget.js';
                 document.body.appendChild(script);
-                
+
                 console.log('Widget initialized with baseUrl:', config.baseUrl);
             } catch (error) {
                 console.error('Failed to initialize widget:', error);
