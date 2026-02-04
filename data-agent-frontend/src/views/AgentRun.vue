@@ -367,6 +367,7 @@
   import Markdown from '@/components/run/Markdown.vue';
   import ResultSetDisplay from '@/components/run/ResultSetDisplay.vue';
   import { generateFallbackAvatar, getAvatarUrl } from '@/services/avatar';
+  import { copyToClipboard } from '@/utils/clipboard';
 
   // 扩展Window接口以包含自定义方法
   declare global {
@@ -394,24 +395,22 @@
       ResultSetDisplay,
     },
     created() {
-      window.copyTextToClipboard = btn => {
+      window.copyTextToClipboard = async btn => {
         const text = btn.previousElementSibling?.textContent || '';
         const originalText = btn.textContent;
 
-        navigator.clipboard
-          .writeText(text)
-          .then(() => {
-            btn.textContent = '已复制!';
-            setTimeout(() => {
-              btn.textContent = originalText;
-            }, 3000);
-          })
-          .catch(() => {
-            btn.textContent = '复制失败';
-            setTimeout(() => {
-              btn.textContent = originalText;
-            }, 3000);
-          });
+        const success = await copyToClipboard(text);
+        if (success) {
+          btn.textContent = '已复制!';
+          setTimeout(() => {
+            btn.textContent = originalText;
+          }, 3000);
+        } else {
+          btn.textContent = '复制失败';
+          setTimeout(() => {
+            btn.textContent = originalText;
+          }, 3000);
+        }
       };
 
       // 结果集翻页事件处理

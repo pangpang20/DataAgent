@@ -26,6 +26,7 @@
   import DOMPurify from 'dompurify';
   import hljs from 'highlight.js';
   import 'highlight.js/styles/github.css';
+  import { copyToClipboard } from '@/utils/clipboard';
 
   export default defineComponent({
     name: 'Markdown',
@@ -204,31 +205,29 @@
         }
       });
 
-      // 在组件挂载时添加全局复制函数
+      // Setup copy function on component mount
       const setupCopyFunction = () => {
         if (typeof window !== 'undefined' && !(window as any).copyCodeBlock) {
-          (window as any).copyCodeBlock = (btn: HTMLElement) => {
+          (window as any).copyCodeBlock = async (btn: HTMLElement) => {
             const code = btn.getAttribute('data-code');
             if (!code) return;
 
             const originalText = btn.textContent;
 
-            navigator.clipboard
-              .writeText(code)
-              .then(() => {
-                btn.textContent = '已复制!';
-                btn.classList.add('copied');
-                setTimeout(() => {
-                  btn.textContent = originalText;
-                  btn.classList.remove('copied');
-                }, 2000);
-              })
-              .catch(() => {
-                btn.textContent = '复制失败';
-                setTimeout(() => {
-                  btn.textContent = originalText;
-                }, 2000);
-              });
+            const success = await copyToClipboard(code);
+            if (success) {
+              btn.textContent = '已复制!';
+              btn.classList.add('copied');
+              setTimeout(() => {
+                btn.textContent = originalText;
+                btn.classList.remove('copied');
+              }, 2000);
+            } else {
+              btn.textContent = '复制失败';
+              setTimeout(() => {
+                btn.textContent = originalText;
+              }, 2000);
+            }
           };
         }
       };

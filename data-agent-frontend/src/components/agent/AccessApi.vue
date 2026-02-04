@@ -137,6 +137,7 @@
   import { ElMessage, ElMessageBox } from 'element-plus';
   import { DocumentCopy } from '@element-plus/icons-vue';
   import AgentService from '@/services/agent';
+  import { copyToClipboard } from '@/utils/clipboard';
 
   export default defineComponent({
     name: 'AgentAccessApi',
@@ -367,11 +368,11 @@ ${scriptOpen} src="${base}/widget.js"${scriptClose}`;
           ElMessage.info('请重新生成或重置后复制完整 Key');
           return;
         }
-        try {
-          await navigator.clipboard.writeText(apiKey.value);
+        const success = await copyToClipboard(apiKey.value);
+        if (success) {
           ElMessage.success('已复制到剪贴板');
-        } catch (e) {
-          ElMessage.error('复制失败');
+        } else {
+          ElMessage.error('复制失败，请手动复制');
         }
       };
 
@@ -398,13 +399,13 @@ ${scriptOpen} src="${base}/widget.js"${scriptClose}`;
         }
       };
 
-      // 复制嵌入代码
+      // Copy embed code
       const handleCopyEmbedCode = async () => {
-        try {
-          await navigator.clipboard.writeText(embedCode.value);
+        const success = await copyToClipboard(embedCode.value);
+        if (success) {
           ElMessage.success('嵌入代码已复制到剪贴板');
-        } catch (e) {
-          ElMessage.error('复制失败');
+        } else {
+          ElMessage.error('复制失败，请手动复制');
         }
       };
 

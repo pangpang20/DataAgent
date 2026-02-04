@@ -24,6 +24,7 @@
     CopyDocument as ICON_COPY,
   } from '@element-plus/icons-vue';
   import { ElMessage } from 'element-plus';
+  import { copyToClipboard } from '@/utils/clipboard';
 
   const props = defineProps<{
     resultData: ResultData;
@@ -108,20 +109,17 @@
     isChartView.value = false;
   };
 
-  // 复制JSON数据到剪贴板
-  const copyJsonData = () => {
+  // Copy JSON data to clipboard
+  const copyJsonData = async () => {
     try {
       const data = props.resultData?.resultSet?.data || [];
       const jsonData = JSON.stringify(data, null, 2);
-      navigator.clipboard
-        .writeText(jsonData)
-        .then(() => {
-          ElMessage.success('数据已复制到剪贴板');
-        })
-        .catch(err => {
-          console.error('复制失败:', err);
-          ElMessage.error('复制失败');
-        });
+      const success = await copyToClipboard(jsonData);
+      if (success) {
+        ElMessage.success('数据已复制到剪贴板');
+      } else {
+        ElMessage.error('复制失败，请手动复制');
+      }
     } catch (err) {
       console.error('JSON转换失败:', err);
       ElMessage.error('复制失败');
