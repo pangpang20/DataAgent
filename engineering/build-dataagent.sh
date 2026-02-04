@@ -429,6 +429,9 @@ build_widget() {
     if [ -f "public/logo.png" ]; then
         cp public/logo.png "$BACKEND_STATIC/"
     fi
+    if [ -f "public/widget-test.html" ]; then
+        cp public/widget-test.html "$BACKEND_STATIC/"
+    fi
     
     WIDGET_SIZE=$(du -h dist/widget.js | cut -f1)
     info "✅ Widget 编译成功: widget.js ($WIDGET_SIZE)"
