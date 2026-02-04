@@ -34,17 +34,17 @@ public class ExceptionAdvice {
 			log.debug("Client disconnected during streaming: {}", e.getMessage());
 			return null; // 不返回响应,因为客户端已断开
 		}
-		
+
 		// 忽略 favicon.ico 404 错误
 		if (isFaviconNotFoundException(e)) {
 			log.debug("Favicon not found (ignored): {}", e.getMessage());
 			return ResponseEntity.notFound().build();
 		}
-		
+
 		log.error("An error occurred: ", e);
 		return ResponseEntity.internalServerError().body(ApiResponse.error("An error occurred: " + e.getMessage()));
 	}
-	
+
 	/**
 	 * 判断是否为 favicon 404 错误
 	 */
@@ -52,7 +52,7 @@ public class ExceptionAdvice {
 		String message = e.getMessage();
 		return message != null && message.contains("favicon.ico");
 	}
-	
+
 	/**
 	 * 判断是否为客户端断开连接导致的异常
 	 */
@@ -61,15 +61,15 @@ public class ExceptionAdvice {
 		if (e instanceof ClientAbortException || e instanceof AsyncRequestNotUsableException) {
 			return true;
 		}
-		
+
 		// 检查异常消息
 		String message = e.getMessage();
-		if (message != null && (message.contains("Broken pipe") || 
-								 message.contains("ClientAbortException") ||
-								 message.contains("An I/O error occurred"))) {
+		if (message != null && (message.contains("Broken pipe") ||
+				message.contains("ClientAbortException") ||
+				message.contains("An I/O error occurred"))) {
 			return true;
 		}
-		
+
 		// 检查cause链
 		Throwable cause = e.getCause();
 		while (cause != null) {
@@ -81,7 +81,7 @@ public class ExceptionAdvice {
 			}
 			cause = cause.getCause();
 		}
-		
+
 		return false;
 	}
 
