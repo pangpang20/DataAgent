@@ -19,6 +19,7 @@ import com.audaque.cloud.ai.dataagent.properties.FileStorageProperties;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
@@ -44,6 +45,20 @@ public class WebConfig implements WebMvcConfigurer {
 		registry.addResourceHandler(urlPrefix + "/**")
 				.addResourceLocations("file:" + uploadDir + "/")
 				.setCachePeriod(3600);
+	}
+
+	@Override
+	public void addCorsMappings(CorsRegistry registry) {
+		// Add CORS configuration for widget.js and API endpoints
+		registry.addMapping("/**")
+				.allowedOrigins("*")
+				.allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+				.allowedHeaders("*")
+				.exposedHeaders("*")
+				.allowCredentials(false)
+				.maxAge(3600);
+		
+		log.info("CORS configuration applied for all endpoints");
 	}
 
 }
