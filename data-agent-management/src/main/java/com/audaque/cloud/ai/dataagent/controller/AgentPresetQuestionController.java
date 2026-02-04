@@ -16,6 +16,7 @@
 package com.audaque.cloud.ai.dataagent.controller;
 
 import com.audaque.cloud.ai.dataagent.dto.agent.BatchDeleteDTO;
+import com.audaque.cloud.ai.dataagent.dto.agent.BatchUpdateStatusDTO;
 import com.audaque.cloud.ai.dataagent.dto.agent.PresetQuestionQueryDTO;
 import com.audaque.cloud.ai.dataagent.entity.AgentPresetQuestion;
 import com.audaque.cloud.ai.dataagent.service.agent.AgentPresetQuestionService;
@@ -151,6 +152,38 @@ public class AgentPresetQuestionController {
 			log.error("Error batch deleting preset questions for agent {}", agentId, e);
 			return ResponseEntity.internalServerError()
 					.body(Map.of("error", "Batch delete failed: " + e.getMessage()));
+		}
+	}
+
+	/**
+	 * Batch update preset questions status (enable/disable)
+	 */
+	@PutMapping("/{agentId}/preset-questions/batch/status")
+	public ResponseEntity<Map<String, String>> batchUpdateStatus(@PathVariable(value = "agentId") Long agentId,
+			@Valid @RequestBody BatchUpdateStatusDTO updateStatusDTO) {
+		try {
+			log.info("Batch update status request: agentId={}, count={}, isActive={}", agentId,
+					updateStatusDTO.getIds().size(), updateStatusDTO.getIsActive());
+
+			// Set agentId from path variable
+			updateStatusDTO.setAgentId(agentId);
+
+			boolean success = presetQuestionService.batchUpdateStatus(updateStatusDTO);
+
+			if (success) {
+				String action = updateStatusDTO.getIsActive() ? "enabled" : "disabled";
+				return ResponseEntity.ok(Map.of("message", "Batch " + action + " successful"));
+			} else {
+				return ResponseEntity.internalServerError()
+						.body(Map.of("error", "Batch update status failed: no records updated"));
+			}
+		} catch (IllegalArgumentException e) {
+			log.error("Invalid batch update status parameters for agent {}: {}", agentId, e.getMessage());
+			return ResponseEntity.badRequest().body(Map.of("error", "Invalid parameters: " + e.getMessage()));
+		} catch (Exception e) {
+			log.error("Error batch updating status for agent {}", agentId, e);
+			return ResponseEntity.internalServerError()
+					.body(Map.of("error", "Batch update status failed: " + e.getMessage()));
 		}
 	}
 

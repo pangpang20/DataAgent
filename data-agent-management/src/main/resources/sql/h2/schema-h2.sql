@@ -160,12 +160,14 @@ CREATE TABLE IF NOT EXISTS agent_preset_question (
   question TEXT NOT NULL COMMENT '预设问题内容',
   sort_order INT DEFAULT 0 COMMENT '排序顺序',
   is_active TINYINT DEFAULT 0 COMMENT '是否启用：0-禁用，1-启用',
+  is_delete TINYINT DEFAULT 0 COMMENT '是否删除：0-未删除，1-已删除',
   create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (id),
   INDEX idx_agent_preset_question_agent_id (agent_id),
   INDEX idx_agent_preset_question_sort_order (sort_order),
   INDEX idx_agent_preset_question_is_active (is_active),
+  INDEX idx_agent_preset_question_is_delete (is_delete),
   FOREIGN KEY (agent_id) REFERENCES agent(id) ON DELETE CASCADE
 ) ENGINE = InnoDB COMMENT = '智能体预设问题表';
 

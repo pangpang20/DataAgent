@@ -269,6 +269,7 @@ CREATE TABLE agent_preset_question (
     question CLOB NOT NULL,
     sort_order INT DEFAULT 0,
     is_active TINYINT DEFAULT 0,
+    is_delete TINYINT DEFAULT 0,
     create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
@@ -277,12 +278,14 @@ CREATE TABLE agent_preset_question (
 CREATE INDEX idx_apq_agent_id ON agent_preset_question(agent_id);
 CREATE INDEX idx_apq_sort_order ON agent_preset_question(sort_order);
 CREATE INDEX idx_apq_is_active ON agent_preset_question(is_active);
+CREATE INDEX idx_apq_is_delete ON agent_preset_question(is_delete);
 
 COMMENT ON TABLE agent_preset_question IS '智能体预设问题表';
 COMMENT ON COLUMN agent_preset_question.agent_id IS '智能体ID';
 COMMENT ON COLUMN agent_preset_question.question IS '预设问题内容';
 COMMENT ON COLUMN agent_preset_question.sort_order IS '排序顺序';
 COMMENT ON COLUMN agent_preset_question.is_active IS '是否启用：0-禁用，1-启用';
+COMMENT ON COLUMN agent_preset_question.is_delete IS '是否删除：0-未删除，1-已删除';
 COMMENT ON COLUMN agent_preset_question.create_time IS '创建时间';
 COMMENT ON COLUMN agent_preset_question.update_time IS '更新时间';
 

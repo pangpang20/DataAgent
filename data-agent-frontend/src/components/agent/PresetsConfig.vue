@@ -65,6 +65,22 @@
         <el-col :span="12">
           <el-button
             v-if="selectedRows.length > 0"
+            @click="handleBatchEnable"
+            type="success"
+            plain
+          >
+            批量启用 ({{ selectedRows.length }})
+          </el-button>
+          <el-button
+            v-if="selectedRows.length > 0"
+            @click="handleBatchDisable"
+            type="warning"
+            plain
+          >
+            批量禁用 ({{ selectedRows.length }})
+          </el-button>
+          <el-button
+            v-if="selectedRows.length > 0"
             @click="handleBatchDelete"
             type="danger"
             plain
@@ -299,6 +315,80 @@
         }
       };
 
+      const handleBatchEnable = async () => {
+        if (selectedRows.value.length === 0) {
+          ElMessage.warning('请选择要启用的记录');
+          return;
+        }
+
+        try {
+          await ElMessageBox.confirm(
+            `确定要启用 ${selectedRows.value.length} 条预设问题吗？`,
+            '确认批量启用',
+            {
+              confirmButtonText: '确定',
+              cancelButtonText: '取消',
+              type: 'success',
+            },
+          );
+
+          const ids = selectedRows.value
+            .map(row => row.id)
+            .filter(id => id !== undefined) as number[];
+          const result = await presetQuestionService.batchUpdateStatus(props.agentId, ids, true);
+
+          if (result) {
+            ElMessage.success('批量启用成功');
+            selectedRows.value = [];
+            await loadPresetQuestions();
+          } else {
+            ElMessage.error('批量启用失败');
+          }
+        } catch (error: any) {
+          if (error !== 'cancel') {
+            ElMessage.error('批量启用失败');
+            console.error('Batch enable error:', error);
+          }
+        }
+      };
+
+      const handleBatchDisable = async () => {
+        if (selectedRows.value.length === 0) {
+          ElMessage.warning('请选择要禁用的记录');
+          return;
+        }
+
+        try {
+          await ElMessageBox.confirm(
+            `确定要禁用 ${selectedRows.value.length} 条预设问题吗？`,
+            '确认批量禁用',
+            {
+              confirmButtonText: '确定',
+              cancelButtonText: '取消',
+              type: 'warning',
+            },
+          );
+
+          const ids = selectedRows.value
+            .map(row => row.id)
+            .filter(id => id !== undefined) as number[];
+          const result = await presetQuestionService.batchUpdateStatus(props.agentId, ids, false);
+
+          if (result) {
+            ElMessage.success('批量禁用成功');
+            selectedRows.value = [];
+            await loadPresetQuestions();
+          } else {
+            ElMessage.error('批量禁用失败');
+          }
+        } catch (error: any) {
+          if (error !== 'cancel') {
+            ElMessage.error('批量禁用失败');
+            console.error('Batch disable error:', error);
+          }
+        }
+      };
+
       const editQuestion = (question: PresetQuestion) => {
         isEdit.value = true;
         currentEditId.value = question.id || null;
@@ -421,6 +511,8 @@
         handleSearch,
         handleReset,
         handleBatchDelete,
+        handleBatchEnable,
+        handleBatchDisable,
       };
     },
   });

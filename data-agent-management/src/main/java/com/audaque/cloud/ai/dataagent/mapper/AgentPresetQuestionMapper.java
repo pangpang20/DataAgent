@@ -26,14 +26,14 @@ public interface AgentPresetQuestionMapper {
 
 	@Select("""
 			SELECT * FROM agent_preset_question
-			         WHERE agent_id = #{agentId} AND is_active = 1
+			         WHERE agent_id = #{agentId} AND is_active = 1 AND is_delete = 0
 			ORDER BY sort_order ASC, id ASC
 			""")
 	List<AgentPresetQuestion> selectByAgentId(@Param("agentId") Long agentId);
 
 	@Select("""
 			SELECT * FROM agent_preset_question
-			         WHERE agent_id = #{agentId}
+			         WHERE agent_id = #{agentId} AND is_delete = 0
 			ORDER BY sort_order ASC, id ASC
 			""")
 	List<AgentPresetQuestion> selectAllByAgentId(@Param("agentId") Long agentId);
@@ -42,13 +42,13 @@ public interface AgentPresetQuestionMapper {
 	 * Query by id
 	 */
 	@Select("""
-			SELECT * FROM agent_preset_question WHERE id = #{id}
+			SELECT * FROM agent_preset_question WHERE id = #{id} AND is_delete = 0
 			""")
 	AgentPresetQuestion selectById(@Param("id") Long id);
 
 	@Insert("""
-			INSERT INTO agent_preset_question (agent_id, question, sort_order, is_active, create_time, update_time)
-			VALUES (#{agentId}, #{question}, #{sortOrder}, #{isActive}, #{createTime}, #{updateTime})
+			INSERT INTO agent_preset_question (agent_id, question, sort_order, is_active, is_delete, create_time, update_time)
+			VALUES (#{agentId}, #{question}, #{sortOrder}, #{isActive}, #{isDelete}, #{createTime}, #{updateTime})
 			""")
 	@Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
 	int insert(AgentPresetQuestion question);
@@ -60,6 +60,7 @@ public interface AgentPresetQuestionMapper {
 				<if test="question != null">question = #{question},</if>
 				<if test="sortOrder != null">sort_order = #{sortOrder},</if>
 				<if test="isActive != null">is_active = #{isActive},</if>
+				<if test="isDelete != null">is_delete = #{isDelete},</if>
 				update_time = #{updateTime}
 			</set>
 			WHERE id = #{id}
@@ -67,13 +68,19 @@ public interface AgentPresetQuestionMapper {
 			""")
 	int update(AgentPresetQuestion question);
 
-	@Delete("""
-			DELETE FROM agent_preset_question WHERE id = #{id}
+	/**
+	 * Logical delete by id
+	 */
+	@Update("""
+			UPDATE agent_preset_question SET is_delete = 1, update_time = NOW() WHERE id = #{id}
 			""")
 	int deleteById(@Param("id") Long id);
 
-	@Delete("""
-			DELETE FROM agent_preset_question WHERE agent_id = #{agentId}
+	/**
+	 * Logical delete all by agentId
+	 */
+	@Update("""
+			UPDATE agent_preset_question SET is_delete = 1, update_time = NOW() WHERE agent_id = #{agentId}
 			""")
 	int deleteByAgentId(@Param("agentId") Long agentId);
 
@@ -83,7 +90,7 @@ public interface AgentPresetQuestionMapper {
 	@Select("""
 			<script>
 			SELECT * FROM agent_preset_question
-			WHERE agent_id = #{queryDTO.agentId}
+			WHERE agent_id = #{queryDTO.agentId} AND is_delete = 0
 			<if test="queryDTO.keyword != null and queryDTO.keyword != ''">
 				AND question LIKE CONCAT('%', #{queryDTO.keyword}, '%')
 			</if>
@@ -109,7 +116,7 @@ public interface AgentPresetQuestionMapper {
 	@Select("""
 			<script>
 			SELECT COUNT(*) FROM agent_preset_question
-			WHERE agent_id = #{queryDTO.agentId}
+			WHERE agent_id = #{queryDTO.agentId} AND is_delete = 0
 			<if test="queryDTO.keyword != null and queryDTO.keyword != ''">
 				AND question LIKE CONCAT('%', #{queryDTO.keyword}, '%')
 			</if>
@@ -127,11 +134,12 @@ public interface AgentPresetQuestionMapper {
 	Long countByConditions(@Param("queryDTO") PresetQuestionQueryDTO queryDTO);
 
 	/**
-	 * Batch delete preset questions by ids
+	 * Batch delete preset questions by ids (logical delete)
 	 */
-	@Delete("""
+	@Update("""
 			<script>
-			DELETE FROM agent_preset_question
+			UPDATE agent_preset_question
+			SET is_delete = 1, update_time = NOW()
 			WHERE agent_id = #{agentId}
 			AND id IN
 			<foreach collection="ids" item="id" open="(" close=")" separator=",">
@@ -140,5 +148,22 @@ public interface AgentPresetQuestionMapper {
 			</script>
 			""")
 	int batchDeleteByIds(@Param("agentId") Long agentId, @Param("ids") List<Long> ids);
+
+	/**
+	 * Batch update isActive status by ids
+	 */
+	@Update("""
+			<script>
+			UPDATE agent_preset_question
+			SET is_active = #{isActive}, update_time = NOW()
+			WHERE agent_id = #{agentId}
+			AND id IN
+			<foreach collection="ids" item="id" open="(" close=")" separator=",">
+				#{id}
+			</foreach>
+			</script>
+			""")
+	int batchUpdateStatus(@Param("agentId") Long agentId, @Param("ids") List<Long> ids,
+			@Param("isActive") Boolean isActive);
 
 }

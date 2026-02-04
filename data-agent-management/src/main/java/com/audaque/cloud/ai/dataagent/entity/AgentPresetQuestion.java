@@ -36,6 +36,8 @@ public class AgentPresetQuestion {
 
 	private Boolean isActive;
 
+	private Boolean isDelete;
+
 	private LocalDateTime createTime;
 
 	private LocalDateTime updateTime;
@@ -45,6 +47,7 @@ public class AgentPresetQuestion {
 		this.question = question;
 		this.sortOrder = sortOrder;
 		this.isActive = false;
+		this.isDelete = false;
 	}
 
 }

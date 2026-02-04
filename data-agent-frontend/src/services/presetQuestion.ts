@@ -147,6 +147,25 @@ class PresetQuestionService {
       throw error;
     }
   }
+
+  /**
+   * 批量更新预设问题状态 (启用/禁用)
+   * @param agentId Agent ID
+   * @param ids 问题ID列表
+   * @param isActive 启用状态
+   */
+  async batchUpdateStatus(agentId: number, ids: number[], isActive: boolean): Promise<boolean> {
+    try {
+      const response = await axios.put(
+        `${API_BASE_URL}/${agentId}/preset-questions/batch/status`,
+        { ids, isActive },
+      );
+      return response.status === 200;
+    } catch (error) {
+      console.error('Batch update status failed:', error);
+      throw error;
+    }
+  }
 }
 
 export type { PresetQuestion, PresetQuestionDTO, PresetQuestionQueryParams, PageResponse };

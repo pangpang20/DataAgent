@@ -16,6 +16,7 @@
 package com.audaque.cloud.ai.dataagent.service.agent;
 
 import com.audaque.cloud.ai.dataagent.dto.agent.BatchDeleteDTO;
+import com.audaque.cloud.ai.dataagent.dto.agent.BatchUpdateStatusDTO;
 import com.audaque.cloud.ai.dataagent.dto.agent.PresetQuestionQueryDTO;
 import com.audaque.cloud.ai.dataagent.entity.AgentPresetQuestion;
 import com.audaque.cloud.ai.dataagent.vo.PageResult;
@@ -72,5 +73,10 @@ public interface AgentPresetQuestionService {
 	 * Batch delete preset questions
 	 */
 	boolean batchDelete(BatchDeleteDTO deleteDTO);
+
+	/**
+	 * Batch update preset questions status (enable/disable)
+	 */
+	boolean batchUpdateStatus(BatchUpdateStatusDTO updateStatusDTO);
 
 }

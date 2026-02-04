@@ -16,6 +16,7 @@
 package com.audaque.cloud.ai.dataagent.service.agent;
 
 import com.audaque.cloud.ai.dataagent.dto.agent.BatchDeleteDTO;
+import com.audaque.cloud.ai.dataagent.dto.agent.BatchUpdateStatusDTO;
 import com.audaque.cloud.ai.dataagent.dto.agent.PresetQuestionQueryDTO;
 import com.audaque.cloud.ai.dataagent.entity.AgentPresetQuestion;
 import com.audaque.cloud.ai.dataagent.mapper.AgentPresetQuestionMapper;
@@ -69,6 +70,10 @@ public class AgentPresetQuestionServiceImpl implements AgentPresetQuestionServic
 			question.setIsActive(true);
 			log.debug("Set default isActive to true");
 		}
+		if (question.getIsDelete() == null) {
+			question.setIsDelete(false);
+			log.debug("Set default isDelete to false");
+		}
 
 		LocalDateTime now = LocalDateTime.now();
 		question.setCreateTime(now);
@@ -107,7 +112,7 @@ public class AgentPresetQuestionServiceImpl implements AgentPresetQuestionServic
 	public void batchSave(Long agentId, List<AgentPresetQuestion> questions) {
 		log.info("Batch saving {} preset questions for agentId: {}", questions != null ? questions.size() : 0, agentId);
 
-		// Step 1: Delete all existing preset questions for the agent
+		// Step 1: Logical delete all existing preset questions for the agent
 		deleteByAgentId(agentId);
 
 		// Step 2: Insert new questions with proper order and active status
@@ -118,6 +123,9 @@ public class AgentPresetQuestionServiceImpl implements AgentPresetQuestionServic
 				question.setSortOrder(i);
 				if (question.getIsActive() == null) {
 					question.setIsActive(true);
+				}
+				if (question.getIsDelete() == null) {
+					question.setIsDelete(false);
 				}
 				create(question);
 			}
@@ -177,6 +185,38 @@ public class AgentPresetQuestionServiceImpl implements AgentPresetQuestionServic
 		} catch (Exception e) {
 			log.error("Batch delete failed: agentId={}, error={}", deleteDTO.getAgentId(), e.getMessage(), e);
 			throw new RuntimeException("Batch delete failed: " + e.getMessage(), e);
+		}
+	}
+
+	@Override
+	@Transactional
+	public boolean batchUpdateStatus(BatchUpdateStatusDTO updateStatusDTO) {
+		log.info("Batch updating preset questions status: agentId={}, count={}, isActive={}",
+				updateStatusDTO.getAgentId(), updateStatusDTO.getIds().size(), updateStatusDTO.getIsActive());
+
+		// Validate parameters
+		if (updateStatusDTO.getAgentId() == null || updateStatusDTO.getIds() == null
+				|| updateStatusDTO.getIds().isEmpty()) {
+			log.error("Invalid batch update status parameters");
+			throw new IllegalArgumentException("agentId and ids cannot be null or empty");
+		}
+		if (updateStatusDTO.getIsActive() == null) {
+			log.error("isActive cannot be null");
+			throw new IllegalArgumentException("isActive cannot be null");
+		}
+
+		try {
+			int updatedCount = agentPresetQuestionMapper.batchUpdateStatus(
+					updateStatusDTO.getAgentId(),
+					updateStatusDTO.getIds(),
+					updateStatusDTO.getIsActive());
+			log.info("Successfully updated {} preset questions status to {}", updatedCount,
+					updateStatusDTO.getIsActive());
+			return updatedCount > 0;
+		} catch (Exception e) {
+			log.error("Batch update status failed: agentId={}, error={}", updateStatusDTO.getAgentId(), e.getMessage(),
+					e);
+			throw new RuntimeException("Batch update status failed: " + e.getMessage(), e);
 		}
 	}
 
