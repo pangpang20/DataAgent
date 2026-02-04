@@ -144,6 +144,10 @@
 
     <!-- DataAgent Widget 配置 -->
     <script>
+        // Use current page origin as baseUrl (works in LAN and production)
+        // 使用当前页面的地址作为 baseUrl,支持局域网和生产环境
+        var baseUrl = window.location.origin;
+
         // TODO: 根据实际部署环境修改以下配置
         window.DataAgentConfig = {
             "agentId": 2,
@@ -152,7 +156,7 @@
             "position": "bottom-right",
             "primaryColor": "#409EFF",
             "welcomeMessage": "您好！我是 AI 助手，有什么可以帮您的吗？",
-            "baseUrl": "http://localhost:8065"  // TODO: 修改为实际后端地址
+            "baseUrl": baseUrl  // Automatically use current page's domain
         };
 
         // Update UI with config values
