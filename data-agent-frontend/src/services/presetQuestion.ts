@@ -28,6 +28,7 @@ interface PresetQuestion {
 
 interface PresetQuestionDTO {
   question: string;
+  sortOrder?: number;
   isActive?: boolean;
 }
 
@@ -81,6 +82,7 @@ class PresetQuestionService {
     try {
       const questionsData = questions.map(q => ({
         question: q.question,
+        sortOrder: q.sortOrder,
         isActive: q.isActive ?? true,
       }));
       const response = await axios.post(

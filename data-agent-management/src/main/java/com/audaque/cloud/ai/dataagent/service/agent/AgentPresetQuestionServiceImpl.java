@@ -120,7 +120,15 @@ public class AgentPresetQuestionServiceImpl implements AgentPresetQuestionServic
 			for (int i = 0; i < questions.size(); i++) {
 				AgentPresetQuestion question = questions.get(i);
 				question.setAgentId(agentId);
-				question.setSortOrder(i);
+
+				// Use provided sortOrder if available, otherwise use index
+				if (question.getSortOrder() == null) {
+					question.setSortOrder(i);
+					log.debug("Auto-assigned sortOrder={} for question at index {}", i, i);
+				} else {
+					log.debug("Using provided sortOrder={} for question at index {}", question.getSortOrder(), i);
+				}
+
 				if (question.getIsActive() == null) {
 					question.setIsActive(true);
 				}
@@ -135,8 +143,9 @@ public class AgentPresetQuestionServiceImpl implements AgentPresetQuestionServic
 
 	@Override
 	public PageResult<AgentPresetQuestion> queryByConditionsWithPage(PresetQuestionQueryDTO queryDTO) {
-		log.info("Page query preset questions: agentId={}, pageNum={}, pageSize={}, keyword={}",
-				queryDTO.getAgentId(), queryDTO.getPageNum(), queryDTO.getPageSize(), queryDTO.getKeyword());
+		log.info("Page query preset questions: agentId={}, pageNum={}, pageSize={}, keyword={}, isActive={}",
+				queryDTO.getAgentId(), queryDTO.getPageNum(), queryDTO.getPageSize(),
+				queryDTO.getKeyword(), queryDTO.getIsActive());
 
 		// Validate parameters
 		if (queryDTO.getAgentId() == null) {
@@ -146,6 +155,8 @@ public class AgentPresetQuestionServiceImpl implements AgentPresetQuestionServic
 
 		// Calculate offset
 		int offset = (queryDTO.getPageNum() - 1) * queryDTO.getPageSize();
+		log.debug("Calculated offset: {} (pageNum={}, pageSize={})",
+				offset, queryDTO.getPageNum(), queryDTO.getPageSize());
 
 		// Query total count
 		Long total = agentPresetQuestionMapper.countByConditions(queryDTO);
@@ -154,6 +165,17 @@ public class AgentPresetQuestionServiceImpl implements AgentPresetQuestionServic
 		// Query page data
 		List<AgentPresetQuestion> dataList = agentPresetQuestionMapper.selectByConditionsWithPage(queryDTO, offset);
 		log.info("Query completed: returned {} records", dataList.size());
+
+		// Log each record's sort order for debugging
+		if (!dataList.isEmpty()) {
+			log.debug("Records order check:");
+			for (int i = 0; i < dataList.size(); i++) {
+				AgentPresetQuestion q = dataList.get(i);
+				log.debug("  [{}] id={}, sortOrder={}, question={}",
+						i, q.getId(), q.getSortOrder(),
+						q.getQuestion().length() > 50 ? q.getQuestion().substring(0, 50) + "..." : q.getQuestion());
+			}
+		}
 
 		// Build result
 		PageResult<AgentPresetQuestion> pageResult = new PageResult<>();

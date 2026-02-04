@@ -151,3 +151,5 @@ logging:
     org.springframework.web.servlet.resource.ResourceHttpRequestHandler: ERROR
     # 打印 Agent 相关的 SQL 语句(包括插入、更新操作)
     com.audaque.cloud.ai.dataagent.mapper.AgentMapper: debug
+    # 打印 AgentPresetQuestion 相关的 SQL 语句(排查排序问题)
+    com.audaque.cloud.ai.dataagent.mapper.AgentPresetQuestionMapper: debug

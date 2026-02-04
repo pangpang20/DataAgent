@@ -226,9 +226,7 @@
         return { right: '20px', left: 'auto' };
       });
 
-      const buttonStyle = computed(() => ({
-        backgroundColor: props.config.primaryColor || '#409EFF',
-      }));
+      const buttonStyle = computed(() => ({}));
 
       const headerStyle = computed(() => ({
         backgroundColor: props.config.primaryColor || '#409EFF',
@@ -491,8 +489,8 @@
   }
 
   .chat-button {
-    width: 56px;
-    height: 56px;
+    width: 50px;
+    height: 50px;
     border-radius: 50%;
     background-color: white;
     color: white;

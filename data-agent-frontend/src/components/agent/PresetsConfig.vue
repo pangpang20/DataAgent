@@ -448,6 +448,7 @@
             questionsToSave = allQuestions.map(q => {
               const dto: PresetQuestionDTO = {
                 question: q.id === currentEditId.value ? questionForm.value.question : q.question,
+                sortOrder: q.id === currentEditId.value ? questionForm.value.sortOrder : q.sortOrder,
               };
               if (q.id === currentEditId.value) {
                 dto.isActive = questionForm.value.isActive === true;
@@ -461,10 +462,12 @@
             questionsToSave = [
               ...allQuestions.map(q => ({
                 question: q.question,
+                sortOrder: q.sortOrder,
                 isActive: q.isActive === true,
               })),
               {
                 question: questionForm.value.question,
+                sortOrder: questionForm.value.sortOrder,
                 isActive: questionForm.value.isActive === true,
               },
             ];

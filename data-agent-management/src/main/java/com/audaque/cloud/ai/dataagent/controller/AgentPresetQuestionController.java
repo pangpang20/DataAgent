@@ -62,9 +62,26 @@ public class AgentPresetQuestionController {
 	public ResponseEntity<Map<String, String>> savePresetQuestions(@PathVariable(value = "agentId") Long agentId,
 			@RequestBody List<Map<String, Object>> questionsData) {
 		try {
+			log.info("Batch save request: agentId={}, count={}", agentId, questionsData.size());
+
 			List<AgentPresetQuestion> questions = questionsData.stream().map(data -> {
 				AgentPresetQuestion question = new AgentPresetQuestion();
 				question.setQuestion((String) data.get("question"));
+
+				// Parse sortOrder
+				Object sortOrderObj = data.get("sortOrder");
+				if (sortOrderObj instanceof Integer) {
+					question.setSortOrder((Integer) sortOrderObj);
+				} else if (sortOrderObj != null) {
+					try {
+						question.setSortOrder(Integer.parseInt(sortOrderObj.toString()));
+					} catch (NumberFormatException e) {
+						log.warn("Invalid sortOrder value: {}, will be auto-assigned", sortOrderObj);
+						question.setSortOrder(null);
+					}
+				}
+
+				// Parse isActive
 				Object isActiveObj = data.get("isActive");
 				if (isActiveObj instanceof Boolean) {
 					question.setIsActive((Boolean) isActiveObj);
@@ -73,8 +90,18 @@ public class AgentPresetQuestionController {
 				} else {
 					question.setIsActive(true);
 				}
+
 				return question;
 			}).toList();
+
+			// Log received data for debugging
+			if (log.isDebugEnabled()) {
+				for (int i = 0; i < questions.size(); i++) {
+					AgentPresetQuestion q = questions.get(i);
+					log.debug("  [{}] sortOrder={}, question={}", i, q.getSortOrder(),
+							q.getQuestion().length() > 50 ? q.getQuestion().substring(0, 50) + "..." : q.getQuestion());
+				}
+			}
 
 			presetQuestionService.batchSave(agentId, questions);
 			return ResponseEntity.ok(Map.of("message", "预设问题保存成功"));
