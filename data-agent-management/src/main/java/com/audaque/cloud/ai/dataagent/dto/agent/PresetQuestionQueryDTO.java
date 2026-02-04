@@ -26,7 +26,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class PresetQuestionQueryDTO {
 
-    @NotNull(message = "agentId cannot be null")
+    // Will be set from path variable in controller, not required in request body
     private Long agentId;
 
     // Search by question content (fuzzy search)

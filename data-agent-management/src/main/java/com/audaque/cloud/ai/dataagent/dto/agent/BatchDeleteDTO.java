@@ -18,13 +18,12 @@ package com.audaque.cloud.ai.dataagent.dto.agent;
 import java.util.List;
 
 import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 @Data
 public class BatchDeleteDTO {
 
-    @NotNull(message = "agentId cannot be null")
+    // Will be set from path variable in controller, not required in request body
     private Long agentId;
 
     @NotEmpty(message = "ids cannot be empty")

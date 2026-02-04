@@ -37,8 +37,21 @@
 
       <!-- 消息区域 -->
       <div class="chat-messages" ref="messagesContainer">
-        <div v-if="messages.length === 0" class="welcome-message">
-          {{ config.welcomeMessage }}
+        <div v-if="messages.length === 0" class="welcome-section">
+          <div class="welcome-message">
+            {{ config.welcomeMessage }}
+          </div>
+          <!-- 预设问题 -->
+          <div v-if="presetQuestions.length > 0" class="preset-questions">
+            <div 
+              v-for="question in presetQuestions" 
+              :key="question.id"
+              class="preset-question-item"
+              @click="sendPresetQuestion(question.question)"
+            >
+              {{ question.question }}
+            </div>
+          </div>
         </div>
         <div 
           v-for="(msg, index) in messages" 
@@ -91,6 +104,12 @@
     content: string;
   }
 
+  interface PresetQuestion {
+    id?: number;
+    question: string;
+    isActive?: boolean;
+  }
+
   interface WidgetConfig {
     agentId: number;
     apiKey: string;
@@ -116,6 +135,7 @@
       const isLoading = ref(false);
       const sessionId = ref<string | null>(null);
       const messagesContainer = ref<HTMLElement | null>(null);
+      const presetQuestions = ref<PresetQuestion[]>([]);
       
       const baseUrl = computed(() => props.config.baseUrl || window.location.origin);
 
@@ -147,7 +167,29 @@
         isOpen.value = !isOpen.value;
         if (isOpen.value && !sessionId.value) {
           createSession();
+          loadPresetQuestions();
         }
+      };
+
+      const loadPresetQuestions = async () => {
+        try {
+          const response = await axios.get(
+            `${baseUrl.value}/api/agent/${props.config.agentId}/preset-questions`,
+            {
+              headers: {
+                'X-API-Key': props.config.apiKey,
+              },
+            }
+          );
+          presetQuestions.value = response.data.filter((q: PresetQuestion) => q.isActive);
+        } catch (error) {
+          console.error('Failed to load preset questions:', error);
+        }
+      };
+
+      const sendPresetQuestion = (question: string) => {
+        userInput.value = question;
+        sendMessage();
       };
 
       const scrollToBottom = () => {
@@ -283,6 +325,7 @@
         userInput,
         isLoading,
         messagesContainer,
+        presetQuestions,
         positionStyle,
         buttonStyle,
         headerStyle,
@@ -290,6 +333,7 @@
         sendButtonStyle,
         toggleChat,
         sendMessage,
+        sendPresetQuestion,
       };
     },
   });
@@ -377,6 +421,36 @@
     color: #666;
     padding: 20px;
     line-height: 1.6;
+  }
+
+  .welcome-section {
+    padding: 20px;
+  }
+
+  .preset-questions {
+    margin-top: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .preset-question-item {
+    background-color: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 12px 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: #333;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  .preset-question-item:hover {
+    background-color: #f0f9ff;
+    border-color: #409EFF;
+    color: #409EFF;
+    transform: translateX(4px);
   }
 
   .message {
