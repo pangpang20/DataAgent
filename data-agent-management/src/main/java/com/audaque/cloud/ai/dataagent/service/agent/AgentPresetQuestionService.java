@@ -15,7 +15,10 @@
  */
 package com.audaque.cloud.ai.dataagent.service.agent;
 
+import com.audaque.cloud.ai.dataagent.dto.agent.BatchDeleteDTO;
+import com.audaque.cloud.ai.dataagent.dto.agent.PresetQuestionQueryDTO;
 import com.audaque.cloud.ai.dataagent.entity.AgentPresetQuestion;
+import com.audaque.cloud.ai.dataagent.vo.PageResult;
 
 import java.util.List;
 
@@ -54,9 +57,20 @@ public interface AgentPresetQuestionService {
 	void deleteByAgentId(Long agentId);
 
 	/**
-	 * Batch save preset questions: delete all existing ones for the agent, then insert
+	 * Batch save preset questions: delete all existing ones for the agent, then
+	 * insert
 	 * the new list
 	 */
 	void batchSave(Long agentId, List<AgentPresetQuestion> questions);
+
+	/**
+	 * Page query preset questions with filters
+	 */
+	PageResult<AgentPresetQuestion> queryByConditionsWithPage(PresetQuestionQueryDTO queryDTO);
+
+	/**
+	 * Batch delete preset questions
+	 */
+	boolean batchDelete(BatchDeleteDTO deleteDTO);
 
 }

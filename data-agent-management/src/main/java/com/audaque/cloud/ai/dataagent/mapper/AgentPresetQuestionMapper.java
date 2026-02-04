@@ -15,6 +15,7 @@
  */
 package com.audaque.cloud.ai.dataagent.mapper;
 
+import com.audaque.cloud.ai.dataagent.dto.agent.PresetQuestionQueryDTO;
 import com.audaque.cloud.ai.dataagent.entity.AgentPresetQuestion;
 import org.apache.ibatis.annotations.*;
 
@@ -75,5 +76,69 @@ public interface AgentPresetQuestionMapper {
 			DELETE FROM agent_preset_question WHERE agent_id = #{agentId}
 			""")
 	int deleteByAgentId(@Param("agentId") Long agentId);
+
+	/**
+	 * Page query preset questions with filters
+	 */
+	@Select("""
+			<script>
+			SELECT * FROM agent_preset_question
+			WHERE agent_id = #{queryDTO.agentId}
+			<if test="queryDTO.keyword != null and queryDTO.keyword != ''">
+				AND question LIKE CONCAT('%', #{queryDTO.keyword}, '%')
+			</if>
+			<if test="queryDTO.isActive != null">
+				AND is_active = #{queryDTO.isActive}
+			</if>
+			<if test="queryDTO.createTimeStart != null and queryDTO.createTimeStart != ''">
+				AND create_time &gt;= #{queryDTO.createTimeStart}
+			</if>
+			<if test="queryDTO.createTimeEnd != null and queryDTO.createTimeEnd != ''">
+				AND create_time &lt;= #{queryDTO.createTimeEnd}
+			</if>
+			ORDER BY sort_order ASC, id ASC
+			${@com.audaque.cloud.ai.dataagent.util.SqlDialectResolver@limit(offset, queryDTO.pageSize)}
+			</script>
+			""")
+	List<AgentPresetQuestion> selectByConditionsWithPage(@Param("queryDTO") PresetQuestionQueryDTO queryDTO,
+			@Param("offset") Integer offset);
+
+	/**
+	 * Count total records by conditions
+	 */
+	@Select("""
+			<script>
+			SELECT COUNT(*) FROM agent_preset_question
+			WHERE agent_id = #{queryDTO.agentId}
+			<if test="queryDTO.keyword != null and queryDTO.keyword != ''">
+				AND question LIKE CONCAT('%', #{queryDTO.keyword}, '%')
+			</if>
+			<if test="queryDTO.isActive != null">
+				AND is_active = #{queryDTO.isActive}
+			</if>
+			<if test="queryDTO.createTimeStart != null and queryDTO.createTimeStart != ''">
+				AND create_time &gt;= #{queryDTO.createTimeStart}
+			</if>
+			<if test="queryDTO.createTimeEnd != null and queryDTO.createTimeEnd != ''">
+				AND create_time &lt;= #{queryDTO.createTimeEnd}
+			</if>
+			</script>
+			""")
+	Long countByConditions(@Param("queryDTO") PresetQuestionQueryDTO queryDTO);
+
+	/**
+	 * Batch delete preset questions by ids
+	 */
+	@Delete("""
+			<script>
+			DELETE FROM agent_preset_question
+			WHERE agent_id = #{agentId}
+			AND id IN
+			<foreach collection="ids" item="id" open="(" close=")" separator=",">
+				#{id}
+			</foreach>
+			</script>
+			""")
+	int batchDeleteByIds(@Param("agentId") Long agentId, @Param("ids") List<Long> ids);
 
 }

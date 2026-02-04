@@ -57,7 +57,7 @@ public class WebConfig implements WebMvcConfigurer {
 				.exposedHeaders("*")
 				.allowCredentials(false)
 				.maxAge(3600);
-		
+
 		log.info("CORS configuration applied for all endpoints");
 	}
 

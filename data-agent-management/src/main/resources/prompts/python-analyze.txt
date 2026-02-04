@@ -38,13 +38,13 @@
 [文本总结内容]
 
 ```echarts
-{
-  "title": { "text": "图表标题" },
-  "tooltip": { "trigger": "axis" },
-  "xAxis": { "type": "category", "data": ["类别1", "类别2"] },
-  "yAxis": { "type": "value" },
-  "series": [{ "type": "bar", "data": [值1, 值2] }]
-}
+\{
+  "title": \{ "text": "图表标题" \},
+  "tooltip": \{ "trigger": "axis" \},
+  "xAxis": \{ "type": "category", "data": ["类别1", "类别2"] \},
+  "yAxis": \{ "type": "value" \},
+  "series": [\{ "type": "bar", "data": [值1, 值2] \}]
+\}
 ```
 ```
 

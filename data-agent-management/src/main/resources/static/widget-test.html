@@ -74,17 +74,48 @@
 
     <!-- DataAgent Widget 配置和加载脚本 -->
     <script>
-        window.DataAgentConfig = {
-            "agentId": 1,  // 请替换为实际的 Agent ID
-            "apiKey": "your-api-key-here",  // 请替换为实际的 API Key
-            "title": "AI 助手",
-            "position": "bottom-right",
-            "primaryColor": "#409EFF",
-            "welcomeMessage": "您好！我是 AI 助手，有什么可以帮您的吗？",
-            "baseUrl": "http://localhost:8065"  // 后端服务地址
-        };
+        // Dynamically fetch backend configuration
+        (async function initWidget() {
+            try {
+                // Get baseUrl from backend API
+                const response = await fetch('/api/config/baseUrl');
+                const config = await response.json();
+                
+                // Configure widget with dynamic baseUrl
+                window.DataAgentConfig = {
+                    "agentId": 1,  // 请替换为实际的 Agent ID
+                    "apiKey": "your-api-key-here",  // 请替换为实际的 API Key
+                    "title": "AI 助手",
+                    "position": "bottom-right",
+                    "primaryColor": "#409EFF",
+                    "welcomeMessage": "您好！我是 AI 助手，有什么可以帮您的吗？",
+                    "baseUrl": config.baseUrl  // 从后端动态获取
+                };
+                
+                // Load widget script
+                const script = document.createElement('script');
+                script.src = '/widget.js';
+                document.body.appendChild(script);
+                
+                console.log('Widget initialized with baseUrl:', config.baseUrl);
+            } catch (error) {
+                console.error('Failed to initialize widget:', error);
+                // Fallback to default configuration
+                window.DataAgentConfig = {
+                    "agentId": 1,
+                    "apiKey": "your-api-key-here",
+                    "title": "AI 助手",
+                    "position": "bottom-right",
+                    "primaryColor": "#409EFF",
+                    "welcomeMessage": "您好！我是 AI 助手，有什么可以帮您的吗？",
+                    "baseUrl": window.location.origin  // Fallback to current origin
+                };
+                const script = document.createElement('script');
+                script.src = '/widget.js';
+                document.body.appendChild(script);
+            }
+        })();
     </script>
-    <script src="/widget.js"></script>
 </body>
 
 </html>

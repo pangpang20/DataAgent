@@ -31,6 +31,27 @@ interface PresetQuestionDTO {
   isActive?: boolean;
 }
 
+// Pagination query parameters
+interface PresetQuestionQueryParams {
+  pageNum: number;
+  pageSize: number;
+  keyword?: string;
+  isActive?: boolean;
+  createTimeStart?: string;
+  createTimeEnd?: string;
+}
+
+// Pagination response
+interface PageResponse<T> {
+  success: boolean;
+  message: string;
+  data: T[];
+  total: number;
+  pageNum: number;
+  pageSize: number;
+  totalPages: number;
+}
+
 const API_BASE_URL = '/api/agent';
 
 class PresetQuestionService {
@@ -87,7 +108,46 @@ class PresetQuestionService {
       throw error;
     }
   }
+
+  /**
+   * 分页查询预设问题
+   * @param agentId Agent ID
+   * @param params 查询参数
+   */
+  async queryPage(
+    agentId: number,
+    params: PresetQuestionQueryParams,
+  ): Promise<PageResponse<PresetQuestion>> {
+    try {
+      const response = await axios.post<PageResponse<PresetQuestion>>(
+        `${API_BASE_URL}/${agentId}/preset-questions/page`,
+        params,
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Query preset questions page failed:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 批量删除预设问题
+   * @param agentId Agent ID
+   * @param ids 问题ID列表
+   */
+  async batchDelete(agentId: number, ids: number[]): Promise<boolean> {
+    try {
+      const response = await axios.delete(
+        `${API_BASE_URL}/${agentId}/preset-questions/batch`,
+        { data: { ids } },
+      );
+      return response.status === 200;
+    } catch (error) {
+      console.error('Batch delete preset questions failed:', error);
+      throw error;
+    }
+  }
 }
 
-export type { PresetQuestion, PresetQuestionDTO };
+export type { PresetQuestion, PresetQuestionDTO, PresetQuestionQueryParams, PageResponse };
 export default new PresetQuestionService();

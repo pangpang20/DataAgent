@@ -21,10 +21,57 @@
     </div>
     <el-divider />
 
+    <!-- 搜索和筛选区域 -->
+    <el-form :inline="true" :model="searchForm" style="margin-bottom: 20px">
+      <el-form-item label="关键词">
+        <el-input
+          v-model="searchForm.keyword"
+          placeholder="搜索问题内容"
+          clearable
+          @clear="handleSearch"
+          style="width: 200px"
+        />
+      </el-form-item>
+      <el-form-item label="状态">
+        <el-select
+          v-model="searchForm.isActive"
+          placeholder="全部"
+          clearable
+          style="width: 120px"
+        >
+          <el-option label="启用" :value="true" />
+          <el-option label="禁用" :value="false" />
+        </el-select>
+      </el-form-item>
+      <el-form-item label="创建时间">
+        <el-date-picker
+          v-model="searchForm.dateRange"
+          type="daterange"
+          range-separator="-"
+          start-placeholder="开始日期"
+          end-placeholder="结束日期"
+          value-format="YYYY-MM-DD"
+          style="width: 240px"
+        />
+      </el-form-item>
+      <el-form-item>
+        <el-button type="primary" @click="handleSearch">搜索</el-button>
+        <el-button @click="handleReset">重置</el-button>
+      </el-form-item>
+    </el-form>
+
     <div style="margin-bottom: 30px">
       <el-row style="display: flex; justify-content: space-between; align-items: center">
         <el-col :span="12">
-          <h3>预设问题列表</h3>
+          <el-button
+            v-if="selectedRows.length > 0"
+            @click="handleBatchDelete"
+            type="danger"
+            plain
+            :icon="Delete"
+          >
+            批量删除 ({{ selectedRows.length }})
+          </el-button>
         </el-col>
         <el-col :span="12" style="text-align: right">
           <el-button @click="openCreateDialog" size="large" type="primary" round :icon="Plus">
@@ -34,7 +81,13 @@
       </el-row>
     </div>
 
-    <el-table :data="presetQuestionList" style="width: 100%" border>
+    <el-table
+      :data="presetQuestionList"
+      @selection-change="handleSelectionChange"
+      style="width: 100%"
+      border
+    >
+      <el-table-column type="selection" width="55" />
       <el-table-column prop="id" label="ID" min-width="60px" />
       <el-table-column prop="question" label="问题" min-width="250px" show-overflow-tooltip />
       <el-table-column prop="sortOrder" label="排序" min-width="80px" />
@@ -57,6 +110,15 @@
         </template>
       </el-table-column>
     </el-table>
+
+    <!-- 分页组件 -->
+    <Pagination
+      v-model:page-num="pagination.pageNum"
+      v-model:page-size="pagination.pageSize"
+      :total="pagination.total"
+      :page-sizes="[10, 20, 50, 100]"
+      @change="loadPresetQuestions"
+    />
   </div>
 
   <!-- 添加/编辑预设问题Dialog -->
@@ -93,13 +155,21 @@
 
 <script lang="ts">
   import { defineComponent, ref, onMounted, Ref } from 'vue';
-  import { Plus } from '@element-plus/icons-vue';
+  import { Plus, Delete } from '@element-plus/icons-vue';
   import presetQuestionService from '@/services/presetQuestion';
-  import { PresetQuestion, PresetQuestionDTO } from '@/services/presetQuestion';
+  import {
+    PresetQuestion,
+    PresetQuestionDTO,
+    PresetQuestionQueryParams,
+  } from '@/services/presetQuestion';
   import { ElMessage, ElMessageBox } from 'element-plus';
+  import Pagination from '@/components/common/Pagination.vue';
 
   export default defineComponent({
     name: 'AgentPresetsConfig',
+    components: {
+      Pagination,
+    },
     props: {
       agentId: {
         type: Number,
@@ -118,6 +188,27 @@
       });
       const currentEditId: Ref<number | null> = ref(null);
 
+      // Search form
+      const searchForm = ref({
+        keyword: '',
+        isActive: null as boolean | null,
+        dateRange: [] as string[],
+      });
+
+      // Pagination
+      const pagination = ref({
+        pageNum: 1,
+        pageSize: 10,
+        total: 0,
+      });
+
+      // Selected rows for batch delete
+      const selectedRows: Ref<PresetQuestion[]> = ref([]);
+
+      const handleSelectionChange = (selection: PresetQuestion[]) => {
+        selectedRows.value = selection;
+      };
+
       const openCreateDialog = () => {
         isEdit.value = false;
         questionForm.value = {
@@ -131,10 +222,80 @@
 
       const loadPresetQuestions = async () => {
         try {
-          presetQuestionList.value = await presetQuestionService.list(props.agentId);
+          const params: PresetQuestionQueryParams = {
+            pageNum: pagination.value.pageNum,
+            pageSize: pagination.value.pageSize,
+            keyword: searchForm.value.keyword || undefined,
+            isActive: searchForm.value.isActive ?? undefined,
+          };
+
+          if (searchForm.value.dateRange && searchForm.value.dateRange.length === 2) {
+            params.createTimeStart = searchForm.value.dateRange[0];
+            params.createTimeEnd = searchForm.value.dateRange[1];
+          }
+
+          const response = await presetQuestionService.queryPage(props.agentId, params);
+
+          if (response.success) {
+            presetQuestionList.value = response.data;
+            pagination.value.total = response.total;
+          } else {
+            ElMessage.error(response.message || 'Failed to load preset questions');
+          }
         } catch (error) {
           ElMessage.error('加载预设问题列表失败');
-          console.error('加载预设问题失败:', error);
+          console.error('Load preset questions failed:', error);
+        }
+      };
+
+      const handleSearch = () => {
+        pagination.value.pageNum = 1; // Reset to first page
+        loadPresetQuestions();
+      };
+
+      const handleReset = () => {
+        searchForm.value = {
+          keyword: '',
+          isActive: null,
+          dateRange: [],
+        };
+        handleSearch();
+      };
+
+      const handleBatchDelete = async () => {
+        if (selectedRows.value.length === 0) {
+          ElMessage.warning('请选择要删除的记录');
+          return;
+        }
+
+        try {
+          await ElMessageBox.confirm(
+            `确定要删除 ${selectedRows.value.length} 条预设问题吗？`,
+            '确认批量删除',
+            {
+              confirmButtonText: '确定',
+              cancelButtonText: '取消',
+              type: 'warning',
+            },
+          );
+
+          const ids = selectedRows.value
+            .map(row => row.id)
+            .filter(id => id !== undefined) as number[];
+          const result = await presetQuestionService.batchDelete(props.agentId, ids);
+
+          if (result) {
+            ElMessage.success('批量删除成功');
+            selectedRows.value = [];
+            await loadPresetQuestions();
+          } else {
+            ElMessage.error('批量删除失败');
+          }
+        } catch (error: any) {
+          if (error !== 'cancel') {
+            ElMessage.error('批量删除失败');
+            console.error('Batch delete error:', error);
+          }
         }
       };
 
@@ -167,7 +328,7 @@
             ElMessage.error('删除失败');
           }
         } catch {
-          // 用户点击取消按钮，忽略此错误
+          // User cancelled, ignore error
         }
       };
 
@@ -229,14 +390,23 @@
 
       return {
         Plus,
+        Delete,
         presetQuestionList,
         dialogVisible,
         isEdit,
         questionForm,
+        searchForm,
+        pagination,
+        selectedRows,
+        handleSelectionChange,
         openCreateDialog,
         editQuestion,
         deleteQuestion,
         saveQuestion,
+        loadPresetQuestions,
+        handleSearch,
+        handleReset,
+        handleBatchDelete,
       };
     },
   });

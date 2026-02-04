@@ -15,8 +15,13 @@
  */
 package com.audaque.cloud.ai.dataagent.controller;
 
+import com.audaque.cloud.ai.dataagent.dto.agent.BatchDeleteDTO;
+import com.audaque.cloud.ai.dataagent.dto.agent.PresetQuestionQueryDTO;
 import com.audaque.cloud.ai.dataagent.entity.AgentPresetQuestion;
 import com.audaque.cloud.ai.dataagent.service.agent.AgentPresetQuestionService;
+import com.audaque.cloud.ai.dataagent.vo.PageResponse;
+import com.audaque.cloud.ai.dataagent.vo.PageResult;
+import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -43,8 +48,7 @@ public class AgentPresetQuestionController {
 		try {
 			List<AgentPresetQuestion> questions = presetQuestionService.findAllByAgentId(agentId);
 			return ResponseEntity.ok(questions);
-		}
-		catch (Exception e) {
+		} catch (Exception e) {
 			log.error("Error getting preset questions for agent {}", agentId, e);
 			return ResponseEntity.internalServerError().build();
 		}
@@ -63,11 +67,9 @@ public class AgentPresetQuestionController {
 				Object isActiveObj = data.get("isActive");
 				if (isActiveObj instanceof Boolean) {
 					question.setIsActive((Boolean) isActiveObj);
-				}
-				else if (isActiveObj != null) {
+				} else if (isActiveObj != null) {
 					question.setIsActive(Boolean.parseBoolean(isActiveObj.toString()));
-				}
-				else {
+				} else {
 					question.setIsActive(true);
 				}
 				return question;
@@ -75,8 +77,7 @@ public class AgentPresetQuestionController {
 
 			presetQuestionService.batchSave(agentId, questions);
 			return ResponseEntity.ok(Map.of("message", "预设问题保存成功"));
-		}
-		catch (Exception e) {
+		} catch (Exception e) {
 			log.error("Error saving preset questions for agent {}", agentId, e);
 			return ResponseEntity.internalServerError().body(Map.of("error", "保存预设问题失败: " + e.getMessage()));
 		}
@@ -91,10 +92,65 @@ public class AgentPresetQuestionController {
 		try {
 			presetQuestionService.deleteById(questionId);
 			return ResponseEntity.ok(Map.of("message", "预设问题删除成功"));
-		}
-		catch (Exception e) {
+		} catch (Exception e) {
 			log.error("Error deleting preset question {} for agent {}", questionId, agentId, e);
 			return ResponseEntity.internalServerError().body(Map.of("error", "删除预设问题失败: " + e.getMessage()));
+		}
+	}
+
+	/**
+	 * Page query preset questions with filters
+	 */
+	@PostMapping("/{agentId}/preset-questions/page")
+	public PageResponse<List<AgentPresetQuestion>> queryPresetQuestionsPage(
+			@PathVariable(value = "agentId") Long agentId, @Valid @RequestBody PresetQuestionQueryDTO queryDTO) {
+		try {
+			log.info("Page query request: agentId={}, pageNum={}, pageSize={}", agentId, queryDTO.getPageNum(),
+					queryDTO.getPageSize());
+
+			// Set agentId from path variable
+			queryDTO.setAgentId(agentId);
+
+			PageResult<AgentPresetQuestion> pageResult = presetQuestionService.queryByConditionsWithPage(queryDTO);
+
+			return PageResponse.success(pageResult.getData(), pageResult.getTotal(), pageResult.getPageNum(),
+					pageResult.getPageSize(), pageResult.getTotalPages());
+		} catch (IllegalArgumentException e) {
+			log.error("Invalid query parameters for agent {}: {}", agentId, e.getMessage());
+			return PageResponse.pageError("Invalid parameters: " + e.getMessage());
+		} catch (Exception e) {
+			log.error("Error querying preset questions page for agent {}", agentId, e);
+			return PageResponse.pageError("Query failed: " + e.getMessage());
+		}
+	}
+
+	/**
+	 * Batch delete preset questions
+	 */
+	@DeleteMapping("/{agentId}/preset-questions/batch")
+	public ResponseEntity<Map<String, String>> batchDeletePresetQuestions(@PathVariable(value = "agentId") Long agentId,
+			@Valid @RequestBody BatchDeleteDTO deleteDTO) {
+		try {
+			log.info("Batch delete request: agentId={}, count={}", agentId, deleteDTO.getIds().size());
+
+			// Set agentId from path variable
+			deleteDTO.setAgentId(agentId);
+
+			boolean success = presetQuestionService.batchDelete(deleteDTO);
+
+			if (success) {
+				return ResponseEntity.ok(Map.of("message", "Batch delete successful"));
+			} else {
+				return ResponseEntity.internalServerError()
+						.body(Map.of("error", "Batch delete failed: no records deleted"));
+			}
+		} catch (IllegalArgumentException e) {
+			log.error("Invalid batch delete parameters for agent {}: {}", agentId, e.getMessage());
+			return ResponseEntity.badRequest().body(Map.of("error", "Invalid parameters: " + e.getMessage()));
+		} catch (Exception e) {
+			log.error("Error batch deleting preset questions for agent {}", agentId, e);
+			return ResponseEntity.internalServerError()
+					.body(Map.of("error", "Batch delete failed: " + e.getMessage()));
 		}
 	}
 

@@ -15,11 +15,15 @@
  */
 package com.audaque.cloud.ai.dataagent.service.agent;
 
+import com.audaque.cloud.ai.dataagent.dto.agent.BatchDeleteDTO;
+import com.audaque.cloud.ai.dataagent.dto.agent.PresetQuestionQueryDTO;
 import com.audaque.cloud.ai.dataagent.entity.AgentPresetQuestion;
 import com.audaque.cloud.ai.dataagent.mapper.AgentPresetQuestionMapper;
+import com.audaque.cloud.ai.dataagent.vo.PageResult;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -119,6 +123,61 @@ public class AgentPresetQuestionServiceImpl implements AgentPresetQuestionServic
 			}
 		}
 		log.info("Successfully batch saved preset questions for agentId: {}", agentId);
+	}
+
+	@Override
+	public PageResult<AgentPresetQuestion> queryByConditionsWithPage(PresetQuestionQueryDTO queryDTO) {
+		log.info("Page query preset questions: agentId={}, pageNum={}, pageSize={}, keyword={}",
+				queryDTO.getAgentId(), queryDTO.getPageNum(), queryDTO.getPageSize(), queryDTO.getKeyword());
+
+		// Validate parameters
+		if (queryDTO.getAgentId() == null) {
+			log.error("agentId cannot be null");
+			throw new IllegalArgumentException("agentId cannot be null");
+		}
+
+		// Calculate offset
+		int offset = (queryDTO.getPageNum() - 1) * queryDTO.getPageSize();
+
+		// Query total count
+		Long total = agentPresetQuestionMapper.countByConditions(queryDTO);
+		log.debug("Total count: {}", total);
+
+		// Query page data
+		List<AgentPresetQuestion> dataList = agentPresetQuestionMapper.selectByConditionsWithPage(queryDTO, offset);
+		log.info("Query completed: returned {} records", dataList.size());
+
+		// Build result
+		PageResult<AgentPresetQuestion> pageResult = new PageResult<>();
+		pageResult.setData(dataList);
+		pageResult.setTotal(total);
+		pageResult.setPageNum(queryDTO.getPageNum());
+		pageResult.setPageSize(queryDTO.getPageSize());
+		pageResult.calculateTotalPages();
+
+		return pageResult;
+	}
+
+	@Override
+	@Transactional
+	public boolean batchDelete(BatchDeleteDTO deleteDTO) {
+		log.info("Batch deleting preset questions: agentId={}, count={}",
+				deleteDTO.getAgentId(), deleteDTO.getIds().size());
+
+		// Validate parameters
+		if (deleteDTO.getAgentId() == null || deleteDTO.getIds() == null || deleteDTO.getIds().isEmpty()) {
+			log.error("Invalid batch delete parameters");
+			throw new IllegalArgumentException("agentId and ids cannot be null or empty");
+		}
+
+		try {
+			int deletedCount = agentPresetQuestionMapper.batchDeleteByIds(deleteDTO.getAgentId(), deleteDTO.getIds());
+			log.info("Successfully deleted {} preset questions", deletedCount);
+			return deletedCount > 0;
+		} catch (Exception e) {
+			log.error("Batch delete failed: agentId={}, error={}", deleteDTO.getAgentId(), e.getMessage(), e);
+			throw new RuntimeException("Batch delete failed: " + e.getMessage(), e);
+		}
 	}
 
 }
