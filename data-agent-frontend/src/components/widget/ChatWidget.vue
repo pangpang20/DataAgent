@@ -337,7 +337,7 @@
 
           // 获取AI响应 (通过SSE)
           const eventSource = new EventSource(
-            `${baseUrl.value}/nl2sql/chat/stream?sessionId=${sessionId.value}&message=${encodeURIComponent(messageContent)}`
+            `${baseUrl.value}/api/stream/search?agentId=${props.config.agentId}&query=${encodeURIComponent(messageContent)}&nl2sqlOnly=true`
           );
 
           const nodeMap: Record<string, StreamNodeData[]> = {};
@@ -346,7 +346,8 @@
             try {
               const data = JSON.parse(event.data);
               
-              if (data.type === 'node') {
+              // Handle GraphNodeResponse structure
+              if (data.nodeName && data.text) {
                 const nodeName = data.nodeName || 'Unknown';
                 if (!nodeMap[nodeName]) {
                   nodeMap[nodeName] = [];
@@ -372,11 +373,17 @@
             loadHistoryMessages();
           };
 
-          eventSource.addEventListener('done', () => {
+          eventSource.addEventListener('complete', () => {
             eventSource.close();
             isLoading.value = false;
             isStreaming.value = false;
             loadHistoryMessages();
+          });
+          
+          eventSource.addEventListener('error', () => {
+            eventSource.close();
+            isLoading.value = false;
+            isStreaming.value = false;
           });
 
         } catch (error) {
