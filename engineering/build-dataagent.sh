@@ -393,6 +393,48 @@ build_backend() {
 }
 
 # ============================================================================
+# 编译 Widget
+# ============================================================================
+build_widget() {
+    step "编译 Widget"
+    
+    cd "$PROJECT_ROOT/data-agent-frontend"
+    
+    # 安装依赖
+    if [ ! -d "node_modules" ]; then
+        info "安装前端依赖..."
+        yarn install
+    fi
+    
+    # 构建 Widget
+    info "构建 Widget..."
+    export BUILD_WIDGET='true'
+    yarn build
+    unset BUILD_WIDGET
+    
+    # 检查构建结果
+    if [ ! -f "dist/widget.js" ]; then
+        error "Widget 编译失败，未找到 widget.js"
+    fi
+    
+    # 复制到后端 static 目录
+    info "复制 Widget 文件到后端..."
+    BACKEND_STATIC="$PROJECT_ROOT/data-agent-management/src/main/resources/static"
+    mkdir -p "$BACKEND_STATIC"
+    
+    cp dist/widget.js "$BACKEND_STATIC/"
+    if [ -f "dist/style.css" ]; then
+        cp dist/style.css "$BACKEND_STATIC/"
+    fi
+    if [ -f "public/logo.png" ]; then
+        cp public/logo.png "$BACKEND_STATIC/"
+    fi
+    
+    WIDGET_SIZE=$(du -h dist/widget.js | cut -f1)
+    info "✅ Widget 编译成功: widget.js ($WIDGET_SIZE)"
+}
+
+# ============================================================================
 # 编译前端
 # ============================================================================
 build_frontend() {
@@ -992,6 +1034,7 @@ main() {
         clean_build
         
         # 编译
+        build_widget
         build_backend
         build_frontend
         
