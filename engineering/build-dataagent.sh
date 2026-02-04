@@ -847,7 +847,7 @@ configure_nginx() {
     # 测试配置
     if sudo nginx -t 2>&1; then
         info "✅ Nginx 配置测试通过"
-        sudo systemctl reload nginx
+        sudo systemctl restart nginx
     else
         error "Nginx 配置测试失败"
     fi
