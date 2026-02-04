@@ -18,9 +18,7 @@
   <div class="chat-widget" :class="{ open: isOpen }" :style="positionStyle">
     <!-- 浮动按钮 -->
     <div v-if="!isOpen" class="chat-button" @click="toggleChat" :style="buttonStyle">
-      <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
-        <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/>
-      </svg>
+      <img src="/logo.png" alt="AI助手" class="chat-button-logo" />
     </div>
 
     <!-- 聊天窗口 -->
@@ -496,7 +494,7 @@
     width: 56px;
     height: 56px;
     border-radius: 50%;
-    background-color: #409EFF;
+    background-color: white;
     color: white;
     display: flex;
     align-items: center;
@@ -504,6 +502,13 @@
     cursor: pointer;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     transition: transform 0.2s, box-shadow 0.2s;
+    overflow: hidden;
+  }
+
+  .chat-button-logo {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
   }
 
   .chat-button:hover {
