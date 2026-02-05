@@ -376,8 +376,8 @@
           const success = await agentService.delete(agent.id!);
           if (success) {
             ElMessage.success('智能体删除成功');
-            // 从列表中移除已删除的智能体
-            agents.value = agents.value.filter((a: Agent) => a.id !== agent.id);
+            // 重新加载数据以获取最新的总数和状态统计
+            await loadAgents();
           } else {
             ElMessage.error('智能体删除失败');
           }
