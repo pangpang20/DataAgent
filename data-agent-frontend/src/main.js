@@ -24,7 +24,7 @@ import '@/styles/layout.css';
 import '@/styles/global.css';
 import 'element-plus/dist/index.css';
 import ElementPlus from 'element-plus';
-import zhCn from 'element-plus/es/locale/lang/zh-cn'; // 导入Element Plus中文语言包
+import zhCn from 'element-plus/dist/locale/zh-cn.mjs'; // 使用正确的本地文件路径
 
 // 全局错误处理 - 过滤Chrome扩展错误
 window.addEventListener('unhandledrejection', (event) => {

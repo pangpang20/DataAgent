@@ -266,6 +266,7 @@
             :on-change="handleFileChange"
             :on-remove="() => (fileList = [])"
             :file-list="fileList"
+            :accept="'.pdf,.doc,.docx,.txt,.md'"
             drag
           >
             <el-icon class="el-icon--upload"><UploadFilled /></el-icon>
@@ -274,7 +275,7 @@
               <em>点击选择文件</em>
             </div>
             <template #tip>
-              <div class="el-upload__tip">支持 PDF, DOCX, TXT, MD 等格式</div>
+              <div class="el-upload__tip">支持 PDF, DOC, DOCX, TXT, MD 格式</div>
               <div v-if="fileList.length > 0" class="el-upload__tip" style="color: #409eff">
                 文件大小: {{ formatFileSize(fileList[0].size) }}
               </div>
@@ -552,6 +553,16 @@
 
       // 处理文件变化
       const handleFileChange = (file: { name: string; size: number; raw: File }) => {
+        // 验证文件类型
+        const allowedExtensions = ['.pdf', '.doc', '.docx', '.txt', '.md'];
+        const fileName = file.name.toLowerCase();
+        const fileExtension = fileName.substring(fileName.lastIndexOf('.'));
+        
+        if (!allowedExtensions.includes(fileExtension)) {
+          ElMessage.error(`不支持的文件类型。仅支持: ${allowedExtensions.join(', ')}`);
+          return;
+        }
+        
         fileList.value = [file];
         knowledgeForm.value.file = file.raw;
       };
