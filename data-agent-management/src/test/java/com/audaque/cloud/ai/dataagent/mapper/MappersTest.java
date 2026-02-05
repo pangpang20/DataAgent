@@ -61,18 +61,18 @@ public class MappersTest {
 
 	private Long createAgent(String name) {
 		Agent agent = Agent.builder()
-			.name(name)
-			.description("for fk")
-			.avatar("a")
-			.status("draft")
-			.prompt("p")
-			.category("c")
-			.adminId(1L)
-			.tags("t")
-			.createTime(LocalDateTime.now().withNano(0))
-			.updateTime(LocalDateTime.now().withNano(0))
-			.humanReviewEnabled(0)
-			.build();
+				.name(name)
+				.description("for fk")
+				.avatar("a")
+				.status("draft")
+				.prompt("p")
+				.category("c")
+				.adminId(1L)
+				.tags("t")
+				.createTime(LocalDateTime.now().withNano(0))
+				.updateTime(LocalDateTime.now().withNano(0))
+				.humanReviewEnabled(0)
+				.build();
 		agentMapper.insert(agent);
 		return agent.getId();
 	}
@@ -81,23 +81,23 @@ public class MappersTest {
 	public void testAgentMapper() {
 		Assertions.assertNotNull(agentMapper);
 
-		agentMapper.findAll().stream().map(Agent::getId).forEach(id -> agentMapper.deleteById(id));
+		agentMapper.findAll().stream().map(Agent::getId).forEach(id -> agentMapper.logicalDeleteById(id));
 
 		List<Agent> all = agentMapper.findAll();
 		Assertions.assertEquals(List.of(), all);
 		Agent agent = Agent.builder()
-			.name("test")
-			.description("test")
-			.avatar("test")
-			.status("test")
-			.prompt("test")
-			.category("test")
-			.adminId(1L)
-			.tags("test")
-			.createTime(LocalDateTime.now().withNano(0))
-			.updateTime(LocalDateTime.now().withNano(0))
-			.humanReviewEnabled(0)
-			.build();
+				.name("test")
+				.description("test")
+				.avatar("test")
+				.status("test")
+				.prompt("test")
+				.category("test")
+				.adminId(1L)
+				.tags("test")
+				.createTime(LocalDateTime.now().withNano(0))
+				.updateTime(LocalDateTime.now().withNano(0))
+				.humanReviewEnabled(0)
+				.build();
 		int insert = agentMapper.insert(agent);
 		Assertions.assertEquals(1, insert);
 		Agent findById = agentMapper.findById(agent.getId());
@@ -109,7 +109,7 @@ public class MappersTest {
 		agent.setName("test2");
 		int update = agentMapper.updateById(agent);
 		Assertions.assertEquals(1, update);
-		agentMapper.deleteById(agent.getId());
+		agentMapper.logicalDeleteById(agent.getId());
 		List<Agent> allAfterDelete = agentMapper.findAll();
 		Assertions.assertEquals(List.of(), allAfterDelete);
 	}
@@ -152,7 +152,7 @@ public class MappersTest {
 		Assertions.assertEquals(1, sd);
 
 		// cleanup agent
-		agentMapper.deleteById(agentId);
+		agentMapper.logicalDeleteById(agentId);
 	}
 
 	@Test
@@ -186,7 +186,7 @@ public class MappersTest {
 		int del = semanticModelMapper.deleteById(m.getId());
 		Assertions.assertEquals(1, del);
 
-		agentMapper.deleteById(agentId);
+		agentMapper.logicalDeleteById(agentId);
 	}
 
 	@Test
@@ -216,7 +216,7 @@ public class MappersTest {
 		Assertions.assertEquals(1, del);
 
 		// 清理创建的 agent
-		agentMapper.deleteById(agentId);
+		agentMapper.logicalDeleteById(agentId);
 	}
 
 	@Test
@@ -237,8 +237,7 @@ public class MappersTest {
 			java.lang.reflect.Field field = BusinessKnowledge.class.getDeclaredField("isRecall");
 			field.setAccessible(true);
 			field.set(k, 1);
-		}
-		catch (Exception e) {
+		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
 		int ins = businessKnowledgeMapper.insert(k);
@@ -257,7 +256,7 @@ public class MappersTest {
 
 		int del = businessKnowledgeMapper.deleteById(k.getId());
 		Assertions.assertEquals(1, del);
-		agentMapper.deleteById(agentId);
+		agentMapper.logicalDeleteById(agentId);
 	}
 
 }

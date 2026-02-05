@@ -115,8 +115,8 @@ public interface AgentMapper {
 			@Param("updateTime") LocalDateTime updateTime);
 
 	@Delete("""
-			UPDATE agent 
-			SET is_deleted = 1, update_time = NOW() 
+			UPDATE agent
+			SET is_deleted = 1, update_time = NOW()
 			WHERE id = #{id} AND is_deleted = 0
 			""")
 	int logicalDeleteById(Long id);

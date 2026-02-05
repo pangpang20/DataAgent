@@ -190,12 +190,12 @@ public class DocumentConverterUtil {
 		metadata.put(DocumentMetadataConstant.TABLE_NAME, tableName);
 		metadata.put("columnName", columnName);
 		metadata.put("businessName", businessName);
-		
+
 		// 添加状态信息，用于查询过滤
 		if (semanticModel.getStatus() != null) {
 			metadata.put("status", semanticModel.getStatus());
 		}
-		
+
 		// 添加逻辑删除标志（重要：确保查询时能正确过滤）
 		if (semanticModel.getIsDeleted() != null) {
 			metadata.put("isDeleted", semanticModel.getIsDeleted());

@@ -107,33 +107,34 @@ public class AgentServiceImpl implements AgentService {
 	public void deleteById(Long id) {
 		try {
 			log.info("Attempting logical delete for agent: {}", id);
-			
+
 			// 获取头像信息用于文件清理
 			Agent existing = agentMapper.findById(id);
 			if (existing == null) {
 				log.warn("Agent not found for deletion: {}", id);
 				return;
 			}
-			
+
 			String avatar = existing.getAvatar();
-			
+
 			// 执行逻辑删除
 			int affected = agentMapper.logicalDeleteById(id);
-			
+
 			if (affected > 0) {
 				log.info("Successfully marked agent as deleted: {}", id);
-				
+
 				// 同步删除向量数据库中的数据
 				if (agentVectorStoreService != null) {
 					try {
 						agentVectorStoreService.deleteDocumentsByMetedata(id.toString(), new HashMap<>());
 						log.info("Successfully deleted vector data for agent: {}", id);
 					} catch (Exception vectorException) {
-						log.warn("Failed to delete vector data for agent: {}, error: {}", id, vectorException.getMessage());
+						log.warn("Failed to delete vector data for agent: {}, error: {}", id,
+								vectorException.getMessage());
 						// 向量数据删除失败不影响主流程
 					}
 				}
-				
+
 				// 清理头像文件
 				try {
 					if (avatar != null && !avatar.isBlank()) {
@@ -144,7 +145,7 @@ public class AgentServiceImpl implements AgentService {
 					log.warn("Failed to cleanup avatar file: {} for agent: {}, error: {}", avatar, id,
 							avatarEx.getMessage());
 				}
-				
+
 				log.info("Successfully completed agent deletion process: {}", id);
 			} else {
 				log.warn("Agent already deleted or not found: {}", id);
