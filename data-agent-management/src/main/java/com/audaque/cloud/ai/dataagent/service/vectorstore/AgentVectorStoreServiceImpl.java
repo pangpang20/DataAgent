@@ -189,9 +189,10 @@ public class AgentVectorStoreServiceImpl implements AgentVectorStoreService {
 
 				// 输出原始文档内容的前100个字符
 				if (document.getText() != null && !document.getText().isEmpty()) {
-					String preview = document.getText().length() > 100
-							? document.getText().substring(0, 100) + "..."
-							: document.getText();
+					// String preview = document.getText().length() > 100
+					// 		? document.getText().substring(0, 100) + "..."
+					// 		: document.getText();
+					String preview = document.getText();
 					log.info("Document[{}] - content preview: {}", i, preview);
 				} else {
 					log.info("Document[{}] - content is empty", i);
