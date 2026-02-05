@@ -15,10 +15,12 @@
 -->
 
 <template>
-  <!-- todo: 添加分页 -->
   <div style="padding: 20px">
     <div style="margin-bottom: 20px">
       <h2>语义模型管理</h2>
+      <p style="color: #909399; font-size: 14px; margin-top: 5px">
+        管理数据库表字段与业务名称的映射关系，支持同义词和业务描述。
+      </p>
     </div>
     <el-divider />
 
@@ -40,9 +42,9 @@
         </el-col>
         <el-col :span="12" style="text-align: right">
           <el-input
-            v-model="searchKeyword"
-            placeholder="请输入关键词，并按回车搜索"
-            style="width: 250px; margin-right: 10px"
+            v-model="queryParams.keyword"
+            placeholder="请输入关键词搜索"
+            style="width: 400px; margin-right: 10px"
             clearable
             @clear="handleSearch"
             @keyup.enter="handleSearch"
@@ -52,6 +54,15 @@
               <el-icon><Search /></el-icon>
             </template>
           </el-input>
+          <el-button
+            @click="toggleFilter"
+            size="large"
+            :type="filterVisible ? 'primary' : ''"
+            round
+            :icon="FilterIcon"
+          >
+            筛选
+          </el-button>
           <el-button @click="openBatchImportDialog" size="large" type="success" round>
             <el-icon><UploadFilled /></el-icon>
             批量导入
@@ -63,10 +74,45 @@
       </el-row>
     </div>
 
+    <!-- 筛选面板 -->
+    <el-collapse-transition>
+      <div v-show="filterVisible" style="margin-bottom: 20px">
+        <el-card shadow="never">
+          <el-form :inline="true" :model="queryParams">
+            <el-form-item label="表名">
+              <el-input
+                v-model="queryParams.tableName"
+                placeholder="输入表名"
+                clearable
+                @change="handleSearch"
+                style="width: 150px"
+              />
+            </el-form-item>
+            <el-form-item label="状态">
+              <el-select
+                v-model="queryParams.status"
+                placeholder="全部状态"
+                clearable
+                @change="handleSearch"
+                style="width: 120px"
+              >
+                <el-option label="启用" :value="1" />
+                <el-option label="停用" :value="0" />
+              </el-select>
+            </el-form-item>
+            <el-form-item>
+              <el-button @click="clearFilters" :icon="RefreshLeft">清空筛选</el-button>
+            </el-form-item>
+          </el-form>
+        </el-card>
+      </div>
+    </el-collapse-transition>
+
     <el-table
       :data="semanticModelList"
       style="width: 100%"
       border
+      v-loading="loading"
       @selection-change="handleSelectionChange"
     >
       <el-table-column type="selection" width="55" />
@@ -119,6 +165,20 @@
         </template>
       </el-table-column>
     </el-table>
+
+    <!-- 分页组件 -->
+    <div style="margin-top: 20px; display: flex; justify-content: flex-end">
+      <el-pagination
+        v-model:current-page="queryParams.pageNum"
+        v-model:page-size="queryParams.pageSize"
+        :page-sizes="[10, 20, 50, 100]"
+        layout="total, sizes, prev, pager, next, jumper"
+        :total="total"
+        background
+        @size-change="handleSizeChange"
+        @current-change="handleCurrentChange"
+      />
+    </div>
   </div>
 
   <!-- 添加/编辑语义模型Dialog -->
@@ -193,14 +253,15 @@
 </template>
 
 <script lang="ts">
-  import { defineComponent, ref, onMounted, Ref } from 'vue';
-  import { Plus, Search, UploadFilled, Delete } from '@element-plus/icons-vue';
+  import { defineComponent, ref, onMounted, Ref, reactive } from 'vue';
+  import { Plus, Search, UploadFilled, Delete, Filter as FilterIcon, RefreshLeft } from '@element-plus/icons-vue';
   import BatchImportDialog from './BatchImportDialog.vue';
   import semanticModelService, {
     SemanticModel,
     SemanticModelAddDto,
     SemanticModelImportItem,
   } from '@/services/semanticModel';
+  import type { SemanticModelPageQuery } from '@/services/common';
   import { ElMessage, ElMessageBox } from 'element-plus';
 
   export default defineComponent({
@@ -217,11 +278,25 @@
       },
     },
     setup(props) {
+      // 响应式数据
       const semanticModelList: Ref<SemanticModel[]> = ref([]);
       const dialogVisible: Ref<boolean> = ref(false);
       const isEdit: Ref<boolean> = ref(false);
-      const searchKeyword: Ref<string> = ref('');
+      const loading: Ref<boolean> = ref(false);
+      const filterVisible: Ref<boolean> = ref(false);
+      const total: Ref<number> = ref(0);
       const selectedModels: Ref<SemanticModel[]> = ref([]);
+      
+      // 分页查询参数
+      const queryParams = reactive<SemanticModelPageQuery>({
+        agentId: props.agentId,
+        pageNum: 1,
+        pageSize: 10,
+        keyword: '',
+        tableName: '',
+        status: undefined,
+      });
+
       const modelForm: Ref<SemanticModel> = ref({
         tableName: '',
         columnName: '',
@@ -235,6 +310,57 @@
       } as SemanticModel);
 
       const currentEditId: Ref<number | null> = ref(null);
+
+      // 切换筛选面板
+      const toggleFilter = () => {
+        filterVisible.value = !filterVisible.value;
+      };
+
+      // 清空筛选条件
+      const clearFilters = () => {
+        queryParams.keyword = '';
+        queryParams.tableName = '';
+        queryParams.status = undefined;
+        queryParams.pageNum = 1;
+        loadSemanticModels();
+      };
+
+      // 处理搜索
+      const handleSearch = () => {
+        queryParams.pageNum = 1;
+        loadSemanticModels();
+      };
+
+      // 分页处理
+      const handleSizeChange = (val: number) => {
+        queryParams.pageSize = val;
+        queryParams.pageNum = 1;
+        loadSemanticModels();
+      };
+
+      const handleCurrentChange = (val: number) => {
+        queryParams.pageNum = val;
+        loadSemanticModels();
+      };
+
+      // 加载语义模型列表（使用分页API）
+      const loadSemanticModels = async () => {
+        loading.value = true;
+        try {
+          const result = await semanticModelService.queryPage(queryParams);
+          if (result.success) {
+            semanticModelList.value = result.data;
+            total.value = result.total;
+          } else {
+            ElMessage.error(result.message || '加载语义模型列表失败');
+          }
+        } catch (error) {
+          ElMessage.error('加载语义模型列表失败');
+          console.error('Failed to load semantic models:', error);
+        } finally {
+          loading.value = false;
+        }
+      };
 
       const openCreateDialog = () => {
         isEdit.value = false;
@@ -288,24 +414,6 @@
           }
         } catch {
           // 用户取消操作时不显示错误消息
-        }
-      };
-
-      // 处理搜索
-      const handleSearch = () => {
-        loadSemanticModels();
-      };
-
-      // 加载语义模型列表
-      const loadSemanticModels = async () => {
-        try {
-          semanticModelList.value = await semanticModelService.list(
-            props.agentId,
-            searchKeyword.value || undefined,
-          );
-        } catch (error) {
-          ElMessage.error('加载语义模型列表失败');
-          console.error('Failed to load semantic models:', error);
         }
       };
 
@@ -544,12 +652,22 @@
         Plus,
         Search,
         Delete,
+        FilterIcon,
+        RefreshLeft,
         semanticModelList,
         dialogVisible,
         isEdit,
-        searchKeyword,
+        loading,
+        filterVisible,
+        total,
+        queryParams,
         selectedModels,
         modelForm,
+        toggleFilter,
+        clearFilters,
+        handleSearch,
+        handleSizeChange,
+        handleCurrentChange,
         openCreateDialog,
         handleSelectionChange,
         batchDeleteModels,
@@ -557,7 +675,6 @@
         deleteModel,
         toggleStatus,
         saveModel,
-        handleSearch,
         // 批量导入相关
         batchImportDialogVisible,
         jsonTemplate,

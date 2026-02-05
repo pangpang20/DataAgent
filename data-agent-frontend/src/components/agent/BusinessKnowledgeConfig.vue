@@ -15,10 +15,12 @@
 -->
 
 <template>
-  <!-- todo: 添加分页 -->
   <div style="padding: 20px">
     <div style="margin-bottom: 20px">
       <h2>业务知识管理</h2>
+      <p style="color: #909399; font-size: 14px; margin-top: 5px">
+        管理业务术语、同义词及其描述信息。
+      </p>
     </div>
     <el-divider />
 
@@ -29,9 +31,9 @@
         </el-col>
         <el-col :span="12" style="text-align: right">
           <el-input
-            v-model="searchKeyword"
-            placeholder="请输入关键词，并按回车搜索"
-            style="width: 250px; margin-right: 10px"
+            v-model="queryParams.keyword"
+            placeholder="请输入关键词搜索"
+            style="width: 400px; margin-right: 10px"
             clearable
             @clear="handleSearch"
             @keyup.enter="handleSearch"
@@ -41,6 +43,15 @@
               <el-icon><Search /></el-icon>
             </template>
           </el-input>
+          <el-button
+            @click="toggleFilter"
+            size="large"
+            :type="filterVisible ? 'primary' : ''"
+            round
+            :icon="FilterIcon"
+          >
+            筛选
+          </el-button>
           <el-button
             @click="refreshVectorStore"
             v-if="!refreshLoading"
@@ -59,7 +70,46 @@
       </el-row>
     </div>
 
-    <el-table :data="businessKnowledgeList" style="width: 100%" border>
+    <!-- 筛选面板 -->
+    <el-collapse-transition>
+      <div v-show="filterVisible" style="margin-bottom: 20px">
+        <el-card shadow="never">
+          <el-form :inline="true" :model="queryParams">
+            <el-form-item label="向量化状态">
+              <el-select
+                v-model="queryParams.embeddingStatus"
+                placeholder="全部状态"
+                clearable
+                @change="handleSearch"
+                style="width: 150px"
+              >
+                <el-option label="COMPLETED" value="COMPLETED" />
+                <el-option label="PROCESSING" value="PROCESSING" />
+                <el-option label="FAILED" value="FAILED" />
+                <el-option label="PENDING" value="PENDING" />
+              </el-select>
+            </el-form-item>
+            <el-form-item label="召回状态">
+              <el-select
+                v-model="queryParams.isRecall"
+                placeholder="全部"
+                clearable
+                @change="handleSearch"
+                style="width: 120px"
+              >
+                <el-option label="已召回" :value="true" />
+                <el-option label="未召回" :value="false" />
+              </el-select>
+            </el-form-item>
+            <el-form-item>
+              <el-button @click="clearFilters" :icon="RefreshLeft">清空筛选</el-button>
+            </el-form-item>
+          </el-form>
+        </el-card>
+      </div>
+    </el-collapse-transition>
+
+    <el-table :data="businessKnowledgeList" style="width: 100%" border v-loading="loading">
       <el-table-column prop="id" label="ID" min-width="60px" />
       <el-table-column prop="businessTerm" label="业务名词" min-width="120px" />
       <el-table-column prop="description" label="描述" min-width="150px" />
@@ -130,6 +180,20 @@
         </template>
       </el-table-column>
     </el-table>
+
+    <!-- 分页组件 -->
+    <div style="margin-top: 20px; display: flex; justify-content: flex-end">
+      <el-pagination
+        v-model:current-page="queryParams.pageNum"
+        v-model:page-size="queryParams.pageSize"
+        :page-sizes="[10, 20, 50, 100]"
+        layout="total, sizes, prev, pager, next, jumper"
+        :total="total"
+        background
+        @size-change="handleSizeChange"
+        @current-change="handleCurrentChange"
+      />
+    </div>
   </div>
 
   <!-- 添加/编辑业务知识Dialog -->
@@ -175,13 +239,14 @@
 </template>
 
 <script lang="ts">
-  import { defineComponent, ref, onMounted, Ref } from 'vue';
-  import { Plus, Search, Document, Warning } from '@element-plus/icons-vue';
+  import { defineComponent, ref, onMounted, Ref, reactive } from 'vue';
+  import { Plus, Search, Document, Warning, Filter as FilterIcon, RefreshLeft } from '@element-plus/icons-vue';
   import businessKnowledgeService, {
     BusinessKnowledgeVO,
     CreateBusinessKnowledgeDTO,
     UpdateBusinessKnowledgeDTO,
   } from '@/services/businessKnowledge';
+  import type { BusinessKnowledgePageQuery } from '@/services/common';
   import { ElMessage, ElMessageBox } from 'element-plus';
 
   export default defineComponent({
@@ -197,10 +262,24 @@
       },
     },
     setup(props) {
+      // 响应式数据
       const businessKnowledgeList: Ref<BusinessKnowledgeVO[]> = ref([]);
       const dialogVisible: Ref<boolean> = ref(false);
       const isEdit: Ref<boolean> = ref(false);
-      const searchKeyword: Ref<string> = ref('');
+      const loading: Ref<boolean> = ref(false);
+      const filterVisible: Ref<boolean> = ref(false);
+      const total: Ref<number> = ref(0);
+      
+      // 分页查询参数
+      const queryParams = reactive<BusinessKnowledgePageQuery>({
+        agentId: props.agentId,
+        pageNum: 1,
+        pageSize: 10,
+        keyword: '',
+        embeddingStatus: '',
+        isRecall: undefined,
+      });
+
       const knowledgeForm: Ref<BusinessKnowledgeVO> = ref({
         businessTerm: '',
         description: '',
@@ -213,27 +292,60 @@
       const saveLoading: Ref<boolean> = ref(false);
       const retryLoadingMap: Ref<Record<number, boolean>> = ref({});
 
-      const openCreateDialog = () => {
-        isEdit.value = false;
-        dialogVisible.value = true;
+      // 切换筛选面板
+      const toggleFilter = () => {
+        filterVisible.value = !filterVisible.value;
+      };
+
+      // 清空筛选条件
+      const clearFilters = () => {
+        queryParams.keyword = '';
+        queryParams.embeddingStatus = '';
+        queryParams.isRecall = undefined;
+        queryParams.pageNum = 1;
+        loadBusinessKnowledge();
       };
 
       // 处理搜索
       const handleSearch = () => {
+        queryParams.pageNum = 1;
         loadBusinessKnowledge();
       };
 
-      // 加载业务知识列表
+      // 分页处理
+      const handleSizeChange = (val: number) => {
+        queryParams.pageSize = val;
+        queryParams.pageNum = 1;
+        loadBusinessKnowledge();
+      };
+
+      const handleCurrentChange = (val: number) => {
+        queryParams.pageNum = val;
+        loadBusinessKnowledge();
+      };
+
+      // 加载业务知识列表（使用分页API）
       const loadBusinessKnowledge = async () => {
+        loading.value = true;
         try {
-          businessKnowledgeList.value = await businessKnowledgeService.list(
-            props.agentId,
-            searchKeyword.value || undefined,
-          );
+          const result = await businessKnowledgeService.queryPage(queryParams);
+          if (result.success) {
+            businessKnowledgeList.value = result.data;
+            total.value = result.total;
+          } else {
+            ElMessage.error(result.message || '加载业务知识列表失败');
+          }
         } catch (error) {
           ElMessage.error('加载业务知识列表失败');
           console.error('Failed to load business knowledge:', error);
+        } finally {
+          loading.value = false;
         }
+      };
+
+      const openCreateDialog = () => {
+        isEdit.value = false;
+        dialogVisible.value = true;
       };
 
       // 编辑业务知识
@@ -414,20 +526,30 @@
         Plus,
         Search,
         Document,
+        Warning,
+        FilterIcon,
+        RefreshLeft,
         businessKnowledgeList,
         dialogVisible,
         isEdit,
-        searchKeyword,
+        loading,
+        filterVisible,
+        total,
+        queryParams,
         knowledgeForm,
         refreshLoading,
         saveLoading,
         retryLoadingMap,
+        toggleFilter,
+        clearFilters,
+        handleSearch,
+        handleSizeChange,
+        handleCurrentChange,
         openCreateDialog,
         editKnowledge,
         deleteKnowledge,
         toggleRecall,
         saveKnowledge,
-        handleSearch,
         refreshVectorStore,
         retryEmbedding,
         getVectorStatusType,

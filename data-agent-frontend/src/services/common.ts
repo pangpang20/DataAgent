@@ -48,6 +48,7 @@ export interface BusinessKnowledgePageQuery extends BasePageQuery {
   agentId: number;
   keyword?: string;
   embeddingStatus?: string;
+  isRecall?: boolean;
 }
 
 // Semantic model page query interface
