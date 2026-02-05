@@ -297,7 +297,7 @@
           // 请求不带状态过滤的统计数据
           const statsQuery = {
             pageNum: 1,
-            pageSize: 1000, // 获取足够多的数据来统计
+            pageSize: 100, // 使用合理的页大小获取统计数据
             keyword: searchKeyword.value.trim() || undefined
           };
           
