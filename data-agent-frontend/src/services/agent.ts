@@ -15,7 +15,7 @@
  */
 
 import axios from 'axios';
-import { ApiResponse } from './common';
+import { ApiResponse, PageResponse, AgentPageQuery } from './common';
 
 export interface Agent {
   id?: number;
@@ -55,6 +55,15 @@ class AgentService {
     if (keyword) params.keyword = keyword;
 
     const response = await axios.get<Agent[]>(`${API_BASE_URL}/list`, { params });
+    return response.data;
+  }
+
+  /**
+   * Paginated query for agents
+   * @param query Page query parameters
+   */
+  async queryPage(query: AgentPageQuery): Promise<PageResponse<Agent[]>> {
+    const response = await axios.post<PageResponse<Agent[]>>(`${API_BASE_URL}/page`, query);
     return response.data;
   }
 

@@ -15,13 +15,14 @@
  */
 package com.audaque.cloud.ai.dataagent.service.business;
 
+import com.audaque.cloud.ai.dataagent.dto.knowledge.BusinessKnowledgeQueryDTO;
 import com.audaque.cloud.ai.dataagent.dto.knowledge.businessknowledge.CreateBusinessKnowledgeDTO;
 import com.audaque.cloud.ai.dataagent.dto.knowledge.businessknowledge.UpdateBusinessKnowledgeDTO;
 import com.audaque.cloud.ai.dataagent.vo.BusinessKnowledgeVO;
+import com.audaque.cloud.ai.dataagent.vo.PageResult;
 
 import java.util.List;
 
-// TODO 添加一个分页查询的方法
 public interface BusinessKnowledgeService {
 
 	List<BusinessKnowledgeVO> getKnowledge(Long agentId);
@@ -43,5 +44,22 @@ public interface BusinessKnowledgeService {
 	void refreshAllKnowledgeToVectorStore(String agentId) throws Exception;
 
 	void retryEmbedding(Long id);
+
+	/**
+	 * Page query business knowledge with filters
+	 * 
+	 * @param queryDTO query parameters
+	 * @return page result
+	 */
+	PageResult<BusinessKnowledgeVO> queryByConditionsWithPage(BusinessKnowledgeQueryDTO queryDTO);
+
+	/**
+	 * Batch delete business knowledge by ids (logical delete)
+	 * 
+	 * @param agentId agent id
+	 * @param ids     id list
+	 * @return affected count
+	 */
+	int batchDelete(Long agentId, List<Long> ids);
 
 }

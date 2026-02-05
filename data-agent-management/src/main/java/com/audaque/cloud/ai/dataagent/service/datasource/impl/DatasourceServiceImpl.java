@@ -23,6 +23,7 @@ import com.audaque.cloud.ai.dataagent.bo.schema.TableInfoBO;
 import com.audaque.cloud.ai.dataagent.connector.pool.DBConnectionPool;
 import com.audaque.cloud.ai.dataagent.connector.pool.DBConnectionPoolFactory;
 import com.audaque.cloud.ai.dataagent.bo.DbConfigBO;
+import com.audaque.cloud.ai.dataagent.dto.datasource.DatasourceQueryDTO;
 import com.audaque.cloud.ai.dataagent.entity.Datasource;
 import com.audaque.cloud.ai.dataagent.entity.AgentDatasource;
 import com.audaque.cloud.ai.dataagent.entity.LogicalRelation;
@@ -33,6 +34,7 @@ import com.audaque.cloud.ai.dataagent.mapper.DatasourceMapper;
 import com.audaque.cloud.ai.dataagent.mapper.AgentDatasourceMapper;
 import com.audaque.cloud.ai.dataagent.mapper.LogicalRelationMapper;
 import com.audaque.cloud.ai.dataagent.service.datasource.DatasourceService;
+import com.audaque.cloud.ai.dataagent.vo.PageResult;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -442,6 +444,26 @@ public class DatasourceServiceImpl implements DatasourceService {
 				insertedCount, updatedCount, deletedCount);
 
 		return logicalRelationMapper.selectByDatasourceId(datasourceId);
+	}
+
+	@Override
+	public PageResult<Datasource> queryByConditionsWithPage(DatasourceQueryDTO queryDTO) {
+		log.info("Page query datasources: pageNum={}, pageSize={}, keyword={}, type={}",
+				queryDTO.getPageNum(), queryDTO.getPageSize(), queryDTO.getKeyword(), queryDTO.getType());
+
+		int offset = queryDTO.calculateOffset();
+
+		Long total = datasourceMapper.countByConditions(queryDTO);
+		List<Datasource> dataList = datasourceMapper.selectByConditionsWithPage(queryDTO, offset);
+
+		PageResult<Datasource> pageResult = new PageResult<>();
+		pageResult.setData(dataList);
+		pageResult.setTotal(total);
+		pageResult.setPageNum(queryDTO.getPageNum());
+		pageResult.setPageSize(queryDTO.getPageSize());
+		pageResult.calculateTotalPages();
+
+		return pageResult;
 	}
 
 }

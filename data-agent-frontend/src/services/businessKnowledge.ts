@@ -15,7 +15,7 @@
  */
 
 import axios from 'axios';
-import { ApiResponse } from './common';
+import { ApiResponse, PageResponse, BusinessKnowledgePageQuery } from './common';
 
 interface BusinessKnowledgeVO {
   id?: number;
@@ -56,7 +56,7 @@ class BusinessKnowledgeService {
    */
   async list(agentId: number, keyword?: string): Promise<BusinessKnowledgeVO[]> {
     try {
-      const params = { agentId: agentId.toString() };
+      const params: Record<string, string> = { agentId: agentId.toString() };
       if (keyword) {
         params.keyword = keyword;
       }
@@ -68,6 +68,30 @@ class BusinessKnowledgeService {
       console.error('Failed to fetch business knowledge list:', error);
       throw error;
     }
+  }
+
+  /**
+   * Paginated query for business knowledge
+   * @param query Page query parameters
+   */
+  async queryPage(query: BusinessKnowledgePageQuery): Promise<PageResponse<BusinessKnowledgeVO[]>> {
+    const response = await axios.post<PageResponse<BusinessKnowledgeVO[]>>(
+      `${API_BASE_URL}/page`,
+      query,
+    );
+    return response.data;
+  }
+
+  /**
+   * Batch delete business knowledge
+   * @param agentId Agent ID
+   * @param ids Business knowledge IDs to delete
+   */
+  async batchDelete(agentId: number, ids: number[]): Promise<boolean> {
+    const response = await axios.delete<ApiResponse<boolean>>(`${API_BASE_URL}/batch`, {
+      data: { agentId, ids },
+    });
+    return response.data.success;
   }
 
   /**

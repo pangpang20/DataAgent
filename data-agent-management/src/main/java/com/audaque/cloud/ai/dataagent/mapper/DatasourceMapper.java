@@ -15,6 +15,7 @@
  */
 package com.audaque.cloud.ai.dataagent.mapper;
 
+import com.audaque.cloud.ai.dataagent.dto.datasource.DatasourceQueryDTO;
 import com.audaque.cloud.ai.dataagent.entity.Datasource;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
@@ -112,5 +113,50 @@ public interface DatasourceMapper {
 
 	@Delete("DELETE FROM datasource WHERE id = #{id}")
 	int deleteById(Integer id);
+
+	/**
+	 * Page query datasources with filters
+	 */
+	@Select("""
+			<script>
+			SELECT * FROM datasource
+			WHERE 1=1
+			<if test="queryDTO.keyword != null and queryDTO.keyword != ''">
+				AND (name LIKE CONCAT('%', #{queryDTO.keyword}, '%')
+					 OR description LIKE CONCAT('%', #{queryDTO.keyword}, '%'))
+			</if>
+			<if test="queryDTO.type != null and queryDTO.type != ''">
+				AND type = #{queryDTO.type}
+			</if>
+			<if test="queryDTO.status != null and queryDTO.status != ''">
+				AND status = #{queryDTO.status}
+			</if>
+			ORDER BY create_time DESC
+			${@com.audaque.cloud.ai.dataagent.util.SqlDialectResolver@limit(offset, queryDTO.pageSize)}
+			</script>
+			""")
+	List<Datasource> selectByConditionsWithPage(@Param("queryDTO") DatasourceQueryDTO queryDTO,
+			@Param("offset") Integer offset);
+
+	/**
+	 * Count total records by conditions
+	 */
+	@Select("""
+			<script>
+			SELECT COUNT(*) FROM datasource
+			WHERE 1=1
+			<if test="queryDTO.keyword != null and queryDTO.keyword != ''">
+				AND (name LIKE CONCAT('%', #{queryDTO.keyword}, '%')
+					 OR description LIKE CONCAT('%', #{queryDTO.keyword}, '%'))
+			</if>
+			<if test="queryDTO.type != null and queryDTO.type != ''">
+				AND type = #{queryDTO.type}
+			</if>
+			<if test="queryDTO.status != null and queryDTO.status != ''">
+				AND status = #{queryDTO.status}
+			</if>
+			</script>
+			""")
+	Long countByConditions(@Param("queryDTO") DatasourceQueryDTO queryDTO);
 
 }

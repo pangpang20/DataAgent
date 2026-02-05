@@ -15,6 +15,7 @@
  */
 package com.audaque.cloud.ai.dataagent.mapper;
 
+import com.audaque.cloud.ai.dataagent.dto.semantic.SemanticModelQueryDTO;
 import com.audaque.cloud.ai.dataagent.entity.SemanticModel;
 import org.apache.ibatis.annotations.*;
 
@@ -155,5 +156,81 @@ public interface SemanticModelMapper {
 			""")
 	SemanticModel selectByAgentIdAndTableNameAndColumnName(@Param("agentId") Integer agentId,
 			@Param("tableName") String tableName, @Param("columnName") String columnName);
+
+	/**
+	 * Page query semantic models with filters
+	 */
+	@Select("""
+			<script>
+			SELECT * FROM semantic_model
+			WHERE agent_id = #{queryDTO.agentId}
+			<if test="queryDTO.keyword != null and queryDTO.keyword != ''">
+				AND (table_name LIKE CONCAT('%', #{queryDTO.keyword}, '%')
+					 OR column_name LIKE CONCAT('%', #{queryDTO.keyword}, '%')
+					 OR business_name LIKE CONCAT('%', #{queryDTO.keyword}, '%')
+					 OR synonyms LIKE CONCAT('%', #{queryDTO.keyword}, '%'))
+			</if>
+			<if test="queryDTO.tableName != null and queryDTO.tableName != ''">
+				AND table_name = #{queryDTO.tableName}
+			</if>
+			<if test="queryDTO.status != null">
+				AND status = #{queryDTO.status}
+			</if>
+			<if test="queryDTO.createTimeStart != null and queryDTO.createTimeStart != ''">
+				AND created_time &gt;= #{queryDTO.createTimeStart}
+			</if>
+			<if test="queryDTO.createTimeEnd != null and queryDTO.createTimeEnd != ''">
+				AND created_time &lt;= #{queryDTO.createTimeEnd}
+			</if>
+			ORDER BY created_time DESC
+			${@com.audaque.cloud.ai.dataagent.util.SqlDialectResolver@limit(offset, queryDTO.pageSize)}
+			</script>
+			""")
+	List<SemanticModel> selectByConditionsWithPage(@Param("queryDTO") SemanticModelQueryDTO queryDTO,
+			@Param("offset") Integer offset);
+
+	/**
+	 * Count total records by conditions
+	 */
+	@Select("""
+			<script>
+			SELECT COUNT(*) FROM semantic_model
+			WHERE agent_id = #{queryDTO.agentId}
+			<if test="queryDTO.keyword != null and queryDTO.keyword != ''">
+				AND (table_name LIKE CONCAT('%', #{queryDTO.keyword}, '%')
+					 OR column_name LIKE CONCAT('%', #{queryDTO.keyword}, '%')
+					 OR business_name LIKE CONCAT('%', #{queryDTO.keyword}, '%')
+					 OR synonyms LIKE CONCAT('%', #{queryDTO.keyword}, '%'))
+			</if>
+			<if test="queryDTO.tableName != null and queryDTO.tableName != ''">
+				AND table_name = #{queryDTO.tableName}
+			</if>
+			<if test="queryDTO.status != null">
+				AND status = #{queryDTO.status}
+			</if>
+			<if test="queryDTO.createTimeStart != null and queryDTO.createTimeStart != ''">
+				AND created_time &gt;= #{queryDTO.createTimeStart}
+			</if>
+			<if test="queryDTO.createTimeEnd != null and queryDTO.createTimeEnd != ''">
+				AND created_time &lt;= #{queryDTO.createTimeEnd}
+			</if>
+			</script>
+			""")
+	Long countByConditions(@Param("queryDTO") SemanticModelQueryDTO queryDTO);
+
+	/**
+	 * Batch delete semantic models by ids
+	 */
+	@Delete("""
+			<script>
+			DELETE FROM semantic_model
+			WHERE agent_id = #{agentId}
+			AND id IN
+			<foreach collection="ids" item="id" open="(" close=")" separator=",">
+				#{id}
+			</foreach>
+			</script>
+			""")
+	int batchDeleteByIds(@Param("agentId") Long agentId, @Param("ids") List<Long> ids);
 
 }

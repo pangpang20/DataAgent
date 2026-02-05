@@ -15,12 +15,15 @@
  */
 package com.audaque.cloud.ai.dataagent.controller;
 
+import com.audaque.cloud.ai.dataagent.dto.datasource.DatasourceQueryDTO;
 import com.audaque.cloud.ai.dataagent.dto.schema.CreateLogicalRelationDTO;
 import com.audaque.cloud.ai.dataagent.dto.schema.UpdateLogicalRelationDTO;
 import com.audaque.cloud.ai.dataagent.entity.Datasource;
 import com.audaque.cloud.ai.dataagent.entity.LogicalRelation;
 import com.audaque.cloud.ai.dataagent.service.datasource.DatasourceService;
 import com.audaque.cloud.ai.dataagent.vo.ApiResponse;
+import com.audaque.cloud.ai.dataagent.vo.PageResponse;
+import com.audaque.cloud.ai.dataagent.vo.PageResult;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -51,15 +54,23 @@ public class DatasourceController {
 
 		if (status != null && !status.isEmpty()) {
 			datasources = datasourceService.getDatasourceByStatus(status);
-		}
-		else if (type != null && !type.isEmpty()) {
+		} else if (type != null && !type.isEmpty()) {
 			datasources = datasourceService.getDatasourceByType(type);
-		}
-		else {
+		} else {
 			datasources = datasourceService.getAllDatasource();
 		}
 
 		return ResponseEntity.ok(datasources);
+	}
+
+	/**
+	 * Paginated query for datasources
+	 */
+	@PostMapping("/page")
+	public PageResponse<List<Datasource>> queryByPage(@Valid @RequestBody DatasourceQueryDTO queryDTO) {
+		PageResult<Datasource> pageResult = datasourceService.queryByConditionsWithPage(queryDTO);
+		return PageResponse.success(pageResult.getData(), pageResult.getTotal(),
+				pageResult.getPageNum(), pageResult.getPageSize(), pageResult.getTotalPages());
 	}
 
 	/**
@@ -70,8 +81,7 @@ public class DatasourceController {
 		Datasource datasource = datasourceService.getDatasourceById(id);
 		if (datasource != null) {
 			return ResponseEntity.ok(datasource);
-		}
-		else {
+		} else {
 			return ResponseEntity.notFound().build();
 		}
 	}
@@ -81,8 +91,7 @@ public class DatasourceController {
 		try {
 			List<String> tables = datasourceService.getDatasourceTables(id);
 			return ResponseEntity.ok(tables);
-		}
-		catch (Exception e) {
+		} catch (Exception e) {
 			return ResponseEntity.badRequest().build();
 		}
 	}
@@ -95,8 +104,7 @@ public class DatasourceController {
 		try {
 			Datasource created = datasourceService.createDatasource(datasource);
 			return ResponseEntity.ok(created);
-		}
-		catch (Exception e) {
+		} catch (Exception e) {
 			return ResponseEntity.badRequest().build();
 		}
 	}
@@ -110,8 +118,7 @@ public class DatasourceController {
 		try {
 			Datasource updated = datasourceService.updateDatasource(id, datasource);
 			return ResponseEntity.ok(updated);
-		}
-		catch (Exception e) {
+		} catch (Exception e) {
 			return ResponseEntity.badRequest().build();
 		}
 	}
@@ -124,8 +131,7 @@ public class DatasourceController {
 		try {
 			datasourceService.deleteDatasource(id);
 			return ResponseEntity.ok(ApiResponse.success("数据源删除成功"));
-		}
-		catch (Exception e) {
+		} catch (Exception e) {
 			return ResponseEntity.badRequest().body(ApiResponse.error("删除失败：" + e.getMessage()));
 		}
 	}
@@ -139,8 +145,7 @@ public class DatasourceController {
 			boolean success = datasourceService.testConnection(id);
 			ApiResponse response = success ? ApiResponse.success("连接测试成功") : ApiResponse.error("连接测试失败");
 			return ResponseEntity.ok(response);
-		}
-		catch (Exception e) {
+		} catch (Exception e) {
 			return ResponseEntity.badRequest().body(ApiResponse.error("测试失败：" + e.getMessage()));
 		}
 	}
@@ -154,8 +159,7 @@ public class DatasourceController {
 		try {
 			List<String> columns = datasourceService.getTableColumns(id, tableName);
 			return ApiResponse.success("获取字段列表成功", columns);
-		}
-		catch (Exception e) {
+		} catch (Exception e) {
 			return ApiResponse.error("获取字段列表失败：" + e.getMessage());
 		}
 	}
@@ -168,8 +172,7 @@ public class DatasourceController {
 		try {
 			List<LogicalRelation> logicalRelations = datasourceService.getLogicalRelations(datasourceId);
 			return ApiResponse.success("success get logical relations", logicalRelations);
-		}
-		catch (Exception e) {
+		} catch (Exception e) {
 			log.error("Failed to get logical relations for datasource: {}", datasourceId, e);
 			return ApiResponse.error("获取逻辑外键失败：" + e.getMessage());
 		}
@@ -183,18 +186,17 @@ public class DatasourceController {
 			@Valid @RequestBody CreateLogicalRelationDTO dto) {
 		try {
 			LogicalRelation logicalRelation = LogicalRelation.builder()
-				.sourceTableName(dto.getSourceTableName())
-				.sourceColumnName(dto.getSourceColumnName())
-				.targetTableName(dto.getTargetTableName())
-				.targetColumnName(dto.getTargetColumnName())
-				.relationType(dto.getRelationType())
-				.description(dto.getDescription())
-				.build();
+					.sourceTableName(dto.getSourceTableName())
+					.sourceColumnName(dto.getSourceColumnName())
+					.targetTableName(dto.getTargetTableName())
+					.targetColumnName(dto.getTargetColumnName())
+					.relationType(dto.getRelationType())
+					.description(dto.getDescription())
+					.build();
 
 			LogicalRelation created = datasourceService.addLogicalRelation(datasourceId, logicalRelation);
 			return ApiResponse.success("success create logical relation", created);
-		}
-		catch (Exception e) {
+		} catch (Exception e) {
 			log.error("Failed to add logical relation for datasource: {}", datasourceId, e);
 			return ApiResponse.error("添加逻辑外键失败：" + e.getMessage());
 		}
@@ -208,19 +210,18 @@ public class DatasourceController {
 			@PathVariable(value = "relationId") Integer relationId, @RequestBody UpdateLogicalRelationDTO dto) {
 		try {
 			LogicalRelation logicalRelation = LogicalRelation.builder()
-				.sourceTableName(dto.getSourceTableName())
-				.sourceColumnName(dto.getSourceColumnName())
-				.targetTableName(dto.getTargetTableName())
-				.targetColumnName(dto.getTargetColumnName())
-				.relationType(dto.getRelationType())
-				.description(dto.getDescription())
-				.build();
+					.sourceTableName(dto.getSourceTableName())
+					.sourceColumnName(dto.getSourceColumnName())
+					.targetTableName(dto.getTargetTableName())
+					.targetColumnName(dto.getTargetColumnName())
+					.relationType(dto.getRelationType())
+					.description(dto.getDescription())
+					.build();
 
 			LogicalRelation updated = datasourceService.updateLogicalRelation(datasourceId, relationId,
 					logicalRelation);
 			return ApiResponse.success("success update logical relation", updated);
-		}
-		catch (Exception e) {
+		} catch (Exception e) {
 			log.error("Failed to update logical relation {} for datasource: {}", relationId, datasourceId, e);
 			return ApiResponse.error("更新逻辑外键失败：" + e.getMessage());
 		}
@@ -235,8 +236,7 @@ public class DatasourceController {
 		try {
 			datasourceService.deleteLogicalRelation(datasourceId, relationId);
 			return ApiResponse.success("success delete logical relation");
-		}
-		catch (Exception e) {
+		} catch (Exception e) {
 			log.error("Failed to delete logical relation {} for datasource: {}", relationId, datasourceId, e);
 			return ApiResponse.error("删除逻辑外键失败：" + e.getMessage());
 		}
@@ -251,8 +251,7 @@ public class DatasourceController {
 		try {
 			List<LogicalRelation> saved = datasourceService.saveLogicalRelations(datasourceId, logicalRelations);
 			return ApiResponse.success("success save logical relations", saved);
-		}
-		catch (Exception e) {
+		} catch (Exception e) {
 			log.error("Failed to save logical relations for datasource: {}", datasourceId, e);
 			return ApiResponse.error("批量保存逻辑外键失败：" + e.getMessage());
 		}

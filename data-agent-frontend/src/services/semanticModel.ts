@@ -15,7 +15,7 @@
  */
 
 import axios from 'axios';
-import { ApiResponse } from './common';
+import { ApiResponse, PageResponse, SemanticModelPageQuery } from './common';
 
 interface SemanticModel {
   id?: number;
@@ -81,6 +81,18 @@ class SemanticModelService {
 
     const response = await axios.get<ApiResponse<SemanticModel[]>>(API_BASE_URL, { params });
     return response.data.data || [];
+  }
+
+  /**
+   * Paginated query for semantic models
+   * @param query Page query parameters
+   */
+  async queryPage(query: SemanticModelPageQuery): Promise<PageResponse<SemanticModel[]>> {
+    const response = await axios.post<PageResponse<SemanticModel[]>>(
+      `${API_BASE_URL}/page`,
+      query,
+    );
+    return response.data;
   }
 
   /**

@@ -17,8 +17,10 @@ package com.audaque.cloud.ai.dataagent.service.semantic;
 
 import com.audaque.cloud.ai.dataagent.dto.schema.SemanticModelAddDTO;
 import com.audaque.cloud.ai.dataagent.dto.schema.SemanticModelBatchImportDTO;
+import com.audaque.cloud.ai.dataagent.dto.semantic.SemanticModelQueryDTO;
 import com.audaque.cloud.ai.dataagent.entity.SemanticModel;
 import com.audaque.cloud.ai.dataagent.vo.BatchImportResult;
+import com.audaque.cloud.ai.dataagent.vo.PageResult;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
@@ -69,10 +71,28 @@ public interface SemanticModelService {
 
 	/**
 	 * 从Excel文件导入语义模型
-	 * @param file Excel文件
+	 * 
+	 * @param file    Excel文件
 	 * @param agentId 智能体ID
 	 * @return 导入结果
 	 */
 	BatchImportResult importFromExcel(MultipartFile file, Long agentId);
+
+	/**
+	 * Page query semantic models with filters
+	 * 
+	 * @param queryDTO query parameters
+	 * @return page result
+	 */
+	PageResult<SemanticModel> queryByConditionsWithPage(SemanticModelQueryDTO queryDTO);
+
+	/**
+	 * Batch delete semantic models by ids
+	 * 
+	 * @param agentId agent id
+	 * @param ids     id list
+	 * @return affected count
+	 */
+	int batchDelete(Long agentId, List<Long> ids);
 
 }

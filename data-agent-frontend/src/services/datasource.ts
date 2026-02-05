@@ -15,7 +15,7 @@
  */
 
 import axios from 'axios';
-import { ApiResponse } from '@/services/common';
+import { ApiResponse, PageResponse, DatasourcePageQuery } from '@/services/common';
 
 export interface Datasource {
   id?: number;
@@ -58,6 +58,18 @@ class DatasourceService {
 
     const response = await axios.get<Datasource[]>(
       `${API_BASE_URL}${params.toString() ? `?${params.toString()}` : ''}`,
+    );
+    return response.data;
+  }
+
+  /**
+   * Paginated query for datasources
+   * @param query Page query parameters
+   */
+  async queryPage(query: DatasourcePageQuery): Promise<PageResponse<Datasource[]>> {
+    const response = await axios.post<PageResponse<Datasource[]>>(
+      `${API_BASE_URL}/page`,
+      query,
     );
     return response.data;
   }

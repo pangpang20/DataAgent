@@ -21,12 +21,14 @@ import com.audaque.cloud.ai.dataagent.event.BusinessKnowledgeDeletionEvent;
 import com.audaque.cloud.ai.dataagent.event.BusinessKnowledgeEmbeddingEvent;
 import com.audaque.cloud.ai.dataagent.util.DocumentConverterUtil;
 import com.audaque.cloud.ai.dataagent.converter.BusinessKnowledgeConverter;
+import com.audaque.cloud.ai.dataagent.dto.knowledge.BusinessKnowledgeQueryDTO;
 import com.audaque.cloud.ai.dataagent.dto.knowledge.businessknowledge.CreateBusinessKnowledgeDTO;
 import com.audaque.cloud.ai.dataagent.dto.knowledge.businessknowledge.UpdateBusinessKnowledgeDTO;
 import com.audaque.cloud.ai.dataagent.entity.BusinessKnowledge;
 import com.audaque.cloud.ai.dataagent.mapper.BusinessKnowledgeMapper;
 import com.audaque.cloud.ai.dataagent.service.vectorstore.AgentVectorStoreService;
 import com.audaque.cloud.ai.dataagent.vo.BusinessKnowledgeVO;
+import com.audaque.cloud.ai.dataagent.vo.PageResult;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.document.Document;
@@ -217,6 +219,52 @@ public class BusinessKnowledgeServiceImpl implements BusinessKnowledgeService {
 		// 发布向量化事件，异步处理
 		eventPublisher.publishEvent(new BusinessKnowledgeEmbeddingEvent(this, id));
 		log.info("Published retry BusinessKnowledgeEmbeddingEvent for id: {}", id);
+	}
+
+	@Override
+	public PageResult<BusinessKnowledgeVO> queryByConditionsWithPage(BusinessKnowledgeQueryDTO queryDTO) {
+		log.info("Page query business knowledge: agentId={}, pageNum={}, pageSize={}, keyword={}",
+				queryDTO.getAgentId(), queryDTO.getPageNum(), queryDTO.getPageSize(), queryDTO.getKeyword());
+
+		if (queryDTO.getAgentId() == null) {
+			throw new IllegalArgumentException("agentId cannot be null");
+		}
+
+		int offset = queryDTO.calculateOffset();
+
+		Long total = businessKnowledgeMapper.countByConditions(queryDTO);
+		List<BusinessKnowledge> dataList = businessKnowledgeMapper.selectByConditionsWithPage(queryDTO, offset);
+
+		List<BusinessKnowledgeVO> voList = dataList.stream()
+				.map(businessKnowledgeConverter::toVo)
+				.toList();
+
+		PageResult<BusinessKnowledgeVO> pageResult = new PageResult<>();
+		pageResult.setData(voList);
+		pageResult.setTotal(total);
+		pageResult.setPageNum(queryDTO.getPageNum());
+		pageResult.setPageSize(queryDTO.getPageSize());
+		pageResult.calculateTotalPages();
+
+		return pageResult;
+	}
+
+	@Override
+	@Transactional(rollbackFor = Exception.class)
+	public int batchDelete(Long agentId, List<Long> ids) {
+		log.info("Batch delete business knowledge: agentId={}, count={}", agentId, ids.size());
+
+		if (ids == null || ids.isEmpty()) {
+			throw new IllegalArgumentException("IDs cannot be empty");
+		}
+
+		int affected = businessKnowledgeMapper.batchDeleteByIds(agentId, ids);
+
+		// Publish deletion events for each deleted record
+		ids.forEach(id -> eventPublisher.publishEvent(new BusinessKnowledgeDeletionEvent(this, id)));
+
+		log.info("Batch delete completed: requested={}, affected={}", ids.size(), affected);
+		return affected;
 	}
 
 }

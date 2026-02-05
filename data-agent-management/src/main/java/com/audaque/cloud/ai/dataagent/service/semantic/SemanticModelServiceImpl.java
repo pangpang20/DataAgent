@@ -18,6 +18,7 @@ package com.audaque.cloud.ai.dataagent.service.semantic;
 import com.audaque.cloud.ai.dataagent.dto.schema.SemanticModelAddDTO;
 import com.audaque.cloud.ai.dataagent.dto.schema.SemanticModelBatchImportDTO;
 import com.audaque.cloud.ai.dataagent.dto.schema.SemanticModelImportItem;
+import com.audaque.cloud.ai.dataagent.dto.semantic.SemanticModelQueryDTO;
 import com.audaque.cloud.ai.dataagent.entity.AgentDatasource;
 import com.audaque.cloud.ai.dataagent.entity.SemanticModel;
 import com.audaque.cloud.ai.dataagent.mapper.AgentDatasourceMapper;
@@ -25,6 +26,7 @@ import com.audaque.cloud.ai.dataagent.mapper.SemanticModelMapper;
 import com.audaque.cloud.ai.dataagent.service.vectorstore.AgentVectorStoreService;
 import com.audaque.cloud.ai.dataagent.util.DocumentConverterUtil;
 import com.audaque.cloud.ai.dataagent.vo.BatchImportResult;
+import com.audaque.cloud.ai.dataagent.vo.PageResult;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.document.Document;
@@ -334,6 +336,53 @@ public class SemanticModelServiceImpl implements SemanticModelService {
 			result.addError("Excel导入失败: " + e.getMessage());
 			return result;
 		}
+	}
+
+	@Override
+	public PageResult<SemanticModel> queryByConditionsWithPage(SemanticModelQueryDTO queryDTO) {
+		log.info("Page query semantic models: agentId={}, pageNum={}, pageSize={}, keyword={}",
+				queryDTO.getAgentId(), queryDTO.getPageNum(), queryDTO.getPageSize(), queryDTO.getKeyword());
+
+		if (queryDTO.getAgentId() == null) {
+			throw new IllegalArgumentException("agentId cannot be null");
+		}
+
+		int offset = queryDTO.calculateOffset();
+
+		Long total = semanticModelMapper.countByConditions(queryDTO);
+		List<SemanticModel> dataList = semanticModelMapper.selectByConditionsWithPage(queryDTO, offset);
+
+		PageResult<SemanticModel> pageResult = new PageResult<>();
+		pageResult.setData(dataList);
+		pageResult.setTotal(total);
+		pageResult.setPageNum(queryDTO.getPageNum());
+		pageResult.setPageSize(queryDTO.getPageSize());
+		pageResult.calculateTotalPages();
+
+		return pageResult;
+	}
+
+	@Override
+	public int batchDelete(Long agentId, List<Long> ids) {
+		log.info("Batch delete semantic models: agentId={}, count={}", agentId, ids.size());
+
+		if (ids == null || ids.isEmpty()) {
+			throw new IllegalArgumentException("IDs cannot be empty");
+		}
+
+		// Delete from vector store first
+		ids.forEach(id -> {
+			SemanticModel model = semanticModelMapper.selectById(id);
+			if (model != null) {
+				deleteSemanticModelFromVectorStore(model);
+			}
+		});
+
+		// Delete from database
+		int affected = semanticModelMapper.batchDeleteByIds(agentId, ids);
+
+		log.info("Batch delete completed: requested={}, affected={}", ids.size(), affected);
+		return affected;
 	}
 
 }

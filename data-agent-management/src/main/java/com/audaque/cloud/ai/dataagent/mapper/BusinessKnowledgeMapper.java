@@ -15,6 +15,7 @@
  */
 package com.audaque.cloud.ai.dataagent.mapper;
 
+import com.audaque.cloud.ai.dataagent.dto.knowledge.BusinessKnowledgeQueryDTO;
 import com.audaque.cloud.ai.dataagent.entity.BusinessKnowledge;
 import org.apache.ibatis.annotations.*;
 
@@ -104,5 +105,80 @@ public interface BusinessKnowledgeMapper {
 			""")
 	int logicalDelete(@Param("id") Long id, @Param("isDeleted") Integer isDeleted,
 			@Param("updatedTime") LocalDateTime updatedTime);
+
+	/**
+	 * Page query business knowledge with filters
+	 */
+	@Select("""
+			<script>
+			SELECT * FROM business_knowledge
+			WHERE agent_id = #{queryDTO.agentId} AND is_deleted = 0
+			<if test="queryDTO.keyword != null and queryDTO.keyword != ''">
+				AND (business_term LIKE CONCAT('%', #{queryDTO.keyword}, '%')
+					 OR description LIKE CONCAT('%', #{queryDTO.keyword}, '%')
+					 OR synonyms LIKE CONCAT('%', #{queryDTO.keyword}, '%'))
+			</if>
+			<if test="queryDTO.isRecall != null">
+				AND is_recall = #{queryDTO.isRecall}
+			</if>
+			<if test="queryDTO.embeddingStatus != null and queryDTO.embeddingStatus != ''">
+				AND embedding_status = #{queryDTO.embeddingStatus}
+			</if>
+			<if test="queryDTO.createTimeStart != null and queryDTO.createTimeStart != ''">
+				AND created_time &gt;= #{queryDTO.createTimeStart}
+			</if>
+			<if test="queryDTO.createTimeEnd != null and queryDTO.createTimeEnd != ''">
+				AND created_time &lt;= #{queryDTO.createTimeEnd}
+			</if>
+			ORDER BY created_time DESC
+			${@com.audaque.cloud.ai.dataagent.util.SqlDialectResolver@limit(offset, queryDTO.pageSize)}
+			</script>
+			""")
+	List<BusinessKnowledge> selectByConditionsWithPage(@Param("queryDTO") BusinessKnowledgeQueryDTO queryDTO,
+			@Param("offset") Integer offset);
+
+	/**
+	 * Count total records by conditions
+	 */
+	@Select("""
+			<script>
+			SELECT COUNT(*) FROM business_knowledge
+			WHERE agent_id = #{queryDTO.agentId} AND is_deleted = 0
+			<if test="queryDTO.keyword != null and queryDTO.keyword != ''">
+				AND (business_term LIKE CONCAT('%', #{queryDTO.keyword}, '%')
+					 OR description LIKE CONCAT('%', #{queryDTO.keyword}, '%')
+					 OR synonyms LIKE CONCAT('%', #{queryDTO.keyword}, '%'))
+			</if>
+			<if test="queryDTO.isRecall != null">
+				AND is_recall = #{queryDTO.isRecall}
+			</if>
+			<if test="queryDTO.embeddingStatus != null and queryDTO.embeddingStatus != ''">
+				AND embedding_status = #{queryDTO.embeddingStatus}
+			</if>
+			<if test="queryDTO.createTimeStart != null and queryDTO.createTimeStart != ''">
+				AND created_time &gt;= #{queryDTO.createTimeStart}
+			</if>
+			<if test="queryDTO.createTimeEnd != null and queryDTO.createTimeEnd != ''">
+				AND created_time &lt;= #{queryDTO.createTimeEnd}
+			</if>
+			</script>
+			""")
+	Long countByConditions(@Param("queryDTO") BusinessKnowledgeQueryDTO queryDTO);
+
+	/**
+	 * Batch delete business knowledge by ids (logical delete)
+	 */
+	@Update("""
+			<script>
+			UPDATE business_knowledge
+			SET is_deleted = 1, updated_time = NOW()
+			WHERE agent_id = #{agentId} AND is_deleted = 0
+			AND id IN
+			<foreach collection="ids" item="id" open="(" close=")" separator=",">
+				#{id}
+			</foreach>
+			</script>
+			""")
+	int batchDeleteByIds(@Param("agentId") Long agentId, @Param("ids") List<Long> ids);
 
 }

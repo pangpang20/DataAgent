@@ -15,11 +15,16 @@
  */
 package com.audaque.cloud.ai.dataagent.controller;
 
+import com.audaque.cloud.ai.dataagent.dto.agent.BatchDeleteDTO;
+import com.audaque.cloud.ai.dataagent.dto.knowledge.BusinessKnowledgeQueryDTO;
 import com.audaque.cloud.ai.dataagent.dto.knowledge.businessknowledge.CreateBusinessKnowledgeDTO;
 import com.audaque.cloud.ai.dataagent.dto.knowledge.businessknowledge.UpdateBusinessKnowledgeDTO;
 import com.audaque.cloud.ai.dataagent.service.business.BusinessKnowledgeService;
 import com.audaque.cloud.ai.dataagent.vo.ApiResponse;
 import com.audaque.cloud.ai.dataagent.vo.BusinessKnowledgeVO;
+import com.audaque.cloud.ai.dataagent.vo.PageResponse;
+import com.audaque.cloud.ai.dataagent.vo.PageResult;
+import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.StringUtils;
@@ -45,8 +50,7 @@ public class BusinessKnowledgeController {
 
 		if (StringUtils.hasText(keyword)) {
 			result = businessKnowledgeService.searchKnowledge(agentId, keyword);
-		}
-		else {
+		} else {
 			result = businessKnowledgeService.getKnowledge(agentId);
 		}
 		return ApiResponse.success("success list businessKnowledge", result);
@@ -101,8 +105,7 @@ public class BusinessKnowledgeController {
 		try {
 			businessKnowledgeService.refreshAllKnowledgeToVectorStore(agentId);
 			return ApiResponse.success("success refresh vector store");
-		}
-		catch (Exception e) {
+		} catch (Exception e) {
 			log.error("Failed to refresh vector store for agentId: {}", agentId, e);
 			return ApiResponse.error("Failed to refresh vector store");
 		}
@@ -112,6 +115,53 @@ public class BusinessKnowledgeController {
 	public ApiResponse<Boolean> retryEmbedding(@PathVariable(value = "id") Long id) {
 		businessKnowledgeService.retryEmbedding(id);
 		return ApiResponse.success("success retry embedding");
+	}
+
+	/**
+	 * Page query business knowledge with filters
+	 */
+	@PostMapping("/page")
+	public PageResponse<List<BusinessKnowledgeVO>> queryByPage(@Valid @RequestBody BusinessKnowledgeQueryDTO queryDTO) {
+		try {
+			log.info("Page query request: agentId={}, pageNum={}, pageSize={}",
+					queryDTO.getAgentId(), queryDTO.getPageNum(), queryDTO.getPageSize());
+
+			PageResult<BusinessKnowledgeVO> pageResult = businessKnowledgeService.queryByConditionsWithPage(queryDTO);
+
+			return PageResponse.success(pageResult.getData(), pageResult.getTotal(),
+					pageResult.getPageNum(), pageResult.getPageSize(), pageResult.getTotalPages());
+		} catch (IllegalArgumentException e) {
+			log.error("Invalid query parameters: {}", e.getMessage());
+			return PageResponse.pageError("Invalid parameters: " + e.getMessage());
+		} catch (Exception e) {
+			log.error("Error querying business knowledge page", e);
+			return PageResponse.pageError("Query failed: " + e.getMessage());
+		}
+	}
+
+	/**
+	 * Batch delete business knowledge (logical delete)
+	 */
+	@DeleteMapping("/batch")
+	public ApiResponse<Boolean> batchDelete(@Valid @RequestBody BatchDeleteDTO deleteDTO) {
+		try {
+			log.info("Batch delete request: agentId={}, count={}",
+					deleteDTO.getAgentId(), deleteDTO.getIds().size());
+
+			int affected = businessKnowledgeService.batchDelete(deleteDTO.getAgentId(), deleteDTO.getIds());
+
+			if (affected > 0) {
+				return ApiResponse.success("Batch delete successful", true);
+			} else {
+				return ApiResponse.error("No records deleted");
+			}
+		} catch (IllegalArgumentException e) {
+			log.error("Invalid batch delete parameters: {}", e.getMessage());
+			return ApiResponse.error("Invalid parameters: " + e.getMessage());
+		} catch (Exception e) {
+			log.error("Error batch deleting business knowledge", e);
+			return ApiResponse.error("Batch delete failed: " + e.getMessage());
+		}
 	}
 
 }

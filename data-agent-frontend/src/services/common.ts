@@ -30,3 +30,37 @@ export interface PageResponse<T = unknown> {
   pageSize: number;
   totalPages: number;
 }
+
+// Base page query interface
+export interface BasePageQuery {
+  pageNum: number;
+  pageSize: number;
+}
+
+// Agent page query interface
+export interface AgentPageQuery extends BasePageQuery {
+  keyword?: string;
+  status?: string;
+}
+
+// Business knowledge page query interface
+export interface BusinessKnowledgePageQuery extends BasePageQuery {
+  agentId: number;
+  keyword?: string;
+  embeddingStatus?: string;
+}
+
+// Semantic model page query interface
+export interface SemanticModelPageQuery extends BasePageQuery {
+  agentId?: number;
+  keyword?: string;
+  status?: number;
+  tableName?: string;
+}
+
+// Datasource page query interface
+export interface DatasourcePageQuery extends BasePageQuery {
+  keyword?: string;
+  type?: string;
+  status?: string;
+}

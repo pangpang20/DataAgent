@@ -16,9 +16,11 @@
 package com.audaque.cloud.ai.dataagent.service.datasource;
 
 import com.audaque.cloud.ai.dataagent.bo.DbConfigBO;
+import com.audaque.cloud.ai.dataagent.dto.datasource.DatasourceQueryDTO;
 import com.audaque.cloud.ai.dataagent.entity.AgentDatasource;
 import com.audaque.cloud.ai.dataagent.entity.Datasource;
 import com.audaque.cloud.ai.dataagent.entity.LogicalRelation;
+import com.audaque.cloud.ai.dataagent.vo.PageResult;
 
 import java.util.List;
 
@@ -109,5 +111,13 @@ public interface DatasourceService {
 	 * 批量保存逻辑外键（替换现有的所有外键）
 	 */
 	List<LogicalRelation> saveLogicalRelations(Integer datasourceId, List<LogicalRelation> logicalRelations);
+
+	/**
+	 * Page query datasources with filters
+	 * 
+	 * @param queryDTO query parameters
+	 * @return page result
+	 */
+	PageResult<Datasource> queryByConditionsWithPage(DatasourceQueryDTO queryDTO);
 
 }

@@ -15,11 +15,13 @@
  */
 package com.audaque.cloud.ai.dataagent.service.agent;
 
+import com.audaque.cloud.ai.dataagent.dto.agent.AgentQueryDTO;
 import com.audaque.cloud.ai.dataagent.entity.Agent;
 import com.audaque.cloud.ai.dataagent.mapper.AgentMapper;
 import com.audaque.cloud.ai.dataagent.service.file.FileStorageService;
 import com.audaque.cloud.ai.dataagent.service.vectorstore.AgentVectorStoreService;
 import com.audaque.cloud.ai.dataagent.util.ApiKeyUtil;
+import com.audaque.cloud.ai.dataagent.vo.PageResult;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -186,6 +188,26 @@ public class AgentServiceImpl implements AgentService {
 			throw new IllegalArgumentException("Agent not found: " + id);
 		}
 		return agent;
+	}
+
+	@Override
+	public PageResult<Agent> queryByConditionsWithPage(AgentQueryDTO queryDTO) {
+		log.info("Page query agents: pageNum={}, pageSize={}, keyword={}, status={}",
+				queryDTO.getPageNum(), queryDTO.getPageSize(), queryDTO.getKeyword(), queryDTO.getStatus());
+
+		int offset = queryDTO.calculateOffset();
+
+		Long total = agentMapper.countByConditions(queryDTO);
+		List<Agent> dataList = agentMapper.selectByConditionsWithPage(queryDTO, offset);
+
+		PageResult<Agent> pageResult = new PageResult<>();
+		pageResult.setData(dataList);
+		pageResult.setTotal(total);
+		pageResult.setPageNum(queryDTO.getPageNum());
+		pageResult.setPageSize(queryDTO.getPageSize());
+		pageResult.calculateTotalPages();
+
+		return pageResult;
 	}
 
 }

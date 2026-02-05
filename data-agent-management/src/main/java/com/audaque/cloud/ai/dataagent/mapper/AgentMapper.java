@@ -15,6 +15,7 @@
  */
 package com.audaque.cloud.ai.dataagent.mapper;
 
+import com.audaque.cloud.ai.dataagent.dto.agent.AgentQueryDTO;
 import com.audaque.cloud.ai.dataagent.entity.Agent;
 import org.apache.ibatis.annotations.*;
 
@@ -115,5 +116,51 @@ public interface AgentMapper {
 			DELETE FROM agent WHERE id = #{id}
 			""")
 	int deleteById(Long id);
+
+	/**
+	 * Page query agents with filters
+	 */
+	@Select("""
+			<script>
+			SELECT * FROM agent
+			WHERE 1=1
+			<if test="queryDTO.keyword != null and queryDTO.keyword != ''">
+				AND (name LIKE CONCAT('%', #{queryDTO.keyword}, '%')
+					 OR description LIKE CONCAT('%', #{queryDTO.keyword}, '%')
+					 OR CAST(id AS CHAR) LIKE CONCAT('%', #{queryDTO.keyword}, '%'))
+			</if>
+			<if test="queryDTO.status != null and queryDTO.status != ''">
+				AND status = #{queryDTO.status}
+			</if>
+			<if test="queryDTO.category != null and queryDTO.category != ''">
+				AND category = #{queryDTO.category}
+			</if>
+			ORDER BY update_time DESC
+			${@com.audaque.cloud.ai.dataagent.util.SqlDialectResolver@limit(offset, queryDTO.pageSize)}
+			</script>
+			""")
+	List<Agent> selectByConditionsWithPage(@Param("queryDTO") AgentQueryDTO queryDTO, @Param("offset") Integer offset);
+
+	/**
+	 * Count total records by conditions
+	 */
+	@Select("""
+			<script>
+			SELECT COUNT(*) FROM agent
+			WHERE 1=1
+			<if test="queryDTO.keyword != null and queryDTO.keyword != ''">
+				AND (name LIKE CONCAT('%', #{queryDTO.keyword}, '%')
+					 OR description LIKE CONCAT('%', #{queryDTO.keyword}, '%')
+					 OR CAST(id AS CHAR) LIKE CONCAT('%', #{queryDTO.keyword}, '%'))
+			</if>
+			<if test="queryDTO.status != null and queryDTO.status != ''">
+				AND status = #{queryDTO.status}
+			</if>
+			<if test="queryDTO.category != null and queryDTO.category != ''">
+				AND category = #{queryDTO.category}
+			</if>
+			</script>
+			""")
+	Long countByConditions(@Param("queryDTO") AgentQueryDTO queryDTO);
 
 }

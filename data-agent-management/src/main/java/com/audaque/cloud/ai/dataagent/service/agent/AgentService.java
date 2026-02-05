@@ -15,7 +15,9 @@
  */
 package com.audaque.cloud.ai.dataagent.service.agent;
 
+import com.audaque.cloud.ai.dataagent.dto.agent.AgentQueryDTO;
 import com.audaque.cloud.ai.dataagent.entity.Agent;
+import com.audaque.cloud.ai.dataagent.vo.PageResult;
 
 import java.util.List;
 
@@ -42,5 +44,13 @@ public interface AgentService {
 	Agent toggleApiKey(Long id, boolean enabled);
 
 	String getApiKeyMasked(Long id);
+
+	/**
+	 * Page query agents with filters
+	 * 
+	 * @param queryDTO query parameters
+	 * @return page result
+	 */
+	PageResult<Agent> queryByConditionsWithPage(AgentQueryDTO queryDTO);
 
 }

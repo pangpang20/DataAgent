@@ -15,10 +15,14 @@
  */
 package com.audaque.cloud.ai.dataagent.controller;
 
+import com.audaque.cloud.ai.dataagent.dto.agent.AgentQueryDTO;
 import com.audaque.cloud.ai.dataagent.entity.Agent;
 import com.audaque.cloud.ai.dataagent.service.agent.AgentService;
 import com.audaque.cloud.ai.dataagent.vo.ApiKeyResponse;
 import com.audaque.cloud.ai.dataagent.vo.ApiResponse;
+import com.audaque.cloud.ai.dataagent.vo.PageResponse;
+import com.audaque.cloud.ai.dataagent.vo.PageResult;
+import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -56,11 +60,9 @@ public class AgentController {
 		List<Agent> result;
 		if (keyword != null && !keyword.trim().isEmpty()) {
 			result = agentService.search(keyword);
-		}
-		else if (status != null && !status.trim().isEmpty()) {
+		} else if (status != null && !status.trim().isEmpty()) {
 			result = agentService.findByStatus(status);
-		}
-		else {
+		} else {
 			result = agentService.findAll();
 		}
 		return ResponseEntity.ok(result);
@@ -213,6 +215,25 @@ public class AgentController {
 
 	private ApiResponse<ApiKeyResponse> buildApiKeyResponse(String apiKey, Integer apiKeyEnabled, String message) {
 		return ApiResponse.success(message, new ApiKeyResponse(apiKey, apiKeyEnabled));
+	}
+
+	/**
+	 * Page query agents with filters
+	 */
+	@PostMapping("/page")
+	public PageResponse<List<Agent>> queryByPage(@Valid @RequestBody AgentQueryDTO queryDTO) {
+		try {
+			log.info("Page query request: pageNum={}, pageSize={}, keyword={}, status={}",
+					queryDTO.getPageNum(), queryDTO.getPageSize(), queryDTO.getKeyword(), queryDTO.getStatus());
+
+			PageResult<Agent> pageResult = agentService.queryByConditionsWithPage(queryDTO);
+
+			return PageResponse.success(pageResult.getData(), pageResult.getTotal(),
+					pageResult.getPageNum(), pageResult.getPageSize(), pageResult.getTotalPages());
+		} catch (Exception e) {
+			log.error("Error querying agent page", e);
+			return PageResponse.pageError("Query failed: " + e.getMessage());
+		}
 	}
 
 }
