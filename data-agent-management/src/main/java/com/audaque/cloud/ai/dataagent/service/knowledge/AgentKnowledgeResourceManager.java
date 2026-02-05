@@ -30,6 +30,7 @@ import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
+import java.io.InputStream;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -105,10 +106,16 @@ public class AgentKnowledgeResourceManager {
 			log.error(
 					"TikaDocumentReader read failed due to StackOverflowError, possibly caused by problematic regex in Tika when processing file: {}",
 					filePath, e);
-			throw new RuntimeException(
-					"File processing failed due to stack overflow, possibly caused by complex document structure or Tika internal regex issue: "
-							+ filePath,
-					e);
+			// 尝试使用简化的读取方式作为后备方案
+			log.warn("Attempting fallback document reading method for file: {}", filePath);
+			try {
+				documents = readDocumentWithFallback(resource, filePath);
+			} catch (Exception fallbackException) {
+				log.error("Fallback document reading also failed for file: {}", filePath, fallbackException);
+				throw new RuntimeException(
+						"File processing failed due to stack overflow and fallback also failed: " + filePath,
+						fallbackException);
+			}
 		} catch (Exception e) {
 			log.error("TikaDocumentReader read failed for file: {}", filePath, e);
 			throw new RuntimeException("File processing failed: " + filePath, e);
@@ -125,6 +132,104 @@ public class AgentKnowledgeResourceManager {
 		} catch (Exception e) {
 			log.error("TextSplitter apply failed for file: {}", filePath, e);
 			throw new RuntimeException("Text splitting failed: " + filePath, e);
+		}
+	}
+
+	/**
+	 * 后备文档读取方法，用于处理Tika失败的情况
+	 * 使用简化的文本提取方式，避免复杂的正则表达式匹配
+	 */
+	private List<Document> readDocumentWithFallback(Resource resource, String filePath) throws Exception {
+		log.info("Using fallback method to read document: {}", filePath);
+
+		// 检查文件扩展名
+		String fileName = resource.getFilename();
+		if (fileName == null) {
+			throw new IllegalArgumentException("Filename is null for resource");
+		}
+
+		String extension = fileName.substring(fileName.lastIndexOf('.') + 1).toLowerCase();
+
+		// 对于docx文件，使用Apache POI直接读取
+		if ("docx".equals(extension)) {
+			return readDocxWithPOI(resource, filePath);
+		}
+
+		// 对于其他文件，尝试简单文本提取
+		return extractSimpleText(resource, filePath);
+	}
+
+	/**
+	 * 使用Apache POI直接读取DOCX文件，避免Tika的正则表达式问题
+	 */
+	private List<Document> readDocxWithPOI(Resource resource, String filePath) throws Exception {
+		log.info("Reading DOCX file using Apache POI: {}", filePath);
+
+		try (InputStream inputStream = resource.getInputStream()) {
+			// 创建XWPFDocument对象
+			org.apache.poi.xwpf.usermodel.XWPFDocument document = new org.apache.poi.xwpf.usermodel.XWPFDocument(
+					inputStream);
+
+			// 提取所有段落文本
+			StringBuilder content = new StringBuilder();
+			for (org.apache.poi.xwpf.usermodel.XWPFParagraph paragraph : document.getParagraphs()) {
+				String text = paragraph.getText();
+				if (StringUtils.hasText(text)) {
+					content.append(text).append("\n");
+				}
+			}
+
+			// 提取表格内容
+			for (org.apache.poi.xwpf.usermodel.XWPFTable table : document.getTables()) {
+				for (org.apache.poi.xwpf.usermodel.XWPFTableRow row : table.getRows()) {
+					StringBuilder rowText = new StringBuilder();
+					for (org.apache.poi.xwpf.usermodel.XWPFTableCell cell : row.getTableCells()) {
+						String cellText = cell.getText();
+						if (StringUtils.hasText(cellText)) {
+							rowText.append(cellText).append(" | ");
+						}
+					}
+					if (rowText.length() > 0) {
+						content.append(rowText.toString()).append("\n");
+					}
+				}
+			}
+
+			document.close();
+
+			String textContent = content.toString().trim();
+			if (!StringUtils.hasText(textContent)) {
+				log.warn("No content extracted from DOCX file: {}", filePath);
+				return List.of();
+			}
+
+			// 创建Document对象
+			Document documentObj = new Document(textContent);
+			log.info("Successfully extracted {} characters from DOCX file: {}", textContent.length(), filePath);
+
+			return List.of(documentObj);
+		}
+	}
+
+	/**
+	 * 简单文本提取方法，用于其他文件类型
+	 */
+	private List<Document> extractSimpleText(Resource resource, String filePath) throws Exception {
+		log.info("Extracting simple text from file: {}", filePath);
+
+		try (InputStream inputStream = resource.getInputStream()) {
+			String content = new String(inputStream.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+			content = content.trim();
+
+			if (!StringUtils.hasText(content)) {
+				log.warn("No content extracted from file: {}", filePath);
+				return List.of();
+			}
+
+			Document document = new Document(content);
+			log.info("Successfully extracted {} characters from file: {}", content.length(), filePath);
+
+			return List.of(document);
 		}
 	}
 
