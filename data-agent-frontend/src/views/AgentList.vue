@@ -285,11 +285,9 @@
 
       // 图片加载失败处理
       const handleImageError = (agent: Agent) => {
-        console.error('头像图片加载失败:', agent.name);
-        // 只有当当前没有头像或者是默认SVG时才重新生成
-        if (!agent.avatar || agent.avatar.startsWith('data:')) {
-          agent.avatar = generateFallbackAvatar();
-        }
+        console.debug('Avatar image load failed, using fallback for:', agent.name);
+        // Generate fallback avatar when image load fails (404 or other errors)
+        agent.avatar = generateFallbackAvatar();
       };
 
       // 删除智能体

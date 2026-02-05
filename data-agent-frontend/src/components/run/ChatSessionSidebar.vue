@@ -321,11 +321,9 @@
 
       // 图片加载失败处理
       const handleImageError = () => {
-        console.error('头像图片加载失败');
-        // 只有当当前没有头像或者是默认SVG时才重新生成
-        if (!props.agent.avatar || props.agent.avatar.startsWith('data:')) {
-          props.agent.avatar = generateFallbackAvatar();
-        }
+        console.debug('Avatar image load failed, using fallback');
+        // Generate fallback avatar when image load fails (404 or other errors)
+        props.agent.avatar = generateFallbackAvatar();
       };
 
       const clearAllSessions = async () => {
