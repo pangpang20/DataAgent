@@ -187,12 +187,15 @@ public class AgentVectorStoreServiceImpl implements AgentVectorStoreService {
 						document.getMetadata().keySet(),
 						document.getMetadata().get(DocumentMetadataConstant.VECTOR_TYPE));
 
-				// 输出原始文档内容的前100个字符
+				// 输出原始文档内容的预览(前50字符...后50字符)
 				if (document.getText() != null && !document.getText().isEmpty()) {
-					// String preview = document.getText().length() > 100
-					// 		? document.getText().substring(0, 100) + "..."
-					// 		: document.getText();
-					String preview = document.getText();
+					String text = document.getText();
+					String preview;
+					if (text.length() > 100) {
+						preview = text.substring(0, 50) + "..." + text.substring(text.length() - 50);
+					} else {
+						preview = text;
+					}
 					log.info("Document[{}] - content preview: {}", i, preview);
 				} else {
 					log.info("Document[{}] - content is empty", i);
