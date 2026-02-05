@@ -265,7 +265,8 @@
             :auto-upload="false"
             :limit="1"
             :on-change="handleFileChange"
-            :on-remove="() => (fileList = [])"
+            :on-exceed="handleFileExceed"
+            :on-remove="handleFileRemove"
             :file-list="fileList"
             :accept="'.pdf,.doc,.docx,.txt,.md'"
             drag
@@ -276,9 +277,9 @@
               <em>点击选择文件</em>
             </div>
             <template #tip>
-              <div class="el-upload__tip">支持 PDF, DOC, DOCX, TXT, MD 格式</div>
+              <div class="el-upload__tip">支持 PDF, DOC, DOCX, TXT, MD 格式，仅保留最后一个上传的文件</div>
               <div v-if="fileList.length > 0" class="el-upload__tip" style="color: #409eff">
-                文件大小: {{ formatFileSize(fileList[0].size) }}
+                当前文件: {{ fileList[0].name }} ({{ formatFileSize(fileList[0].size) }})
               </div>
             </template>
           </el-upload>
@@ -561,11 +562,34 @@
         
         if (!allowedExtensions.includes(fileExtension)) {
           ElMessage.error(`不支持的文件类型。仅支持: ${allowedExtensions.join(', ')}`);
-          return;
+          return false;
         }
         
+        // 清空之前的文件列表，只保留最新的文件
         fileList.value = [file];
         knowledgeForm.value.file = file.raw;
+        return true;
+      };
+
+      // 处理文件超出限制
+      const handleFileExceed = (files: File[]) => {
+        ElMessage.warning('只能上传一个文件，新文件将替换原有文件');
+        // 自动替换为最新上传的文件
+        if (files.length > 0) {
+          const file = files[files.length - 1]; // 取最后一个文件
+          const fileObj = {
+            name: file.name,
+            size: file.size,
+            raw: file
+          };
+          handleFileChange(fileObj);
+        }
+      };
+
+      // 处理文件移除
+      const handleFileRemove = () => {
+        fileList.value = [];
+        knowledgeForm.value.file = undefined;
       };
 
       // 格式化文件大小
@@ -708,6 +732,8 @@
         resetForm,
         handleTypeChange,
         handleFileChange,
+        handleFileExceed,
+        handleFileRemove,
         toggleStatus,
         handleRetry,
         formatFileSize,
