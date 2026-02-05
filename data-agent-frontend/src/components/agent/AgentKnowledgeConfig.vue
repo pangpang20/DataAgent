@@ -101,6 +101,7 @@
 
     <!-- 表格区域 -->
     <el-table :data="knowledgeList" style="width: 100%" border v-loading="loading">
+      <el-table-column prop="id" label="ID" min-width="80px" />
       <el-table-column prop="title" label="标题" min-width="150px" />
       <el-table-column prop="type" label="类型" min-width="100px">
         <template #default="scope">

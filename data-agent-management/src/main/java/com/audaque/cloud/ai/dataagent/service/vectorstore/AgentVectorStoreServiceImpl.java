@@ -90,18 +90,31 @@ public class AgentVectorStoreServiceImpl implements AgentVectorStoreService {
 
 	@Override
 	public List<Document> search(AgentSearchRequest searchRequest) {
+		log.info("=== Starting search operation ===");
+		log.info("Search parameters - agentId: {}, vectorType: {}, query: {}, topK: {}, similarityThreshold: {}",
+				searchRequest.getAgentId(),
+				searchRequest.getDocVectorType(),
+				searchRequest.getQuery(),
+				searchRequest.getTopK(),
+				searchRequest.getSimilarityThreshold());
+
 		Assert.hasText(searchRequest.getAgentId(), "AgentId cannot be empty");
 		Assert.hasText(searchRequest.getDocVectorType(), "DocVectorType cannot be empty");
 
+		log.debug("Building dynamic filter for agentId: {}, vectorType: {}",
+				searchRequest.getAgentId(), searchRequest.getDocVectorType());
 		Filter.Expression filter = dynamicFilterService.buildDynamicFilter(searchRequest.getAgentId(),
 				searchRequest.getDocVectorType());
+
 		// 根据agentId vectorType找不到要 召回 的业务知识或者智能体知识
 		if (filter == null) {
 			log.warn(
 					"Dynamic filter returned null (no valid ids), returning empty result directly.AgentId: {}, VectorType: {}",
 					searchRequest.getAgentId(), searchRequest.getDocVectorType());
+			log.info("=== Search operation completed (no valid filter) ===");
 			return Collections.emptyList();
 		}
+		log.debug("Dynamic filter built successfully: {}", filter);
 
 		HybridSearchRequest hybridRequest = HybridSearchRequest.builder()
 				.query(searchRequest.getQuery())
@@ -109,27 +122,44 @@ public class AgentVectorStoreServiceImpl implements AgentVectorStoreService {
 				.similarityThreshold(searchRequest.getSimilarityThreshold())
 				.filterExpression(filter)
 				.build();
+		log.debug("Hybrid search request built: {}", hybridRequest);
 
 		if (dataAgentProperties.getVectorStore().isEnableHybridSearch() && hybridRetrievalStrategy.isPresent()) {
-			return hybridRetrievalStrategy.get().retrieve(hybridRequest);
+			log.info("Using hybrid search strategy for agentId: {}, vectorType: {}",
+					searchRequest.getAgentId(), searchRequest.getDocVectorType());
+			List<Document> results = hybridRetrievalStrategy.get().retrieve(hybridRequest);
+			log.info("=== Search operation completed with hybrid search, found {} documents ===", results.size());
+			return results;
 		}
 		log.debug("Hybrid search is not enabled. use vector-search only");
+		log.debug("Executing vector similarity search with topK: {}, similarityThreshold: {}",
+				searchRequest.getTopK(), searchRequest.getSimilarityThreshold());
 		List<Document> results = vectorStore.similaritySearch(hybridRequest.toVectorSearchRequest());
-		log.debug("Search completed with vectorType: {}, found {} documents for SearchRequest: {}",
-				searchRequest.getDocVectorType(), results.size(), searchRequest);
+		log.info("=== Search operation completed with vector search, found {} documents ===", results.size());
+		log.debug("Search results details - vectorType: {}, topK: {}, similarityThreshold: {}, actual count: {}",
+				searchRequest.getDocVectorType(),
+				searchRequest.getTopK(),
+				searchRequest.getSimilarityThreshold(),
+				results.size());
 		return results;
 
 	}
 
 	@Override
 	public Boolean deleteDocumentsByVectorType(String agentId, String vectorType) throws Exception {
+		log.info("=== Starting deleteDocumentsByVectorType operation ===");
+		log.info("Delete parameters - agentId: {}, vectorType: {}", agentId, vectorType);
+
 		Assert.notNull(agentId, "AgentId cannot be null.");
 		Assert.notNull(vectorType, "VectorType cannot be null.");
 
 		Map<String, Object> metadata = new HashMap<>(Map.ofEntries(Map.entry(Constant.AGENT_ID, agentId),
 				Map.entry(DocumentMetadataConstant.VECTOR_TYPE, vectorType)));
+		log.debug("Built metadata for deletion: {}", metadata);
 
-		return this.deleteDocumentsByMetedata(agentId, metadata);
+		Boolean result = this.deleteDocumentsByMetedata(agentId, metadata);
+		log.info("=== DeleteDocumentsByVectorType operation completed, result: {} ===", result);
+		return result;
 	}
 
 	@Override
@@ -156,6 +186,16 @@ public class AgentVectorStoreServiceImpl implements AgentVectorStoreService {
 						document.getText() != null ? document.getText().length() : 0,
 						document.getMetadata().keySet(),
 						document.getMetadata().get(DocumentMetadataConstant.VECTOR_TYPE));
+
+				// 输出原始文档内容的前100个字符
+				if (document.getText() != null && !document.getText().isEmpty()) {
+					String preview = document.getText().length() > 100
+							? document.getText().substring(0, 100) + "..."
+							: document.getText();
+					log.info("Document[{}] - content preview: {}", i, preview);
+				} else {
+					log.info("Document[{}] - content is empty", i);
+				}
 			}
 
 			// 检查 id 字段
@@ -273,37 +313,55 @@ public class AgentVectorStoreServiceImpl implements AgentVectorStoreService {
 
 	@Override
 	public Boolean deleteDocumentsByMetedata(String agentId, Map<String, Object> metadata) {
+		log.info("=== Starting deleteDocumentsByMetedata operation ===");
+		log.info("Delete parameters - agentId: {}, metadata: {}", agentId, metadata);
+
 		Assert.hasText(agentId, "AgentId cannot be empty.");
 		Assert.notNull(metadata, "Metadata cannot be null.");
+
 		// 添加agentId元数据过滤条件, 用于删除指定agentId下的所有数据，因为metadata中用户调用可能忘记添加agentId
 		metadata.put(Constant.AGENT_ID, agentId);
 		String filterExpression = buildFilterExpressionString(metadata);
+		log.debug("Built filter expression for deletion: {}", filterExpression);
 
 		// es的可以直接元数据删除
 		if (vectorStore instanceof SimpleVectorStore) {
+			log.info("Using SimpleVectorStore, proceeding with batch deletion by filter");
 			// 目前SimpleVectorStore不支持通过元数据删除，使用会抛出UnsupportedOperationException,现在是通过id删除
 			batchDelDocumentsWithFilter(filterExpression);
 		} else {
+			log.info("Using vectorStore.delete() with filter expression");
 			vectorStore.delete(filterExpression);
 		}
 
+		log.info("=== DeleteDocumentsByMetedata operation completed successfully ===");
 		return true;
 	}
 
 	private void batchDelDocumentsWithFilter(String filterExpression) {
+		log.info("=== Starting batch delete with filter ===");
+		log.info("Filter expression: {}", filterExpression);
+
 		Set<String> seenDocumentIds = new HashSet<>();
 		// 分批获取，因为Milvus等向量数据库的topK有限制
 		List<Document> batch;
 		int newDocumentsCount;
 		int totalDeleted = 0;
+		int batchNumber = 0;
 
 		do {
+			batchNumber++;
+			log.debug("Processing batch #{} for filter: {}", batchNumber, filterExpression);
+			log.debug("Fetching documents with topK limit: {}", dataAgentProperties.getVectorStore().getBatchDelTopkLimit());
+
 			batch = vectorStore.similaritySearch(org.springframework.ai.vectorstore.SearchRequest.builder()
 					.query(DEFAULT)// 使用默认的查询字符串，因为有的嵌入模型不支持空字符串
 					.filterExpression(filterExpression)
 					.similarityThreshold(0.0)// 设置最低相似度阈值以获取元数据匹配的所有文档
 					.topK(dataAgentProperties.getVectorStore().getBatchDelTopkLimit())
 					.build());
+
+			log.debug("Batch #{} fetched {} documents", batchNumber, batch.size());
 
 			// 过滤掉已经处理过的文档，只删除未处理的文档
 			List<String> idsToDelete = new ArrayList<>();
@@ -317,29 +375,47 @@ public class AgentVectorStoreServiceImpl implements AgentVectorStoreService {
 				}
 			}
 
+			log.debug("Batch #{} - {} new documents to delete, {} duplicates skipped",
+					batchNumber, newDocumentsCount, batch.size() - newDocumentsCount);
+
 			// 删除这批新文档
 			if (!idsToDelete.isEmpty()) {
+				log.info("Deleting {} documents in batch #{}", idsToDelete.size(), batchNumber);
 				vectorStore.delete(idsToDelete);
 				totalDeleted += idsToDelete.size();
+				log.info("Batch #{} deletion completed, total deleted so far: {}",
+						batchNumber, totalDeleted);
 			}
 
 		} while (newDocumentsCount > 0); // 只有当获取到新文档时才继续循环
 
-		log.info("Deleted {} documents with filter expression: {}", totalDeleted, filterExpression);
+		log.info("=== Batch delete completed - total {} documents deleted with filter: {} ===",
+				totalDeleted, filterExpression);
 	}
 
 	@Override
 	public List<Document> getDocumentsForAgent(String agentId, String query, String vectorType) {
+		log.info("=== Starting getDocumentsForAgent with default parameters ===");
+		log.info("Parameters - agentId: {}, query: {}, vectorType: {}", agentId, query, vectorType);
+
 		// 使用全局默认配置
 		int defaultTopK = dataAgentProperties.getVectorStore().getDefaultTopkLimit();
 		double defaultThreshold = dataAgentProperties.getVectorStore().getDefaultSimilarityThreshold();
 
-		return getDocumentsForAgent(agentId, query, vectorType, defaultTopK, defaultThreshold);
+		log.debug("Using default parameters - topK: {}, threshold: {}", defaultTopK, defaultThreshold);
+
+		List<Document> result = getDocumentsForAgent(agentId, query, vectorType, defaultTopK, defaultThreshold);
+		log.info("=== getDocumentsForAgent completed, found {} documents ===", result.size());
+		return result;
 	}
 
 	@Override
 	public List<Document> getDocumentsForAgent(String agentId, String query, String vectorType, int topK,
 			double threshold) {
+		log.info("=== Starting getDocumentsForAgent with custom parameters ===");
+		log.info("Parameters - agentId: {}, query: {}, vectorType: {}, topK: {}, threshold: {}",
+				agentId, query, vectorType, topK, threshold);
+
 		AgentSearchRequest searchRequest = AgentSearchRequest.builder()
 				.agentId(agentId)
 				.docVectorType(vectorType)
@@ -347,33 +423,59 @@ public class AgentVectorStoreServiceImpl implements AgentVectorStoreService {
 				.topK(topK) // 使用传入的参数
 				.similarityThreshold(threshold) // 使用传入的参数
 				.build();
-		return search(searchRequest);
+		log.debug("Built search request: {}", searchRequest);
+
+		List<Document> result = search(searchRequest);
+		log.info("=== getDocumentsForAgent completed, found {} documents ===", result.size());
+		return result;
 	}
 
 	@Override
 	public List<Document> getDocumentsOnlyByFilter(Filter.Expression filterExpression, Integer topK) {
+		log.info("=== Starting getDocumentsOnlyByFilter operation ===");
+		log.info("Parameters - filterExpression: {}, topK: {}", filterExpression, topK);
+
 		Assert.notNull(filterExpression, "filterExpression cannot be null.");
-		if (topK == null)
+
+		if (topK == null) {
 			topK = dataAgentProperties.getVectorStore().getDefaultTopkLimit();
+			log.debug("topK not provided, using default: {}", topK);
+		}
+
+		log.debug("Building search request with query: '{}', topK: {}, similarityThreshold: 0.0", DEFAULT);
 		SearchRequest searchRequest = SearchRequest.builder()
 				.query(DEFAULT)
 				.topK(topK)
 				.filterExpression(filterExpression)
 				.similarityThreshold(0.0)
 				.build();
-		return vectorStore.similaritySearch(searchRequest);
+
+		log.debug("Executing similarity search with filter only");
+		List<Document> result = vectorStore.similaritySearch(searchRequest);
+		log.info("=== getDocumentsOnlyByFilter completed, found {} documents ===", result.size());
+		return result;
 	}
 
 	@Override
 	public boolean hasDocuments(String agentId) {
+		log.info("=== Starting hasDocuments check ===");
+		log.info("Checking if documents exist for agentId: {}", agentId);
+
 		// 类似 MySQL 的 LIMIT 1,只检查是否存在文档
+		String filterExpression = buildFilterExpressionString(Map.of(Constant.AGENT_ID, agentId));
+		log.debug("Built filter expression for check: {}", filterExpression);
+
+		log.debug("Executing similarity search with topK=1 to check document existence");
 		List<Document> docs = vectorStore.similaritySearch(org.springframework.ai.vectorstore.SearchRequest.builder()
 				.query(DEFAULT)// 使用默认的查询字符串，因为有的嵌入模型不支持空字符串
-				.filterExpression(buildFilterExpressionString(Map.of(Constant.AGENT_ID, agentId)))
+				.filterExpression(filterExpression)
 				.topK(1) // 只获取1个文档
 				.similarityThreshold(0.0)
 				.build());
-		return !docs.isEmpty();
+
+		boolean hasDocuments = !docs.isEmpty();
+		log.info("=== hasDocuments check completed for agentId: {}, result: {} ===", agentId, hasDocuments);
+		return hasDocuments;
 	}
 
 }
