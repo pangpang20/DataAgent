@@ -267,4 +267,22 @@ public class BusinessKnowledgeServiceImpl implements BusinessKnowledgeService {
 		return affected;
 	}
 
+	@Override
+	public int batchUpdateRecallStatus(Long agentId, List<Long> ids, Boolean isRecall) {
+		log.info("Batch update recall status: agentId={}, count={}, isRecall={}", agentId, ids.size(), isRecall);
+
+		if (ids == null || ids.isEmpty()) {
+			throw new IllegalArgumentException("IDs cannot be empty");
+		}
+
+		if (isRecall == null) {
+			throw new IllegalArgumentException("isRecall cannot be null");
+		}
+
+		int affected = businessKnowledgeMapper.batchUpdateRecallStatus(agentId, ids, isRecall);
+
+		log.info("Batch update recall status completed: requested={}, affected={}", ids.size(), affected);
+		return affected;
+	}
+
 }

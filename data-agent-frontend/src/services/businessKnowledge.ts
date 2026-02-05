@@ -95,6 +95,21 @@ class BusinessKnowledgeService {
   }
 
   /**
+   * Batch update recall status for business knowledge
+   * @param agentId Agent ID
+   * @param ids Business knowledge IDs
+   * @param isRecall Recall status (true: recall, false: cancel recall)
+   */
+  async batchUpdateRecallStatus(agentId: number, ids: number[], isRecall: boolean): Promise<boolean> {
+    const response = await axios.post<ApiResponse<boolean>>(
+      `${API_BASE_URL}/batch-recall`,
+      { agentId, ids },
+      { params: { isRecall } }
+    );
+    return response.data.success;
+  }
+
+  /**
    * 根据 ID 获取业务知识详情
    * @param id 业务知识 ID
    */

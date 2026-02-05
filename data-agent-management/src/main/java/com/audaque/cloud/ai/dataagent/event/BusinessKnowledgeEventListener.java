@@ -92,8 +92,8 @@ public class BusinessKnowledgeEventListener {
         Long id = event.getKnowledgeId();
         log.info("Starting async vector cleanup for businessKnowledgeId: {}", id);
 
-        // 1. 重新查询
-        BusinessKnowledge knowledge = businessKnowledgeMapper.selectById(id);
+        // 1. 重新查询（包括已逻辑删除的记录）
+        BusinessKnowledge knowledge = businessKnowledgeMapper.selectByIdIncludingDeleted(id);
         if (knowledge == null) {
             log.warn("BusinessKnowledge record not found or already deleted, skipping cleanup. ID: {}", id);
             return;

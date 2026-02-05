@@ -29,13 +29,13 @@
         <el-col :span="12">
           <h3>语义模型列表</h3>
           <el-button
-            v-if="selectedModels.length > 0"
             @click="batchDeleteModels"
             size="default"
             type="danger"
             plain
             :icon="Delete"
             style="margin-left: 10px"
+            :disabled="selectedModels.length === 0"
           >
             批量删除 ({{ selectedModels.length }})
           </el-button>

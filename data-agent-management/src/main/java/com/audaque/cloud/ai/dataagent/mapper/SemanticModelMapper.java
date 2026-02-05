@@ -24,7 +24,7 @@ import java.util.List;
 @Mapper
 public interface SemanticModelMapper {
 
-	@Select("SELECT * FROM semantic_model ORDER BY created_time DESC")
+	@Select("SELECT * FROM semantic_model WHERE is_deleted = 0 ORDER BY created_time DESC")
 	List<SemanticModel> selectAll();
 
 	/**
@@ -32,7 +32,7 @@ public interface SemanticModelMapper {
 	 */
 	@Select("""
 			SELECT * FROM semantic_model
-			WHERE agent_id = #{agentId}
+			WHERE agent_id = #{agentId} AND is_deleted = 0
 			ORDER BY created_time DESC
 			""")
 	List<SemanticModel> selectByAgentId(@Param("agentId") Long agentId);
@@ -42,7 +42,7 @@ public interface SemanticModelMapper {
 	 */
 	@Select("""
 			SELECT * FROM semantic_model
-			WHERE id = #{id}
+			WHERE id = #{id} AND is_deleted = 0
 			""")
 	SemanticModel selectById(@Param("id") Long id);
 
@@ -51,10 +51,11 @@ public interface SemanticModelMapper {
 	 */
 	@Select("""
 			SELECT * FROM semantic_model
-			WHERE column_name LIKE CONCAT('%', #{keyword}, '%')
+			WHERE is_deleted = 0
+			  AND (column_name LIKE CONCAT('%', #{keyword}, '%')
 			   OR business_name LIKE CONCAT('%', #{keyword}, '%')
 			   OR business_description LIKE CONCAT('%', #{keyword}, '%')
-			   OR synonyms LIKE CONCAT('%', #{keyword}, '%')
+			   OR synonyms LIKE CONCAT('%', #{keyword}, '%'))
 			ORDER BY created_time DESC
 			""")
 	List<SemanticModel> searchByKeyword(@Param("keyword") String keyword);
@@ -65,7 +66,7 @@ public interface SemanticModelMapper {
 	@Update("""
 			UPDATE semantic_model
 			SET status = 1
-			WHERE id = #{id}
+			WHERE id = #{id} AND is_deleted = 0
 			""")
 	int enableById(@Param("id") Long id);
 
@@ -75,7 +76,7 @@ public interface SemanticModelMapper {
 	@Update("""
 			UPDATE semantic_model
 			SET status = 0
-			WHERE id = #{id}
+			WHERE id = #{id} AND is_deleted = 0
 			""")
 	int disableById(@Param("id") Long id);
 
@@ -86,15 +87,16 @@ public interface SemanticModelMapper {
 			SELECT * FROM semantic_model
 			WHERE agent_id = #{agentId}
 			  AND status != 0
+			  AND is_deleted = 0
 			ORDER BY created_time DESC
 			""")
 	List<SemanticModel> selectEnabledByAgentId(@Param("agentId") Long agentId);
 
 	@Insert("""
 			INSERT INTO semantic_model
-			(agent_id, datasource_id, table_name, column_name, business_name, synonyms, business_description, column_comment, data_type, created_time, updated_time, status)
+			(agent_id, datasource_id, table_name, column_name, business_name, synonyms, business_description, column_comment, data_type, created_time, updated_time, status, is_deleted)
 			VALUES
-			(#{agentId}, #{datasourceId}, #{tableName}, #{columnName}, #{businessName}, #{synonyms}, #{businessDescription}, #{columnComment}, #{dataType}, #{createdTime}, #{updatedTime}, #{status})
+			(#{agentId}, #{datasourceId}, #{tableName}, #{columnName}, #{businessName}, #{synonyms}, #{businessDescription}, #{columnComment}, #{dataType}, #{createdTime}, #{updatedTime}, #{status}, #{isDeleted})
 			""")
 	@Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
 	int insert(SemanticModel model);
@@ -113,6 +115,7 @@ public interface SemanticModelMapper {
 				<if test="columnComment != null">column_comment = #{columnComment},</if>
 				<if test="dataType != null">data_type = #{dataType},</if>
 				<if test="status != null">status = #{status},</if>
+				<if test="isDeleted != null">is_deleted = #{isDeleted},</if>
 				updated_time = #{updatedTime}
 			</set>
 			WHERE id = #{id}
@@ -120,8 +123,12 @@ public interface SemanticModelMapper {
 			""")
 	int updateById(SemanticModel model);
 
-	@Delete("""
-			DELETE FROM semantic_model
+	/**
+	 * Logical delete by id
+	 */
+	@Update("""
+			UPDATE semantic_model
+			SET is_deleted = 1, updated_time = NOW()
 			WHERE id = #{id}
 			""")
 	int deleteById(@Param("id") Long id);
@@ -134,6 +141,7 @@ public interface SemanticModelMapper {
 			SELECT * FROM semantic_model
 			WHERE datasource_id = #{datasourceId}
 			  AND status = 1
+			  AND is_deleted = 0
 			  AND table_name IN
 			  <foreach item='tableName' index='index' collection='tableNames' open='(' separator=',' close=')'>
 			    #{tableName}
@@ -152,6 +160,7 @@ public interface SemanticModelMapper {
 			WHERE agent_id = #{agentId}
 			  AND table_name = #{tableName}
 			  AND column_name = #{columnName}
+			  AND is_deleted = 0
 			${@com.audaque.cloud.ai.dataagent.util.SqlDialectResolver@limit(0, 1)}
 			""")
 	SemanticModel selectByAgentIdAndTableNameAndColumnName(@Param("agentId") Integer agentId,
@@ -163,7 +172,7 @@ public interface SemanticModelMapper {
 	@Select("""
 			<script>
 			SELECT * FROM semantic_model
-			WHERE agent_id = #{queryDTO.agentId}
+			WHERE agent_id = #{queryDTO.agentId} AND is_deleted = 0
 			<if test="queryDTO.keyword != null and queryDTO.keyword != ''">
 				AND (table_name LIKE CONCAT('%', #{queryDTO.keyword}, '%')
 					 OR column_name LIKE CONCAT('%', #{queryDTO.keyword}, '%')
@@ -195,7 +204,7 @@ public interface SemanticModelMapper {
 	@Select("""
 			<script>
 			SELECT COUNT(*) FROM semantic_model
-			WHERE agent_id = #{queryDTO.agentId}
+			WHERE agent_id = #{queryDTO.agentId} AND is_deleted = 0
 			<if test="queryDTO.keyword != null and queryDTO.keyword != ''">
 				AND (table_name LIKE CONCAT('%', #{queryDTO.keyword}, '%')
 					 OR column_name LIKE CONCAT('%', #{queryDTO.keyword}, '%')
@@ -219,12 +228,13 @@ public interface SemanticModelMapper {
 	Long countByConditions(@Param("queryDTO") SemanticModelQueryDTO queryDTO);
 
 	/**
-	 * Batch delete semantic models by ids
+	 * Batch delete semantic models by ids (logical delete)
 	 */
-	@Delete("""
+	@Update("""
 			<script>
-			DELETE FROM semantic_model
-			WHERE agent_id = #{agentId}
+			UPDATE semantic_model
+			SET is_deleted = 1, updated_time = NOW()
+			WHERE agent_id = #{agentId} AND is_deleted = 0
 			AND id IN
 			<foreach collection="ids" item="id" open="(" close=")" separator=",">
 				#{id}

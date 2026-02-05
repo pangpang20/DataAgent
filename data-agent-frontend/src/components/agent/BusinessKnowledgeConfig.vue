@@ -27,7 +27,36 @@
     <div style="margin-bottom: 30px">
       <el-row style="display: flex; justify-content: space-between; align-items: center">
         <el-col :span="12">
-          <h3>业务知识列表</h3>
+          <h3 style="display: inline-block; margin-right: 20px">业务知识列表</h3>
+          <!-- 批量操作按钮 -->
+          <el-button
+            @click="handleBatchDelete"
+            size="default"
+            type="danger"
+            plain
+            :icon="Delete"
+            :disabled="selectedKnowledge.length === 0"
+          >
+            批量删除 ({{ selectedKnowledge.length }})
+          </el-button>
+          <el-button
+            @click="handleBatchRecall(true)"
+            size="default"
+            type="success"
+            plain
+            :disabled="selectedKnowledge.length === 0"
+          >
+            批量召回 ({{ selectedKnowledge.length }})
+          </el-button>
+          <el-button
+            @click="handleBatchRecall(false)"
+            size="default"
+            type="warning"
+            plain
+            :disabled="selectedKnowledge.length === 0"
+          >
+            批量取消召回 ({{ selectedKnowledge.length }})
+          </el-button>
         </el-col>
         <el-col :span="12" style="text-align: right">
           <el-input
@@ -109,7 +138,14 @@
       </div>
     </el-collapse-transition>
 
-    <el-table :data="businessKnowledgeList" style="width: 100%" border v-loading="loading">
+    <el-table 
+      :data="businessKnowledgeList" 
+      style="width: 100%" 
+      border 
+      v-loading="loading"
+      @selection-change="handleSelectionChange"
+    >
+      <el-table-column type="selection" width="55" />
       <el-table-column prop="id" label="ID" min-width="60px" />
       <el-table-column prop="businessTerm" label="业务名词" min-width="120px" />
       <el-table-column prop="description" label="描述" min-width="150px" />
@@ -240,7 +276,7 @@
 
 <script lang="ts">
   import { defineComponent, ref, onMounted, Ref, reactive } from 'vue';
-  import { Plus, Search, Document, Warning, Filter as FilterIcon, RefreshLeft } from '@element-plus/icons-vue';
+  import { Plus, Search, Document, Warning, Filter as FilterIcon, RefreshLeft, Delete } from '@element-plus/icons-vue';
   import businessKnowledgeService, {
     BusinessKnowledgeVO,
     CreateBusinessKnowledgeDTO,
@@ -291,6 +327,12 @@
       const refreshLoading: Ref<boolean> = ref(false);
       const saveLoading: Ref<boolean> = ref(false);
       const retryLoadingMap: Ref<Record<number, boolean>> = ref({});
+      const selectedKnowledge: Ref<BusinessKnowledgeVO[]> = ref([]);
+
+      // 处理表格选择变化
+      const handleSelectionChange = (selection: BusinessKnowledgeVO[]) => {
+        selectedKnowledge.value = selection;
+      };
 
       // 切换筛选面板
       const toggleFilter = () => {
@@ -518,6 +560,78 @@
         }
       };
 
+      // 批量删除
+      const handleBatchDelete = async () => {
+        if (selectedKnowledge.value.length === 0) {
+          ElMessage.warning('请先选择要删除的业务知识');
+          return;
+        }
+
+        try {
+          await ElMessageBox.confirm(
+            `确定要删除选中的 ${selectedKnowledge.value.length} 条业务知识吗？此操作为逻辑删除。`,
+            '确认批量删除',
+            {
+              confirmButtonText: '确定',
+              cancelButtonText: '取消',
+              type: 'warning',
+            },
+          );
+
+          const ids = selectedKnowledge.value.map(item => item.id!);
+          const result = await businessKnowledgeService.batchDelete(props.agentId, ids);
+          
+          if (result) {
+            ElMessage.success(`成功删除 ${ids.length} 条业务知识`);
+            selectedKnowledge.value = [];
+            await loadBusinessKnowledge();
+          } else {
+            ElMessage.error('批量删除失败');
+          }
+        } catch (error) {
+          if (error !== 'cancel') {
+            ElMessage.error('批量删除失败');
+            console.error('Failed to batch delete:', error);
+          }
+        }
+      };
+
+      // 批量召回/取消召回
+      const handleBatchRecall = async (isRecall: boolean) => {
+        if (selectedKnowledge.value.length === 0) {
+          ElMessage.warning(`请先选择要${isRecall ? '召回' : '取消召回'}的业务知识`);
+          return;
+        }
+
+        try {
+          await ElMessageBox.confirm(
+            `确定要${isRecall ? '召回' : '取消召回'}选中的 ${selectedKnowledge.value.length} 条业务知识吗？`,
+            `确认批量${isRecall ? '召回' : '取消召回'}`,
+            {
+              confirmButtonText: '确定',
+              cancelButtonText: '取消',
+              type: 'warning',
+            },
+          );
+
+          const ids = selectedKnowledge.value.map(item => item.id!);
+          const result = await businessKnowledgeService.batchUpdateRecallStatus(props.agentId, ids, isRecall);
+          
+          if (result) {
+            ElMessage.success(`成功${isRecall ? '召回' : '取消召回'} ${ids.length} 条业务知识`);
+            selectedKnowledge.value = [];
+            await loadBusinessKnowledge();
+          } else {
+            ElMessage.error(`批量${isRecall ? '召回' : '取消召回'}失败`);
+          }
+        } catch (error) {
+          if (error !== 'cancel') {
+            ElMessage.error(`批量${isRecall ? '召回' : '取消召回'}失败`);
+            console.error('Failed to batch update recall status:', error);
+          }
+        }
+      };
+
       onMounted(() => {
         loadBusinessKnowledge();
       });
@@ -529,6 +643,7 @@
         Warning,
         FilterIcon,
         RefreshLeft,
+        Delete,
         businessKnowledgeList,
         dialogVisible,
         isEdit,
@@ -540,11 +655,13 @@
         refreshLoading,
         saveLoading,
         retryLoadingMap,
+        selectedKnowledge,
         toggleFilter,
         clearFilters,
         handleSearch,
         handleSizeChange,
         handleCurrentChange,
+        handleSelectionChange,
         openCreateDialog,
         editKnowledge,
         deleteKnowledge,
@@ -553,6 +670,8 @@
         refreshVectorStore,
         retryEmbedding,
         getVectorStatusType,
+        handleBatchDelete,
+        handleBatchRecall,
       };
     },
   });

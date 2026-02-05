@@ -62,4 +62,14 @@ public interface BusinessKnowledgeService {
 	 */
 	int batchDelete(Long agentId, List<Long> ids);
 
+	/**
+	 * Batch update recall status for business knowledge
+	 * 
+	 * @param agentId  agent id
+	 * @param ids      id list
+	 * @param isRecall recall status (true: recall, false: cancel recall)
+	 * @return affected count
+	 */
+	int batchUpdateRecallStatus(Long agentId, List<Long> ids, Boolean isRecall);
+
 }

@@ -92,6 +92,15 @@ public interface BusinessKnowledgeMapper {
 			""")
 	BusinessKnowledge selectById(Long id);
 
+	/**
+	 * Select by id including logically deleted records
+	 */
+	@Select("""
+			SELECT * FROM business_knowledge
+			WHERE id = #{id}
+			""")
+	BusinessKnowledge selectByIdIncludingDeleted(Long id);
+
 	@Select("""
 			SELECT id FROM business_knowledge
 			WHERE agent_id = #{agentId} AND is_recall = 1 AND is_deleted = 0
@@ -180,5 +189,22 @@ public interface BusinessKnowledgeMapper {
 			</script>
 			""")
 	int batchDeleteByIds(@Param("agentId") Long agentId, @Param("ids") List<Long> ids);
+
+	/**
+	 * Batch update recall status for business knowledge
+	 */
+	@Update("""
+			<script>
+			UPDATE business_knowledge
+			SET is_recall = #{isRecall}, updated_time = NOW()
+			WHERE agent_id = #{agentId} AND is_deleted = 0
+			AND id IN
+			<foreach collection="ids" item="id" open="(" close=")" separator=",">
+				#{id}
+			</foreach>
+			</script>
+			""")
+	int batchUpdateRecallStatus(@Param("agentId") Long agentId, @Param("ids") List<Long> ids,
+			@Param("isRecall") Boolean isRecall);
 
 }

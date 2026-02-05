@@ -164,4 +164,31 @@ public class BusinessKnowledgeController {
 		}
 	}
 
+	/**
+	 * Batch update recall status for business knowledge
+	 */
+	@PostMapping("/batch-recall")
+	public ApiResponse<Boolean> batchUpdateRecallStatus(@Valid @RequestBody BatchDeleteDTO requestDTO,
+			@RequestParam(value = "isRecall") Boolean isRecall) {
+		try {
+			log.info("Batch update recall status request: agentId={}, count={}, isRecall={}",
+					requestDTO.getAgentId(), requestDTO.getIds().size(), isRecall);
+
+			int affected = businessKnowledgeService.batchUpdateRecallStatus(
+					requestDTO.getAgentId(), requestDTO.getIds(), isRecall);
+
+			if (affected > 0) {
+				return ApiResponse.success("Batch update recall status successful", true);
+			} else {
+				return ApiResponse.error("No records updated");
+			}
+		} catch (IllegalArgumentException e) {
+			log.error("Invalid batch update recall parameters: {}", e.getMessage());
+			return ApiResponse.error("Invalid parameters: " + e.getMessage());
+		} catch (Exception e) {
+			log.error("Error batch updating recall status", e);
+			return ApiResponse.error("Batch update recall status failed: " + e.getMessage());
+		}
+	}
+
 }
