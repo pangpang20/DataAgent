@@ -54,7 +54,7 @@
                     <el-radio-button value="all">
                       <el-icon><Grid /></el-icon>
                       <span>全部智能体</span>
-                      <span class="tab-count">{{ agents.length }}</span>
+                      <span class="tab-count">{{ total }}</span>
                     </el-radio-button>
                     <el-radio-button value="published">
                       <el-icon><Check /></el-icon>
@@ -220,46 +220,27 @@
       const currentPage = ref(1);
       const pageSize = ref(12);
       const total = ref(0);
+      
+      // 状态统计
+      const statusStats = ref({
+        all: 0,
+        published: 0,
+        draft: 0,
+        offline: 0
+      });
 
       // 计算属性
-      const publishedCount = computed(
-        () => agents.value.filter((a: Agent) => a.status === 'published').length,
-      );
-      const draftCount = computed(
-        () => agents.value.filter((a: Agent) => a.status === 'draft').length,
-      );
-      const offlineCount = computed(
-        () => agents.value.filter((a: Agent) => a.status === 'offline').length,
-      );
+      const publishedCount = computed(() => statusStats.value.published);
+      const draftCount = computed(() => statusStats.value.draft);
+      const offlineCount = computed(() => statusStats.value.offline);
 
       const filteredAgents = computed(() => {
-        let filtered = agents.value;
-
-        // 按状态过滤
-        if (activeFilter.value !== 'all') {
-          filtered = filtered.filter((agent: Agent) => agent.status === activeFilter.value);
-        }
-
-        // 按关键词搜索
-        if (searchKeyword.value.trim()) {
-          const keyword = searchKeyword.value.toLowerCase();
-          filtered = filtered.filter(
-            (agent: Agent) =>
-              agent.name.toLowerCase().includes(keyword) ||
-              agent.description.toLowerCase().includes(keyword) ||
-              agent.id.toString().includes(keyword),
-          );
-        }
-
-        return filtered;
+        // 后端已处理过滤，这里直接返回所有数据
+        return agents.value;
       });
 
-      // 分页计算属性
-      const paginatedAgents = computed(() => {
-        const start = (currentPage.value - 1) * pageSize.value;
-        const end = start + pageSize.value;
-        return filteredAgents.value.slice(start, end);
-      });
+      // 直接使用后端分页数据，不再进行前端二次分页
+      const paginatedAgents = computed(() => agents.value);
 
       const setFilter = (filter: string) => {
         activeFilter.value = filter;
@@ -291,12 +272,47 @@
           const response = await agentService.queryPage(query);
           agents.value = response.data || [];
           total.value = response.total || 0;
+          
+          // 更新状态统计（请求全部数据的统计信息）
+          await updateStatusStats();
         } catch (error) {
           ElMessage.error('获取智能体列表失败，请检查网络！');
           agents.value = [];
           total.value = 0;
+          // 重置状态统计
+          statusStats.value = {
+            all: 0,
+            published: 0,
+            draft: 0,
+            offline: 0
+          };
         } finally {
           loading.value = false;
+        }
+      };
+
+      // 更新状态统计数据
+      const updateStatusStats = async () => {
+        try {
+          // 请求不带状态过滤的统计数据
+          const statsQuery = {
+            pageNum: 1,
+            pageSize: 1000, // 获取足够多的数据来统计
+            keyword: searchKeyword.value.trim() || undefined
+          };
+          
+          const response = await agentService.queryPage(statsQuery);
+          const allAgents = response.data || [];
+          
+          statusStats.value = {
+            all: response.total || 0,
+            published: allAgents.filter((a: Agent) => a.status === 'published').length,
+            draft: allAgents.filter((a: Agent) => a.status === 'draft').length,
+            offline: allAgents.filter((a: Agent) => a.status === 'offline').length
+          };
+        } catch (error) {
+          console.error('获取状态统计失败:', error);
+          // 保持现有统计或重置为0
         }
       };
 
@@ -388,6 +404,7 @@
         total,
         currentPage,
         pageSize,
+        statusStats,
         setFilter,
         loadAgents,
         enterAgent,
