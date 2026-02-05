@@ -30,12 +30,14 @@ CREATE TABLE agent (
     create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     human_review_enabled TINYINT DEFAULT 0,
+    is_deleted INT DEFAULT 0,
     PRIMARY KEY (id)
 );
 CREATE INDEX idx_agent_name ON agent(name);
 CREATE INDEX idx_agent_status ON agent(status);
 CREATE INDEX idx_agent_category ON agent(category);
 CREATE INDEX idx_agent_admin_id ON agent(admin_id);
+CREATE INDEX idx_agent_is_deleted ON agent(is_deleted);
 
 COMMENT ON TABLE agent IS '智能体表';
 COMMENT ON COLUMN agent.name IS '智能体名称';
@@ -51,6 +53,7 @@ COMMENT ON COLUMN agent.tags IS '标签，逗号分隔';
 COMMENT ON COLUMN agent.create_time IS '创建时间';
 COMMENT ON COLUMN agent.update_time IS '更新时间';
 COMMENT ON COLUMN agent.human_review_enabled IS '是否启用计划人工复核：0-否，1-是';
+COMMENT ON COLUMN agent.is_deleted IS '逻辑删除：0-未删除，1-已删除';
 
 -- 2. 业务知识表
 CREATE TABLE business_knowledge (
@@ -99,6 +102,7 @@ CREATE TABLE semantic_model (
     column_comment VARCHAR(255) DEFAULT NULL,
     data_type VARCHAR(255) DEFAULT '' NOT NULL,
     status TINYINT DEFAULT 1 NOT NULL,
+    is_deleted INT DEFAULT 0,
     created_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     updated_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     PRIMARY KEY (id),
@@ -107,6 +111,7 @@ CREATE TABLE semantic_model (
 CREATE INDEX idx_sm_agent_id ON semantic_model(agent_id);
 CREATE INDEX idx_sm_field_name ON semantic_model(business_name);
 CREATE INDEX idx_sm_status ON semantic_model(status);
+CREATE INDEX idx_sm_is_deleted ON semantic_model(is_deleted);
 
 COMMENT ON TABLE semantic_model IS '语义模型表';
 COMMENT ON COLUMN semantic_model.agent_id IS '关联的智能体ID';
@@ -119,6 +124,7 @@ COMMENT ON COLUMN semantic_model.business_description IS '业务描述 (用于�
 COMMENT ON COLUMN semantic_model.column_comment IS '数据库中的物理字段的原始注释 ';
 COMMENT ON COLUMN semantic_model.data_type IS '物理数据类型 (例如: int, varchar(20))';
 COMMENT ON COLUMN semantic_model.status IS '0 停用 1 启用';
+COMMENT ON COLUMN semantic_model.is_deleted IS '逻辑删除：0-未删除，1-已删除';
 COMMENT ON COLUMN semantic_model.created_time IS '创建时间';
 COMMENT ON COLUMN semantic_model.updated_time IS '更新时间';
 
@@ -183,12 +189,14 @@ CREATE TABLE datasource (
     creator_id BIGINT,
     create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    is_deleted INT DEFAULT 0,
     PRIMARY KEY (id)
 );
 CREATE INDEX idx_ds_name ON datasource(name);
 CREATE INDEX idx_ds_type ON datasource(type);
 CREATE INDEX idx_ds_status ON datasource(status);
 CREATE INDEX idx_ds_creator_id ON datasource(creator_id);
+CREATE INDEX idx_ds_is_deleted ON datasource(is_deleted);
 
 COMMENT ON TABLE datasource IS '数据源表';
 COMMENT ON COLUMN datasource.name IS '数据源名称';
@@ -205,6 +213,7 @@ COMMENT ON COLUMN datasource.description IS '描述';
 COMMENT ON COLUMN datasource.creator_id IS '创建者ID';
 COMMENT ON COLUMN datasource.create_time IS '创建时间';
 COMMENT ON COLUMN datasource.update_time IS '更新时间';
+COMMENT ON COLUMN datasource.is_deleted IS '逻辑删除：0-未删除，1-已删除';
 
 -- 6. 逻辑外键配置表
 CREATE TABLE logical_relation (

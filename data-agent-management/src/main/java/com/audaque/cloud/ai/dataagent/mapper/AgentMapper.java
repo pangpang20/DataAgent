@@ -26,23 +26,24 @@ import java.util.List;
 public interface AgentMapper {
 
 	@Select("""
-			SELECT * FROM agent ORDER BY create_time DESC
+			SELECT * FROM agent WHERE is_deleted = 0 ORDER BY create_time DESC
 			""")
 	List<Agent> findAll();
 
 	@Select("""
-			SELECT * FROM agent WHERE id = #{id}
+			SELECT * FROM agent WHERE id = #{id} AND is_deleted = 0
 			""")
 	Agent findById(Long id);
 
 	@Select("""
-			SELECT * FROM agent WHERE status = #{status} ORDER BY create_time DESC
+			SELECT * FROM agent WHERE status = #{status} AND is_deleted = 0 ORDER BY create_time DESC
 			""")
 	List<Agent> findByStatus(String status);
 
 	@Select("""
 			SELECT * FROM agent
-			WHERE (name LIKE CONCAT('%', #{keyword}, '%')
+			WHERE is_deleted = 0
+			  AND (name LIKE CONCAT('%', #{keyword}, '%')
 				   OR description LIKE CONCAT('%', #{keyword}, '%')
 				   OR tags LIKE CONCAT('%', #{keyword}, '%'))
 			ORDER BY create_time DESC
@@ -52,6 +53,7 @@ public interface AgentMapper {
 	@Select("""
 			<script>
 				SELECT * FROM agent
+				WHERE is_deleted = 0
 				<where>
 					<if test='status != null and status != ""'>
 						AND status = #{status}
@@ -113,9 +115,11 @@ public interface AgentMapper {
 			@Param("updateTime") LocalDateTime updateTime);
 
 	@Delete("""
-			DELETE FROM agent WHERE id = #{id}
+			UPDATE agent 
+			SET is_deleted = 1, update_time = NOW() 
+			WHERE id = #{id} AND is_deleted = 0
 			""")
-	int deleteById(Long id);
+	int logicalDeleteById(Long id);
 
 	/**
 	 * Page query agents with filters
@@ -123,7 +127,7 @@ public interface AgentMapper {
 	@Select("""
 			<script>
 			SELECT * FROM agent
-			WHERE 1=1
+			WHERE is_deleted = 0
 			<if test="queryDTO.keyword != null and queryDTO.keyword != ''">
 				AND (name LIKE CONCAT('%', #{queryDTO.keyword}, '%')
 					 OR description LIKE CONCAT('%', #{queryDTO.keyword}, '%')
@@ -147,7 +151,7 @@ public interface AgentMapper {
 	@Select("""
 			<script>
 			SELECT COUNT(*) FROM agent
-			WHERE 1=1
+			WHERE is_deleted = 0
 			<if test="queryDTO.keyword != null and queryDTO.keyword != ''">
 				AND (name LIKE CONCAT('%', #{queryDTO.keyword}, '%')
 					 OR description LIKE CONCAT('%', #{queryDTO.keyword}, '%')

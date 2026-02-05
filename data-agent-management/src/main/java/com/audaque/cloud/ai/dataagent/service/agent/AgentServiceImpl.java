@@ -25,6 +25,7 @@ import com.audaque.cloud.ai.dataagent.vo.PageResult;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -102,41 +103,55 @@ public class AgentServiceImpl implements AgentService {
 	}
 
 	@Override
+	@Transactional
 	public void deleteById(Long id) {
 		try {
+			log.info("Attempting logical delete for agent: {}", id);
+			
 			// 获取头像信息用于文件清理
 			Agent existing = agentMapper.findById(id);
-			String avatar = existing != null ? existing.getAvatar() : null;
-
-			// Delete agent record from database
-			agentMapper.deleteById(id);
-
-			// Also clean up the agent's vector data
-			if (agentVectorStoreService != null) {
+			if (existing == null) {
+				log.warn("Agent not found for deletion: {}", id);
+				return;
+			}
+			
+			String avatar = existing.getAvatar();
+			
+			// 执行逻辑删除
+			int affected = agentMapper.logicalDeleteById(id);
+			
+			if (affected > 0) {
+				log.info("Successfully marked agent as deleted: {}", id);
+				
+				// 同步删除向量数据库中的数据
+				if (agentVectorStoreService != null) {
+					try {
+						agentVectorStoreService.deleteDocumentsByMetedata(id.toString(), new HashMap<>());
+						log.info("Successfully deleted vector data for agent: {}", id);
+					} catch (Exception vectorException) {
+						log.warn("Failed to delete vector data for agent: {}, error: {}", id, vectorException.getMessage());
+						// 向量数据删除失败不影响主流程
+					}
+				}
+				
+				// 清理头像文件
 				try {
-					agentVectorStoreService.deleteDocumentsByMetedata(id.toString(), new HashMap<>());
-					log.info("Successfully deleted vector data for agent: {}", id);
-				} catch (Exception vectorException) {
-					log.warn("Failed to delete vector data for agent: {}, error: {}", id, vectorException.getMessage());
-					// Vector data deletion failure does not affect the main process
+					if (avatar != null && !avatar.isBlank()) {
+						fileStorageService.deleteFile(avatar);
+						log.info("Successfully deleted avatar file: {} for agent: {}", avatar, id);
+					}
+				} catch (Exception avatarEx) {
+					log.warn("Failed to cleanup avatar file: {} for agent: {}, error: {}", avatar, id,
+							avatarEx.getMessage());
 				}
+				
+				log.info("Successfully completed agent deletion process: {}", id);
+			} else {
+				log.warn("Agent already deleted or not found: {}", id);
 			}
-
-			// 清理头像文件
-			try {
-				if (avatar != null && !avatar.isBlank()) {
-					fileStorageService.deleteFile(avatar);
-					log.info("Successfully deleted avatar file: {} for agent: {}", avatar, id);
-				}
-			} catch (Exception avatarEx) {
-				log.warn("Failed to cleanup avatar file: {} for agent: {}, error: {}", avatar, id,
-						avatarEx.getMessage());
-			}
-
-			log.info("Successfully deleted agent: {}", id);
 		} catch (Exception e) {
 			log.error("Failed to delete agent: {}", id, e);
-			throw e;
+			throw new RuntimeException("Failed to delete agent: " + id, e);
 		}
 	}
 

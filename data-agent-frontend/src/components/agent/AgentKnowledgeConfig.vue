@@ -27,7 +27,36 @@
     <div style="margin-bottom: 30px">
       <el-row style="display: flex; justify-content: space-between; align-items: center">
         <el-col :span="12">
-          <h3>知识列表</h3>
+          <h3 style="display: inline-block; margin-right: 20px">知识列表</h3>
+          <!-- 批量操作按钮 -->
+          <el-button
+            @click="handleBatchDelete"
+            size="default"
+            type="danger"
+            plain
+            :icon="Delete"
+            :disabled="selectedKnowledge.length === 0"
+          >
+            批量删除 ({{ selectedKnowledge.length }})
+          </el-button>
+          <el-button
+            @click="handleBatchRecall(true)"
+            size="default"
+            type="success"
+            plain
+            :disabled="selectedKnowledge.length === 0"
+          >
+            批量召回 ({{ selectedKnowledge.length }})
+          </el-button>
+          <el-button
+            @click="handleBatchRecall(false)"
+            size="default"
+            type="warning"
+            plain
+            :disabled="selectedKnowledge.length === 0"
+          >
+            批量取消召回 ({{ selectedKnowledge.length }})
+          </el-button>
         </el-col>
         <el-col :span="12" style="text-align: right">
           <el-input
@@ -100,7 +129,14 @@
     </el-collapse-transition>
 
     <!-- 表格区域 -->
-    <el-table :data="knowledgeList" style="width: 100%" border v-loading="loading">
+    <el-table 
+      :data="knowledgeList" 
+      style="width: 100%" 
+      border 
+      v-loading="loading"
+      @selection-change="handleSelectionChange"
+    >
+      <el-table-column type="selection" width="55" />
       <el-table-column prop="id" label="ID" min-width="80px" />
       <el-table-column prop="title" label="标题" min-width="150px" />
       <el-table-column prop="type" label="类型" min-width="100px">
@@ -336,6 +372,7 @@
     RefreshLeft,
     UploadFilled,
     Warning,
+    Delete,
   } from '@element-plus/icons-vue';
   import axios from 'axios';
   import agentKnowledgeService, {
@@ -366,6 +403,7 @@
       const currentEditId: Ref<number | null> = ref(null);
       const fileList: Ref<{ name: string; size: number; raw: File }[]> = ref([]);
       const filterVisible: Ref<boolean> = ref(false);
+      const selectedKnowledge: Ref<AgentKnowledge[]> = ref([]);
 
       // 查询参数
       const queryParams = reactive<AgentKnowledgeQueryDTO>({
@@ -592,6 +630,109 @@
         knowledgeForm.value.file = undefined;
       };
 
+      // 处理表格选择变化
+      const handleSelectionChange = (selection: AgentKnowledge[]) => {
+        selectedKnowledge.value = selection;
+      };
+
+      // 批量删除
+      const handleBatchDelete = async () => {
+        if (selectedKnowledge.value.length === 0) {
+          ElMessage.warning('请先选择要删除的知识');
+          return;
+        }
+
+        try {
+          await ElMessageBox.confirm(
+            `确定要删除选中的 ${selectedKnowledge.value.length} 条知识吗？此操作为逻辑删除。`,
+            '确认批量删除',
+            {
+              confirmButtonText: '确定',
+              cancelButtonText: '取消',
+              type: 'warning',
+            },
+          );
+
+          const ids = selectedKnowledge.value.map(item => item.id!);
+          // 假设 agentKnowledgeService 有 batchDelete 方法
+          // const result = await agentKnowledgeService.batchDelete(props.agentId, ids);
+          
+          // 临时实现：逐个删除（后续需要后端支持批量删除接口）
+          let successCount = 0;
+          for (const id of ids) {
+            try {
+              const result = await agentKnowledgeService.delete(id);
+              if (result) {
+                successCount++;
+              }
+            } catch (error) {
+              console.error(`Failed to delete knowledge ${id}:`, error);
+            }
+          }
+          
+          if (successCount > 0) {
+            ElMessage.success(`成功删除 ${successCount} 条知识`);
+            selectedKnowledge.value = [];
+            await loadKnowledgeList();
+          } else {
+            ElMessage.error('批量删除失败');
+          }
+        } catch (error) {
+          if (error !== 'cancel') {
+            ElMessage.error('批量删除失败');
+            console.error('Failed to batch delete:', error);
+          }
+        }
+      };
+
+      // 批量召回/取消召回
+      const handleBatchRecall = async (isRecall: boolean) => {
+        if (selectedKnowledge.value.length === 0) {
+          ElMessage.warning(`请先选择要${isRecall ? '召回' : '取消召回'}的知识`);
+          return;
+        }
+
+        try {
+          await ElMessageBox.confirm(
+            `确定要${isRecall ? '召回' : '取消召回'}选中的 ${selectedKnowledge.value.length} 条知识吗？`,
+            `确认批量${isRecall ? '召回' : '取消召回'}`,
+            {
+              confirmButtonText: '确定',
+              cancelButtonText: '取消',
+              type: 'warning',
+            },
+          );
+
+          const ids = selectedKnowledge.value.map(item => item.id!);
+          let successCount = 0;
+          
+          // 逐个更新召回状态（后续需要后端支持批量更新接口）
+          for (const id of ids) {
+            try {
+              const result = await agentKnowledgeService.updateRecallStatus(id, isRecall);
+              if (result) {
+                successCount++;
+              }
+            } catch (error) {
+              console.error(`Failed to update recall status for knowledge ${id}:`, error);
+            }
+          }
+          
+          if (successCount > 0) {
+            ElMessage.success(`成功${isRecall ? '召回' : '取消召回'} ${successCount} 条知识`);
+            selectedKnowledge.value = [];
+            await loadKnowledgeList();
+          } else {
+            ElMessage.error(`批量${isRecall ? '召回' : '取消召回'}失败`);
+          }
+        } catch (error) {
+          if (error !== 'cancel') {
+            ElMessage.error(`批量${isRecall ? '召回' : '取消召回'}失败`);
+            console.error('Failed to batch update recall status:', error);
+          }
+        }
+      };
+
       // 格式化文件大小
       const formatFileSize = (bytes: number): string => {
         if (!bytes) return '0 B';
@@ -708,6 +849,7 @@
         RefreshLeft,
         UploadFilled,
         Warning,
+        Delete,
         knowledgeList,
         total,
         loading,
@@ -718,6 +860,7 @@
         knowledgeForm,
         fileList,
         filterVisible,
+        selectedKnowledge,
         toggleFilter,
         clearFilters,
         loadKnowledgeList,
@@ -737,6 +880,9 @@
         toggleStatus,
         handleRetry,
         formatFileSize,
+        handleSelectionChange,
+        handleBatchDelete,
+        handleBatchRecall,
       };
     },
   });

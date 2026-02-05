@@ -166,10 +166,10 @@
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="是否召回" min-width="80px">
+      <el-table-column label="召回状态" min-width="100px">
         <template #default="scope">
           <el-tag :type="scope.row.isRecall ? 'success' : 'info'" round>
-            {{ scope.row.isRecall ? '是' : '否' }}
+            {{ scope.row.isRecall ? '已召回' : '未召回' }}
           </el-tag>
         </template>
       </el-table-column>

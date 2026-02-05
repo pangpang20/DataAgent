@@ -32,11 +32,13 @@ CREATE TABLE IF NOT EXISTS agent (
     create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     human_review_enabled TINYINT DEFAULT 0 COMMENT '是否启用计划人工复核：0-否，1-是',
+    is_deleted INT DEFAULT 0 COMMENT '逻辑删除：0-未删除，1-已删除',
     PRIMARY KEY (id),
     INDEX idx_name (name),
     INDEX idx_status (status),
     INDEX idx_category (category),
-    INDEX idx_admin_id (admin_id)
+    INDEX idx_admin_id (admin_id),
+    INDEX idx_is_deleted (is_deleted)
     ) ENGINE = InnoDB COMMENT = '智能体表';
 
 -- 业务知识表
@@ -74,12 +76,14 @@ CREATE TABLE IF NOT EXISTS `semantic_model` (
   `column_comment` varchar(255) COLLATE utf8mb4_bin DEFAULT NULL COMMENT '数据库中的物理字段的原始注释 ',
   `data_type` varchar(255) COLLATE utf8mb4_bin NOT NULL DEFAULT '' COMMENT '物理数据类型 (例如: int, varchar(20))',
   `status` tinyint(4) NOT NULL DEFAULT '1' COMMENT '0 停用 1 启用',
+  `is_deleted` int(11) DEFAULT 0 COMMENT '逻辑删除：0-未删除，1-已删除',
   `created_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `updated_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`id`) USING BTREE,
   KEY `idx_agent_id` (`agent_id`) USING BTREE,
   KEY `idx_field_name` (`business_name`) USING BTREE,
   KEY `idx_status` (`status`) USING BTREE,
+  KEY `idx_is_deleted` (`is_deleted`) USING BTREE,
   CONSTRAINT `fk_semantic_model_agent` FOREIGN KEY (`agent_id`) REFERENCES `agent` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin ROW_FORMAT=DYNAMIC COMMENT='语义模型表';
 
@@ -126,11 +130,13 @@ CREATE TABLE IF NOT EXISTS datasource (
   creator_id BIGINT COMMENT '创建者ID',
   create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  is_deleted INT DEFAULT 0 COMMENT '逻辑删除：0-未删除，1-已删除',
   PRIMARY KEY (id),
   INDEX idx_name (name),
   INDEX idx_type (type),
   INDEX idx_status (status),
-  INDEX idx_creator_id (creator_id)
+  INDEX idx_creator_id (creator_id),
+  INDEX idx_is_deleted (is_deleted)
 ) ENGINE = InnoDB COMMENT = '数据源表';
 
 -- 逻辑外键配置表
