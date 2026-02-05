@@ -235,26 +235,37 @@
       const initButtonPosition = () => {
         const saved = localStorage.getItem('widget-button-position');
         console.log('[Widget] Initializing button position, saved:', saved);
+        console.log('[Widget] Window size:', { width: window.innerWidth, height: window.innerHeight });
+        
+        let position = { 
+          x: window.innerWidth - 70, 
+          y: window.innerHeight - 70 
+        };
+        
         if (saved) {
           try {
-            buttonPosition.value = JSON.parse(saved);
-            console.log('[Widget] Loaded saved position:', buttonPosition.value);
+            const parsed = JSON.parse(saved);
+            console.log('[Widget] Parsed saved position:', parsed);
+            
+            // Validate position is within current window bounds
+            if (parsed.x >= 0 && parsed.x <= window.innerWidth - 50 &&
+                parsed.y >= 0 && parsed.y <= window.innerHeight - 50) {
+              position = parsed;
+              console.log('[Widget] Saved position is valid, using it');
+            } else {
+              console.warn('[Widget] Saved position out of bounds, resetting to default');
+              // Clear invalid position
+              localStorage.removeItem('widget-button-position');
+            }
           } catch (e) {
-            // Default to bottom-right
-            console.warn('[Widget] Failed to parse saved position, using default');
-            buttonPosition.value = { 
-              x: window.innerWidth - 70, 
-              y: window.innerHeight - 70 
-            };
+            console.warn('[Widget] Failed to parse saved position:', e);
+            localStorage.removeItem('widget-button-position');
           }
         } else {
-          // Default to bottom-right (20px from edges)
           console.log('[Widget] No saved position, using default bottom-right');
-          buttonPosition.value = { 
-            x: window.innerWidth - 70, 
-            y: window.innerHeight - 70 
-          };
         }
+        
+        buttonPosition.value = position;
         console.log('[Widget] Button position set to:', buttonPosition.value);
       };
       
