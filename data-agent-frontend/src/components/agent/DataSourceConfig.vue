@@ -45,7 +45,7 @@
       </el-row>
     </div>
 
-    <el-table :data="datasource" style="width: 100%" border @expand-change="handleExpandChange">
+    <el-table :data="paginatedDatasource" style="width: 100%" border @expand-change="handleExpandChange">
       <el-table-column type="expand" width="100" label="选择数据表">
         <template #default="scope">
           <div
@@ -207,13 +207,26 @@
         </template>
       </el-table-column>
     </el-table>
+    
+    <!-- 分页控件 -->
+    <div class="pagination-container" v-if="total > 0">
+      <el-pagination
+        v-model:current-page="currentPage"
+        v-model:page-size="pageSize"
+        :page-sizes="[10, 20, 30, 50]"
+        :total="total"
+        layout="total, sizes, prev, pager, next, jumper"
+        @size-change="handleSizeChange"
+        @current-change="handleCurrentChange"
+        background
+      />
+    </div>
   </div>
 
   <!-- 添加数据源Dialog -->
   <el-dialog v-model="dialogVisible" title="添加数据源" width="1000">
     <el-tabs v-model="dialogActiveName" type="card" stretch>
       <el-tab-pane label="选择已有数据源" name="select">
-        <!-- todo: 添加分页和查询 -->
         <el-table
           @current-change="handleSelectDatasourceChange"
           :data="allDatasource"
@@ -756,7 +769,7 @@
 </template>
 
 <script lang="ts">
-  import { defineComponent, ref, onMounted, Ref, watch } from 'vue';
+  import { defineComponent, ref, onMounted, Ref, watch, computed } from 'vue';
   import {
     Plus,
     UploadFilled,
@@ -793,6 +806,11 @@
       const dialogActiveName: Ref<string> = ref('select');
       // 所有数据源列表
       const allDatasource: Ref<Datasource[]> = ref([]);
+      
+      // 分页相关数据
+      const currentPage = ref(1);
+      const pageSize = ref(10);
+      const total = ref(0);
       const newDatasource: Ref<Datasource> = ref({ port: 3306 } as Datasource);
       const selectedDatasourceId: Ref<number | null> = ref(null);
       const editDialogVisible: Ref<boolean> = ref(false);
@@ -852,6 +870,24 @@
           ElMessage.error('加载当前智能体的数据源列表失败');
           console.error('Failed to load datasource:', error);
         }
+      };
+
+      // 分页计算属性
+      const paginatedDatasource = computed(() => {
+        const start = (currentPage.value - 1) * pageSize.value;
+        const end = start + pageSize.value;
+        return datasource.value.slice(start, end);
+      });
+
+      const handleCurrentChange = (val: number) => {
+        currentPage.value = val;
+        // 注意：这里不需要重新加载数据，因为是客户端分页
+      };
+
+      const handleSizeChange = (val: number) => {
+        pageSize.value = val;
+        currentPage.value = 1; // 重置到第一页
+        // 注意：这里不需要重新加载数据，因为是客户端分页
       };
 
       const handleSelectDatasourceChange = (value: Datasource) => {
@@ -1473,6 +1509,7 @@
         FolderOpened,
         Lock,
         datasource,
+        paginatedDatasource,
         initStatus,
         dialogVisible,
         dialogActiveName,
@@ -1484,6 +1521,9 @@
         selectedTables,
         tableLoadingStates,
         updateLoadingStates,
+        total,
+        currentPage,
+        pageSize,
         initAgentDatasource,
         changeDatasource,
         testConnection,
@@ -1501,6 +1541,8 @@
         clearAllTables,
         truncateText,
         handleExpandChange,
+        handleCurrentChange,
+        handleSizeChange,
         // 逻辑外键管理
         Connection,
         Link,
@@ -1529,4 +1571,11 @@
   });
 </script>
 
-<style scoped></style>
+<style scoped>
+.pagination-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+  padding: 10px 0;
+}
+</style>

@@ -387,6 +387,14 @@
 
       const openCreateDialog = () => {
         isEdit.value = false;
+        currentEditId.value = null;
+        // 重置表单数据
+        knowledgeForm.value = {
+          businessTerm: '',
+          description: '',
+          synonyms: '',
+          isRecall: false,
+        } as BusinessKnowledgeVO;
         dialogVisible.value = true;
       };
 

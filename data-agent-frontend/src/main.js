@@ -24,19 +24,22 @@ import '@/styles/layout.css';
 import '@/styles/global.css';
 import 'element-plus/dist/index.css';
 import ElementPlus from 'element-plus';
+import zhCn from 'element-plus/es/locale/lang/zh-cn'; // 导入Element Plus中文语言包
 
 // 全局错误处理 - 过滤Chrome扩展错误
 window.addEventListener('unhandledrejection', (event) => {
-    // 过滤Chrome扩展通信错误
-    if (event.reason && event.reason.message &&
-        event.reason.message.includes('message channel closed')) {
-        console.debug('Chrome extension communication error (ignored):', event.reason.message);
-        event.preventDefault(); // 阻止错误显示在控制台
-    }
+  // 过滤Chrome扩展通信错误
+  if (event.reason && event.reason.message &&
+    event.reason.message.includes('message channel closed')) {
+    console.debug('Chrome extension communication error (ignored):', event.reason.message);
+    event.preventDefault(); // 阻止错误显示在控制台
+  }
 });
 
 // 创建应用实例
 const app = createApp(App);
 app.use(router);
-app.use(ElementPlus);
+app.use(ElementPlus, {
+  locale: zhCn, // 设置Element Plus为中文
+});
 app.mount('#app');

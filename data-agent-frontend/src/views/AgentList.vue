@@ -82,6 +82,7 @@
                     :prefix-icon="Search"
                     clearable
                     style="width: 350px"
+                    @change="handleSearchChange"
                   />
                   <div class="action-buttons">
                     <el-button :icon="Refresh" @click="loadAgents" size="large">刷新</el-button>
@@ -96,11 +97,10 @@
         </div>
 
         <!-- 智能体网格 -->
-        <!-- todo: 支持分页（需后端支持）-->
         <div class="agents-grid" v-if="!loading">
           <el-row :gutter="20">
             <el-col
-              v-for="agent in filteredAgents"
+              v-for="agent in paginatedAgents"
               :key="agent.id"
               :xs="24"
               :sm="12"
@@ -145,6 +145,20 @@
               </el-card>
             </el-col>
           </el-row>
+          
+          <!-- 分页控件 -->
+          <div class="pagination-container" v-if="total > 0">
+            <el-pagination
+              v-model:current-page="currentPage"
+              v-model:page-size="pageSize"
+              :page-sizes="[12, 24, 36, 48]"
+              :total="total"
+              layout="total, sizes, prev, pager, next, jumper"
+              @size-change="handleSizeChange"
+              @current-change="handleCurrentChange"
+              background
+            />
+          </div>
         </div>
 
         <!-- 加载状态 -->
@@ -201,6 +215,11 @@
       const activeFilter = ref('all');
       const searchKeyword = ref('');
       const agents = ref<Agent[]>([]);
+      
+      // 分页相关数据
+      const currentPage = ref(1);
+      const pageSize = ref(12);
+      const total = ref(0);
 
       // 计算属性
       const publishedCount = computed(
@@ -235,18 +254,47 @@
         return filtered;
       });
 
+      // 分页计算属性
+      const paginatedAgents = computed(() => {
+        const start = (currentPage.value - 1) * pageSize.value;
+        const end = start + pageSize.value;
+        return filteredAgents.value.slice(start, end);
+      });
+
       const setFilter = (filter: string) => {
         activeFilter.value = filter;
+        currentPage.value = 1; // 重置到第一页
+        loadAgents();
+      };
+
+      const handleCurrentChange = (val: number) => {
+        currentPage.value = val;
+        loadAgents();
+      };
+
+      const handleSizeChange = (val: number) => {
+        pageSize.value = val;
+        currentPage.value = 1; // 重置到第一页
+        loadAgents();
       };
 
       const loadAgents = async () => {
         loading.value = true;
         try {
-          const response = await agentService.list();
-          agents.value = response || [];
+          const query = {
+            pageNum: currentPage.value,
+            pageSize: pageSize.value,
+            keyword: searchKeyword.value.trim() || undefined,
+            status: activeFilter.value === 'all' ? undefined : activeFilter.value,
+          };
+          
+          const response = await agentService.queryPage(query);
+          agents.value = response.data || [];
+          total.value = response.total || 0;
         } catch (error) {
           ElMessage.error('获取智能体列表失败，请检查网络！');
           agents.value = [];
+          total.value = 0;
         } finally {
           loading.value = false;
         }
@@ -281,6 +329,12 @@
 
       const goToCreateAgent = () => {
         router.push('/agent/create');
+      };
+
+      // 监听搜索关键词变化
+      const handleSearchChange = () => {
+        currentPage.value = 1; // 重置到第一页
+        loadAgents();
       };
 
       // 图片加载失败处理
@@ -327,9 +381,13 @@
         searchKeyword,
         agents,
         filteredAgents,
+        paginatedAgents,
         publishedCount,
         draftCount,
         offlineCount,
+        total,
+        currentPage,
+        pageSize,
         setFilter,
         loadAgents,
         enterAgent,
@@ -340,6 +398,9 @@
         handleDeleteAgent,
         handleImageError,
         getAvatarUrl,
+        handleCurrentChange,
+        handleSizeChange,
+        handleSearchChange,
         Search,
         Refresh,
         Plus,
@@ -449,6 +510,13 @@
   /* 智能体网格 */
   .agents-grid {
     margin-bottom: 2rem;
+  }
+
+  .pagination-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 2rem;
+    padding: 1rem 0;
   }
 
   .agent-card {
