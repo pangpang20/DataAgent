@@ -276,6 +276,7 @@ mybatis:
   configuration:
     map-underscore-to-camel-case: true      # 下划线转驼峰
     log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl  # 日志实现
+  type-handlers-package: com.audaque.cloud.ai.dataagent.config  # 自定义类型处理器包路径
 
 # ============================================================================
 # Actuator 监控配置
