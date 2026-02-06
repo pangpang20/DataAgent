@@ -74,8 +74,8 @@ public class AgentVectorStoreServiceImpl implements AgentVectorStoreService {
 	@Value("${spring.ai.vectorstore.milvus.flush-max-concurrency:1}")
 	private int flushMaxConcurrency;
 
-	@Value("${spring.ai.vectorstore.milvus.flush-enabled:false}")
-	private boolean flushEnabled;
+	@Value("${spring.ai.vectorstore.milvus.flush-auto:false}")
+	private boolean flushAuto;
 
 	private final Semaphore flushSemaphore = new Semaphore(flushMaxConcurrency);
 
@@ -90,7 +90,7 @@ public class AgentVectorStoreServiceImpl implements AgentVectorStoreService {
 		log.info("VectorStore type: {}, MilvusClient present: {}",
 				vectorStore.getClass().getSimpleName(), milvusClient.isPresent());
 		log.info("Milvus configuration - Collection: {}, Auto Flush: {}, Max Concurrency: {}, Delay: {}ms",
-				collectionName, flushEnabled, flushMaxConcurrency, flushDelayMs);
+				collectionName, flushAuto, flushMaxConcurrency, flushDelayMs);
 	}
 
 	@Override
@@ -220,7 +220,7 @@ public class AgentVectorStoreServiceImpl implements AgentVectorStoreService {
 			log.info("Successfully inserted {} documents into Milvus", documents.size());
 
 			// 根据配置决定是否执行异步 flush
-			if (flushEnabled) {
+			if (flushAuto) {
 				log.info("Auto flush is enabled, triggering async flush operation");
 				flushMilvusAsync();
 			} else {
@@ -238,7 +238,7 @@ public class AgentVectorStoreServiceImpl implements AgentVectorStoreService {
 	 * 当 auto flush 被禁用时，可以通过此方法手动执行 flush
 	 */
 	public void manualFlush() {
-		if (!flushEnabled) {
+		if (!flushAuto) {
 			log.info("Manual flush triggered, executing flush operation");
 			flushMilvus();
 		} else {
