@@ -21,6 +21,7 @@
       <p>2. 如果记录已存在（相同表名+字段名），将自动覆盖更新</p>
       <p>3. 枚举字段信息可以直接写在"业务描述"中，例如：枚举值：1=资产工单, 2=账号工单</p>
       <p>4. 必填字段：表名、字段名、业务名称、数据类型</p>
+      <p>5. Excel导入点击开始后，可以直接关闭，后台会继续处理导入任务</p>
     </el-alert>
 
     <el-radio-group v-model="importMode" style="margin-bottom: 20px">
@@ -268,26 +269,45 @@
         }
 
         try {
+          console.log('开始JSON导入，设置importing=true');
           importing.value = true;
           importProgress.value.total = Array.isArray(items) ? items.length : 0;
           importProgress.value.current = 0;
           importProgress.value.percentage = 0;
           
+          // 使用 nextTick 确保 UI 更新后再开始导入
+          await new Promise(resolve => setTimeout(resolve, 100));
+          
           // 模拟进度更新（实际进度需要后端支持）
-          const updateProgress = setInterval(() => {
-            if (importing.value && importProgress.value.current < importProgress.value.total) {
-              importProgress.value.current++;
-              importProgress.value.percentage = Math.round(
-                (importProgress.value.current / importProgress.value.total) * 100
-              );
-            }
-          }, 100);
+          let updateProgress: NodeJS.Timeout | null = null;
+          if (importProgress.value.total > 0) {
+            updateProgress = setInterval(() => {
+              if (importing.value && importProgress.value.current < importProgress.value.total) {
+                importProgress.value.current++;
+                importProgress.value.percentage = Math.round(
+                  (importProgress.value.current / importProgress.value.total) * 100
+                );
+                // 当接近完成时停止自动更新，等待实际结果
+                if (importProgress.value.percentage >= 90) {
+                  if (updateProgress) {
+                    clearInterval(updateProgress);
+                    updateProgress = null;
+                  }
+                }
+              }
+            }, 100);
+          }
           
           const result = await props.onJsonImport(items);
-          clearInterval(updateProgress);
+          
+          // 清理进度更新定时器
+          if (updateProgress) {
+            clearInterval(updateProgress);
+          }
           
           // 确保进度完成
-          importProgress.value.current = importProgress.value.total;
+          importProgress.value.current = result.successCount + result.failCount;
+          importProgress.value.total = result.total;
           importProgress.value.percentage = 100;
           
           importResult.value = result;
@@ -305,6 +325,7 @@
           ElMessage.error('批量导入失败：' + (error as Error).message);
           console.error('Failed to batch import:', error);
         } finally {
+          console.log('JSON导入完成，设置importing=false');
           importing.value = false;
         }
       };
@@ -333,13 +354,27 @@
         }
 
         try {
+          console.log('开始Excel导入，设置importing=true');
           importing.value = true;
           // 对于Excel导入，我们无法预先知道确切的记录数，显示加载状态
           importProgress.value.total = 0; // 未知总数
           importProgress.value.current = 0;
           importProgress.value.percentage = 0;
           
+          // 使用 nextTick 确保 UI 更新后再开始导入
+          await new Promise(resolve => setTimeout(resolve, 100));
+          
+          // 显示加载动画
+          const loadingInterval = setInterval(() => {
+            if (importing.value) {
+              importProgress.value.percentage = (importProgress.value.percentage + 5) % 100;
+            }
+          }, 200);
+          
           const result = await props.onExcelImport(uploadedFile.value);
+          
+          // 清理加载动画
+          clearInterval(loadingInterval);
           
           // 导入完成后显示结果统计
           importProgress.value.current = result.successCount + result.failCount;
@@ -361,6 +396,7 @@
           ElMessage.error('Excel导入失败：' + (error as Error).message);
           console.error('Failed to import excel:', error);
         } finally {
+          console.log('Excel导入完成，设置importing=false');
           importing.value = false;
         }
       };
