@@ -103,20 +103,21 @@
       @selection-change="handleSelectionChange"
       style="width: 100%"
       border
+      :header-cell-style="{ textAlign: 'center', fontWeight: 'bold' }"
     >
-      <el-table-column type="selection" width="55" />
-      <el-table-column prop="id" label="ID" min-width="60px" />
+      <el-table-column type="selection" width="50px" align="center" />
+      <el-table-column prop="id" label="ID" min-width="60px" align="center" />
       <el-table-column prop="question" label="问题" min-width="250px" show-overflow-tooltip />
-      <el-table-column prop="sortOrder" label="排序" min-width="80px" />
-      <el-table-column label="状态" min-width="80px">
+      <el-table-column prop="sortOrder" label="排序" min-width="50px" align="center" />
+      <el-table-column label="状态" min-width="80px" align="center">
         <template #default="scope">
           <el-tag :type="scope.row.isActive ? 'success' : 'info'" round>
             {{ scope.row.isActive ? '启用' : '禁用' }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="createTime" label="创建时间" min-width="150px" />
-      <el-table-column label="操作" min-width="200px">
+      <el-table-column prop="createTime" label="创建时间" min-width="100px" align="center" />
+      <el-table-column label="操作" min-width="100px" align="center">
         <template #default="scope">
           <el-button @click="editQuestion(scope.row)" size="small" type="primary" round plain>
             编辑

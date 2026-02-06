@@ -26,7 +26,7 @@
 
     <div style="margin-bottom: 30px">
       <el-row style="display: flex; justify-content: space-between; align-items: center">
-        <el-col :span="12">
+        <el-col :span="8">
           <h3>语义模型列表</h3>
           <el-button
             @click="batchEnableModels"
@@ -60,7 +60,7 @@
             批量删除 ({{ selectedModels.length }})
           </el-button>
         </el-col>
-        <el-col :span="12" style="text-align: right">
+        <el-col :span="16" style="text-align: right">
           <el-input
             v-model="queryParams.keyword"
             placeholder="请输入关键词搜索"
@@ -134,28 +134,29 @@
       style="width: 100%"
       border
       v-loading="loading"
+      :header-cell-style="{ textAlign: 'center', fontWeight: 'bold' }"
       @selection-change="handleSelectionChange"
     >
-      <el-table-column type="selection" width="55" />
-      <el-table-column prop="id" label="ID" min-width="60px" />
+      <el-table-column type="selection" width="50px" align="center" />
+      <el-table-column prop="id" label="ID" width="50px" align="center"/>
       <el-table-column prop="tableName" label="表名" min-width="120px" />
       <el-table-column prop="columnName" label="数据库字段名" min-width="120px" />
       <el-table-column prop="businessName" label="业务名称" min-width="120px" />
       <el-table-column prop="synonyms" label="同义词" min-width="120px" />
-      <el-table-column prop="dataType" label="数据类型" min-width="80px" />
-      <el-table-column label="状态" min-width="80px">
+      <el-table-column prop="dataType" label="数据类型" min-width="120px" />
+      <el-table-column label="状态" min-width="80px" align="center">
         <template #default="scope">
           <el-tag :type="scope.row.status === 1 ? 'success' : 'info'" round>
             {{ scope.row.status === 1 ? '启用' : '停用' }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="创建时间" min-width="160px">
+      <el-table-column label="创建时间" min-width="100px" align="center" >
         <template #default="scope">
           {{ formatDateTime(scope.row.createdTime || scope.row.createTime) }}
         </template>
       </el-table-column>
-      <el-table-column label="操作" min-width="180px">
+      <el-table-column label="操作" min-width="180px" align="center">
         <template #default="scope">
           <el-button @click="editModel(scope.row)" size="small" type="primary" round plain>
             编辑

@@ -26,7 +26,7 @@
 
     <div style="margin-bottom: 30px">
       <el-row style="display: flex; justify-content: space-between; align-items: center">
-        <el-col :span="12">
+        <el-col :span="10">
           <h3 style="display: inline-block; margin-right: 20px">知识列表</h3>
           <!-- 批量操作按钮 -->
           <el-button
@@ -58,7 +58,7 @@
             批量取消召回 ({{ selectedKnowledge.length }})
           </el-button>
         </el-col>
-        <el-col :span="12" style="text-align: right">
+        <el-col :span="14" style="text-align: right">
           <el-input
             v-model="queryParams.title"
             placeholder="请输入知识标题搜索"
@@ -135,12 +135,13 @@
       style="width: 100%" 
       border 
       v-loading="loading"
+      :header-cell-style="{ textAlign: 'center', fontWeight: 'bold' }"
       @selection-change="handleSelectionChange"
     >
-      <el-table-column type="selection" width="55" />
-      <el-table-column prop="id" label="ID" min-width="80px" />
-      <el-table-column prop="title" label="标题" min-width="150px" />
-      <el-table-column prop="type" label="类型" min-width="100px">
+      <el-table-column type="selection" width="50px" align="center" />
+      <el-table-column prop="id" label="ID" min-width="50px" align="center" />
+      <el-table-column prop="title" label="标题" min-width="250px" />
+      <el-table-column prop="type" label="类型" min-width="50px" align="center">
         <template #default="scope">
           <span v-if="scope.row.type === 'DOCUMENT'">文档</span>
           <span v-else-if="scope.row.type === 'QA'">问答对</span>
@@ -148,7 +149,7 @@
           <span v-else>{{ scope.row.type }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="处理状态" min-width="120px">
+      <el-table-column label="向量化状态" min-width="80px" align="center">
         <template #default="scope">
           <el-tag v-if="scope.row.embeddingStatus === 'COMPLETED'" type="success" round>
             {{ scope.row.embeddingStatus }}
@@ -170,14 +171,14 @@
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="召回状态" min-width="100px">
+      <el-table-column label="召回状态" min-width="60px" align="center">
         <template #default="scope">
           <el-tag :type="scope.row.isRecall ? 'success' : 'info'" round>
             {{ scope.row.isRecall ? '已召回' : '未召回' }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="操作" min-width="280px">
+      <el-table-column label="操作" min-width="180px" align="center">
         <template #default="scope">
           <el-button @click="editKnowledge(scope.row)" size="small" type="primary" round plain>
             管理

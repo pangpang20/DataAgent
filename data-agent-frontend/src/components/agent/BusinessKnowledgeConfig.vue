@@ -145,13 +145,14 @@
       border 
       v-loading="loading"
       @selection-change="handleSelectionChange"
+      :header-cell-style="{ textAlign: 'center', fontWeight: 'bold' }"
     >
-      <el-table-column type="selection" width="55" />
-      <el-table-column prop="id" label="ID" min-width="60px" />
-      <el-table-column prop="businessTerm" label="业务名词" min-width="120px" />
-      <el-table-column prop="description" label="描述" min-width="150px" />
-      <el-table-column prop="synonyms" label="同义词" min-width="120px" />
-      <el-table-column label="向量化状态" min-width="120px">
+      <el-table-column type="selection" width="50px" align="center" />
+      <el-table-column prop="id" label="ID" width="50px" align="center"  />
+      <el-table-column prop="businessTerm" label="业务名词" min-width="100px" />
+      <el-table-column prop="description" label="描述" min-width="100px" />
+      <el-table-column prop="synonyms" label="同义词" min-width="60px" />
+      <el-table-column label="向量化状态" width="100px" align="center">
         <template #default="scope">
           <el-tag :type="getVectorStatusType(scope.row.embeddingStatus)" round>
             {{ scope.row.embeddingStatus || '未知' }}
@@ -167,15 +168,15 @@
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="召回状态" min-width="100px">
+      <el-table-column label="召回状态" min-width="60px" align="center">
         <template #default="scope">
           <el-tag :type="scope.row.isRecall ? 'success' : 'info'" round>
             {{ scope.row.isRecall ? '已召回' : '未召回' }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="createdTime" label="创建时间" min-width="120px" />
-      <el-table-column label="操作" min-width="180px">
+      <el-table-column prop="createdTime" label="创建时间" min-width="80px" align="center" />
+      <el-table-column label="操作" min-width="150px" align="center">
         <template #default="scope">
           <el-button @click="editKnowledge(scope.row)" size="small" type="primary" round plain>
             编辑

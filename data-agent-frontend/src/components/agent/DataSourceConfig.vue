@@ -45,7 +45,7 @@
       </el-row>
     </div>
 
-    <el-table :data="paginatedDatasource" style="width: 100%" border @expand-change="handleExpandChange">
+    <el-table :data="paginatedDatasource" style="width: 100%" border @expand-change="handleExpandChange" :header-cell-style="{ textAlign: 'center', fontWeight: 'bold' }">
       <el-table-column type="expand" width="100" label="选择数据表">
         <template #default="scope">
           <div
@@ -145,22 +145,22 @@
           </el-tooltip>
         </template>
       </el-table-column>
-      <el-table-column label="连接状态" min-width="50px">
+      <el-table-column label="连接状态" min-width="50px" align="center">
         <template #default="scope">
           <el-tag :type="scope.row.testStatus === 'success' ? 'success' : 'danger'" round>
             {{ scope.row.testStatus === 'success' ? '连接成功' : '连接失败' }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="状态" min-width="40px">
+      <el-table-column label="状态" min-width="40px" align="center">
         <template #default="scope">
           <el-tag :type="scope.row.status === 'active' ? 'success' : 'info'" round>
             {{ scope.row.status === 'active' ? '启用' : '禁用' }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="createTime" label="创建时间" min-width="100px" />
-      <el-table-column label="操作" min-width="120px">
+      <el-table-column prop="createTime" label="创建时间" min-width="100px" align="center" />
+      <el-table-column label="操作" min-width="120px" align="center">
         <template #default="scope">
           <el-button
             v-if="scope.row.status === 'active'"
@@ -232,13 +232,14 @@
           :data="allDatasource"
           highlight-current-row
           style="width: 100%"
+          :header-cell-style="{ textAlign: 'center', fontWeight: 'bold' }"
         >
           <el-table-column property="name" label="数据源名称" width="150" />
-          <el-table-column property="type" label="数据源类型" width="100" />
+          <el-table-column property="type" label="数据源类型" width="100" align="center" />
           <el-table-column property="host" label="Host" width="100" />
-          <el-table-column property="port" label="Port" width="80" />
+          <el-table-column property="port" label="Port" width="80" align="center" />
           <el-table-column property="description" label="描述" width="300" />
-          <el-table-column label="操作" width="150">
+          <el-table-column label="操作" width="150" align="center" >
             <template #default="scope">
               <el-button @click="editDatasource(scope.row)" size="small" type="primary" round plain>
                 修改
