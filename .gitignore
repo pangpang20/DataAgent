@@ -68,3 +68,4 @@ output/
 logs/
 # Frontend build artifacts in backend
 data-agent-management/src/main/resources/static/
+uploads/

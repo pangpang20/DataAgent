@@ -103,6 +103,7 @@ CREATE TABLE IF NOT EXISTS `agent_knowledge` (
   `file_path` varchar(500) COLLATE utf8mb4_bin DEFAULT NULL COMMENT '文件在服务器上的物理存储路径',
   `file_size` bigint(20) DEFAULT NULL COMMENT '文件大小 (字节)',
   `file_type` varchar(255) COLLATE utf8mb4_bin DEFAULT NULL COMMENT '文件类型（pdf,md,markdown,doc等）',
+  `splitter_type` varchar(50) COLLATE utf8mb4_bin DEFAULT 'DEFAULT' COMMENT '分片策略类型：DEFAULT-默认分片，CUSTOM-自定义分片',
   `created_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `updated_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `is_deleted` int(11) DEFAULT 0 COMMENT '逻辑删除字段，0=未删除, 1=已删除',
@@ -286,3 +287,17 @@ CREATE TABLE IF NOT EXISTS `model_config` (
   `is_deleted` int(11) DEFAULT '0' COMMENT '0=未删除, 1=已删除',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 多轮对话历史记录表
+CREATE TABLE IF NOT EXISTS conversation_turn (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `thread_id` varchar(64) NOT NULL COMMENT '会话线程ID',
+  `user_question` text COMMENT '用户问题',
+  `plan` text COMMENT 'AI规划输出',
+  `sequence_number` int(11) NOT NULL DEFAULT '0' COMMENT '序号（用于排序）',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_conversation_turn_thread_id` (`thread_id`),
+  KEY `idx_conversation_turn_sequence` (`thread_id`, `sequence_number`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='多轮对话历史记录表';

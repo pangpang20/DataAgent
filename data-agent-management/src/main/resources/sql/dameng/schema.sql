@@ -143,6 +143,7 @@ CREATE TABLE agent_knowledge (
     file_path VARCHAR(500) DEFAULT NULL,
     file_size BIGINT DEFAULT NULL,
     file_type VARCHAR(255) DEFAULT NULL,
+    splitter_type VARCHAR(50) DEFAULT 'DEFAULT',
     created_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     updated_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     is_deleted INT DEFAULT 0,
@@ -167,6 +168,7 @@ COMMENT ON COLUMN agent_knowledge.source_filename IS '上传时的原始文件�
 COMMENT ON COLUMN agent_knowledge.file_path IS '文件在服务器上的物理存储路径';
 COMMENT ON COLUMN agent_knowledge.file_size IS '文件大小 (字节)';
 COMMENT ON COLUMN agent_knowledge.file_type IS '文件类型（pdf,md,markdown,doc等）';
+COMMENT ON COLUMN agent_knowledge.splitter_type IS '分片策略类型：DEFAULT-默认分片，CUSTOM-自定义分片';
 COMMENT ON COLUMN agent_knowledge.created_time IS '创建时间';
 COMMENT ON COLUMN agent_knowledge.updated_time IS '更新时间';
 COMMENT ON COLUMN agent_knowledge.is_deleted IS '逻辑删除字段，0=未删除, 1=已删除';
@@ -464,6 +466,23 @@ CREATE OR REPLACE TRIGGER trg_user_prompt_config_update_time BEFORE UPDATE ON us
 CREATE OR REPLACE TRIGGER trg_agent_datasource_tables_update_time BEFORE UPDATE ON agent_datasource_tables FOR EACH ROW BEGIN :NEW.update_time := SYSDATE; END;
 /
 CREATE OR REPLACE TRIGGER trg_model_config_update_time BEFORE UPDATE ON model_config FOR EACH ROW BEGIN :NEW.updated_time := SYSDATE; END;
+/
+
+-- 多轮对话历史记录表
+CREATE TABLE conversation_turn (
+  id BIGINT IDENTITY(1,1) PRIMARY KEY,
+  thread_id VARCHAR(64) NOT NULL,
+  user_question TEXT,
+  plan TEXT,
+  sequence_number INT DEFAULT 0,
+  create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_conversation_turn_thread_id ON conversation_turn(thread_id);
+CREATE INDEX idx_conversation_turn_sequence ON conversation_turn(thread_id, sequence_number);
+
+CREATE OR REPLACE TRIGGER trg_conversation_turn_update_time BEFORE UPDATE ON conversation_turn FOR EACH ROW BEGIN :NEW.update_time := CURRENT_TIMESTAMP; END;
 /
 
 EXIT;
