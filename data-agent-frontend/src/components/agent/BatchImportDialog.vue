@@ -115,7 +115,7 @@
         <div v-if="importing" style="display: inline-block; margin-right: 20px; vertical-align: middle; min-width: 200px">
           <div style="display: flex; align-items: center; margin-bottom: 8px">
             <span style="margin-right: 10px; font-size: 14px; color: #666">
-              导入进度:
+              单条记录导入进度:
             </span>
             <el-progress 
               :percentage="importProgress.percentage" 
@@ -126,12 +126,7 @@
             />
           </div>
           <div style="text-align: center; font-size: 12px; color: #999">
-            <span v-if="importProgress.total > 0">
-              正在处理第 {{ importProgress.current }} 条，共 {{ importProgress.total }} 条
-            </span>
-            <span v-else>
-              处理中...
-            </span>
+            正在处理第 {{ importProgress.current }} 条，共 {{ importProgress.total }} 条
           </div>
         </div>
         
