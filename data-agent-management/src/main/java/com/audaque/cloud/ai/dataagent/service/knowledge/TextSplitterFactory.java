@@ -37,13 +37,25 @@ public class TextSplitterFactory {
 	 * @return 对应的 TextSplitter 实例
 	 */
 	public TextSplitter getSplitter(String type) {
+		log.debug("Attempting to get splitter for type: '{}'", type);
+		log.debug("Available splitters in map: {}", splitterMap.keySet());
+		
 		// 1. 尝试直接获取
 		TextSplitter splitter = splitterMap.get(type);
+		log.debug("Direct lookup result for '{}': {}", type, splitter != null ? "found" : "null");
 
-		// 2. 如果没找到，尝返回默认
+		// 2. 如果没找到，尝试返回默认
 		if (splitter == null) {
 			log.warn("Splitter type '{}' not found, falling back to default 'token'", type);
-			return splitterMap.get(SplitterType.TOKEN.getValue());
+			String defaultValue = SplitterType.TOKEN.getValue();
+			log.debug("Trying to get default splitter with key: '{}'", defaultValue);
+			splitter = splitterMap.get(defaultValue);
+			log.debug("Default splitter lookup result: {}", splitter != null ? "found" : "null");
+			
+			if (splitter == null) {
+				log.error("Default splitter '{}' also not found! Available keys: {}", defaultValue, splitterMap.keySet());
+				throw new IllegalStateException("No TextSplitter available for type: " + type + ", and default 'token' splitter is also missing. Available types: " + splitterMap.keySet());
+			}
 		}
 
 		return splitter;
