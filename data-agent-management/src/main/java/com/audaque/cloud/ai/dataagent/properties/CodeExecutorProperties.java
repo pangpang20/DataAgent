@@ -42,7 +42,8 @@ public class CodeExecutorProperties {
 	String host = null;
 
 	/**
-	 * Image name, can customize image with common third-party dependencies to replace
+	 * Image name, can customize image with common third-party dependencies to
+	 * replace
 	 * this configuration
 	 */
 	String imageName = "continuumio/anaconda3:latest";
@@ -121,5 +122,20 @@ public class CodeExecutorProperties {
 	 * Python执行的最大重试次数
 	 */
 	Integer pythonMaxTriesCount = 5;
+
+	/**
+	 * Local执行器相关配置
+	 */
+	private Local local = new Local();
+
+	@Getter
+	@Setter
+	public static class Local {
+		/**
+		 * 输出读取超时时间（毫秒）
+		 * 用于等待Python进程stdout/stderr输出完成的时间
+		 */
+		private Integer outputReadTimeoutMs = 2000;
+	}
 
 }

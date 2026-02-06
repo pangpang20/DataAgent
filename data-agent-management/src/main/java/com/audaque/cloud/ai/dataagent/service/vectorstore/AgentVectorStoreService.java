@@ -29,6 +29,12 @@ public interface AgentVectorStoreService {
 	 */
 	List<Document> search(AgentSearchRequest searchRequest);
 
+	/**
+	 * 手动触发 Milvus flush 操作
+	 * 当 auto flush 被禁用时使用
+	 */
+	void manualFlush();
+
 	Boolean deleteDocumentsByVectorType(String agentId, String vectorType) throws Exception;
 
 	Boolean deleteDocumentsByMetedata(String agentId, Map<String, Object> metadata);

@@ -78,8 +78,7 @@ public class LocalCodePoolExecutorService extends AbstractCodePoolExecutorServic
 			Files.write(scriptFile, Optional.ofNullable(request.code()).orElse("").getBytes());
 			Files.write(stdinFile, Optional.ofNullable(request.input()).orElse("").getBytes());
 			Files.write(requirementFile, Optional.ofNullable(request.requirement()).orElse("").getBytes());
-		}
-		catch (Exception e) {
+		} catch (Exception e) {
 			log.error("Create temp file failed: {}", e.getMessage(), e);
 			return TaskResponse.exception(e.getMessage());
 		}
@@ -100,12 +99,10 @@ public class LocalCodePoolExecutorService extends AbstractCodePoolExecutorServic
 					}
 					throw new RuntimeException("Pip command timed out.");
 				}
-			}
-			catch (Exception e) {
+			} catch (Exception e) {
 				// 即使PIP安装失败，仍然尝试运行Python代码
 				log.warn("Pip install failed: {}", e.getMessage(), e);
-			}
-			finally {
+			} finally {
 				if (process != null && process.isAlive()) {
 					process.destroyForcibly();
 				}
@@ -129,16 +126,14 @@ public class LocalCodePoolExecutorService extends AbstractCodePoolExecutorServic
 				CompletableFuture<Void> stdoutFuture = CompletableFuture.runAsync(() -> {
 					try {
 						stdoutReader.transferTo(stdoutWriter);
-					}
-					catch (IOException e) {
+					} catch (IOException e) {
 						stderrWriter.write("Error reading stdout: " + e.getMessage());
 					}
 				});
 				CompletableFuture<Void> stderrFuture = CompletableFuture.runAsync(() -> {
 					try {
 						stderrReader.transferTo(stderrWriter);
-					}
-					catch (IOException e) {
+					} catch (IOException e) {
 						stderrWriter.write("Error reading stderr: " + e.getMessage());
 					}
 				});
@@ -154,8 +149,9 @@ public class LocalCodePoolExecutorService extends AbstractCodePoolExecutorServic
 					return TaskResponse.failure("", "python code timeout, Killed.");
 				}
 
-				// 等待输出读取完成，给输出读取额外2秒时间
-				CompletableFuture.allOf(stdoutFuture, stderrFuture).get(2, TimeUnit.SECONDS);
+				// 等待输出读取完成，给输出读取额外时间
+				CompletableFuture.allOf(stdoutFuture, stderrFuture).get(
+						properties.getLocal().getOutputReadTimeoutMs(), TimeUnit.MILLISECONDS);
 			}
 
 			// 返回结果
@@ -164,17 +160,14 @@ public class LocalCodePoolExecutorService extends AbstractCodePoolExecutorServic
 			String stderr = stderrWriter.toString();
 			if (exitCode != 0) {
 				return TaskResponse.failure(stdout, stderr);
-			}
-			else {
+			} else {
 				return TaskResponse.success(stdout);
 			}
 
-		}
-		catch (Exception e) {
+		} catch (Exception e) {
 			log.error("Python execution failed: {}", e.getMessage(), e);
 			return TaskResponse.exception(e.getMessage());
-		}
-		finally {
+		} finally {
 			if (process != null && process.isAlive()) {
 				process.destroyForcibly();
 			}
@@ -194,6 +187,7 @@ public class LocalCodePoolExecutorService extends AbstractCodePoolExecutorServic
 
 	/**
 	 * 按顺序检查多个程序是否存在
+	 * 
 	 * @param programNames 程序名称，按优先级顺序
 	 * @return 第一个找到的程序名称，如果都没找到返回null
 	 */

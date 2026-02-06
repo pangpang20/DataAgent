@@ -74,6 +74,9 @@ public class AgentVectorStoreServiceImpl implements AgentVectorStoreService {
 	@Value("${spring.ai.vectorstore.milvus.flush-max-concurrency:1}")
 	private int flushMaxConcurrency;
 
+	@Value("${spring.ai.vectorstore.milvus.flush-enabled:false}")
+	private boolean flushEnabled;
+
 	private final Semaphore flushSemaphore = new Semaphore(flushMaxConcurrency);
 
 	public AgentVectorStoreServiceImpl(VectorStore vectorStore,
@@ -86,6 +89,8 @@ public class AgentVectorStoreServiceImpl implements AgentVectorStoreService {
 		this.milvusClient = milvusClient;
 		log.info("VectorStore type: {}, MilvusClient present: {}",
 				vectorStore.getClass().getSimpleName(), milvusClient.isPresent());
+		log.info("Milvus configuration - Collection: {}, Auto Flush: {}, Max Concurrency: {}, Delay: {}ms",
+				collectionName, flushEnabled, flushMaxConcurrency, flushDelayMs);
 	}
 
 	@Override
@@ -214,11 +219,30 @@ public class AgentVectorStoreServiceImpl implements AgentVectorStoreService {
 			vectorStore.add(documents);
 			log.info("Successfully inserted {} documents into Milvus", documents.size());
 
-			// 异步 flush 确保数据持久化并立即可搜索，不阻塞当前请求线程
-			flushMilvusAsync();
+			// 根据配置决定是否执行异步 flush
+			if (flushEnabled) {
+				log.info("Auto flush is enabled, triggering async flush operation");
+				flushMilvusAsync();
+			} else {
+				log.info("Auto flush is disabled, documents inserted but not immediately searchable. " +
+						"Use manualFlush() API or enable auto flush for immediate availability.");
+			}
 		} catch (Exception e) {
 			log.error("Failed to insert documents into Milvus: {}", e.getMessage(), e);
 			throw e;
+		}
+	}
+
+	/**
+	 * 手动触发 Milvus flush 操作
+	 * 当 auto flush 被禁用时，可以通过此方法手动执行 flush
+	 */
+	public void manualFlush() {
+		if (!flushEnabled) {
+			log.info("Manual flush triggered, executing flush operation");
+			flushMilvus();
+		} else {
+			log.info("Auto flush is enabled, manual flush not needed");
 		}
 	}
 
@@ -248,7 +272,9 @@ public class AgentVectorStoreServiceImpl implements AgentVectorStoreService {
 		// 使用信号量控制并发 flush 操作，避免超出 Milvus 速率限制
 		try {
 			if (!flushSemaphore.tryAcquire(10, TimeUnit.SECONDS)) {
-				log.warn("Cannot acquire flush semaphore, timed out after 10 seconds, skipping this flush operation");
+				log.warn("Cannot acquire flush semaphore, timed out after 10 seconds. " +
+						"This may indicate high concurrent load or Milvus rate limiting. " +
+						"Consider enabling auto flush or reducing concurrent operations.");
 				return;
 			}
 		} catch (InterruptedException e) {
@@ -356,7 +382,8 @@ public class AgentVectorStoreServiceImpl implements AgentVectorStoreService {
 		do {
 			batchNumber++;
 			log.debug("Processing batch #{} for filter: {}", batchNumber, filterExpression);
-			log.debug("Fetching documents with topK limit: {}", dataAgentProperties.getVectorStore().getBatchDelTopkLimit());
+			log.debug("Fetching documents with topK limit: {}",
+					dataAgentProperties.getVectorStore().getBatchDelTopkLimit());
 
 			batch = vectorStore.similaritySearch(org.springframework.ai.vectorstore.SearchRequest.builder()
 					.query(DEFAULT)// 使用默认的查询字符串，因为有的嵌入模型不支持空字符串

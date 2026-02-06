@@ -29,6 +29,7 @@
           placeholder="搜索问题内容"
           clearable
           @clear="handleSearch"
+          @input="handleSearchInput"
           style="width: 200px"
         />
       </el-form-item>
@@ -264,7 +265,28 @@
         }
       };
 
+      // 防抖定时器
+      let searchTimer: any = null;
+
+      // 处理搜索输入（带防抖）
+      const handleSearchInput = () => {
+        // 清除之前的定时器
+        if (searchTimer) {
+          clearTimeout(searchTimer);
+        }
+        
+        // 设置新的定时器，延迟500ms执行搜索
+        searchTimer = setTimeout(() => {
+          pagination.value.pageNum = 1; // Reset to first page
+          loadPresetQuestions();
+        }, 500);
+      };
+
       const handleSearch = () => {
+        // 清除防抖定时器
+        if (searchTimer) {
+          clearTimeout(searchTimer);
+        }
         pagination.value.pageNum = 1; // Reset to first page
         loadPresetQuestions();
       };
@@ -512,6 +534,7 @@
         saveQuestion,
         loadPresetQuestions,
         handleSearch,
+        handleSearchInput,
         handleReset,
         handleBatchDelete,
         handleBatchEnable,

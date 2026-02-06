@@ -36,10 +36,11 @@
           :rows="15"
           placeholder="请输入JSON格式的数据..."
           style="font-family: 'Courier New', monospace"
+          :disabled="!!importResult"
         />
         <div style="margin-top: 10px; text-align: right">
-          <el-button @click="loadTemplate" size="small">加载模板</el-button>
-          <el-button @click="handleValidateJson" size="small" type="primary">验证JSON</el-button>
+          <el-button @click="loadTemplate" size="small" :disabled="!!importResult">加载模板</el-button>
+          <el-button @click="handleValidateJson" size="small" type="primary" :disabled="!!importResult">验证JSON</el-button>
         </div>
       </el-tab-pane>
 
@@ -53,6 +54,7 @@
             :on-change="handleFileChange"
             :on-exceed="handleExceed"
             drag
+            :disabled="!!importResult"
           >
             <el-icon class="el-icon--upload"><upload-filled /></el-icon>
             <div class="el-upload__text">
@@ -64,7 +66,7 @@
             </template>
           </el-upload>
           <div style="margin-top: 20px">
-            <el-button @click="downloadExcelTemplate" type="primary" plain>下载Excel模板</el-button>
+            <el-button @click="downloadExcelTemplate" type="primary" plain :disabled="!!importResult">下载Excel模板</el-button>
           </div>
         </div>
       </el-tab-pane>
@@ -96,6 +98,9 @@
                 style="margin-bottom: 10px"
               />
             </div>
+            <div style="margin-top: 20px; text-align: center">
+              <el-button @click="resetImport" type="primary">重新导入</el-button>
+            </div>
           </template>
         </el-result>
       </el-tab-pane>
@@ -108,6 +113,7 @@
           type="primary"
           @click="handleJsonImport"
           :loading="importing"
+          :disabled="!!importResult"
           v-if="importMode === 'json'"
         >
           开始导入
@@ -116,6 +122,7 @@
           type="primary"
           @click="handleExcelImport"
           :loading="importing"
+          :disabled="!!importResult"
           v-if="importMode === 'excel'"
         >
           开始导入
@@ -191,6 +198,10 @@
         importJsonText.value = '';
         importMode.value = 'json';
         uploadedFile.value = null;
+      };
+
+      const resetImport = () => {
+        resetState();
       };
 
       watch(
@@ -303,6 +314,7 @@
         handleExceed,
         downloadExcelTemplate,
         handleExcelImport,
+        resetImport,
       };
     },
   });

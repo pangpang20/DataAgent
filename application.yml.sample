@@ -146,6 +146,7 @@ spring:
         flush-delay-ms: 10000  # Milvus flush 操作延迟（毫秒），避免速率限制
         flush-retry-count: 3  # flush 操作重试次数
         flush-initial-backoff-ms: 1000  # flush 操作初始退避时间（毫秒）
+        flush-enabled: true  # 是否启用自动 flush 功能，默认关闭。关闭时数据插入后不会立即可搜索，需要等待 Milvus 自动 flush 或手动调用 flush
       elasticsearch:
         enabled: false
       # 如果使用 Milvus，需要配置以下参数：
@@ -218,6 +219,12 @@ spring:
           code-pool-executor: local
           # Python 执行的最大重试次数
           python-max-tries-count: 5
+          
+          # Local 执行器配置
+          local:
+            # 输出读取超时时间（毫秒）
+            # 用于等待Python进程stdout/stderr输出完成的时间
+            output-read-timeout-ms: 2000
         
         # 文件存储配置
         file:

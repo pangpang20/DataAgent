@@ -66,6 +66,7 @@
             clearable
             @clear="handleSearch"
             @keyup.enter="handleSearch"
+            @input="handleSearchInput"
             size="large"
           >
             <template #prefix>
@@ -348,8 +349,29 @@
         loadBusinessKnowledge();
       };
 
+      // 防抖定时器
+      let searchTimer: any = null;
+
+      // 处理搜索输入（带防抖）
+      const handleSearchInput = () => {
+        // 清除之前的定时器
+        if (searchTimer) {
+          clearTimeout(searchTimer);
+        }
+        
+        // 设置新的定时器，延迟500ms执行搜索
+        searchTimer = setTimeout(() => {
+          queryParams.pageNum = 1;
+          loadBusinessKnowledge();
+        }, 500);
+      };
+
       // 处理搜索
       const handleSearch = () => {
+        // 清除防抖定时器
+        if (searchTimer) {
+          clearTimeout(searchTimer);
+        }
         queryParams.pageNum = 1;
         loadBusinessKnowledge();
       };
@@ -680,6 +702,7 @@
         getVectorStatusType,
         handleBatchDelete,
         handleBatchRecall,
+        handleSearchInput,
       };
     },
   });
