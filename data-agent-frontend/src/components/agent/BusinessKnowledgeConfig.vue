@@ -29,21 +29,23 @@
         <el-col :span="12">
           <h3 style="display: inline-block; margin-right: 20px">业务知识列表</h3>
           <!-- 批量操作按钮 -->
-          <el-button
+        <el-button
             @click="handleBatchDelete"
             size="default"
             type="danger"
             plain
+            style="margin-left: 10px"
             :icon="Delete"
             :disabled="selectedKnowledge.length === 0"
           >
             批量删除 ({{ selectedKnowledge.length }})
-          </el-button>
+        </el-button>
           <el-button
             @click="handleBatchRecall(true)"
             size="default"
             type="success"
             plain
+            style="margin-left: 10px"
             :disabled="selectedKnowledge.length === 0"
           >
             批量召回 ({{ selectedKnowledge.length }})
@@ -53,6 +55,7 @@
             size="default"
             type="warning"
             plain
+            style="margin-left: 10px"
             :disabled="selectedKnowledge.length === 0"
           >
             批量取消召回 ({{ selectedKnowledge.length }})
