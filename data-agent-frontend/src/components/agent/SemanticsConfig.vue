@@ -29,6 +29,26 @@
         <el-col :span="12">
           <h3>语义模型列表</h3>
           <el-button
+            @click="batchEnableModels"
+            size="default"
+            type="success"
+            plain
+            style="margin-left: 10px"
+            :disabled="selectedModels.length === 0"
+          >
+            批量启用 ({{ selectedModels.length }})
+          </el-button>
+          <el-button
+            @click="batchDisableModels"
+            size="default"
+            type="warning"
+            plain
+            style="margin-left: 10px"
+            :disabled="selectedModels.length === 0"
+          >
+            批量停用 ({{ selectedModels.length }})
+          </el-button>
+          <el-button
             @click="batchDeleteModels"
             size="default"
             type="danger"
@@ -411,6 +431,74 @@
         selectedModels.value = selection;
       };
 
+      // 批量启用语义模型
+      const batchEnableModels = async () => {
+        if (selectedModels.value.length === 0) {
+          ElMessage.warning('请先选择要启用的语义模型');
+          return;
+        }
+
+        try {
+          await ElMessageBox.confirm(
+            `确定要启用选中的 ${selectedModels.value.length} 个语义模型吗？`,
+            '确认批量启用',
+            {
+              confirmButtonText: '确定',
+              cancelButtonText: '取消',
+              type: 'warning',
+            },
+          );
+
+          const ids = selectedModels.value
+            .map(model => model.id)
+            .filter(id => id !== undefined) as number[];
+          const result = await semanticModelService.enable(ids);
+          if (result) {
+            ElMessage.success(`成功启用 ${ids.length} 个语义模型`);
+            selectedModels.value = [];
+            await loadSemanticModels();
+          } else {
+            ElMessage.error('批量启用失败');
+          }
+        } catch {
+          // 用户取消操作时不显示错误消息
+        }
+      };
+
+      // 批量停用语义模型
+      const batchDisableModels = async () => {
+        if (selectedModels.value.length === 0) {
+          ElMessage.warning('请先选择要停用的语义模型');
+          return;
+        }
+
+        try {
+          await ElMessageBox.confirm(
+            `确定要停用选中的 ${selectedModels.value.length} 个语义模型吗？`,
+            '确认批量停用',
+            {
+              confirmButtonText: '确定',
+              cancelButtonText: '取消',
+              type: 'warning',
+            },
+          );
+
+          const ids = selectedModels.value
+            .map(model => model.id)
+            .filter(id => id !== undefined) as number[];
+          const result = await semanticModelService.disable(ids);
+          if (result) {
+            ElMessage.success(`成功停用 ${ids.length} 个语义模型`);
+            selectedModels.value = [];
+            await loadSemanticModels();
+          } else {
+            ElMessage.error('批量停用失败');
+          }
+        } catch {
+          // 用户取消操作时不显示错误消息
+        }
+      };
+
       // 批量删除语义模型
       const batchDeleteModels = async () => {
         if (selectedModels.value.length === 0) {
@@ -706,6 +794,8 @@
         openCreateDialog,
         handleSelectionChange,
         batchDeleteModels,
+        batchEnableModels,
+        batchDisableModels,
         editModel,
         deleteModel,
         toggleStatus,
