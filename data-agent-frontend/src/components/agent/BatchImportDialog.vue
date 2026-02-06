@@ -122,11 +122,12 @@
               :show-text="true"
               :stroke-width="10"
               style="flex: 1; max-width: 200px"
+              :format="() => `${importProgress.current}/${importProgress.total}`"
             />
           </div>
           <div style="text-align: center; font-size: 12px; color: #999">
             <span v-if="importProgress.total > 0">
-              {{ importProgress.current }}/{{ importProgress.total }} 条
+              正在处理第 {{ importProgress.current }} 条，共 {{ importProgress.total }} 条
             </span>
             <span v-else>
               处理中...
