@@ -232,8 +232,13 @@
     <template #footer>
       <div style="text-align: right">
         <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="saveModel">
-          {{ isEdit ? '更新' : '创建' }}
+        <el-button 
+          type="primary" 
+          @click="saveModel" 
+          :loading="saving"
+          :disabled="saving"
+        >
+          {{ saving ? (isEdit ? '更新中...' : '创建中...') : (isEdit ? '更新' : '创建') }}
         </el-button>
       </div>
     </template>
@@ -287,6 +292,7 @@
       const filterVisible: Ref<boolean> = ref(false);
       const total: Ref<number> = ref(0);
       const selectedModels: Ref<SemanticModel[]> = ref([]);
+      const saving: Ref<boolean> = ref(false); // 保存按钮加载状态
       
       // 分页查询参数
       const queryParams = reactive<SemanticModelPageQuery>({
@@ -500,8 +506,14 @@
         }
       };
 
-      // 保存语义模型
+      // 保存语义模型（异步处理，避免阻塞UI）
       const saveModel = async () => {
+        // 防止重复提交
+        if (saving.value) {
+          return;
+        }
+        
+        saving.value = true;
         try {
           if (isEdit.value && currentEditId.value) {
             const formData: SemanticModel = {
@@ -685,6 +697,7 @@
         queryParams,
         selectedModels,
         modelForm,
+        saving,
         toggleFilter,
         clearFilters,
         handleSearch,
