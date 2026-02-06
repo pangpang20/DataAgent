@@ -31,7 +31,7 @@ spring:
       default-transaction-isolation: ${DRUID_TRANSACTION_ISOLATION:2}
   sql:
     init:
-      mode: always
+      mode: never
       schema-locations:
         - classpath:sql/${spring.datasource.platform}/schema.sql
         - classpath:sql/${spring.datasource.platform}/product_schema.sql
@@ -120,10 +120,10 @@ spring:
       enabled: true
 
 mybatis:
-
   configuration:
     map-underscore-to-camel-case: true
     log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
+  type-handlers-package: com.audaque.cloud.ai.dataagent.config
 
 # Actuator 监控配置
 management:

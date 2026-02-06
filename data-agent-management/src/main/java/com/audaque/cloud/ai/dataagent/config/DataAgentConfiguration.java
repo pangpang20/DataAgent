@@ -434,4 +434,16 @@ public class DataAgentConfiguration implements DisposableBean {
 				textSplitterProps.isKeepSeparator());
 	}
 
+	/**
+	 * 配置 MyBatis TypeHandlers
+n	 */
+	@Bean
+	@ConditionalOnMissingBean
+	public org.apache.ibatis.session.Configuration mybatisConfiguration() {
+		org.apache.ibatis.session.Configuration configuration = new org.apache.ibatis.session.Configuration();
+		configuration.getTypeHandlerRegistry().register(com.audaque.cloud.ai.dataagent.enums.AgentStatus.class, 
+			com.audaque.cloud.ai.dataagent.config.AgentStatusTypeHandler.class);
+		return configuration;
+	}
+
 }
