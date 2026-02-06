@@ -26,7 +26,7 @@
           </div>
           <div class="header-stats">
             <div class="stat-item" @click="setFilter('all')">
-              <div class="stat-number">{{ agents.length }}</div>
+              <div class="stat-number">{{ total }}</div>
               <div class="stat-label">总数量</div>
             </div>
             <div class="stat-item" @click="setFilter('published')">
