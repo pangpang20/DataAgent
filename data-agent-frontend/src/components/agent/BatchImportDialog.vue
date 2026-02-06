@@ -111,25 +111,6 @@
       <div style="text-align: right">
         <el-button @click="dialogVisible = false">关闭</el-button>
         
-        <!-- 导入进度显示 -->
-        <div v-if="importing" style="display: inline-block; margin-right: 20px; vertical-align: middle; min-width: 200px">
-          <div style="display: flex; align-items: center; margin-bottom: 8px">
-            <span style="margin-right: 10px; font-size: 14px; color: #666">
-              单条记录导入进度:
-            </span>
-            <el-progress 
-              :percentage="importProgress.percentage" 
-              :show-text="true"
-              :stroke-width="10"
-              style="flex: 1; max-width: 200px"
-              :format="() => `${importProgress.current}/${importProgress.total}`"
-            />
-          </div>
-          <div style="text-align: center; font-size: 12px; color: #999">
-            正在处理第 {{ importProgress.current }} 条，共 {{ importProgress.total }} 条
-          </div>
-        </div>
-        
         <el-button
           type="primary"
           @click="handleJsonImport"
