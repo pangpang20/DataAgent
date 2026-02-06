@@ -145,14 +145,14 @@
           </el-tooltip>
         </template>
       </el-table-column>
-      <el-table-column label="连接状态" min-width="50px" align="center">
+      <el-table-column label="连接状态" min-width="70px" align="center">
         <template #default="scope">
           <el-tag :type="scope.row.testStatus === 'success' ? 'success' : 'danger'" round>
             {{ scope.row.testStatus === 'success' ? '连接成功' : '连接失败' }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="状态" min-width="40px" align="center">
+      <el-table-column label="状态" min-width="50px" align="center">
         <template #default="scope">
           <el-tag :type="scope.row.status === 'active' ? 'success' : 'info'" round>
             {{ scope.row.status === 'active' ? '启用' : '禁用' }}
@@ -263,239 +263,242 @@
         </div>
       </el-tab-pane>
       <el-tab-pane label="添加新数据源" name="add">
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <div class="form-item">
-              <label>数据源名称 *</label>
-              <el-input v-model="newDatasource.name" placeholder="请输入数据源名称" size="large" />
-            </div>
-          </el-col>
-          <el-col :span="12">
-            <div class="form-item">
-              <label>数据源类型 *</label>
-              <!-- todo: 改为后端动态获取-->
-              <el-select
-                v-model="newDatasource.type"
-                placeholder="请选择数据源类型"
-                style="width: 100%"
-                size="large"
-              >
-                <el-option key="mysql" label="MySQL" value="mysql" />
-                <el-option key="postgresql" label="PostgreSQL" value="postgresql" />
-                <el-option key="sqlserver" label="SQL Server" value="sqlserver" />
-                <el-option key="dameng" label="达梦(Dameng)" value="dameng" />
-              </el-select>
-            </div>
-          </el-col>
-        </el-row>
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <div class="form-item">
-              <label>主机地址 *</label>
-              <el-input
-                v-model="newDatasource.host"
-                placeholder="例如：localhost 或 192.168.1.100"
-                size="large"
-              />
-            </div>
-          </el-col>
-          <el-col :span="12">
-            <div class="form-item">
-              <label>端口号 *</label>
-              <el-input-number
-                v-model="newDatasource.port"
-                :min="0"
-                :max="65535"
-                size="large"
-                style="width: 100%"
-              />
-            </div>
-          </el-col>
-        </el-row>
-        <el-row :gutter="20">
-          <el-col>
-            <div class="form-item">
-              <label>数据库名 *</label>
-              <el-input
-                v-model="newDatasource.databaseName"
-                placeholder="请输入数据库（schema）名称"
-                size="large"
-              />
-            </div>
-          </el-col>
-        </el-row>
-        <el-row :gutter="20">
-          <el-col>
-            <div class="form-item">
-              <label>连接地址</label>
-              <el-input
-                v-model="newDatasource.connectionUrl"
-                placeholder="请输入JDBC地址（若不填则自动生成）"
-                size="large"
-              />
-            </div>
-          </el-col>
-        </el-row>
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <div class="form-item">
-              <label>用户名 *</label>
-              <el-input
-                v-model="newDatasource.username"
-                placeholder="请输入数据库用户名"
-                size="large"
-              />
-            </div>
-          </el-col>
-          <el-col :span="12">
-            <div class="form-item">
-              <label>密码 *</label>
-              <el-input
-                v-model="newDatasource.password"
-                placeholder="请输入数据库密码"
-                size="large"
-                show-password
-              />
-            </div>
-          </el-col>
-        </el-row>
-        <el-row :gutter="30">
-          <el-col :span="24">
-            <div class="form-item">
-              <label>描述</label>
-              <el-input
-                v-model="newDatasource.description"
-                :rows="4"
-                type="textarea"
-                placeholder="请输入数据源描述（可选）"
-                size="large"
-              />
-            </div>
-          </el-col>
-        </el-row>
+        <el-form 
+          :model="newDatasource" 
+          :rules="datasourceRules" 
+          ref="datasourceFormRef" 
+          label-width="120px"
+          size="large"
+        >
+          <el-row :gutter="20">
+            <el-col :span="12">
+              <el-form-item label="数据源名称" prop="name" required>
+                <el-input 
+                  v-model="newDatasource.name" 
+                  placeholder="请输入数据源名称" 
+                />
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="数据源类型" prop="type" required>
+                <!-- todo: 改为后端动态获取-->
+                <el-select
+                  v-model="newDatasource.type"
+                  placeholder="请选择数据源类型"
+                  style="width: 100%"
+                  @change="handleTypeChange"
+                >
+                  <el-option key="mysql" label="MySQL" value="mysql" />
+                  <el-option key="postgresql" label="PostgreSQL" value="postgresql" />
+                  <el-option key="sqlserver" label="SQL Server" value="sqlserver" />
+                  <el-option key="dameng" label="达梦(Dameng)" value="dameng" />
+                </el-select>
+              </el-form-item>
+            </el-col>
+          </el-row>
+          
+          <el-row :gutter="20">
+            <el-col :span="12">
+              <el-form-item label="主机地址" prop="host" required>
+                <el-input
+                  v-model="newDatasource.host"
+                  placeholder="例如：localhost 或 192.168.1.100"
+                />
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="端口号" prop="port" required>
+                <el-input-number
+                  v-model="newDatasource.port"
+                  :min="0"
+                  :max="65535"
+                  style="width: 100%"
+                />
+              </el-form-item>
+            </el-col>
+          </el-row>
+          
+          <el-row :gutter="20">
+            <el-col :span="24">
+              <el-form-item label="数据库名" prop="databaseName" required>
+                <el-input
+                  v-model="newDatasource.databaseName"
+                  placeholder="请输入数据库（schema）名称"
+                />
+              </el-form-item>
+            </el-col>
+          </el-row>
+          
+          
+          
+          <el-row :gutter="20">
+            <el-col :span="12">
+              <el-form-item label="用户名" prop="username" required>
+                <el-input
+                  v-model="newDatasource.username"
+                  placeholder="请输入数据库用户名"
+                />
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="密码" prop="password" required>
+                <el-input
+                  v-model="newDatasource.password"
+                  placeholder="请输入数据库密码"
+                  show-password
+                />
+              </el-form-item>
+            </el-col>
+          </el-row>
+
+          <el-row :gutter="20">
+            <el-col :span="24">
+              <el-form-item label="连接地址" prop="connectionUrl">
+                <el-input
+                  v-model="newDatasource.connectionUrl"
+                  placeholder="请输入JDBC地址（若不填则自动生成）"
+                />
+              </el-form-item>
+            </el-col>
+          </el-row>
+          
+          <el-row :gutter="20">
+            <el-col :span="24">
+              <el-form-item label="描述" prop="description">
+                <el-input
+                  v-model="newDatasource.description"
+                  :rows="4"
+                  type="textarea"
+                  placeholder="请输入数据源描述（可选）"
+                />
+              </el-form-item>
+            </el-col>
+          </el-row>
+        </el-form>
 
         <el-divider />
         <div style="text-align: right">
           <el-button @click="dialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="createNewDatasource">创建并添加</el-button>
+          <el-button type="primary" @click="validateAndCreate">创建并添加</el-button>
         </div>
       </el-tab-pane>
     </el-tabs>
   </el-dialog>
   <el-dialog v-model="editDialogVisible" title="编辑数据源" width="1000">
-    <el-row :gutter="20">
-      <el-col :span="12">
-        <div class="form-item">
-          <label>数据源名称 *</label>
-          <el-input v-model="editingDatasource.name" placeholder="请输入数据源名称" size="large" />
-        </div>
-      </el-col>
-      <el-col :span="12">
-        <div class="form-item">
-          <label>数据源类型 *</label>
-          <el-select
-            v-model="editingDatasource.type"
-            placeholder="请选择数据源类型"
-            style="width: 100%"
-            size="large"
-          >
-            <el-option key="mysql" label="MySQL" value="mysql" />
-            <el-option key="postgresql" label="PostgreSQL" value="postgresql" />
-            <el-option key="dameng" label="达梦(Dameng)" value="dameng" />
-          </el-select>
-        </div>
-      </el-col>
-    </el-row>
-    <el-row :gutter="20">
-      <el-col :span="12">
-        <div class="form-item">
-          <label>主机地址 *</label>
-          <el-input
-            v-model="editingDatasource.host"
-            placeholder="例如：localhost 或 192.168.1.100"
-            size="large"
-          />
-        </div>
-      </el-col>
-      <el-col :span="12">
-        <div class="form-item">
-          <label>端口号 *</label>
-          <el-input-number
-            v-model="editingDatasource.port"
-            :min="0"
-            :max="65535"
-            size="large"
-            style="width: 100%"
-          />
-        </div>
-      </el-col>
-    </el-row>
-    <el-row :gutter="20">
-      <el-col>
-        <div class="form-item">
-          <label>数据库名 *</label>
-          <el-input
-            v-model="editingDatasource.databaseName"
-            placeholder="请输入数据库（schema）名称"
-            size="large"
-          />
-        </div>
-      </el-col>
-    </el-row>
-    <el-row :gutter="20">
-      <el-col>
-        <div class="form-item">
-          <label>连接地址</label>
-          <el-input
-            v-model="editingDatasource.connectionUrl"
-            placeholder="请输入JDBC地址（若不填则自动生成）"
-            size="large"
-          />
-        </div>
-      </el-col>
-    </el-row>
-    <el-row :gutter="20">
-      <el-col :span="12">
-        <div class="form-item">
-          <label>用户名 *</label>
-          <el-input
-            v-model="editingDatasource.username"
-            placeholder="请输入数据库用户名"
-            size="large"
-          />
-        </div>
-      </el-col>
-      <el-col :span="12">
-        <div class="form-item">
-          <label>密码 *</label>
-          <el-input
-            v-model="editingDatasource.password"
-            placeholder="请输入数据库密码"
-            size="large"
-            show-password
-          />
-        </div>
-      </el-col>
-    </el-row>
-    <el-row :gutter="30">
-      <el-col :span="24">
-        <div class="form-item">
-          <label>描述</label>
-          <el-input
-            v-model="editingDatasource.description"
-            :rows="4"
-            type="textarea"
-            placeholder="请输入数据源描述（可选）"
-            size="large"
-          />
-        </div>
-      </el-col>
-    </el-row>
+    <el-form 
+      :model="editingDatasource" 
+      :rules="editDatasourceRules" 
+      ref="editDatasourceFormRef" 
+      label-width="120px"
+      size="large"
+    >
+      <el-row :gutter="20">
+        <el-col :span="12">
+          <el-form-item label="数据源名称" prop="name" required>
+            <el-input v-model="editingDatasource.name" placeholder="请输入数据源名称" />
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item label="数据源类型" prop="type" required>
+            <el-select
+              v-model="editingDatasource.type"
+              placeholder="请选择数据源类型"
+              style="width: 100%"
+              disabled
+            >
+              <el-option key="mysql" label="MySQL" value="mysql" />
+              <el-option key="postgresql" label="PostgreSQL" value="postgresql" />
+              <el-option key="sqlserver" label="SQL Server" value="sqlserver" />
+              <el-option key="dameng" label="达梦(Dameng)" value="dameng" />
+            </el-select>
+          </el-form-item>
+        </el-col>
+      </el-row>
+      
+      <el-row :gutter="20">
+        <el-col :span="12">
+          <el-form-item label="主机地址" prop="host" required>
+            <el-input
+              v-model="editingDatasource.host"
+              placeholder="例如：localhost 或 192.168.1.100"
+              @input="handleEditFieldChange"
+            />
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item label="端口号" prop="port" required>
+            <el-input-number
+              v-model="editingDatasource.port"
+              :min="0"
+              :max="65535"
+              style="width: 100%"
+              @change="handleEditFieldChange"
+            />
+          </el-form-item>
+        </el-col>
+      </el-row>
+      
+      <el-row :gutter="20">
+        <el-col :span="24">
+          <el-form-item label="数据库名" prop="databaseName" required>
+            <el-input
+              v-model="editingDatasource.databaseName"
+              placeholder="请输入数据库（schema）名称"
+              @input="handleEditFieldChange"
+            />
+          </el-form-item>
+        </el-col>
+      </el-row>
+      
+      <el-row :gutter="20">
+        <el-col :span="12">
+          <el-form-item label="用户名" prop="username" required>
+            <el-input
+              v-model="editingDatasource.username"
+              placeholder="请输入数据库用户名"
+            />
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item label="密码" prop="password" required>
+            <el-input
+              v-model="editingDatasource.password"
+              placeholder="请输入数据库密码"
+              show-password
+            />
+          </el-form-item>
+        </el-col>
+      </el-row>
+      
+      <el-row :gutter="20">
+        <el-col :span="24">
+          <el-form-item label="连接地址" prop="connectionUrl">
+            <el-input
+              v-model="editingDatasource.connectionUrl"
+              placeholder="请输入JDBC地址（若不填则自动生成）"
+            />
+          </el-form-item>
+        </el-col>
+      </el-row>
+      
+      <el-row :gutter="20">
+        <el-col :span="24">
+          <el-form-item label="数据源描述" prop="description">
+            <el-input
+              v-model="editingDatasource.description"
+              :rows="4"
+              type="textarea"
+              placeholder="请输入数据源描述（可选）"
+            />
+          </el-form-item>
+        </el-col>
+      </el-row>
+    </el-form>
 
     <el-divider />
     <div style="text-align: right">
       <el-button @click="editDialogVisible = false">取消</el-button>
-      <el-button type="primary" @click="saveEditDatasource">保存修改</el-button>
+      <el-button type="primary" @click="validateAndSaveEdit">保存修改</el-button>
     </div>
   </el-dialog>
 
@@ -770,7 +773,10 @@
 </template>
 
 <script lang="ts">
-  import { defineComponent, ref, onMounted, Ref, watch, computed } from 'vue';
+  import { defineComponent, ref, onMounted, Ref, watch, computed, reactive } from 'vue';
+  import {
+    FormInstance,
+  } from 'element-plus';
   import {
     Plus,
     UploadFilled,
@@ -842,12 +848,144 @@
       const targetColumnList: Ref<string[]> = ref([]);
       const savingForeignKeys: Ref<boolean> = ref(false);
 
+      // 表单引用和验证规则
+      const datasourceFormRef = ref<FormInstance>();
+      const editDatasourceFormRef = ref<FormInstance>();
+      
+      const datasourceRules = reactive({
+        name: [
+          { required: true, message: '请输入数据源名称', trigger: 'blur' },
+          { min: 1, max: 100, message: '长度在 1 到 100 个字符', trigger: 'blur' }
+        ],
+        type: [
+          { required: true, message: '请选择数据源类型', trigger: 'change' }
+        ],
+        host: [
+          { required: true, message: '请输入主机地址', trigger: 'blur' },
+          { pattern: /^([a-zA-Z0-9][-a-zA-Z0-9]{0,62}(\.[a-zA-Z0-9][-a-zA-Z0-9]{0,62})*|\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})$/, message: '请输入有效的主机地址', trigger: 'blur' }
+        ],
+        port: [
+          { required: true, message: '请输入端口号', trigger: 'blur' },
+          { type: 'number', min: 1, max: 65535, message: '端口号必须在 1-65535 之间', trigger: 'blur' }
+        ],
+        databaseName: [
+          { required: true, message: '请输入数据库名', trigger: 'blur' },
+          { min: 1, max: 100, message: '长度在 1 到 100 个字符', trigger: 'blur' }
+        ],
+        username: [
+          { required: true, message: '请输入用户名', trigger: 'blur' },
+          { min: 1, max: 50, message: '长度在 1 到 50 个字符', trigger: 'blur' }
+        ],
+        password: [
+          { required: true, message: '请输入密码', trigger: 'blur' },
+          { min: 1, max: 100, message: '长度在 1 到 100 个字符', trigger: 'blur' }
+        ]
+      });
+
+      // 编辑表单的验证规则（数据源类型不可修改）
+      const editDatasourceRules = reactive({
+        name: [
+          { required: true, message: '请输入数据源名称', trigger: 'blur' },
+          { min: 1, max: 100, message: '长度在 1 到 100 个字符', trigger: 'blur' }
+        ],
+        type: [
+          { required: true, message: '数据源类型不可修改', trigger: 'change' }
+        ],
+        host: [
+          { required: true, message: '请输入主机地址', trigger: 'blur' },
+          { pattern: /^([a-zA-Z0-9][-a-zA-Z0-9]{0,62}(\.[a-zA-Z0-9][-a-zA-Z0-9]{0,62})*|\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})$/, message: '请输入有效的主机地址', trigger: 'blur' }
+        ],
+        port: [
+          { required: true, message: '请输入端口号', trigger: 'blur' },
+          { type: 'number', min: 1, max: 65535, message: '端口号必须在 1-65535 之间', trigger: 'blur' }
+        ],
+        databaseName: [
+          { required: true, message: '请输入数据库名', trigger: 'blur' },
+          { min: 1, max: 100, message: '长度在 1 到 100 个字符', trigger: 'blur' }
+        ],
+        username: [
+          { required: true, message: '请输入用户名', trigger: 'blur' },
+          { min: 1, max: 50, message: '长度在 1 到 50 个字符', trigger: 'blur' }
+        ],
+        password: [
+          { required: true, message: '请输入密码', trigger: 'blur' },
+          { min: 1, max: 100, message: '长度在 1 到 100 个字符', trigger: 'blur' }
+        ]
+      });
+
       watch(dialogVisible, newValue => {
         if (newValue) {
           loadAllDatasource();
           newDatasource.value = { port: 3306 } as Datasource;
         }
       });
+
+      // 数据源类型变化时设置默认端口
+      const handleTypeChange = (type: string) => {
+        const defaultPorts: Record<string, number> = {
+          'mysql': 3306,
+          'postgresql': 5432,
+          'sqlserver': 1433,
+          'dameng': 5236
+        };
+        
+        if (defaultPorts[type] && newDatasource.value) {
+          newDatasource.value.port = defaultPorts[type];
+        }
+      };
+
+      // 编辑时数据源类型变化时设置默认端口
+      const handleEditTypeChange = (type: string) => {
+        const defaultPorts: Record<string, number> = {
+          'mysql': 3306,
+          'postgresql': 5432,
+          'sqlserver': 1433,
+          'dameng': 5236
+        };
+        
+        if (defaultPorts[type] && editingDatasource.value) {
+          editingDatasource.value.port = defaultPorts[type];
+          // 数据源类型变化时重新生成连接地址
+          generateConnectionUrl(editingDatasource.value);
+        }
+      };
+
+      // 生成连接地址
+      const generateConnectionUrl = (datasource: Datasource) => {
+        if (!datasource.type || !datasource.host || !datasource.port || !datasource.databaseName) {
+          return;
+        }
+
+        let url = '';
+        switch (datasource.type) {
+          case 'mysql':
+            url = `jdbc:mysql://${datasource.host}:${datasource.port}/${datasource.databaseName}?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=GMT%2B8`;
+            break;
+          case 'postgresql':
+            url = `jdbc:postgresql://${datasource.host}:${datasource.port}/${datasource.databaseName}?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai`;
+            break;
+          case 'sqlserver':
+            url = `jdbc:sqlserver://${datasource.host}:${datasource.port};databaseName=${datasource.databaseName};encrypt=false;trustServerCertificate=true`;
+            break;
+          case 'dameng':
+            url = `jdbc:dm://${datasource.host}:${datasource.port}/${datasource.databaseName}`;
+            break;
+          default:
+            return;
+        }
+        
+        datasource.connectionUrl = url;
+      };
+
+      // 监听编辑表单字段变化，自动更新连接地址
+      const handleEditFieldChange = () => {
+        // 延迟执行，确保字段值已更新
+        setTimeout(() => {
+          if (editingDatasource.value) {
+            generateConnectionUrl(editingDatasource.value);
+          }
+        }, 100);
+      };
 
       // 初始化Agent数据源列表
       const loadAgentDatasource = async () => {
@@ -968,12 +1106,20 @@
             ElMessage.success('操作成功！');
             row.status = active ? 'active' : 'inactive';
           } else {
-            ElMessage.error('操作失败！');
+            ElMessage.error(response.message || '操作失败！');
             console.error('Failed to change datasource:', response);
           }
-        } catch (error) {
-          ElMessage.error('操作失败！');
+        } catch (error: any) {
           console.error('Failed to change datasource:', error);
+          
+          // 检查是否是业务规则错误
+          if (error.message && error.message.includes('Only one datasource can be active')) {
+            ElMessage.error('操作失败：每个智能体只能启用一个数据源，请先禁用其他已启用的数据源！');
+          } else if (error.message && error.message.includes('other datasources are active')) {
+            ElMessage.error('操作失败：检测到其他数据源已启用，请先禁用它们再启用此数据源！');
+          } else {
+            ElMessage.error('操作失败：' + (error.message || '未知错误'));
+          }
         }
       };
 
@@ -1002,7 +1148,7 @@
         const datasourceId = row.id;
 
         try {
-          await ElMessageBox.confirm('是否要删除当前数据源吗？', '提示', {
+          await ElMessageBox.confirm('是否删除当前数据源吗？', '提示', {
             confirmButtonText: '确定',
             cancelButtonText: '取消',
             type: 'warning',
@@ -1048,6 +1194,30 @@
           return;
         }
         await addDatasourceToAgent(datasourceId);
+      };
+
+      // 验证并创建数据源
+      const validateAndCreate = async () => {
+        if (!datasourceFormRef.value) return;
+        
+        try {
+          await datasourceFormRef.value.validate();
+          await createNewDatasource();
+        } catch (error) {
+          console.error('表单验证失败:', error);
+        }
+      };
+
+      // 验证并保存编辑的数据源
+      const validateAndSaveEdit = async () => {
+        if (!editDatasourceFormRef.value) return;
+        
+        try {
+          await editDatasourceFormRef.value.validate();
+          await saveEditDatasource();
+        } catch (error) {
+          console.error('表单验证失败:', error);
+        }
       };
 
       const validateDatasourceForm = (datasourceForm: Datasource): string[] => {
@@ -1567,6 +1737,19 @@
         deleteForeignKey,
         saveForeignKeyConfig,
         editingForeignKey,
+        // 表单验证相关
+        datasourceFormRef,
+        editDatasourceFormRef,
+        datasourceRules,
+        editDatasourceRules,
+        validateAndCreate,
+        validateAndSaveEdit,
+        // 数据源类型变化处理
+        handleTypeChange,
+        handleEditTypeChange,
+        // 连接地址自动生成
+        generateConnectionUrl,
+        handleEditFieldChange,
       };
     },
   });
