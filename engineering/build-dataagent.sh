@@ -746,8 +746,8 @@ deploy_backend() {
         info "开启 Milvus 自动配置..."
         sed -i "s|\${VECTOR_STORE_EXCLUDE:[^}]*}| |g" "$DEPLOY_DIR/application.yml"
         
-        # 启用 Milvus（精确替换 milvus 段落下的 enabled）
-        sed -i '/vectorstore:/,/elasticsearch:/ s|milvus:|milvus:|; /milvus:/,/elasticsearch:/ s|enabled: false|enabled: true|' "$DEPLOY_DIR/application.yml"
+        # 启用 Milvus（只替换主 enabled 配置，保留 flush-enabled 为 false）
+        sed -i '/vectorstore:/,/elasticsearch:/ s|milvus:|milvus:|; /milvus:/,/elasticsearch:/ s|^\s*enabled: false|enabled: true|' "$DEPLOY_DIR/application.yml"
         
         # 转义特殊字符
         ESC_MILVUS_USER=$(printf '%s\n' "$MILVUS_USERNAME" | sed 's/[[\.*^$()+?{|]/\\&/g')
