@@ -183,7 +183,7 @@ public class MappersTest {
 		int upd = semanticModelMapper.updateById(m);
 		Assertions.assertEquals(1, upd);
 
-		int del = semanticModelMapper.deleteById(m.getId());
+		int del = semanticModelMapper.softDeleteById(m.getId());
 		Assertions.assertEquals(1, del);
 
 		agentMapper.logicalDeleteById(agentId);
