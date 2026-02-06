@@ -422,15 +422,15 @@ build_widget() {
     BACKEND_STATIC="$PROJECT_ROOT/data-agent-management/src/main/resources/static"
     mkdir -p "$BACKEND_STATIC"
     
-    cp dist/widget.js "$BACKEND_STATIC/"
+    \cp dist/widget.js "$BACKEND_STATIC/"
     if [ -f "dist/style.css" ]; then
-        cp dist/style.css "$BACKEND_STATIC/"
+        \cp dist/style.css "$BACKEND_STATIC/"
     fi
     if [ -f "public/logo.png" ]; then
-        cp public/logo.png "$BACKEND_STATIC/"
+        \cp public/logo.png "$BACKEND_STATIC/"
     fi
     if [ -f "public/widget-test.html" ]; then
-        cp public/widget-test.html "$BACKEND_STATIC/"
+        \cp public/widget-test.html "$BACKEND_STATIC/"
     fi
     
     WIDGET_SIZE=$(du -h dist/widget.js | cut -f1)
@@ -482,19 +482,19 @@ package_output() {
     
     # 复制后端 JAR
     info "复制后端 JAR..."
-    cp "$BACKEND_JAR" "$OUTPUT_DIR/backend/dataagent-backend.jar"
+    \cp "$BACKEND_JAR" "$OUTPUT_DIR/backend/dataagent-backend.jar"
     
     # 复制前端构建产物
     info "复制前端构建产物..."
-    cp -r "$PROJECT_ROOT/data-agent-frontend/dist/"* "$OUTPUT_DIR/frontend/"
+    \cp -r "$PROJECT_ROOT/data-agent-frontend/dist/"* "$OUTPUT_DIR/frontend/"
     
     # 复制配置模板
     info "复制配置模板..."
-    cp "$PROJECT_ROOT/application.yml.sample" "$OUTPUT_DIR/config/application.yml.template"
+    \cp "$PROJECT_ROOT/application.yml.sample" "$OUTPUT_DIR/config/application.yml.template"
     
     # 复制 Nginx 配置模板
     if [ -f "$PROJECT_ROOT/docker-file/config/nginx-production.conf" ]; then
-        cp "$PROJECT_ROOT/docker-file/config/nginx-production.conf" "$OUTPUT_DIR/config/nginx-dataagent.conf.template"
+        \cp "$PROJECT_ROOT/docker-file/config/nginx-production.conf" "$OUTPUT_DIR/config/nginx-dataagent.conf.template"
     fi
     
     # 复制数据库初始化脚本
@@ -503,11 +503,11 @@ package_output() {
     mkdir -p "$OUTPUT_DIR/config/sql/dameng"
     
     if [ -d "$PROJECT_ROOT/data-agent-management/src/main/resources/sql/mysql" ]; then
-        cp -r "$PROJECT_ROOT/data-agent-management/src/main/resources/sql/mysql/"* "$OUTPUT_DIR/config/sql/mysql/"
+        \cp -r "$PROJECT_ROOT/data-agent-management/src/main/resources/sql/mysql/"* "$OUTPUT_DIR/config/sql/mysql/"
     fi
     
     if [ -d "$PROJECT_ROOT/data-agent-management/src/main/resources/sql/dameng" ]; then
-        cp -r "$PROJECT_ROOT/data-agent-management/src/main/resources/sql/dameng/"* "$OUTPUT_DIR/config/sql/dameng/"
+        \cp -r "$PROJECT_ROOT/data-agent-management/src/main/resources/sql/dameng/"* "$OUTPUT_DIR/config/sql/dameng/"
     fi
     
     # 生成版本信息
@@ -670,12 +670,12 @@ backup_old_version() {
         
         # 备份后端
         if [ -f "$DEPLOY_DIR/dataagent-backend.jar" ]; then
-            cp "$DEPLOY_DIR/dataagent-backend.jar" "$BACKUP_DIR/"
+            \cp "$DEPLOY_DIR/dataagent-backend.jar" "$BACKUP_DIR/"
         fi
         
         # 备份配置
         if [ -f "$DEPLOY_DIR/application.yml" ]; then
-            cp "$DEPLOY_DIR/application.yml" "$BACKUP_DIR/"
+            \cp "$DEPLOY_DIR/application.yml" "$BACKUP_DIR/"
         fi
         
         info "✅ 已备份到: $BACKUP_DIR"
@@ -700,7 +700,7 @@ deploy_backend() {
         error "找不到后端 JAR 文件: $SOURCE_JAR"
     fi
     
-    cp "$SOURCE_JAR" "$DEPLOY_DIR/"
+    \cp "$SOURCE_JAR" "$DEPLOY_DIR/"
     info "✅ 后端 JAR 已部署"
     
     # 生成配置文件
@@ -710,7 +710,7 @@ deploy_backend() {
         error "配置模板不存在: $CONFIG_TEMPLATE"
     fi
     
-    cp "$CONFIG_TEMPLATE" "$DEPLOY_DIR/application.yml"
+    \cp "$CONFIG_TEMPLATE" "$DEPLOY_DIR/application.yml"
     
     # 转义特殊字符
     ESC_DB_USER=$(printf '%s\n' "$DB_USER" | sed 's/[[\.*^$()+?{|]/\\&/g')
@@ -777,7 +777,7 @@ deploy_frontend() {
     # 复制前端文件
     rm -rf "$FRONTEND_DIR"/*
     if [ -d "$PACKAGE_DIR/frontend" ]; then
-        cp -r "$PACKAGE_DIR/frontend/"* "$FRONTEND_DIR/"
+        \cp -r "$PACKAGE_DIR/frontend/"* "$FRONTEND_DIR/"
     else
         error "找不到前端文件目录: $PACKAGE_DIR/frontend"
     fi
@@ -823,7 +823,7 @@ configure_nginx() {
         return 0
     fi
     
-    cp "$NGINX_TEMPLATE" "$NGINX_LOCAL_CONF"
+    \cp "$NGINX_TEMPLATE" "$NGINX_LOCAL_CONF"
     
     # 替换配置参数
     FRONTEND_DIR="$DEPLOY_DIR/frontend"
@@ -834,7 +834,7 @@ configure_nginx() {
     sed -i "s|alias .*/uploads/;|alias $DEPLOY_DIR/uploads/;|g" "$NGINX_LOCAL_CONF"
     
     # 部署配置
-    sudo cp "$NGINX_LOCAL_CONF" "$NGINX_CONFIG_FILE"
+    sudo \cp "$NGINX_LOCAL_CONF" "$NGINX_CONFIG_FILE"
     
     # 启用配置
     if [ "$USE_SITES_STYLE" = true ]; then
@@ -888,7 +888,7 @@ WantedBy=multi-user.target
 EOF
     
     # 安装服务
-    sudo cp "$SERVICE_FILE" /etc/systemd/system/dataagent.service
+    sudo \cp "$SERVICE_FILE" /etc/systemd/system/dataagent.service
     sudo systemctl daemon-reload
     
     info "✅ systemd 服务已创建: dataagent.service"
