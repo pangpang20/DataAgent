@@ -1112,13 +1112,21 @@
         } catch (error: any) {
           console.error('Failed to change datasource:', error);
           
-          // 检查是否是业务规则错误
-          if (error.message && error.message.includes('Only one datasource can be active')) {
-            ElMessage.error('操作失败：每个智能体只能启用一个数据源，请先禁用其他已启用的数据源！');
-          } else if (error.message && error.message.includes('other datasources are active')) {
-            ElMessage.error('操作失败：检测到其他数据源已启用，请先禁用它们再启用此数据源！');
+          // 根据错误类型显示不同提示
+          if (error.message) {
+            // 检查是否是业务规则错误
+            if (error.message.includes('Only one datasource can be active') || 
+                error.message.includes('other datasources are active')) {
+              ElMessage.error('操作失败：每个智能体只能启用一个数据源，请先禁用其他已启用的数据源！');
+            } else if (error.message.includes('请求参数错误')) {
+              ElMessage.error(`参数错误：${error.message.replace('请求参数错误: ', '')}`);
+            } else if (error.message.includes('网络连接失败')) {
+              ElMessage.error('网络连接失败，请检查网络或服务器状态！');
+            } else {
+              ElMessage.error(error.message);
+            }
           } else {
-            ElMessage.error('操作失败：' + (error.message || '未知错误'));
+            ElMessage.error('操作失败：未知错误');
           }
         }
       };

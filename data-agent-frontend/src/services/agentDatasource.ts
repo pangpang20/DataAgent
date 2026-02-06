@@ -19,8 +19,8 @@ import { ApiResponse } from '@/services/common';
 import { AgentDatasource } from '@/services/datasource';
 
 interface ToggleDatasourceDto {
-  datasourceId?: number;
-  isActive?: boolean;
+  datasourceId: number;
+  isActive: boolean;
 }
 
 interface UpdateDatasourceTablesDto {
@@ -136,8 +136,30 @@ class AgentDatasourceService {
         dto,
       );
       return response.data;
-    } catch (error) {
-      throw new Error(`切换数据源状态失败: ${error}`);
+    } catch (error: any) {
+      // 根据不同错误类型提供具体提示
+      if (error.response) {
+        // 服务器返回了错误响应
+        const status = error.response.status;
+        const message = error.response.data?.message || error.response.statusText;
+
+        switch (status) {
+          case 400:
+            throw new Error(`请求参数错误: ${message}`);
+          case 404:
+            throw new Error(`资源未找到: ${message}`);
+          case 500:
+            throw new Error(`服务器内部错误: ${message}`);
+          default:
+            throw new Error(`HTTP ${status} 错误: ${message}`);
+        }
+      } else if (error.request) {
+        // 请求已发出但没有收到响应
+        throw new Error('网络连接失败，请检查网络或服务器状态');
+      } else {
+        // 其他错误
+        throw new Error(`请求失败: ${error.message}`);
+      }
     }
   }
 
