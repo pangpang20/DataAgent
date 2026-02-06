@@ -131,7 +131,7 @@ public interface AgentMapper {
 			<if test="queryDTO.keyword != null and queryDTO.keyword != ''">
 				AND (name LIKE CONCAT('%', #{queryDTO.keyword}, '%')
 					 OR description LIKE CONCAT('%', #{queryDTO.keyword}, '%')
-					 OR CAST(id AS CHAR) LIKE CONCAT('%', #{queryDTO.keyword}, '%'))
+					 OR TO_CHAR(id) LIKE CONCAT('%', #{queryDTO.keyword}, '%'))
 			</if>
 			<if test="queryDTO.status != null and queryDTO.status != ''">
 				AND status = #{queryDTO.status}
@@ -155,7 +155,7 @@ public interface AgentMapper {
 			<if test="queryDTO.keyword != null and queryDTO.keyword != ''">
 				AND (name LIKE CONCAT('%', #{queryDTO.keyword}, '%')
 					 OR description LIKE CONCAT('%', #{queryDTO.keyword}, '%')
-					 OR CAST(id AS CHAR) LIKE CONCAT('%', #{queryDTO.keyword}, '%'))
+					 OR TO_CHAR(id) LIKE CONCAT('%', #{queryDTO.keyword}, '%'))
 			</if>
 			<if test="queryDTO.status != null and queryDTO.status != ''">
 				AND status = #{queryDTO.status}
