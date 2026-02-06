@@ -82,6 +82,10 @@ public class SemanticModelServiceImpl implements SemanticModelService {
 		LocalDateTime now = LocalDateTime.now();
 		semanticModel.setCreatedTime(now);
 		semanticModel.setUpdatedTime(now);
+		// 确保 isDeleted 字段被设置（如果未设置则默认为0）
+		if (semanticModel.getIsDeleted() == null) {
+			semanticModel.setIsDeleted(0);
+		}
 		semanticModelMapper.insert(semanticModel);
 	}
 
@@ -102,6 +106,7 @@ public class SemanticModelServiceImpl implements SemanticModelService {
 				.columnComment(dto.getColumnComment())
 				.dataType(dto.getDataType())
 				.status(1) // 默认启用状态
+				.isDeleted(0) // 显式设置未删除状态
 				.build();
 
 		// 保存到数据库
@@ -163,10 +168,11 @@ public class SemanticModelServiceImpl implements SemanticModelService {
 		if (semanticModel != null) {
 			// 从向量数据库删除
 			deleteSemanticModelFromVectorStore(semanticModel);
-		}
 
-		// 从关系数据库删除
-		semanticModelMapper.deleteById(id);
+			// 软删除：更新 is_deleted = 1
+			semanticModelMapper.softDeleteById(id);
+			log.info("Soft deleted semantic model: id={}", id);
+		}
 	}
 
 	@Override
@@ -235,6 +241,7 @@ public class SemanticModelServiceImpl implements SemanticModelService {
 							.columnComment(item.getColumnComment())
 							.dataType(item.getDataType())
 							.status(1) // 默认启用
+							.isDeleted(0) // 显式设置未删除状态
 							.createdTime(item.getCreateTime() != null ? item.getCreateTime() : LocalDateTime.now())
 							.updatedTime(LocalDateTime.now())
 							.build();

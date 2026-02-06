@@ -124,14 +124,23 @@ public interface SemanticModelMapper {
 	int updateById(SemanticModel model);
 
 	/**
-	 * Logical delete by id
+	 * Physical delete by id (deprecated - use softDeleteById instead)
+	 */
+	@Delete("""
+			DELETE FROM semantic_model
+			WHERE id = #{id}
+			""")
+	int physicalDeleteById(@Param("id") Long id);
+
+	/**
+	 * Soft delete by id
 	 */
 	@Update("""
 			UPDATE semantic_model
 			SET is_deleted = 1, updated_time = NOW()
-			WHERE id = #{id}
+			WHERE id = #{id} AND is_deleted = 0
 			""")
-	int deleteById(@Param("id") Long id);
+	int softDeleteById(@Param("id") Long id);
 
 	/**
 	 * Query semantic models by datasource ID, status and table names

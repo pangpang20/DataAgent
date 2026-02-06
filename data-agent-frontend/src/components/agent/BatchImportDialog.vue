@@ -109,6 +109,30 @@
     <template #footer>
       <div style="text-align: right">
         <el-button @click="dialogVisible = false">关闭</el-button>
+        
+        <!-- 导入进度显示 -->
+        <div v-if="importing" style="display: inline-block; margin-right: 20px; vertical-align: middle; min-width: 200px">
+          <div style="display: flex; align-items: center; margin-bottom: 8px">
+            <span style="margin-right: 10px; font-size: 14px; color: #666">
+              导入进度:
+            </span>
+            <el-progress 
+              :percentage="importProgress.percentage" 
+              :show-text="true"
+              :stroke-width="10"
+              style="flex: 1; max-width: 200px"
+            />
+          </div>
+          <div style="text-align: center; font-size: 12px; color: #999">
+            <span v-if="importProgress.total > 0">
+              {{ importProgress.current }}/{{ importProgress.total }} 条
+            </span>
+            <span v-else>
+              处理中...
+            </span>
+          </div>
+        </div>
+        
         <el-button
           type="primary"
           @click="handleJsonImport"
@@ -186,6 +210,11 @@
       const importing = ref(false);
       const importMode = ref('json');
       const uploadedFile = ref<File | null>(null);
+      const importProgress = ref({
+        current: 0,
+        total: 0,
+        percentage: 0
+      });
 
       const dialogVisible = computed({
         get: () => props.modelValue,
@@ -198,6 +227,11 @@
         importJsonText.value = '';
         importMode.value = 'json';
         uploadedFile.value = null;
+        importProgress.value = {
+          current: 0,
+          total: 0,
+          percentage: 0
+        };
       };
 
       const resetImport = () => {
@@ -235,7 +269,27 @@
 
         try {
           importing.value = true;
+          importProgress.value.total = Array.isArray(items) ? items.length : 0;
+          importProgress.value.current = 0;
+          importProgress.value.percentage = 0;
+          
+          // 模拟进度更新（实际进度需要后端支持）
+          const updateProgress = setInterval(() => {
+            if (importing.value && importProgress.value.current < importProgress.value.total) {
+              importProgress.value.current++;
+              importProgress.value.percentage = Math.round(
+                (importProgress.value.current / importProgress.value.total) * 100
+              );
+            }
+          }, 100);
+          
           const result = await props.onJsonImport(items);
+          clearInterval(updateProgress);
+          
+          // 确保进度完成
+          importProgress.value.current = importProgress.value.total;
+          importProgress.value.percentage = 100;
+          
           importResult.value = result;
           importTab.value = 'result';
 
@@ -280,7 +334,18 @@
 
         try {
           importing.value = true;
+          // 对于Excel导入，我们无法预先知道确切的记录数，显示加载状态
+          importProgress.value.total = 0; // 未知总数
+          importProgress.value.current = 0;
+          importProgress.value.percentage = 0;
+          
           const result = await props.onExcelImport(uploadedFile.value);
+          
+          // 导入完成后显示结果统计
+          importProgress.value.current = result.successCount + result.failCount;
+          importProgress.value.total = result.total;
+          importProgress.value.percentage = 100;
+          
           importResult.value = result;
           importTab.value = 'result';
 
@@ -315,6 +380,7 @@
         downloadExcelTemplate,
         handleExcelImport,
         resetImport,
+        importProgress,
       };
     },
   });
