@@ -50,7 +50,7 @@
             <div class="filter-content">
               <div class="filter-tabs-row">
                 <div class="filter-tabs">
-                  <el-radio-group v-model="activeFilter" size="large">
+                  <el-radio-group v-model="activeFilter" size="large" @change="handleFilterChange">
                     <el-radio-button value="all">
                       <el-icon><Grid /></el-icon>
                       <span>全部智能体</span>
@@ -248,6 +248,11 @@
         loadAgents();
       };
 
+      const handleFilterChange = (value: string) => {
+        console.log('Filter changed to:', value);
+        setFilter(value);
+      };
+
       const handleCurrentChange = (val: number) => {
         currentPage.value = val;
         loadAgents();
@@ -423,6 +428,7 @@
         pageSize,
         statusStats,
         setFilter,
+        handleFilterChange,
         loadAgents,
         enterAgent,
         getStatusText,
@@ -553,6 +559,7 @@
     font-size: 0.75rem;
     font-weight: 600;
     margin-left: 0.5rem;
+    pointer-events: none; /* 防止数字计数干扰按钮点击 */
   }
 
   /* 智能体网格 */
