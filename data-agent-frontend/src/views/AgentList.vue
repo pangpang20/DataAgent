@@ -82,7 +82,7 @@
                     :prefix-icon="Search"
                     clearable
                     style="width: 350px"
-                    @change="handleSearchChange"
+                    @input="handleSearchInput"
                   />
                   <div class="action-buttons">
                     <el-button :icon="Refresh" @click="loadAgents" size="large">刷新</el-button>
@@ -353,6 +353,23 @@
         loadAgents();
       };
 
+      // 防抖定时器
+      let searchTimer: any = null;
+
+      // 处理搜索输入（带防抖）
+      const handleSearchInput = () => {
+        // 清除之前的定时器
+        if (searchTimer) {
+          clearTimeout(searchTimer);
+        }
+        
+        // 设置新的定时器，延迟300ms执行搜索
+        searchTimer = setTimeout(() => {
+          currentPage.value = 1; // 重置到第一页
+          loadAgents();
+        }, 300);
+      };
+
       // 图片加载失败处理
       const handleImageError = (agent: Agent) => {
         console.debug('Avatar image load failed, using fallback for:', agent.name);
@@ -418,6 +435,7 @@
         handleCurrentChange,
         handleSizeChange,
         handleSearchChange,
+        handleSearchInput,
         Search,
         Refresh,
         Plus,
