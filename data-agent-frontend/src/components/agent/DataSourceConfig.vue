@@ -81,7 +81,7 @@
                     :span="6"
                     style="margin-bottom: 10px"
                   >
-                    <el-checkbox :label="table" size="large">
+                    <el-checkbox :value="table" size="large">
                       {{ table }}
                     </el-checkbox>
                   </el-col>
@@ -798,6 +798,19 @@
 
   export default defineComponent({
     name: 'AgentDataSourceConfig',
+    components: {
+      Plus,
+      UploadFilled,
+      Loading,
+      FolderOpened,
+      Lock,
+      Connection,
+      Link,
+      CirclePlus,
+      Check,
+      Right,
+      Edit,
+    },
     props: {
       agentId: {
         type: Number,
@@ -1722,12 +1735,6 @@
         handleCurrentChange,
         handleSizeChange,
         // 逻辑外键管理
-        Connection,
-        Link,
-        CirclePlus,
-        Check,
-        Right,
-        Edit,
         foreignKeyDialogVisible,
         currentForeignKeyDatasource,
         foreignKeyList,
