@@ -49,16 +49,16 @@ spring:
       multiplier: 2.0                # 指数退避倍数（每次重试间隔为上次的 multiplier 倍）
     vectorstore:
       milvus:
-        enabled: false
+        enabled: true
         initialize-schema: true
         embedding-dimension: 1024          # 标准配置，用于创建 Milvus 集合
         client:
-          host: ${MILVUS_HOST:localhost}
+          host: ${MILVUS_HOST:172.16.1.137}
           port: ${MILVUS_PORT:19530}
           username: ${MILVUS_USERNAME:root}
           password: ${MILVUS_PASSWORD:Milvus}
           database-name: ${MILVUS_DATABASE:default}
-        collection-name: ${MILVUS_COLLECTION:data_agent_vector}
+        collection-name: ${MILVUS_COLLECTION:data_agent_vector_dev}
         flush-delay-ms: 10000  # Milvus flush 操作延迟（毫秒），避免速率限制
         flush-retry-count: 3  # flush 操作重试次数
         flush-initial-backoff-ms: 1000  # flush 操作初始退避时间（毫秒）
