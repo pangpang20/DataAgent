@@ -80,4 +80,10 @@ public class AgentKnowledge {
 	// 默认值是 0
 	private Integer isResourceCleaned;
 
+	/**
+	 * 文本切割方式：token, recursive
+	 * 默认值：token
+	 */
+	private String splitterType = "token";
+
 }

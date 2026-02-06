@@ -281,7 +281,6 @@
             </el-col>
             <el-col :span="12">
               <el-form-item label="数据源类型" prop="type" required>
-                <!-- todo: 改为后端动态获取-->
                 <el-select
                   v-model="newDatasource.type"
                   placeholder="请选择数据源类型"

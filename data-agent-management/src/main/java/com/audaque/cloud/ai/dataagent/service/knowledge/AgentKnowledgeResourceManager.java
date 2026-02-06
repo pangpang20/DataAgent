@@ -18,10 +18,12 @@ package com.audaque.cloud.ai.dataagent.service.knowledge;
 import com.audaque.cloud.ai.dataagent.constant.Constant;
 import com.audaque.cloud.ai.dataagent.constant.DocumentMetadataConstant;
 import com.audaque.cloud.ai.dataagent.enums.KnowledgeType;
+import com.audaque.cloud.ai.dataagent.enums.SplitterType;
 import com.audaque.cloud.ai.dataagent.util.DocumentConverterUtil;
 import com.audaque.cloud.ai.dataagent.entity.AgentKnowledge;
 import com.audaque.cloud.ai.dataagent.service.file.FileStorageService;
 import com.audaque.cloud.ai.dataagent.service.vectorstore.AgentVectorStoreService;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.reader.tika.TikaDocumentReader;
@@ -38,20 +40,14 @@ import java.util.Map;
 // 智能体知识的向量资源和文件资源管理
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class AgentKnowledgeResourceManager {
 
-	private final TextSplitter textSplitter;
+	private final TextSplitterFactory textSplitterFactory;
 
 	private final FileStorageService fileStorageService;
 
 	private final AgentVectorStoreService agentVectorStoreService;
-
-	public AgentKnowledgeResourceManager(TextSplitter textSplitter, FileStorageService fileStorageService,
-			AgentVectorStoreService agentVectorStoreService) {
-		this.textSplitter = textSplitter;
-		this.fileStorageService = fileStorageService;
-		this.agentVectorStoreService = agentVectorStoreService;
-	}
 
 	public void doEmbedingToVectorStore(AgentKnowledge agentKnowledge) throws Exception {
 		// delete old data
@@ -75,7 +71,7 @@ public class AgentKnowledgeResourceManager {
 	private void processDocumentKnowledge(AgentKnowledge knowledge) {
 
 		// 处理文档
-		List<Document> documents = getAndSplitDocument(knowledge.getFilePath());
+		List<Document> documents = getAndSplitDocument(knowledge);
 		if (documents == null || documents.isEmpty()) {
 			log.error("No documents extracted from file: knowledgeId={}, filePath={}", knowledge.getId(),
 					knowledge.getFilePath());
@@ -93,9 +89,9 @@ public class AgentKnowledgeResourceManager {
 
 	}
 
-	private List<Document> getAndSplitDocument(String filePath) {
+	private List<Document> getAndSplitDocument(AgentKnowledge knowledge) {
 		// 使用FileStorageService获取文件资源对象
-		Resource resource = fileStorageService.getFileResource(filePath);
+		Resource resource = fileStorageService.getFileResource(knowledge.getFilePath());
 
 		// 使用TikaDocumentReader读取文件
 		TikaDocumentReader tikaDocumentReader = new TikaDocumentReader(resource);
@@ -105,33 +101,43 @@ public class AgentKnowledgeResourceManager {
 		} catch (StackOverflowError e) {
 			log.error(
 					"TikaDocumentReader read failed due to StackOverflowError, possibly caused by problematic regex in Tika when processing file: {}",
-					filePath, e);
+					knowledge.getFilePath(), e);
 			// 尝试使用简化的读取方式作为后备方案
-			log.warn("Attempting fallback document reading method for file: {}", filePath);
+			log.warn("Attempting fallback document reading method for file: {}", knowledge.getFilePath());
 			try {
-				documents = readDocumentWithFallback(resource, filePath);
+				documents = readDocumentWithFallback(resource, knowledge.getFilePath());
 			} catch (Exception fallbackException) {
-				log.error("Fallback document reading also failed for file: {}", filePath, fallbackException);
+				log.error("Fallback document reading also failed for file: {}", knowledge.getFilePath(), fallbackException);
 				throw new RuntimeException(
-						"File processing failed due to stack overflow and fallback also failed: " + filePath,
+						"File processing failed due to stack overflow and fallback also failed: " + knowledge.getFilePath(),
 						fallbackException);
 			}
 		} catch (Exception e) {
-			log.error("TikaDocumentReader read failed for file: {}", filePath, e);
-			throw new RuntimeException("File processing failed: " + filePath, e);
+			log.error("TikaDocumentReader read failed for file: {}", knowledge.getFilePath(), e);
+			throw new RuntimeException("File processing failed: " + knowledge.getFilePath(), e);
 		}
 
 		try {
+			// 根据知识配置的切割方式获取对应的 TextSplitter
+			String splitterType = knowledge.getSplitterType();
+			if (!StringUtils.hasText(splitterType)) {
+				splitterType = SplitterType.TOKEN.getValue(); // 默认使用 token 切割
+				log.warn("Splitter type is empty for knowledgeId: {}, using default: token", knowledge.getId());
+			}
+
+			TextSplitter textSplitter = textSplitterFactory.getSplitter(splitterType);
+			log.info("Using splitter type: {} for knowledgeId: {}", splitterType, knowledge.getId());
+
 			return textSplitter.apply(documents);
 		} catch (StackOverflowError e) {
-			log.error("TextSplitter apply failed due to StackOverflowError for file: {}", filePath, e);
+			log.error("TextSplitter apply failed due to StackOverflowError for file: {}", knowledge.getFilePath(), e);
 			throw new RuntimeException(
 					"Text splitting failed due to stack overflow, possibly caused by complex document content: "
-							+ filePath,
+							+ knowledge.getFilePath(),
 					e);
 		} catch (Exception e) {
-			log.error("TextSplitter apply failed for file: {}", filePath, e);
-			throw new RuntimeException("Text splitting failed: " + filePath, e);
+			log.error("TextSplitter apply failed for file: {}", knowledge.getFilePath(), e);
+			throw new RuntimeException("Text splitting failed: " + knowledge.getFilePath(), e);
 		}
 	}
 

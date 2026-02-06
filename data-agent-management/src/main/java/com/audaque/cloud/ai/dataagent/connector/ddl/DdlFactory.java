@@ -28,6 +28,9 @@ public class DdlFactory {
 
 	private final Map<String, Ddl> ddlExecutorSet = new ConcurrentHashMap<>();
 
+	// 缓存 BizDataSourceTypeEnum 到 Ddl 的映射，避免重复流式查找
+	private final Map<BizDataSourceTypeEnum, Ddl> enumDdlCache = new ConcurrentHashMap<>();
+
 	public DdlFactory(List<Ddl> ddls) {
 		ddls.forEach(this::registry);
 	}
@@ -48,13 +51,23 @@ public class DdlFactory {
 		return getDdlExecutorByDbType(type);
 	}
 
-	// todo: 写一层缓存
 	public Ddl getDdlExecutorByDbType(BizDataSourceTypeEnum type) {
+		// 先从缓存中查找
+		return enumDdlCache.computeIfAbsent(type, this::findDdlExecutorByTypeEnum);
+	}
+
+	/**
+	 * 根据枚举类型查找对应的DDL执行器（无缓存版本）
+	 * 
+	 * @param type 数据源类型枚举
+	 * @return 对应的DDL执行器
+	 */
+	private Ddl findDdlExecutorByTypeEnum(BizDataSourceTypeEnum type) {
 		return ddlExecutorSet.values()
-			.stream()
-			.filter(d -> d.supportedDataSourceType(type))
-			.findFirst()
-			.orElseThrow(() -> new IllegalStateException("no ddl executor found for " + type));
+				.stream()
+				.filter(d -> d.supportedDataSourceType(type))
+				.findFirst()
+				.orElseThrow(() -> new IllegalStateException("no ddl executor found for " + type));
 	}
 
 	public Ddl getDdlExecutorByType(String type) {

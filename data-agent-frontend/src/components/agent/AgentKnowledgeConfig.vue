@@ -296,6 +296,27 @@
         <el-input v-model="knowledgeForm.title" placeholder="为这份知识起一个易于识别的名称" />
       </el-form-item>
 
+      <!-- 文本切割方式选择 -->
+      <el-form-item 
+        v-if="knowledgeForm.type === 'DOCUMENT'" 
+        label="文本切割方式" 
+        prop="splitterType"
+      >
+        <el-select
+          v-model="knowledgeForm.splitterType"
+          placeholder="请选择文本切割方式"
+          style="width: 100%"
+        >
+          <el-option label="Token 切割（推荐）" value="token" />
+          <el-option label="递归切割" value="recursive" />
+        </el-select>
+        <div style="margin-top: 5px; color: #909399; font-size: 12px; line-height: 1.4">
+          <strong>说明：</strong><br>
+          • <strong>Token 切割</strong>：按照 token 数量进行切割，适合大多数文档<br>
+          • <strong>递归切割</strong>：按照段落结构进行切割，适合结构化文档
+        </div>
+      </el-form-item>
+
       <!-- 文件上传区域 -->
       <el-form-item v-if="knowledgeForm.type === 'DOCUMENT'" label="上传文件" required>
         <div v-if="!isEdit" style="width: 100%">
@@ -428,6 +449,7 @@
         isRecall: true,
         question: '',
         answer: '',
+        splitterType: 'token', // 默认使用 token 切割
       } as AgentKnowledge & { question?: string; answer?: string });
 
       // 切换筛选面板
@@ -524,6 +546,7 @@
         knowledgeForm.value = {
           ...knowledge,
           type: knowledge.type,
+          splitterType: knowledge.splitterType || 'token', // 确保有默认值
         };
 
         if (knowledge.type === 'QA' || knowledge.type === 'FAQ') {
@@ -810,6 +833,7 @@
             formData.append('title', knowledgeForm.value.title);
             formData.append('type', knowledgeForm.value.type || 'DOCUMENT');
             formData.append('isRecall', knowledgeForm.value.isRecall ? '1' : '0');
+            formData.append('splitterType', knowledgeForm.value.splitterType || 'token');
 
             if (knowledgeForm.value.type === 'DOCUMENT' && knowledgeForm.value.file) {
               formData.append('file', knowledgeForm.value.file);
@@ -856,6 +880,7 @@
           isRecall: true,
           question: '',
           answer: '',
+          splitterType: 'token', // 默认使用 token 切割
         } as AgentKnowledge & { question?: string; answer?: string };
         currentEditId.value = null;
         fileList.value = [];

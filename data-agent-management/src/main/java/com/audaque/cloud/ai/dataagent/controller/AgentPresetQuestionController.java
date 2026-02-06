@@ -17,7 +17,9 @@ package com.audaque.cloud.ai.dataagent.controller;
 
 import com.audaque.cloud.ai.dataagent.dto.agent.BatchDeleteDTO;
 import com.audaque.cloud.ai.dataagent.dto.agent.BatchUpdateStatusDTO;
+import com.audaque.cloud.ai.dataagent.dto.agent.CommonResponseDTO;
 import com.audaque.cloud.ai.dataagent.dto.agent.PresetQuestionQueryDTO;
+import com.audaque.cloud.ai.dataagent.dto.agent.PresetQuestionSaveDTO;
 import com.audaque.cloud.ai.dataagent.entity.AgentPresetQuestion;
 import com.audaque.cloud.ai.dataagent.service.agent.AgentPresetQuestionService;
 import com.audaque.cloud.ai.dataagent.vo.PageResponse;
@@ -29,14 +31,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 
 @Slf4j
 @RestController
 @RequestMapping("/api/agent")
 @CrossOrigin(origins = "*")
 @AllArgsConstructor
-// todo: 部分返回值和参数需要定义DTO
 public class AgentPresetQuestionController {
 
 	private final AgentPresetQuestionService presetQuestionService;
@@ -59,38 +59,16 @@ public class AgentPresetQuestionController {
 	 * Batch save preset questions of agent
 	 */
 	@PostMapping("/{agentId}/preset-questions")
-	public ResponseEntity<Map<String, String>> savePresetQuestions(@PathVariable(value = "agentId") Long agentId,
-			@RequestBody List<Map<String, Object>> questionsData) {
+	public ResponseEntity<CommonResponseDTO> savePresetQuestions(@PathVariable(value = "agentId") Long agentId,
+			@RequestBody @Valid List<PresetQuestionSaveDTO> questionsData) {
 		try {
 			log.info("Batch save request: agentId={}, count={}", agentId, questionsData.size());
 
-			List<AgentPresetQuestion> questions = questionsData.stream().map(data -> {
+			List<AgentPresetQuestion> questions = questionsData.stream().map(dto -> {
 				AgentPresetQuestion question = new AgentPresetQuestion();
-				question.setQuestion((String) data.get("question"));
-
-				// Parse sortOrder
-				Object sortOrderObj = data.get("sortOrder");
-				if (sortOrderObj instanceof Integer) {
-					question.setSortOrder((Integer) sortOrderObj);
-				} else if (sortOrderObj != null) {
-					try {
-						question.setSortOrder(Integer.parseInt(sortOrderObj.toString()));
-					} catch (NumberFormatException e) {
-						log.warn("Invalid sortOrder value: {}, will be auto-assigned", sortOrderObj);
-						question.setSortOrder(null);
-					}
-				}
-
-				// Parse isActive
-				Object isActiveObj = data.get("isActive");
-				if (isActiveObj instanceof Boolean) {
-					question.setIsActive((Boolean) isActiveObj);
-				} else if (isActiveObj != null) {
-					question.setIsActive(Boolean.parseBoolean(isActiveObj.toString()));
-				} else {
-					question.setIsActive(true);
-				}
-
+				question.setQuestion(dto.getQuestion());
+				question.setSortOrder(dto.getSortOrder());
+				question.setIsActive(dto.getIsActive() != null ? dto.getIsActive() : true);
 				return question;
 			}).toList();
 
@@ -104,10 +82,10 @@ public class AgentPresetQuestionController {
 			}
 
 			presetQuestionService.batchSave(agentId, questions);
-			return ResponseEntity.ok(Map.of("message", "预设问题保存成功"));
+			return ResponseEntity.ok(CommonResponseDTO.success("预设问题保存成功"));
 		} catch (Exception e) {
 			log.error("Error saving preset questions for agent {}", agentId, e);
-			return ResponseEntity.internalServerError().body(Map.of("error", "保存预设问题失败: " + e.getMessage()));
+			return ResponseEntity.internalServerError().body(CommonResponseDTO.error("保存预设问题失败: " + e.getMessage()));
 		}
 	}
 
@@ -115,14 +93,14 @@ public class AgentPresetQuestionController {
 	 * Delete preset question
 	 */
 	@DeleteMapping("/{agentId}/preset-questions/{questionId}")
-	public ResponseEntity<Map<String, String>> deletePresetQuestion(@PathVariable(value = "agentId") Long agentId,
+	public ResponseEntity<CommonResponseDTO> deletePresetQuestion(@PathVariable(value = "agentId") Long agentId,
 			@PathVariable Long questionId) {
 		try {
 			presetQuestionService.deleteById(questionId);
-			return ResponseEntity.ok(Map.of("message", "预设问题删除成功"));
+			return ResponseEntity.ok(CommonResponseDTO.success("预设问题删除成功"));
 		} catch (Exception e) {
 			log.error("Error deleting preset question {} for agent {}", questionId, agentId, e);
-			return ResponseEntity.internalServerError().body(Map.of("error", "删除预设问题失败: " + e.getMessage()));
+			return ResponseEntity.internalServerError().body(CommonResponseDTO.error("删除预设问题失败: " + e.getMessage()));
 		}
 	}
 
@@ -156,7 +134,7 @@ public class AgentPresetQuestionController {
 	 * Batch delete preset questions
 	 */
 	@DeleteMapping("/{agentId}/preset-questions/batch")
-	public ResponseEntity<Map<String, String>> batchDeletePresetQuestions(@PathVariable(value = "agentId") Long agentId,
+	public ResponseEntity<CommonResponseDTO> batchDeletePresetQuestions(@PathVariable(value = "agentId") Long agentId,
 			@Valid @RequestBody BatchDeleteDTO deleteDTO) {
 		try {
 			log.info("Batch delete request: agentId={}, count={}", agentId, deleteDTO.getIds().size());
@@ -167,18 +145,18 @@ public class AgentPresetQuestionController {
 			boolean success = presetQuestionService.batchDelete(deleteDTO);
 
 			if (success) {
-				return ResponseEntity.ok(Map.of("message", "Batch delete successful"));
+				return ResponseEntity.ok(CommonResponseDTO.success("Batch delete successful"));
 			} else {
 				return ResponseEntity.internalServerError()
-						.body(Map.of("error", "Batch delete failed: no records deleted"));
+						.body(CommonResponseDTO.error("Batch delete failed: no records deleted"));
 			}
 		} catch (IllegalArgumentException e) {
 			log.error("Invalid batch delete parameters for agent {}: {}", agentId, e.getMessage());
-			return ResponseEntity.badRequest().body(Map.of("error", "Invalid parameters: " + e.getMessage()));
+			return ResponseEntity.badRequest().body(CommonResponseDTO.error("Invalid parameters: " + e.getMessage()));
 		} catch (Exception e) {
 			log.error("Error batch deleting preset questions for agent {}", agentId, e);
 			return ResponseEntity.internalServerError()
-					.body(Map.of("error", "Batch delete failed: " + e.getMessage()));
+					.body(CommonResponseDTO.error("Batch delete failed: " + e.getMessage()));
 		}
 	}
 
@@ -186,7 +164,7 @@ public class AgentPresetQuestionController {
 	 * Batch update preset questions status (enable/disable)
 	 */
 	@PutMapping("/{agentId}/preset-questions/batch/status")
-	public ResponseEntity<Map<String, String>> batchUpdateStatus(@PathVariable(value = "agentId") Long agentId,
+	public ResponseEntity<CommonResponseDTO> batchUpdateStatus(@PathVariable(value = "agentId") Long agentId,
 			@Valid @RequestBody BatchUpdateStatusDTO updateStatusDTO) {
 		try {
 			log.info("Batch update status request: agentId={}, count={}, isActive={}", agentId,
@@ -199,18 +177,18 @@ public class AgentPresetQuestionController {
 
 			if (success) {
 				String action = updateStatusDTO.getIsActive() ? "enabled" : "disabled";
-				return ResponseEntity.ok(Map.of("message", "Batch " + action + " successful"));
+				return ResponseEntity.ok(CommonResponseDTO.success("Batch " + action + " successful"));
 			} else {
 				return ResponseEntity.internalServerError()
-						.body(Map.of("error", "Batch update status failed: no records updated"));
+						.body(CommonResponseDTO.error("Batch update status failed: no records updated"));
 			}
 		} catch (IllegalArgumentException e) {
 			log.error("Invalid batch update status parameters for agent {}: {}", agentId, e.getMessage());
-			return ResponseEntity.badRequest().body(Map.of("error", "Invalid parameters: " + e.getMessage()));
+			return ResponseEntity.badRequest().body(CommonResponseDTO.error("Invalid parameters: " + e.getMessage()));
 		} catch (Exception e) {
 			log.error("Error batch updating status for agent {}", agentId, e);
 			return ResponseEntity.internalServerError()
-					.body(Map.of("error", "Batch update status failed: " + e.getMessage()));
+					.body(CommonResponseDTO.error("Batch update status failed: " + e.getMessage()));
 		}
 	}
 

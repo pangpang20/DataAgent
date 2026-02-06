@@ -180,6 +180,7 @@ public class DataAgentConfiguration implements DisposableBean {
 				.addNode(FEASIBILITY_ASSESSMENT_NODE, nodeBeanUtil.getNodeBeanAsync(FeasibilityAssessmentNode.class))
 				.addNode(SQL_GENERATE_NODE, nodeBeanUtil.getNodeBeanAsync(SqlGenerateNode.class))
 				.addNode(PLANNER_NODE, nodeBeanUtil.getNodeBeanAsync(PlannerNode.class))
+				.addNode(PLAN_VALIDATOR_NODE, nodeBeanUtil.getNodeBeanAsync(PlanValidatorNode.class))
 				.addNode(PLAN_EXECUTOR_NODE, nodeBeanUtil.getNodeBeanAsync(PlanExecutorNode.class))
 				.addNode(SQL_EXECUTE_NODE, nodeBeanUtil.getNodeBeanAsync(SqlExecuteNode.class))
 				.addNode(PYTHON_GENERATE_NODE, nodeBeanUtil.getNodeBeanAsync(PythonGenerateNode.class))
@@ -204,9 +205,20 @@ public class DataAgentConfiguration implements DisposableBean {
 				.addConditionalEdges(FEASIBILITY_ASSESSMENT_NODE, edge_async(new FeasibilityAssessmentDispatcher()),
 						Map.of(PLANNER_NODE, PLANNER_NODE, END, END))
 
-				// The edge from PlannerNode now goes to PlanExecutorNode for validation and
-				// execution
-				.addEdge(PLANNER_NODE, PLAN_EXECUTOR_NODE)
+				// The edge from PlannerNode now goes to PlanValidatorNode for validation
+				.addEdge(PLANNER_NODE, PLAN_VALIDATOR_NODE)
+				// The edge from PlanValidatorNode goes to PlanExecutorNode or HumanFeedbackNode
+				.addConditionalEdges(PLAN_VALIDATOR_NODE, edge_async(new PlanValidatorDispatcher()), Map.of(
+						// If validation fails, go back to PlannerNode to repair
+						PLANNER_NODE, PLANNER_NODE,
+						// If validation passes and human review enabled, go to human_feedback node
+						HUMAN_FEEDBACK_NODE, HUMAN_FEEDBACK_NODE,
+						// If validation passes and no human review, proceed to execution
+						SQL_GENERATE_NODE, SQL_GENERATE_NODE, PYTHON_GENERATE_NODE, PYTHON_GENERATE_NODE,
+						REPORT_GENERATOR_NODE, REPORT_GENERATOR_NODE,
+						// If max repair attempts are reached, end the process
+						END, END
+				))
 				// python nodes
 				.addEdge(PYTHON_GENERATE_NODE, PYTHON_EXECUTE_NODE)
 				.addConditionalEdges(PYTHON_EXECUTE_NODE,

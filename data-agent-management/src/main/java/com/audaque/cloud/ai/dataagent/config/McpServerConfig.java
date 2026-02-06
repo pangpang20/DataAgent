@@ -22,7 +22,6 @@ import org.springframework.ai.tool.method.MethodToolCallbackProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-// TODO 2025/12/08 合并包后移动到DataAgentConfiguration  中
 @Configuration
 public class McpServerConfig {
 

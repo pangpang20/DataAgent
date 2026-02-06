@@ -31,6 +31,7 @@ export interface AgentKnowledge {
   errorMsg?: string;
   createdTime?: string;
   updatedTime?: string;
+  splitterType?: string; // 文本切割方式：token, recursive
 }
 
 /**

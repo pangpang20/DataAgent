@@ -58,4 +58,9 @@ public class AgentKnowledgeVO {
 	@JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
 	private LocalDateTime updatedTime;
 
+	/**
+	 * 文本切割方式：token, recursive
+	 */
+	private String splitterType;
+
 }

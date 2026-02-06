@@ -35,6 +35,9 @@ public class AccessorFactory {
 
 	private final Map<String, Accessor> accessorMap = new ConcurrentHashMap<>();
 
+	// 缓存 BizDataSourceTypeEnum 到 Accessor 的映射，避免重复流式查找
+	private final Map<BizDataSourceTypeEnum, Accessor> enumAccessorCache = new ConcurrentHashMap<>();
+
 	public void register(Accessor accessor) {
 		accessorMap.put(accessor.getAccessorType(), accessor);
 	}
@@ -48,21 +51,31 @@ public class AccessorFactory {
 			throw new IllegalArgumentException("dbConfig cannot be null");
 		}
 		BizDataSourceTypeEnum typeEnum = Arrays.stream(BizDataSourceTypeEnum.values())
-			.filter(e -> e.getDialect().equalsIgnoreCase(dbConfig.getDialectType()))
-			.filter(e -> e.getProtocol().equalsIgnoreCase(dbConfig.getConnectionType()))
-			.findFirst()
-			.orElseThrow(() -> new IllegalStateException(
-					"no accessor registered for dialect: " + dbConfig.getDialectType()));
+				.filter(e -> e.getDialect().equalsIgnoreCase(dbConfig.getDialectType()))
+				.filter(e -> e.getProtocol().equalsIgnoreCase(dbConfig.getConnectionType()))
+				.findFirst()
+				.orElseThrow(() -> new IllegalStateException(
+						"no accessor registered for dialect: " + dbConfig.getDialectType()));
 		return getAccessorByDbTypeEnum(typeEnum);
 	}
 
-	// todo: 写一层缓存
 	public Accessor getAccessorByDbTypeEnum(BizDataSourceTypeEnum typeEnum) {
+		// 先从缓存中查找
+		return enumAccessorCache.computeIfAbsent(typeEnum, this::findAccessorByTypeEnum);
+	}
+
+	/**
+	 * 根据枚举类型查找对应的访问器（无缓存版本）
+	 * 
+	 * @param typeEnum 数据源类型枚举
+	 * @return 对应的访问器
+	 */
+	private Accessor findAccessorByTypeEnum(BizDataSourceTypeEnum typeEnum) {
 		return accessorMap.values()
-			.stream()
-			.filter(a -> a.supportedDataSourceType(typeEnum.getTypeName()))
-			.findFirst()
-			.orElseThrow(() -> new IllegalStateException("no accessor registered for dialect: " + typeEnum));
+				.stream()
+				.filter(a -> a.supportedDataSourceType(typeEnum.getTypeName()))
+				.findFirst()
+				.orElseThrow(() -> new IllegalStateException("no accessor registered for dialect: " + typeEnum));
 	}
 
 	public Accessor getAccessorByType(String type) {

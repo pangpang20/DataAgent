@@ -15,6 +15,7 @@
  */
 package com.audaque.cloud.ai.dataagent.entity;
 
+import com.audaque.cloud.ai.dataagent.enums.AgentStatus;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -40,9 +41,7 @@ public class Agent {
 
 	private String avatar; // Avatar URL
 
-	// todo: 改为枚举
-	private String status; // Status: draft-pending publication, published-published,
-							// offline-offline
+	private AgentStatus status; // 智能体状态：DRAFT-草稿待发布, PUBLISHED-已发布, OFFLINE-离线
 
 	private String apiKey; // API Key for external access, format sk-xxx
 

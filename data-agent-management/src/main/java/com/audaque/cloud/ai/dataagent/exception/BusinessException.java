@@ -13,27 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.audaque.cloud.ai.dataagent.dto.knowledge.agentknowledge;
+package com.audaque.cloud.ai.dataagent.exception;
 
-import lombok.Data;
+/**
+ * 业务异常基类
+ */
+public class BusinessException extends RuntimeException {
 
-@Data
-public class UpdateKnowledgeDTO {
+    public BusinessException(String message) {
+        super(message);
+    }
 
-	/**
-	 * 知识标题
-	 */
-	private String title;
-
-	// 不更新question，只更新title和content。question要更新直接创建新的知识
-	/**
-	 * 内容（当type=QA, FAQ时必填）
-	 */
-	private String content;
-
-	/**
-	 * 文本切割方式：token, recursive
-	 */
-	private String splitterType;
-
+    public BusinessException(String message, Throwable cause) {
+        super(message, cause);
+    }
 }

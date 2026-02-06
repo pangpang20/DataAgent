@@ -41,6 +41,7 @@ public class AgentKnowledgeConverter {
 		vo.setErrorMsg(po.getErrorMsg());
 		vo.setCreatedTime(po.getCreatedTime());
 		vo.setUpdatedTime(po.getUpdatedTime());
+		vo.setSplitterType(po.getSplitterType());
 		return vo;
 	}
 
@@ -69,6 +70,9 @@ public class AgentKnowledgeConverter {
 			knowledge.setFileSize(createKnowledgeDto.getFile().getSize());
 			knowledge.setFileType(createKnowledgeDto.getFile().getContentType());
 		}
+
+		// 设置切割方式
+		knowledge.setSplitterType(createKnowledgeDto.getSplitterType());
 
 		return knowledge;
 	}

@@ -101,6 +101,8 @@ public final class Constant {
 	// Node KEY
 	public static final String PLANNER_NODE = "PLANNER_NODE";
 
+	public static final String PLAN_VALIDATOR_NODE = "PLAN_VALIDATOR_NODE";
+
 	public static final String PLAN_EXECUTOR_NODE = "PLAN_EXECUTOR_NODE";
 
 	public static final String INTENT_RECOGNITION_NODE = "INTENT_RECOGNITION_NODE";

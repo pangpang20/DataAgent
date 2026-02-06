@@ -141,9 +141,18 @@ public class OssFileStorageServiceImpl implements FileStorageService {
 
 	@Override
 	public Resource getFileResource(String filePath) {
-		// TODO 实现
-		log.error("Getting resource from OSS not implemented");
-		return null;
+		if (!StringUtils.hasText(filePath)) {
+			log.warn("Cannot get resource, file path is empty");
+			return null;
+		}
+		
+		try {
+			log.debug("Creating OSS resource for file: {}", filePath);
+			return new OssResource(ossClient, ossProperties.getBucketName(), filePath, ossProperties);
+		} catch (Exception e) {
+			log.error("Failed to create OSS resource for file: {}", filePath, e);
+			return null;
+		}
 	}
 
 	/**

@@ -50,7 +50,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-// todo: 检查Mapper的返回值，判断是否执行成功（或者对Mapper进行AOP）
 @Slf4j
 @Service
 @AllArgsConstructor
@@ -109,7 +108,10 @@ public class DatasourceServiceImpl implements DatasourceService {
 		datasource.setCreateTime(now);
 		datasource.setUpdateTime(now);
 
-		datasourceMapper.insert(datasource);
+		int inserted = datasourceMapper.insert(datasource);
+		if (inserted == 0) {
+			throw new RuntimeException("数据源创建失败");
+		}
 		return datasource;
 	}
 
@@ -124,7 +126,10 @@ public class DatasourceServiceImpl implements DatasourceService {
 		datasource.setId(id);
 		datasource.setUpdateTime(LocalDateTime.now());
 
-		datasourceMapper.updateById(datasource);
+		int updated = datasourceMapper.updateById(datasource);
+		if (updated == 0) {
+			throw new RuntimeException("数据源更新失败，可能记录不存在");
+		}
 		return datasource;
 	}
 
@@ -135,12 +140,18 @@ public class DatasourceServiceImpl implements DatasourceService {
 		agentDatasourceMapper.deleteAllByDatasourceId(id);
 
 		// Then, delete the data source
-		datasourceMapper.deleteById(id);
+		int deleted = datasourceMapper.deleteById(id);
+		if (deleted == 0) {
+			throw new RuntimeException("数据源删除失败，可能记录不存在");
+		}
 	}
 
 	@Override
 	public void updateTestStatus(Integer id, String testStatus) {
-		datasourceMapper.updateTestStatusById(id, testStatus);
+		int updated = datasourceMapper.updateTestStatusById(id, testStatus);
+		if (updated == 0) {
+			log.warn("更新数据源测试状态失败，数据源ID: {}", id);
+		}
 	}
 
 	@Override
@@ -304,6 +315,9 @@ public class DatasourceServiceImpl implements DatasourceService {
 		logicalRelation.setUpdatedTime(now);
 
 		logicalRelationMapper.insert(logicalRelation);
+		if (logicalRelation.getId() == null) {
+			throw new RuntimeException("逻辑外键插入失败");
+		}
 		log.info("Logical relation added successfully with id: {}", logicalRelation.getId());
 
 		return logicalRelation;
@@ -332,7 +346,7 @@ public class DatasourceServiceImpl implements DatasourceService {
 		// 更新外键
 		int updated = logicalRelationMapper.updateById(logicalRelation);
 		if (updated == 0) {
-			throw new RuntimeException("更新逻辑外键失败");
+			throw new RuntimeException("更新逻辑外键失败，记录可能不存在");
 		}
 
 		log.info("Logical relation updated successfully: {}", logicalRelationId);
@@ -358,7 +372,7 @@ public class DatasourceServiceImpl implements DatasourceService {
 		// 删除外键（逻辑删除）
 		int deleted = logicalRelationMapper.deleteById(logicalRelationId, LocalDateTime.now());
 		if (deleted == 0) {
-			throw new RuntimeException("删除逻辑外键失败");
+			throw new RuntimeException("删除逻辑外键失败，记录可能不存在");
 		}
 
 		log.info("Logical relation deleted successfully: {}", logicalRelationId);

@@ -23,7 +23,6 @@ import org.springframework.stereotype.Component;
 
 import java.util.Map;
 
-// TODO 后续需改造 AgentKnowledgeResourceManager 使用该类获取对应的 TextSplitter，然后前端提供页面让用户选择不同的切割方式
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -33,6 +32,7 @@ public class TextSplitterFactory {
 
 	/**
 	 * 根据类型字符串获取对应的 Splitter
+	 * 
 	 * @param type 前端传入的类型，例如 "token", "recursive"
 	 * @return 对应的 TextSplitter 实例
 	 */
