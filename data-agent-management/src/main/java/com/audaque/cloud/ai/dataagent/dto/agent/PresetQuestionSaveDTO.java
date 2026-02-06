@@ -41,3 +41,4 @@ public class PresetQuestionSaveDTO {
     private Boolean isActive = true;
 
 }
+

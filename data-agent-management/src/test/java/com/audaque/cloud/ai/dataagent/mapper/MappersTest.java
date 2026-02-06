@@ -17,6 +17,7 @@ package com.audaque.cloud.ai.dataagent.mapper;
 
 import com.audaque.cloud.ai.dataagent.MySqlContainerConfiguration;
 import com.audaque.cloud.ai.dataagent.entity.*;
+import com.audaque.cloud.ai.dataagent.enums.AgentStatus;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mybatis.spring.boot.test.autoconfigure.MybatisTest;
@@ -64,7 +65,7 @@ public class MappersTest {
 				.name(name)
 				.description("for fk")
 				.avatar("a")
-				.status("draft")
+				.status(AgentStatus.DRAFT)
 				.prompt("p")
 				.category("c")
 				.adminId(1L)
@@ -89,7 +90,7 @@ public class MappersTest {
 				.name("test")
 				.description("test")
 				.avatar("test")
-				.status("test")
+				.status(AgentStatus.DRAFT)
 				.prompt("test")
 				.category("test")
 				.adminId(1L)

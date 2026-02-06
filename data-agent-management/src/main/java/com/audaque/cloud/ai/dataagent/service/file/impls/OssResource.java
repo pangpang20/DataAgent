@@ -174,3 +174,4 @@ public class OssResource extends AbstractResource {
         return bucketName;
     }
 }
+

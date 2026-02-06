@@ -17,6 +17,7 @@ package com.audaque.cloud.ai.dataagent.controller;
 
 import com.audaque.cloud.ai.dataagent.dto.agent.AgentQueryDTO;
 import com.audaque.cloud.ai.dataagent.entity.Agent;
+import com.audaque.cloud.ai.dataagent.enums.AgentStatus;
 import com.audaque.cloud.ai.dataagent.service.agent.AgentService;
 import com.audaque.cloud.ai.dataagent.vo.ApiKeyResponse;
 import com.audaque.cloud.ai.dataagent.vo.ApiResponse;
@@ -86,8 +87,8 @@ public class AgentController {
 	@PostMapping
 	public ResponseEntity<Agent> create(@RequestBody Agent agent) {
 		// Set default status
-		if (agent.getStatus() == null || agent.getStatus().trim().isEmpty()) {
-			agent.setStatus("draft");
+		if (agent.getStatus() == null) {
+			agent.setStatus(AgentStatus.DRAFT);
 		}
 		Agent saved = agentService.save(agent);
 		return ResponseEntity.ok(saved);
@@ -127,7 +128,7 @@ public class AgentController {
 		if (agent == null) {
 			return ResponseEntity.notFound().build();
 		}
-		agent.setStatus("published");
+		agent.setStatus(AgentStatus.PUBLISHED);
 		Agent updated = agentService.save(agent);
 		return ResponseEntity.ok(updated);
 	}
@@ -141,7 +142,7 @@ public class AgentController {
 		if (agent == null) {
 			return ResponseEntity.notFound().build();
 		}
-		agent.setStatus("offline");
+		agent.setStatus(AgentStatus.OFFLINE);
 		Agent updated = agentService.save(agent);
 		return ResponseEntity.ok(updated);
 	}

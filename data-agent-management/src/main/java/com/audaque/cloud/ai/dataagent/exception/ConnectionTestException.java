@@ -28,3 +28,4 @@ public class ConnectionTestException extends BusinessException {
         super(message, cause);
     }
 }
+

@@ -28,3 +28,4 @@ public class ResourceNotFoundException extends BusinessException {
         super(String.format("%s not found: %s", resourceType, resourceId));
     }
 }
+

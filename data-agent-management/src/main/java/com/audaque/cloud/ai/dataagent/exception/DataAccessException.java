@@ -28,3 +28,4 @@ public class DataAccessException extends BusinessException {
         super(message, cause);
     }
 }
+

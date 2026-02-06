@@ -77,3 +77,4 @@ public interface ConversationTurnMapper {
             "ORDER BY sequence_number DESC LIMIT 1 OFFSET #{maxHistory}) AS sub)")
     int cleanupOldTurns(@Param("threadId") String threadId, @Param("maxHistory") int maxHistory);
 }
+
