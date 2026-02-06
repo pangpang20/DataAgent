@@ -25,19 +25,19 @@
             <p class="content-subtitle">创建和管理您的AI智能体，让数据分析更智能</p>
           </div>
           <div class="header-stats">
-            <div class="stat-item">
+            <div class="stat-item" @click="setFilter('all')">
               <div class="stat-number">{{ agents.length }}</div>
               <div class="stat-label">总数量</div>
             </div>
-            <div class="stat-item">
+            <div class="stat-item" @click="setFilter('published')">
               <div class="stat-number">{{ publishedCount }}</div>
               <div class="stat-label">已发布</div>
             </div>
-            <div class="stat-item">
+            <div class="stat-item" @click="setFilter('draft')">
               <div class="stat-number">{{ draftCount }}</div>
               <div class="stat-label">草稿</div>
             </div>
-            <div class="stat-item">
+            <div class="stat-item" @click="setFilter('offline')">
               <div class="stat-number">{{ offlineCount }}</div>
               <div class="stat-label">已下线</div>
             </div>
@@ -469,6 +469,19 @@
 
   .stat-item {
     text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    padding: 0.5rem;
+    border-radius: 8px;
+  }
+  
+  .stat-item:hover {
+    background-color: #f0f9ff;
+    transform: translateY(-2px);
+  }
+  
+  .stat-item:active {
+    transform: translateY(0);
   }
 
   .stat-number {
