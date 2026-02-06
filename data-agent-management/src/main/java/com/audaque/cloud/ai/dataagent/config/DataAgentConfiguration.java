@@ -217,8 +217,7 @@ public class DataAgentConfiguration implements DisposableBean {
 						SQL_GENERATE_NODE, SQL_GENERATE_NODE, PYTHON_GENERATE_NODE, PYTHON_GENERATE_NODE,
 						REPORT_GENERATOR_NODE, REPORT_GENERATOR_NODE,
 						// If max repair attempts are reached, end the process
-						END, END
-				))
+						END, END))
 				// python nodes
 				.addEdge(PYTHON_GENERATE_NODE, PYTHON_EXECUTE_NODE)
 				.addConditionalEdges(PYTHON_EXECUTE_NODE,
@@ -436,13 +435,14 @@ public class DataAgentConfiguration implements DisposableBean {
 
 	/**
 	 * 配置 MyBatis TypeHandlers
-n	 */
+	 * n
+	 */
 	@Bean
 	@ConditionalOnMissingBean
 	public org.apache.ibatis.session.Configuration mybatisConfiguration() {
 		org.apache.ibatis.session.Configuration configuration = new org.apache.ibatis.session.Configuration();
-		configuration.getTypeHandlerRegistry().register(com.audaque.cloud.ai.dataagent.enums.AgentStatus.class, 
-			com.audaque.cloud.ai.dataagent.config.AgentStatusTypeHandler.class);
+		configuration.getTypeHandlerRegistry().register(com.audaque.cloud.ai.dataagent.enums.AgentStatus.class,
+				com.audaque.cloud.ai.dataagent.config.AgentStatusTypeHandler.class);
 		return configuration;
 	}
 
