@@ -1649,29 +1649,3 @@ curl http://localhost:8081/list
 | MySQL        | 8.0      | 数据库             |
 | Java         | 17       | JDK 版本           |
 | Maven        | 3.9.9    | 构建工具           |
-
-### 11.2 参考资料
-
-- [Spring Cloud 官方文档](https://spring.io/projects/spring-cloud)
-- [Consul 官方文档](https://www.consul.io/docs)
-- [Spring Cloud Gateway 文档](https://spring.io/projects/spring-cloud-gateway)
-- [微服务架构设计模式](https://microservices.io/patterns/index.html)
-
-### 11.3 文档变更记录
-
-| 版本  | 日期       | 作者           | 变更说明                     |
-| ----- | ---------- | -------------- | ---------------------------- |
-| 1.0.0 | 2026-01-21 | DataAgent Team | 初始版本，定义微服务改造方案 |
-
----
-
-**注意事项**：
-1. 本文档为需求规范，实际实施时应结合项目情况调整
-2. 建议采用渐进式改造，降低风险
-3. 保持向后兼容，确保现有功能不受影响
-4. 充分测试后再上线生产环境
-
-**审批流程**：
-- [ ] 技术负责人审批
-- [ ] 架构师审批
-- [ ] 项目经理审批

@@ -1754,16 +1754,3 @@ docker run -d --name dws \
 4. **华为 DWS 文档**：https://support.huaweicloud.com/dws/
 5. **PostgreSQL JDBC 文档**：https://jdbc.postgresql.org/documentation/
 6. **Spring Boot 多数据源**：https://spring.io/guides/gs/accessing-data-mysql/
-
----
-
-## 文档变更记录
-
-| 版本 | 日期       | 修订内容 | 作者         |
-| ---- | ---------- | -------- | ------------ |
-| v1.0 | 2026-01-15 | 初始版本 | AI Assistant |
-
----
-
-**文档结束**
-    

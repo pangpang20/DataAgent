@@ -1339,16 +1339,3 @@ SELECT * FROM USER_SEQUENCES;
 2. **达梦 JDBC 开发指南**：https://eco.dameng.com/document/dm/zh-cn/app-dev/java-jdbc.html
 3. **Spring Boot 多数据源配置**：https://spring.io/guides/gs/accessing-data-mysql/
 4. **MyBatis 数据库方言**：https://mybatis.org/mybatis-3/configuration.html
-
----
-
-## 文档变更记录
-
-| 版本 | 日期       | 修订内容                                          | 作者         |
-| ---- | ---------- | ------------------------------------------------- | ------------ |
-| v1.0 | 2026-01-15 | 初始版本                                          | AI Assistant |
-| v1.1 | 2026-01-21 | 修正 Druid 包名、事务配置、分页语法及自增主键细节 | AI Assistant |
-
----
-
-**文档结束**
