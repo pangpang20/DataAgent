@@ -322,7 +322,7 @@ export default defineComponent({
       
       try {
         const response = await axios.get(
-          `${baseUrl.value}/api/agents/${agentId.value}/preset-questions`,
+          `${baseUrl.value}/api/agent/${agentId.value}/preset-questions`,
           {
             headers: { 'X-API-Key': apiKey.value },
           }
