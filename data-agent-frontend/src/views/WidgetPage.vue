@@ -69,17 +69,24 @@
           />
         </div>
         <!-- Markdown Report Message -->
-        <div v-else-if="msg.messageType === 'markdown-report'" class="markdown-message">
-          <div class="markdown-header">
-            <span class="report-label">Markdown 报告</span>
-            <button class="download-btn" @click="downloadMarkdown(msg.content)">
+        <div v-else-if="msg.messageType === 'markdown-report'" class="markdown-report-message">
+          <div class="markdown-report-header">
+            <div class="report-info">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="#409EFF">
+                <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
+              </svg>
+              <span>Markdown 报告已生成</span>
+            </div>
+            <button class="download-btn primary" @click="downloadMarkdown(msg.content)">
               <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
                 <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
               </svg>
-              下载
+              下载Markdown报告
             </button>
           </div>
-          <Markdown>{{ msg.content }}</Markdown>
+          <div class="markdown-report-content">
+            <Markdown>{{ msg.content }}</Markdown>
+          </div>
         </div>
         <!-- Normal Text Message -->
         <div v-else :class="['message', msg.role]">
@@ -105,17 +112,31 @@
             <span class="node-toggle">{{ isNodeVisible[index] ? '▼' : '▶' }}</span>
           </div>
           <div v-show="isNodeVisible[index]" class="node-content">
+            <!-- Result Set -->
             <ResultSetDisplay
               v-if="nodeBlock[0]?.textType === 'RESULT_SET' && nodeBlock[0]?.text"
               :resultData="JSON.parse(nodeBlock[0].text)"
               :pageSize="10"
             />
+            <!-- Markdown -->
             <Markdown
               v-else-if="nodeBlock[0]?.textType === 'MARK_DOWN' && nodeBlock[0]?.text"
               :generating="isStreaming"
             >
               {{ nodeBlock[0].text }}
             </Markdown>
+            <!-- Python/SQL/JSON Code -->
+            <div 
+              v-else-if="['PYTHON', 'SQL', 'JSON'].includes(nodeBlock[0]?.textType) && nodeBlock[0]?.text" 
+              class="code-block"
+            >
+              <div class="code-header">
+                <span class="code-lang">{{ nodeBlock[0].textType }}</span>
+                <button class="copy-btn" @click="copyCode(nodeBlock[0].text)">复制</button>
+              </div>
+              <pre class="code-content"><code>{{ nodeBlock[0].text }}</code></pre>
+            </div>
+            <!-- Other content -->
             <div v-else class="node-text" v-html="nodeBlock[0]?.text || ''"></div>
           </div>
         </div>
@@ -597,6 +618,16 @@ export default defineComponent({
       URL.revokeObjectURL(url);
     };
 
+    // Copy code to clipboard
+    const copyCode = async (code: string) => {
+      if (!code) return;
+      try {
+        await navigator.clipboard.writeText(code);
+      } catch (e) {
+        console.warn('[Widget Page] Failed to copy:', e);
+      }
+    };
+
     return {
       // State
       title,
@@ -620,6 +651,7 @@ export default defineComponent({
       sendPresetQuestion,
       toggleNodeVisibility,
       downloadMarkdown,
+      copyCode,
     };
   },
 });
@@ -954,27 +986,41 @@ export default defineComponent({
 }
 
 /* Result Set & Markdown */
-.result-set-message,
-.markdown-message {
+.result-set-message {
   background: white;
   border-radius: 12px;
   padding: 16px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
-.markdown-header {
+/* Markdown Report Message */
+.markdown-report-message {
+  background: white;
+  border: 1px solid #e8e8e8;
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.markdown-report-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 12px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid #eee;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #f0f0f0;
 }
 
-.report-label {
-  font-size: 13px;
+.report-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #409eff;
+  font-size: 14px;
   font-weight: 500;
-  color: #666;
+}
+
+.markdown-report-content {
+  margin-top: 12px;
 }
 
 .download-btn {
@@ -982,8 +1028,8 @@ export default defineComponent({
   align-items: center;
   gap: 4px;
   padding: 6px 12px;
-  background: var(--primary-color, #409EFF);
-  color: white;
+  background: #f0f0f0;
+  color: #666;
   border: none;
   border-radius: 6px;
   font-size: 12px;
@@ -992,8 +1038,71 @@ export default defineComponent({
 }
 
 .download-btn:hover {
+  background: #e0e0e0;
+}
+
+.download-btn.primary {
+  background: var(--primary-color, #409EFF);
+  color: white;
+}
+
+.download-btn.primary:hover {
   opacity: 0.9;
-  transform: translateY(-1px);
+}
+
+/* Code Block */
+.code-block {
+  background: #f6f8fa;
+  border: 1px solid #e1e4e8;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.code-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: #f1f3f5;
+  border-bottom: 1px solid #e1e4e8;
+}
+
+.code-lang {
+  font-size: 12px;
+  font-weight: 500;
+  color: #666;
+  text-transform: uppercase;
+}
+
+.copy-btn {
+  padding: 4px 10px;
+  background: transparent;
+  border: 1px solid #d1d5da;
+  border-radius: 4px;
+  font-size: 11px;
+  color: #24292e;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.copy-btn:hover {
+  background: #f3f4f6;
+  border-color: #c6cbd1;
+}
+
+.code-content {
+  margin: 0;
+  padding: 12px;
+  overflow-x: auto;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #24292e;
+}
+
+.code-content code {
+  background: transparent;
+  padding: 0;
 }
 
 /* Scrollbar */

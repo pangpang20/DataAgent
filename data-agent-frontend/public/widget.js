@@ -459,6 +459,8 @@
             case 'WIDGET_RESIZE':
                 // Handle resize request from iframe
                 const iframeEl = document.getElementById(IFRAME_ID);
+                const buttonEl = document.getElementById(BUTTON_ID);
+                const containerEl = document.getElementById(CONTAINER_ID);
                 if (iframeEl && payload) {
                     if (payload.maximized) {
                         // Maximize: 50% width, 80% height, centered
@@ -473,6 +475,15 @@
                         iframeEl.style.right = 'auto';
                         iframeEl.style.bottom = 'auto';
                         iframeEl.classList.add('maximized');
+
+                        // Move button to bottom-right of iframe
+                        if (buttonEl && containerEl) {
+                            containerEl.style.position = 'fixed';
+                            containerEl.style.left = `calc(50% + ${maxWidth / 2}px - 28px)`;
+                            containerEl.style.top = `calc(50% + ${maxHeight / 2}px + 16px)`;
+                            containerEl.style.right = 'auto';
+                            containerEl.style.bottom = 'auto';
+                        }
                     } else {
                         // Restore to default size
                         iframeEl.style.width = finalConfig.width;
@@ -484,6 +495,15 @@
                         iframeEl.style.right = '0';
                         iframeEl.style.bottom = 'calc(100% + 16px)';
                         iframeEl.classList.remove('maximized');
+
+                        // Restore button to default position
+                        if (containerEl) {
+                            containerEl.style.position = 'fixed';
+                            containerEl.style.left = '';
+                            containerEl.style.top = '';
+                            containerEl.style.right = '24px';
+                            containerEl.style.bottom = '24px';
+                        }
                     }
                 }
                 break;
