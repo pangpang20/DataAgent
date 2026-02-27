@@ -1051,10 +1051,10 @@ main() {
         # 清理旧的构建产物
         clean_build
         
-        # 编译
+        # 编译（注意顺序：前端必须在后端之前，确保 static 目录完整）
         build_widget
-        build_backend
         build_frontend
+        build_backend
         
         # 打包
         package_output
