@@ -15,7 +15,7 @@
  */
 
 import axios from 'axios';
-import type { ApiResponse } from './common';
+import type { ApiResponse, PageResponse, BasePageQuery } from './common';
 
 export interface ChatSession {
   id: string; // UUID
@@ -39,6 +39,13 @@ export interface ChatMessage {
   titleNeeded?: boolean;
 }
 
+// Session page query interface
+export interface ChatSessionPageQuery extends BasePageQuery {
+  keyword?: string;
+  startDate?: string; // YYYY-MM-DD
+  endDate?: string; // YYYY-MM-DD
+}
+
 const API_BASE_URL = '/api';
 
 class ChatService {
@@ -48,6 +55,19 @@ class ChatService {
    */
   async getAgentSessions(agentId: number): Promise<ChatSession[]> {
     const response = await axios.get<ChatSession[]>(`${API_BASE_URL}/agent/${agentId}/sessions`);
+    return response.data;
+  }
+
+  /**
+   * 分页查询Agent的会话列表
+   * @param agentId Agent ID
+   * @param query 分页查询参数
+   */
+  async getAgentSessionsPage(agentId: number, query: ChatSessionPageQuery): Promise<PageResponse<ChatSession[]>> {
+    const response = await axios.post<PageResponse<ChatSession[]>>(
+      `${API_BASE_URL}/agent/${agentId}/sessions/page`,
+      query,
+    );
     return response.data;
   }
 

@@ -15,7 +15,9 @@
  */
 package com.audaque.cloud.ai.dataagent.service.chat;
 
+import com.audaque.cloud.ai.dataagent.dto.chat.ChatSessionQueryDTO;
 import com.audaque.cloud.ai.dataagent.entity.ChatSession;
+import com.audaque.cloud.ai.dataagent.vo.PageResult;
 
 import java.util.List;
 
@@ -63,5 +65,10 @@ public interface ChatSessionService {
 	 * Delete a single session
 	 */
 	void deleteSession(String sessionId);
+
+	/**
+	 * Page query sessions with filters
+	 */
+	PageResult<ChatSession> queryByConditionsWithPage(ChatSessionQueryDTO queryDTO);
 
 }

@@ -37,8 +37,34 @@
 
     <el-divider style="margin: 0" />
 
+    <!-- Filter section -->
+    <div class="filter-section">
+      <el-input
+        v-model="filterTitle"
+        placeholder="搜索标题"
+        clearable
+        size="small"
+        :prefix-icon="Search"
+        @input="handleFilterChange"
+      />
+      <el-date-picker
+        v-model="filterDateRange"
+        type="daterange"
+        range-separator="-"
+        start-placeholder="开始日期"
+        end-placeholder="结束日期"
+        size="small"
+        style="width: 100%; margin-top: 8px"
+        @change="handleFilterChange"
+        value-format="YYYY-MM-DD"
+      />
+      <div class="filter-info" v-if="totalCount > 0">
+        共 {{ totalCount }} 条会话
+      </div>
+    </div>
+
     <!-- 会话列表 -->
-    <div class="session-list" style="margin-top: 20px">
+    <div class="session-list">
       <div
         v-for="session in sessions"
         :key="session.id"
@@ -88,6 +114,25 @@
           </div>
         </div>
       </div>
+      <!-- Empty state -->
+      <div v-if="sessions.length === 0 && !isLoading" class="empty-state">
+        暂无会话记录
+      </div>
+      <div v-if="isLoading" class="empty-state">
+        加载中...
+      </div>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination-section" v-if="totalPages > 1">
+      <el-pagination
+        v-model:current-page="currentPage"
+        :page-size="pageSize"
+        :total="totalCount"
+        layout="prev, pager, next"
+        small
+        @current-change="handlePageChange"
+      />
     </div>
   </el-aside>
 </template>
@@ -97,10 +142,9 @@
   import { ref, onMounted, onUnmounted, computed, nextTick } from 'vue';
   import { useRouter, useRoute } from 'vue-router';
   import { ElMessage, ElMessageBox } from 'element-plus';
-  import ChatService from '../../services/chat';
-  import { ArrowLeft, Plus, Delete, Star, StarFilled, Edit } from '@element-plus/icons-vue';
+  import ChatService, { type ChatSession, type ChatSessionPageQuery } from '../../services/chat';
+  import { ArrowLeft, Plus, Delete, Star, StarFilled, Edit, Search } from '@element-plus/icons-vue';
   import { type Agent } from '../../services/agent';
-  import { type ChatSession } from '../../services/chat';
   import { generateFallbackAvatar, getAvatarUrl } from '../../services/avatar';
 
   // 扩展ChatSession接口以包含编辑相关属性
@@ -124,6 +168,7 @@
       Star,
       StarFilled,
       Edit,
+      Search,
     },
     props: {
       agent: {
@@ -152,6 +197,16 @@
       const sessionEventSource = ref<EventSource | null>(null);
       let reconnectTimer: number | null = null;
       let isComponentActive = true;
+
+      // Filter and pagination state
+      const filterTitle = ref('');
+      const filterDateRange = ref<[string, string] | null>(null);
+      const currentPage = ref(1);
+      const pageSize = ref(10);
+      const totalCount = ref(0);
+      const totalPages = ref(0);
+      const isLoading = ref(false);
+      let filterDebounceTimer: number | null = null;
 
       const router = useRouter();
       const route = useRoute();
@@ -255,33 +310,81 @@
         session.editing = false;
       };
 
-      // 计算属性
+      // Computed properties
       const agentId = computed(() => route.params.id as string);
+
+      // Load sessions from backend with pagination
+      const loadSessionsPage = async (selectFirst = false) => {
+        if (isLoading.value) return;
+        isLoading.value = true;
+
+        try {
+          const query: ChatSessionPageQuery = {
+            pageNum: currentPage.value,
+            pageSize: pageSize.value,
+          };
+
+          // Add keyword filter
+          if (filterTitle.value.trim()) {
+            query.keyword = filterTitle.value.trim();
+          }
+
+          // Add date range filter
+          if (filterDateRange.value && filterDateRange.value[0] && filterDateRange.value[1]) {
+            query.startDate = filterDateRange.value[0];
+            query.endDate = filterDateRange.value[1];
+          }
+
+          const response = await ChatService.getAgentSessionsPage(parseInt(agentId.value), query);
+
+          if (response.success) {
+            sessions.value = response.data || [];
+            totalCount.value = response.total || 0;
+            totalPages.value = response.totalPages || 0;
+
+            // Select first session if requested
+            if (selectFirst && sessions.value.length > 0) {
+              await props.handleSelectSession(sessions.value[0]);
+            }
+          } else {
+            ElMessage.error(response.message || '加载会话列表失败');
+          }
+        } catch (error) {
+          ElMessage.error('加载会话列表失败');
+          console.error('加载会话列表失败:', error);
+        } finally {
+          isLoading.value = false;
+        }
+      };
+
+      // Handle filter change with debounce
+      const handleFilterChange = () => {
+        if (filterDebounceTimer) {
+          window.clearTimeout(filterDebounceTimer);
+        }
+        filterDebounceTimer = window.setTimeout(() => {
+          currentPage.value = 1; // Reset to first page when filter changes
+          loadSessionsPage();
+        }, 500);
+      };
+
+      // Handle page change
+      const handlePageChange = (page: number) => {
+        currentPage.value = page;
+        loadSessionsPage();
+      };
 
       // 方法
       const goBack = () => {
         router.push(`/agent/${agentId.value}`);
       };
 
-      const loadSessions = async () => {
-        try {
-          sessions.value = await ChatService.getAgentSessions(parseInt(agentId.value));
-          // 默认选择第一个会话或创建新会话
-          if (sessions.value.length > 0) {
-            await props.handleSelectSession(sessions.value[0]);
-          } else {
-            await createNewSession();
-          }
-        } catch (error) {
-          ElMessage.error('加载会话列表失败');
-          console.error('加载会话列表失败:', error);
-        }
-      };
-
       const createNewSession = async () => {
         try {
           const newSession = await ChatService.createSession(parseInt(agentId.value), '新会话');
-          sessions.value.unshift(newSession);
+          // Reload page to show new session
+          currentPage.value = 1;
+          await loadSessionsPage();
           await props.handleSelectSession(newSession);
           ElMessage.success('新会话创建成功');
         } catch (error) {
@@ -310,10 +413,11 @@
           });
           await ChatService.deleteSession(session.id);
           props.handleDeleteSessionState(session.id);
-          sessions.value = sessions.value.filter((s: ChatSession) => s.id !== session.id);
-          if (props.handleGetCurrentSession() == session) {
+          if (props.handleGetCurrentSession()?.id === session.id) {
             await props.handleSetCurrentSession(null);
           }
+          // Reload current page
+          await loadSessionsPage();
           ElMessage.success('会话删除成功');
         } catch (error) {
           if (error !== 'cancel') {
@@ -355,7 +459,7 @@
       // 生命周期
       onMounted(async () => {
         connectSessionStream();
-        await loadSessions();
+        await loadSessionsPage(true); // Select first session on initial load
       });
 
       onUnmounted(() => {
@@ -380,6 +484,17 @@
         saveSessionTitle,
         cancelEditSessionTitle,
         getAvatarUrl,
+        // Filter and pagination
+        filterTitle,
+        filterDateRange,
+        currentPage,
+        pageSize,
+        totalCount,
+        totalPages,
+        isLoading,
+        handleFilterChange,
+        handlePageChange,
+        Search,
       };
     },
   });
@@ -398,11 +513,25 @@
     margin-bottom: 16px;
   }
 
+  /* Filter section */
+  .filter-section {
+    padding: 12px 20px;
+    background: #fafafa;
+    border-bottom: 1px solid #e8e8e8;
+  }
+
+  .filter-info {
+    font-size: 12px;
+    color: #909399;
+    margin-top: 8px;
+    text-align: right;
+  }
+
   /* 会话列表样式 */
   .session-list {
-    max-height: calc(100vh - 200px);
+    max-height: calc(100vh - 340px);
     overflow-y: auto;
-    padding: 0 20px 20px;
+    padding: 12px 20px;
   }
 
   .session-item {
@@ -457,6 +586,23 @@
   .session-time {
     font-size: 12px;
     color: #909399;
+  }
+
+  /* Empty state */
+  .empty-state {
+    text-align: center;
+    color: #909399;
+    font-size: 14px;
+    padding: 40px 20px;
+  }
+
+  /* Pagination */
+  .pagination-section {
+    padding: 12px 20px;
+    display: flex;
+    justify-content: center;
+    border-top: 1px solid #e8e8e8;
+    background: #fafafa;
   }
 
   /* 响应式设计 */

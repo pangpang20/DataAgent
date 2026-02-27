@@ -15,6 +15,7 @@
  */
 package com.audaque.cloud.ai.dataagent.mapper;
 
+import com.audaque.cloud.ai.dataagent.dto.chat.ChatSessionQueryDTO;
 import com.audaque.cloud.ai.dataagent.entity.ChatSession;
 import org.apache.ibatis.annotations.*;
 
@@ -120,5 +121,48 @@ public interface ChatSessionMapper {
 			VALUES (#{id}, #{agentId}, #{title}, #{status}, #{isPinned}, #{userId}, #{createTime}, #{updateTime})
 			""")
 	int insert(ChatSession session);
+
+	/**
+	 * Count sessions by conditions
+	 */
+	@Select("""
+			<script>
+			SELECT COUNT(*) FROM chat_session
+			WHERE agent_id = #{queryDTO.agentId} AND status != 'deleted'
+			<if test="queryDTO.keyword != null and queryDTO.keyword != ''">
+				AND title LIKE CONCAT('%', #{queryDTO.keyword}, '%')
+			</if>
+			<if test="queryDTO.startDate != null">
+				AND DATE(update_time) &gt;= #{queryDTO.startDate}
+			</if>
+			<if test="queryDTO.endDate != null">
+				AND DATE(update_time) &lt;= #{queryDTO.endDate}
+			</if>
+			</script>
+			""")
+	Long countByConditions(@Param("queryDTO") ChatSessionQueryDTO queryDTO);
+
+	/**
+	 * Select sessions with pagination and filters
+	 */
+	@Select("""
+			<script>
+			SELECT * FROM chat_session
+			WHERE agent_id = #{queryDTO.agentId} AND status != 'deleted'
+			<if test="queryDTO.keyword != null and queryDTO.keyword != ''">
+				AND title LIKE CONCAT('%', #{queryDTO.keyword}, '%')
+			</if>
+			<if test="queryDTO.startDate != null">
+				AND DATE(update_time) &gt;= #{queryDTO.startDate}
+			</if>
+			<if test="queryDTO.endDate != null">
+				AND DATE(update_time) &lt;= #{queryDTO.endDate}
+			</if>
+			ORDER BY is_pinned DESC, update_time DESC
+			LIMIT #{queryDTO.pageSize} OFFSET #{offset}
+			</script>
+			""")
+	List<ChatSession> selectByConditionsWithPage(@Param("queryDTO") ChatSessionQueryDTO queryDTO,
+			@Param("offset") int offset);
 
 }

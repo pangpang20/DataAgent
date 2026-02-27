@@ -15,8 +15,10 @@
  */
 package com.audaque.cloud.ai.dataagent.service.chat;
 
+import com.audaque.cloud.ai.dataagent.dto.chat.ChatSessionQueryDTO;
 import com.audaque.cloud.ai.dataagent.entity.ChatSession;
 import com.audaque.cloud.ai.dataagent.mapper.ChatSessionMapper;
+import com.audaque.cloud.ai.dataagent.vo.PageResult;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -127,6 +129,37 @@ public class ChatSessionServiceImpl implements ChatSessionService {
 		LocalDateTime now = LocalDateTime.now();
 		chatSessionMapper.softDeleteById(sessionId, now);
 		log.info("Successfully deleted session: {}", sessionId);
+	}
+
+	/**
+	 * Page query sessions with filters
+	 */
+	@Override
+	public PageResult<ChatSession> queryByConditionsWithPage(ChatSessionQueryDTO queryDTO) {
+		log.info("Page query sessions: agentId={}, pageNum={}, pageSize={}, keyword={}, startDate={}, endDate={}",
+				queryDTO.getAgentId(), queryDTO.getPageNum(), queryDTO.getPageSize(),
+				queryDTO.getKeyword(), queryDTO.getStartDate(), queryDTO.getEndDate());
+
+		if (queryDTO.getAgentId() == null) {
+			throw new IllegalArgumentException("agentId cannot be null");
+		}
+
+		int offset = queryDTO.calculateOffset();
+
+		Long total = chatSessionMapper.countByConditions(queryDTO);
+		List<ChatSession> dataList = chatSessionMapper.selectByConditionsWithPage(queryDTO, offset);
+
+		PageResult<ChatSession> pageResult = new PageResult<>();
+		pageResult.setData(dataList);
+		pageResult.setTotal(total);
+		pageResult.setPageNum(queryDTO.getPageNum());
+		pageResult.setPageSize(queryDTO.getPageSize());
+		pageResult.calculateTotalPages();
+
+		log.debug("Query completed: total={}, pages={}, returned {} records",
+				total, pageResult.getTotalPages(), dataList.size());
+
+		return pageResult;
 	}
 
 }

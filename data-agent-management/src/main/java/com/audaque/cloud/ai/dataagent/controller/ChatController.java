@@ -16,12 +16,16 @@
 package com.audaque.cloud.ai.dataagent.controller;
 
 import com.audaque.cloud.ai.dataagent.dto.ChatMessageDTO;
+import com.audaque.cloud.ai.dataagent.dto.chat.ChatSessionQueryDTO;
 import com.audaque.cloud.ai.dataagent.entity.ChatMessage;
 import com.audaque.cloud.ai.dataagent.entity.ChatSession;
 import com.audaque.cloud.ai.dataagent.service.chat.ChatMessageService;
 import com.audaque.cloud.ai.dataagent.service.chat.ChatSessionService;
 import com.audaque.cloud.ai.dataagent.service.chat.SessionTitleService;
 import com.audaque.cloud.ai.dataagent.vo.ApiResponse;
+import com.audaque.cloud.ai.dataagent.vo.PageResponse;
+import com.audaque.cloud.ai.dataagent.vo.PageResult;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -54,6 +58,33 @@ public class ChatController {
 	public ResponseEntity<List<ChatSession>> getAgentSessions(@PathVariable(value = "id") Integer id) {
 		List<ChatSession> sessions = chatSessionService.findByAgentId(id);
 		return ResponseEntity.ok(sessions);
+	}
+
+	/**
+	 * Page query sessions for an agent
+	 */
+	@PostMapping("/agent/{id}/sessions/page")
+	public PageResponse<List<ChatSession>> querySessionsPage(
+			@PathVariable(value = "id") Integer id,
+			@Valid @RequestBody ChatSessionQueryDTO queryDTO) {
+		try {
+			log.info("Page query sessions: agentId={}, pageNum={}, pageSize={}",
+					id, queryDTO.getPageNum(), queryDTO.getPageSize());
+
+			// Set agentId from path variable
+			queryDTO.setAgentId(id);
+
+			PageResult<ChatSession> pageResult = chatSessionService.queryByConditionsWithPage(queryDTO);
+
+			return PageResponse.success(pageResult.getData(), pageResult.getTotal(),
+					pageResult.getPageNum(), pageResult.getPageSize(), pageResult.getTotalPages());
+		} catch (IllegalArgumentException e) {
+			log.error("Invalid query parameters for agent {}: {}", id, e.getMessage());
+			return PageResponse.pageError("Invalid parameters: " + e.getMessage());
+		} catch (Exception e) {
+			log.error("Error querying sessions page for agent {}", id, e);
+			return PageResponse.pageError("Query failed: " + e.getMessage());
+		}
 	}
 
 	/**
@@ -98,12 +129,12 @@ public class ChatController {
 				return ResponseEntity.badRequest().build();
 			}
 			ChatMessage message = ChatMessage.builder()
-				.sessionId(sessionId)
-				.role(request.getRole())
-				.content(request.getContent())
-				.messageType(request.getMessageType())
-				.metadata(request.getMetadata())
-				.build();
+					.sessionId(sessionId)
+					.role(request.getRole())
+					.content(request.getContent())
+					.messageType(request.getMessageType())
+					.metadata(request.getMetadata())
+					.build();
 
 			ChatMessage savedMessage = chatMessageService.saveMessage(message);
 
@@ -115,8 +146,7 @@ public class ChatController {
 			}
 
 			return ResponseEntity.ok(savedMessage);
-		}
-		catch (Exception e) {
+		} catch (Exception e) {
 			log.error("Save message error for session {}: {}", sessionId, e.getMessage(), e);
 			return ResponseEntity.internalServerError().build();
 		}
@@ -132,8 +162,7 @@ public class ChatController {
 			chatSessionService.pinSession(sessionId, isPinned);
 			String message = isPinned ? "会话已置顶" : "会话已取消置顶";
 			return ResponseEntity.ok(ApiResponse.success(message));
-		}
-		catch (Exception e) {
+		} catch (Exception e) {
 			log.error("Pin session error for session {}: {}", sessionId, e.getMessage(), e);
 			return ResponseEntity.internalServerError().body(ApiResponse.error("操作失败"));
 		}
@@ -152,8 +181,7 @@ public class ChatController {
 
 			chatSessionService.renameSession(sessionId, title.trim());
 			return ResponseEntity.ok(ApiResponse.success("会话已重命名"));
-		}
-		catch (Exception e) {
+		} catch (Exception e) {
 			log.error("Rename session error for session {}: {}", sessionId, e.getMessage(), e);
 			return ResponseEntity.internalServerError().body(ApiResponse.error("重命名失败"));
 		}
@@ -167,8 +195,7 @@ public class ChatController {
 		try {
 			chatSessionService.deleteSession(sessionId);
 			return ResponseEntity.ok(ApiResponse.success("会话已删除"));
-		}
-		catch (Exception e) {
+		} catch (Exception e) {
 			log.error("Delete session error for session {}: {}", sessionId, e.getMessage(), e);
 			return ResponseEntity.internalServerError().body(ApiResponse.error("删除失败"));
 		}
