@@ -293,11 +293,12 @@ requests.post(
         
         const scriptOpen = '<script>';
         const scriptClose = '<' + '/script>';
+        const scriptSrc = `<script src="${base}/widget.js">`;
         return `<!-- 将以下代码添加到您的网页 </body> 标签之前 -->
 ${scriptOpen}
   window.DataAgentConfig = ${configJson};
 ${scriptClose}
-${scriptOpen} src="${base}/widget.js"${scriptClose}`;
+${scriptSrc}${scriptClose}`;
       });
 
       const loadApiKey = async () => {

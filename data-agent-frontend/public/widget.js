@@ -38,9 +38,32 @@
         return;
     }
 
+    // Auto-detect baseUrl from the script src if not configured
+    function detectBaseUrl() {
+        // First check if baseUrl is explicitly configured
+        if (config.baseUrl) {
+            return config.baseUrl;
+        }
+        // Try to extract from the widget.js script src
+        const scripts = document.querySelectorAll('script[src*="widget.js"]');
+        for (const script of scripts) {
+            const src = script.src;
+            if (src) {
+                try {
+                    const url = new URL(src);
+                    return url.origin;
+                } catch (e) {
+                    // Ignore parse errors
+                }
+            }
+        }
+        // Fallback to current page origin
+        return window.location.origin;
+    }
+
     // Default configuration
     const defaultConfig = {
-        baseUrl: window.location.origin,
+        baseUrl: detectBaseUrl(),
         draggable: true,
         position: 'bottom-right',
         primaryColor: '#409EFF',
