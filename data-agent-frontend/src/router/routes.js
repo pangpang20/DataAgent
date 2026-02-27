@@ -72,6 +72,18 @@ const routes = [
     },
   },
 
+  // Widget 嵌入页面 (用于 iframe 嵌入)
+  {
+    path: '/widget/:id',
+    name: 'WidgetPage',
+    component: () => import('@/views/WidgetPage.vue'),
+    meta: {
+      title: 'Widget',
+      module: 'widget',
+      layout: 'none', // No layout wrapper
+    },
+  },
+
   // 404页面
   {
     path: '/:pathMatch(.*)*',

@@ -44,7 +44,8 @@ router.beforeEach(async (to, from, next) => {
     document.title = 'Audaque Data Agent';
   }
 
-  if (to.path === '/model-config') {
+  // Skip model config check for model-config page and widget pages
+  if (to.path === '/model-config' || to.path.startsWith('/widget')) {
     console.log(`导航到: ${to.path} (${to.name})`);
     next();
     return;

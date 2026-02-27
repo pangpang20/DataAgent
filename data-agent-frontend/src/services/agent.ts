@@ -215,6 +215,17 @@ class AgentService {
   }
 
   /**
+   * 显示完整 API Key
+   */
+  async revealApiKey(id: number): Promise<AgentApiKeyResponse> {
+    const response = await axios.post<AgentApiKeyApiResult>(`${API_BASE_URL}/${id}/api-key/reveal`);
+    if (response.data.success && response.data.data) {
+      return response.data.data;
+    }
+    throw new Error(response.data.message || '获取完整 API Key 失败');
+  }
+
+  /**
    * 删除 API Key
    */
   async deleteApiKey(id: number): Promise<AgentApiKeyResponse> {

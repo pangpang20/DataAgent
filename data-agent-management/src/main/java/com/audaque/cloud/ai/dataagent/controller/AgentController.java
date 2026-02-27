@@ -187,6 +187,21 @@ public class AgentController {
 	}
 
 	/**
+	 * Reveal full API Key (show unmasked key)
+	 */
+	@PostMapping("/{id}/api-key/reveal")
+	public ResponseEntity<ApiResponse<ApiKeyResponse>> revealApiKey(@PathVariable("id") Long id) {
+		Agent agent = agentService.findById(id);
+		if (agent == null) {
+			return ResponseEntity.notFound().build();
+		}
+		if (agent.getApiKey() == null) {
+			return ResponseEntity.ok(buildApiKeyResponse(null, agent.getApiKeyEnabled(), "API Key 不存在"));
+		}
+		return ResponseEntity.ok(buildApiKeyResponse(agent.getApiKey(), agent.getApiKeyEnabled(), "获取完整 API Key 成功"));
+	}
+
+	/**
 	 * Delete API Key
 	 */
 	@DeleteMapping("/{id}/api-key")

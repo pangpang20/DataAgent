@@ -51,7 +51,7 @@
             删除
           </el-button>
           <el-button @click="handleCopy" :disabled="!apiKey || !canCopy">复制</el-button>
-          <el-button @click="toggleMask" :disabled="!apiKey">
+          <el-button @click="toggleMask" :disabled="!apiKey" :loading="loading.reveal">
             {{ masked ? '显示' : '隐藏' }}
           </el-button>
         </div>
@@ -87,7 +87,7 @@
             <div class="embed-config">
               <el-form label-width="120px" size="default">
                 <el-form-item label="窗口标题">
-                  <el-input v-model="embedConfig.title" placeholder="AI 助手" />
+                  <el-input v-model="embedConfig.title" placeholder="AI 问数助手" />
                 </el-form-item>
                 <el-form-item label="按钮位置">
                   <el-select v-model="embedConfig.position" style="width:100%">
@@ -103,7 +103,7 @@
                     v-model="embedConfig.welcomeMessage"
                     type="textarea"
                     :rows="2"
-                    placeholder="您好！我是 Audaque DataAgent AI 助手，有什么可以帮您的吗？"
+                    placeholder="您好！我是 AI 问数助手，有什么可以帮您的吗？"
                   />
                 </el-form-item>
               </el-form>
@@ -162,15 +162,16 @@
         delete: false,
         toggle: false,
         fetch: false,
+        reveal: false,
       });
       const exampleTab = ref('curl');
 
       // 嵌入配置
       const embedConfig = ref({
-        title: 'AI 助手',
+        title: 'AI 问数助手',
         position: 'bottom-right',
         primaryColor: '#409EFF',
-        welcomeMessage: '您好！我是 AI 助手，有什么可以帮您的吗？',
+        welcomeMessage: '您好！我是 AI 问数助手，有什么可以帮您的吗？',
       });
 
       const maskKey = (key: string) => {
@@ -262,9 +263,23 @@ requests.post(
 `;
       });
 
+      // Get backend URL for widget embedding
+      // In dev mode (port 3000/8080 etc), use backend port 8065
+      // In production, frontend is served from backend, so use current origin
+      const getBackendUrl = () => {
+        const origin = window.location.origin;
+        const port = window.location.port;
+        // Common dev ports for frontend
+        const devPorts = ['3000', '5173', '8080', '8081'];
+        if (devPorts.includes(port)) {
+          return `${window.location.protocol}//${window.location.hostname}:8065`;
+        }
+        return origin;
+      };
+
       // 生成嵌入代码
       const embedCode = computed(() => {
-        const base = window.location.origin;
+        const base = getBackendUrl();
         const id = resolvedAgentId.value;
         const config = embedConfig.value;
         const configJson = JSON.stringify({
@@ -376,9 +391,29 @@ ${scriptOpen} src="${base}/widget.js"${scriptClose}`;
         }
       };
 
-      const toggleMask = () => {
+      const toggleMask = async () => {
         if (!apiKey.value) return;
-        masked.value = !masked.value;
+        
+        // If currently showing full key, just toggle to masked
+        if (!masked.value) {
+          masked.value = true;
+          return;
+        }
+        
+        // If masked, fetch full key from server
+        loading.value.reveal = true;
+        try {
+          const res = await AgentService.revealApiKey(resolvedAgentId.value);
+          if (res.apiKey) {
+            apiKey.value = res.apiKey;
+            masked.value = false;
+            canCopy.value = true;
+          }
+        } catch (e) {
+          ElMessage.error('获取完整 Key 失败');
+        } finally {
+          loading.value.reveal = false;
+        }
       };
 
       const handleToggle = async (val: boolean) => {
