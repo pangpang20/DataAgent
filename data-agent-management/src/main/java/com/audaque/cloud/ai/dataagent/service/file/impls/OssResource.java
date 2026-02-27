@@ -63,12 +63,12 @@ public class OssResource extends AbstractResource {
             OSSObject ossObject = ossClient.getObject(bucketName, objectKey);
             return ossObject.getObjectContent();
         } catch (OSSException e) {
-            log.error("Failed to get OSS object due to OSS error: bucket={}, key={}, errorCode={}, errorMessage={}", 
-                     bucketName, objectKey, e.getErrorCode(), e.getErrorMessage(), e);
+            log.error("Failed to get OSS object due to OSS error: bucket={}, key={}, errorCode={}, errorMessage={}",
+                    bucketName, objectKey, e.getErrorCode(), e.getErrorMessage(), e);
             throw new IOException("Failed to get OSS object: " + e.getErrorMessage(), e);
         } catch (ClientException e) {
-            log.error("Failed to get OSS object due to client error: bucket={}, key={}, errorMessage={}", 
-                     bucketName, objectKey, e.getMessage(), e);
+            log.error("Failed to get OSS object due to client error: bucket={}, key={}, errorMessage={}",
+                    bucketName, objectKey, e.getMessage(), e);
             throw new IOException("Failed to get OSS object: " + e.getMessage(), e);
         } catch (Exception e) {
             log.error("Failed to get OSS object: bucket={}, key={}", bucketName, objectKey, e);
@@ -83,7 +83,7 @@ public class OssResource extends AbstractResource {
             log.debug("OSS object existence check: bucket={}, key={}, exists={}", bucketName, objectKey, exists);
             return exists;
         } catch (Exception e) {
-            log.warn("Failed to check OSS object existence: bucket={}, key={}, error={}", 
+            log.warn("Failed to check OSS object existence: bucket={}, key={}, error={}",
                     bucketName, objectKey, e.getMessage());
             return false;
         }
@@ -109,7 +109,7 @@ public class OssResource extends AbstractResource {
                 log.debug("Using custom domain URL: {}", url);
                 return new URL(url);
             }
-            
+
             // 否则构造标准OSS URL
             String endpoint = ossProperties.getEndpoint();
             String cleanEndpoint = endpoint.replace("https://", "").replace("http://", "");
@@ -145,12 +145,13 @@ public class OssResource extends AbstractResource {
             log.debug("Got content length for OSS object: bucket={}, key={}, length={}", bucketName, objectKey, length);
             return length;
         } catch (OSSException e) {
-            log.error("Failed to get OSS object content length due to OSS error: bucket={}, key={}, errorCode={}, errorMessage={}", 
-                     bucketName, objectKey, e.getErrorCode(), e.getErrorMessage(), e);
+            log.error(
+                    "Failed to get OSS object content length due to OSS error: bucket={}, key={}, errorCode={}, errorMessage={}",
+                    bucketName, objectKey, e.getErrorCode(), e.getErrorMessage(), e);
             throw new IOException("Failed to get OSS object content length: " + e.getErrorMessage(), e);
         } catch (ClientException e) {
-            log.error("Failed to get OSS object content length due to client error: bucket={}, key={}, errorMessage={}", 
-                     bucketName, objectKey, e.getMessage(), e);
+            log.error("Failed to get OSS object content length due to client error: bucket={}, key={}, errorMessage={}",
+                    bucketName, objectKey, e.getMessage(), e);
             throw new IOException("Failed to get OSS object content length: " + e.getMessage(), e);
         } catch (Exception e) {
             log.error("Failed to get OSS object content length: bucket={}, key={}", bucketName, objectKey, e);
@@ -160,6 +161,7 @@ public class OssResource extends AbstractResource {
 
     /**
      * 获取对象键
+     * 
      * @return 对象键
      */
     public String getObjectKey() {
@@ -168,10 +170,10 @@ public class OssResource extends AbstractResource {
 
     /**
      * 获取存储桶名称
+     * 
      * @return 存储桶名称
      */
     public String getBucketName() {
         return bucketName;
     }
 }
-

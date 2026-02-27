@@ -43,11 +43,11 @@ import java.util.stream.Collectors;
 public class MultiTurnContextManager {
 
 	private final DataAgentProperties properties;
-	
+
 	private final ConversationTurnMapper conversationTurnMapper;
 
 	private final Map<String, Deque<ConversationTurn>> history = new ConcurrentHashMap<>();
-	
+
 	// 缓存标志，标记哪些线程的历史已从数据库加载到内存
 	private final Map<String, Boolean> loadedFlags = new ConcurrentHashMap<>();
 
@@ -99,15 +99,15 @@ public class MultiTurnContextManager {
 		}
 
 		String trimmedPlan = StringUtils.abbreviate(plan, properties.getMaxplanlength());
-		
+
 		// 确保该线程的历史已加载
 		ensureHistoryLoaded(threadId);
-		
+
 		Deque<ConversationTurn> deque = history.computeIfAbsent(threadId, k -> new ArrayDeque<>());
 		synchronized (deque) {
 			// 持久化到数据库
 			persistTurnToDatabase(threadId, pending.userQuestion, trimmedPlan);
-			
+
 			// 内存中维护历史记录
 			while (deque.size() >= properties.getMaxturnhistory()) {
 				deque.pollFirst();
@@ -137,7 +137,7 @@ public class MultiTurnContextManager {
 	public void restartLastTurn(String threadId) {
 		// 确保该线程的历史已加载
 		ensureHistoryLoaded(threadId);
-		
+
 		Deque<ConversationTurn> deque = history.get(threadId);
 		if (deque == null || deque.isEmpty()) {
 			return;
@@ -162,7 +162,7 @@ public class MultiTurnContextManager {
 	public String buildContext(String threadId) {
 		// 确保该线程的历史已加载
 		ensureHistoryLoaded(threadId);
-		
+
 		Deque<ConversationTurn> deque = history.get(threadId);
 		if (deque == null || deque.isEmpty()) {
 			return "(无)";
@@ -174,6 +174,7 @@ public class MultiTurnContextManager {
 
 	/**
 	 * 确保指定线程的历史记录已从数据库加载到内存
+	 * 
 	 * @param threadId 线程ID
 	 */
 	private void ensureHistoryLoaded(String threadId) {
@@ -182,9 +183,10 @@ public class MultiTurnContextManager {
 			loadHistoryFromDatabase(threadId);
 		}
 	}
-	
+
 	/**
 	 * 从数据库加载历史记录到内存
+	 * 
 	 * @param threadId 线程ID
 	 */
 	private void loadHistoryFromDatabase(String threadId) {
@@ -198,17 +200,18 @@ public class MultiTurnContextManager {
 			history.putIfAbsent(threadId, new ArrayDeque<>());
 		}
 	}
-	
+
 	/**
 	 * 将对话记录持久化到数据库
-	 * @param threadId 线程ID
+	 * 
+	 * @param threadId     线程ID
 	 * @param userQuestion 用户问题
-	 * @param plan AI规划
+	 * @param plan         AI规划
 	 */
 	private void persistTurnToDatabase(String threadId, String userQuestion, String plan) {
 		try {
 			int maxSequence = conversationTurnMapper.getMaxSequenceNumberByThreadId(threadId);
-			
+
 			ConversationTurn turn = ConversationTurn.builder()
 					.threadId(threadId)
 					.userQuestion(userQuestion)
@@ -217,21 +220,23 @@ public class MultiTurnContextManager {
 					.createTime(java.time.LocalDateTime.now())
 					.updateTime(java.time.LocalDateTime.now())
 					.build();
-			
+
 			conversationTurnMapper.insert(turn);
-			
+
 			// 清理超出最大历史记录数的旧记录
 			int maxHistory = properties.getMaxturnhistory();
 			conversationTurnMapper.cleanupOldTurns(threadId, maxHistory);
-			
-			log.debug("Persisted conversation turn to database: threadId={}, sequence={}", threadId, turn.getSequenceNumber());
+
+			log.debug("Persisted conversation turn to database: threadId={}, sequence={}", threadId,
+					turn.getSequenceNumber());
 		} catch (Exception e) {
 			log.error("Failed to persist conversation turn to database: threadId={}", threadId, e);
 		}
 	}
-	
+
 	/**
 	 * 清除指定线程的所有历史记录（内存和数据库）
+	 * 
 	 * @param threadId 线程ID
 	 */
 	public void clearHistory(String threadId) {
@@ -240,18 +245,19 @@ public class MultiTurnContextManager {
 			history.remove(threadId);
 			loadedFlags.remove(threadId);
 			pendingTurns.remove(threadId);
-			
+
 			// 清除数据库中的历史
 			conversationTurnMapper.deleteByThreadId(threadId);
-			
+
 			log.info("Cleared all conversation history for thread: {}", threadId);
 		} catch (Exception e) {
 			log.error("Failed to clear conversation history for thread: {}", threadId, e);
 		}
 	}
-	
+
 	/**
 	 * 获取指定线程的历史记录数量
+	 * 
 	 * @param threadId 线程ID
 	 * @return 历史记录数量
 	 */
@@ -260,7 +266,7 @@ public class MultiTurnContextManager {
 		Deque<ConversationTurn> deque = history.get(threadId);
 		return deque != null ? deque.size() : 0;
 	}
-	
+
 	private static class PendingTurn {
 
 		private final String userQuestion;

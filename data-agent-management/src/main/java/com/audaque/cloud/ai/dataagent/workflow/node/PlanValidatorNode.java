@@ -71,28 +71,26 @@ public class PlanValidatorNode implements NodeAction {
 		}
 
 		log.info("Plan validation successful. Plan contains {} steps.", plan.getExecutionPlan().size());
-		
+
 		// 4. Check if human review is enabled
 		Boolean humanReviewEnabled = state.value(HUMAN_REVIEW_ENABLED, false);
 		if (Boolean.TRUE.equals(humanReviewEnabled)) {
 			log.info("Human review enabled: routing to human_feedback node");
 			return Map.of(
-				PLAN_VALIDATION_STATUS, true, 
-				PLAN_NEXT_NODE, HUMAN_FEEDBACK_NODE,
-				PLAN_CURRENT_STEP, 1
-			);
+					PLAN_VALIDATION_STATUS, true,
+					PLAN_NEXT_NODE, HUMAN_FEEDBACK_NODE,
+					PLAN_CURRENT_STEP, 1);
 		}
 
 		// 5. Plan is valid, proceed to first execution step
 		ExecutionStep firstStep = plan.getExecutionPlan().get(0);
 		String firstTool = firstStep.getToolToUse();
-		
+
 		log.info("Routing to first execution node: {}", firstTool);
 		return Map.of(
-			PLAN_VALIDATION_STATUS, true,
-			PLAN_NEXT_NODE, firstTool,
-			PLAN_CURRENT_STEP, 1
-		);
+				PLAN_VALIDATION_STATUS, true,
+				PLAN_NEXT_NODE, firstTool,
+				PLAN_CURRENT_STEP, 1);
 	}
 
 	/**
@@ -155,12 +153,9 @@ public class PlanValidatorNode implements NodeAction {
 			// When validation fails, increment the repair count here.
 			int repairCount = StateUtil.getObjectValue(state, PLAN_REPAIR_COUNT, Integer.class, 0);
 			return Map.of(
-				PLAN_VALIDATION_STATUS, false, 
-				PLAN_VALIDATION_ERROR, errorMessage, 
-				PLAN_REPAIR_COUNT, repairCount + 1
-			);
+					PLAN_VALIDATION_STATUS, false,
+					PLAN_VALIDATION_ERROR, errorMessage,
+					PLAN_REPAIR_COUNT, repairCount + 1);
 		}
 	}
 }
-
-

@@ -19,13 +19,12 @@ package com.audaque.cloud.ai.dataagent.exception;
  * 数据访问异常
  */
 public class DataAccessException extends BusinessException {
-    
+
     public DataAccessException(String message) {
         super(message);
     }
-    
+
     public DataAccessException(String message, Throwable cause) {
         super(message, cause);
     }
 }
-

@@ -145,7 +145,7 @@ public class OssFileStorageServiceImpl implements FileStorageService {
 			log.warn("Cannot get resource, file path is empty");
 			return null;
 		}
-		
+
 		try {
 			log.debug("Creating OSS resource for file: {}", filePath);
 			return new OssResource(ossClient, ossProperties.getBucketName(), filePath, ossProperties);

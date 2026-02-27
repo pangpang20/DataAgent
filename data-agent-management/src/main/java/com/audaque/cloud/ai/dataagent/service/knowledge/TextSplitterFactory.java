@@ -39,7 +39,7 @@ public class TextSplitterFactory {
 	public TextSplitter getSplitter(String type) {
 		log.debug("Attempting to get splitter for type: '{}'", type);
 		log.debug("Available splitters in map: {}", splitterMap.keySet());
-		
+
 		// 1. 尝试直接获取
 		TextSplitter splitter = splitterMap.get(type);
 		log.debug("Direct lookup result for '{}': {}", type, splitter != null ? "found" : "null");
@@ -47,20 +47,20 @@ public class TextSplitterFactory {
 		// 2. 如果没找到，尝试返回默认的 token splitter
 		if (splitter == null) {
 			log.warn("Splitter type '{}' not found, falling back to default 'token' splitter", type);
-			
+
 			// 先尝试通过 SplitterType.TOKEN.getValue() 获取
 			String defaultValue = SplitterType.TOKEN.getValue();
 			log.debug("Trying to get default splitter with key: '{}'", defaultValue);
 			splitter = splitterMap.get(defaultValue);
 			log.debug("Default splitter lookup result: {}", splitter != null ? "found" : "null");
-			
+
 			// 如果还是找不到，尝试直接获取 "textSplitter" 这个 key
 			if (splitter == null) {
 				log.debug("Trying alternative key 'textSplitter'");
 				splitter = splitterMap.get("textSplitter");
 				log.debug("Alternative splitter lookup result: {}", splitter != null ? "found" : "null");
 			}
-			
+
 			// 如果仍然找不到，抛出异常
 			if (splitter == null) {
 				log.error("No TextSplitter available! Available keys: {}", splitterMap.keySet());

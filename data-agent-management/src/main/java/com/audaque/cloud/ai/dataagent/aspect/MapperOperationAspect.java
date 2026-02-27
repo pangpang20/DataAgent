@@ -40,78 +40,78 @@ public class MapperOperationAspect {
         String methodName = joinPoint.getSignature().getName();
         String className = joinPoint.getTarget().getClass().getSimpleName();
         Object[] args = joinPoint.getArgs();
-        
+
         try {
             log.debug("Executing mapper method: {}.{} with args: {}", className, methodName, args);
-            
+
             Object result = joinPoint.proceed();
-            
+
             // 检查返回值
             if (result instanceof Integer) {
                 int affectedRows = (Integer) result;
                 logOperationResult(className, methodName, affectedRows, args);
-                
+
                 // 对于修改操作，如果影响行数为0，记录警告
                 if (affectedRows == 0 && isModifyOperation(methodName)) {
-                    log.warn("Mapper operation affected 0 rows: {}.{} with args: {}", 
+                    log.warn("Mapper operation affected 0 rows: {}.{} with args: {}",
                             className, methodName, args);
                 }
             } else if (result == null && isInsertOperation(methodName)) {
                 log.warn("Insert operation returned null: {}.{}", className, methodName);
             }
-            
+
             return result;
         } catch (Exception e) {
-            log.error("Mapper operation failed: {}.{} with args: {}", 
+            log.error("Mapper operation failed: {}.{} with args: {}",
                     className, methodName, args, e);
             throw new DataAccessException("数据库操作失败: " + methodName, e);
         }
     }
-    
+
     /**
      * 记录操作结果
      */
     private void logOperationResult(String className, String methodName, int affectedRows, Object[] args) {
         if (affectedRows > 0) {
             if (isInsertOperation(methodName)) {
-                log.debug("Insert operation successful: {}.{} affected {} row(s)", 
+                log.debug("Insert operation successful: {}.{} affected {} row(s)",
                         className, methodName, affectedRows);
             } else if (isUpdateOperation(methodName)) {
-                log.debug("Update operation successful: {}.{} affected {} row(s)", 
+                log.debug("Update operation successful: {}.{} affected {} row(s)",
                         className, methodName, affectedRows);
             } else if (isDeleteOperation(methodName)) {
-                log.debug("Delete operation successful: {}.{} affected {} row(s)", 
+                log.debug("Delete operation successful: {}.{} affected {} row(s)",
                         className, methodName, affectedRows);
             }
         }
     }
-    
+
     /**
      * 判断是否为插入操作
      */
     private boolean isInsertOperation(String methodName) {
-        return methodName.toLowerCase().startsWith("insert") || 
-               methodName.toLowerCase().startsWith("add") ||
-               methodName.toLowerCase().startsWith("create");
+        return methodName.toLowerCase().startsWith("insert") ||
+                methodName.toLowerCase().startsWith("add") ||
+                methodName.toLowerCase().startsWith("create");
     }
-    
+
     /**
      * 判断是否为更新操作
      */
     private boolean isUpdateOperation(String methodName) {
         return methodName.toLowerCase().startsWith("update") ||
-               methodName.toLowerCase().startsWith("modify") ||
-               methodName.toLowerCase().startsWith("change");
+                methodName.toLowerCase().startsWith("modify") ||
+                methodName.toLowerCase().startsWith("change");
     }
-    
+
     /**
      * 判断是否为删除操作
      */
     private boolean isDeleteOperation(String methodName) {
         return methodName.toLowerCase().startsWith("delete") ||
-               methodName.toLowerCase().startsWith("remove");
+                methodName.toLowerCase().startsWith("remove");
     }
-    
+
     /**
      * 判断是否为修改操作（更新/删除）
      */
@@ -119,4 +119,3 @@ public class MapperOperationAspect {
         return isUpdateOperation(methodName) || isDeleteOperation(methodName);
     }
 }
-

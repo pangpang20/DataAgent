@@ -107,9 +107,11 @@ public class AgentKnowledgeResourceManager {
 			try {
 				documents = readDocumentWithFallback(resource, knowledge.getFilePath());
 			} catch (Exception fallbackException) {
-				log.error("Fallback document reading also failed for file: {}", knowledge.getFilePath(), fallbackException);
+				log.error("Fallback document reading also failed for file: {}", knowledge.getFilePath(),
+						fallbackException);
 				throw new RuntimeException(
-						"File processing failed due to stack overflow and fallback also failed: " + knowledge.getFilePath(),
+						"File processing failed due to stack overflow and fallback also failed: "
+								+ knowledge.getFilePath(),
 						fallbackException);
 			}
 		} catch (Exception e) {

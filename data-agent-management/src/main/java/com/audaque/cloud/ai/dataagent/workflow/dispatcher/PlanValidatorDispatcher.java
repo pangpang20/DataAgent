@@ -37,20 +37,21 @@ public class PlanValidatorDispatcher implements EdgeAction {
 
 		if (validationPassed) {
 			log.info("Plan validation passed.");
-			
+
 			// Check if human review is enabled
 			Boolean humanReviewEnabled = state.value(HUMAN_REVIEW_ENABLED, false);
 			if (Boolean.TRUE.equals(humanReviewEnabled)) {
 				log.info("Human review enabled: routing to human_feedback node");
 				return HUMAN_FEEDBACK_NODE;
 			}
-			
+
 			// Route to the first execution node
 			String nextNode = state.value(PLAN_NEXT_NODE, StateGraph.END);
 			log.info("Routing to first execution node: {}", nextNode);
 			return nextNode;
 		} else {
-			// Plan validation failed, check repair count and decide whether to retry or end.
+			// Plan validation failed, check repair count and decide whether to retry or
+			// end.
 			int repairCount = StateUtil.getObjectValue(state, PLAN_REPAIR_COUNT, Integer.class, 0);
 
 			if (repairCount > MAX_REPAIR_ATTEMPTS) {
@@ -63,4 +64,3 @@ public class PlanValidatorDispatcher implements EdgeAction {
 		}
 	}
 }
-

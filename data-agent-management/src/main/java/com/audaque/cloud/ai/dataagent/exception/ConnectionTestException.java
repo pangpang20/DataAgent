@@ -19,13 +19,12 @@ package com.audaque.cloud.ai.dataagent.exception;
  * 连接测试异常
  */
 public class ConnectionTestException extends BusinessException {
-    
+
     public ConnectionTestException(String message) {
         super(message);
     }
-    
+
     public ConnectionTestException(String message, Throwable cause) {
         super(message, cause);
     }
 }
-
