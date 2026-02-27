@@ -464,6 +464,21 @@ build_frontend() {
     
     DIST_SIZE=$(du -sh dist | cut -f1)
     info "✅ 前端编译成功: dist/ ($DIST_SIZE)"
+    
+    # 复制前端构建产物到后端 static 目录（用于 SPA 路由支持）
+    info "复制前端文件到后端 static 目录..."
+    BACKEND_STATIC="$PROJECT_ROOT/data-agent-management/src/main/resources/static"
+    mkdir -p "$BACKEND_STATIC"
+    
+    # 复制全部 dist 内容到 static 目录
+    \cp -r dist/* "$BACKEND_STATIC/"
+    
+    # 确保 public 目录下的 widget.js 也被复制（如果存在）
+    if [ -f "public/widget.js" ]; then
+        \cp public/widget.js "$BACKEND_STATIC/"
+    fi
+    
+    info "✅ 前端文件已复制到后端 static 目录"
 }
 
 # ============================================================================
