@@ -130,7 +130,7 @@ public interface ChatSessionMapper {
 			SELECT COUNT(*) FROM chat_session
 			WHERE agent_id = #{queryDTO.agentId} AND status != 'deleted'
 			<if test="queryDTO.keyword != null and queryDTO.keyword != ''">
-				AND title LIKE CONCAT('%', #{queryDTO.keyword}, '%')
+				AND LOWER(title) LIKE LOWER(CONCAT('%', #{queryDTO.keyword}, '%'))
 			</if>
 			<if test="queryDTO.startDate != null">
 				AND DATE(update_time) &gt;= #{queryDTO.startDate}
@@ -150,7 +150,7 @@ public interface ChatSessionMapper {
 			SELECT * FROM chat_session
 			WHERE agent_id = #{queryDTO.agentId} AND status != 'deleted'
 			<if test="queryDTO.keyword != null and queryDTO.keyword != ''">
-				AND title LIKE CONCAT('%', #{queryDTO.keyword}, '%')
+				AND LOWER(title) LIKE LOWER(CONCAT('%', #{queryDTO.keyword}, '%'))
 			</if>
 			<if test="queryDTO.startDate != null">
 				AND DATE(update_time) &gt;= #{queryDTO.startDate}
