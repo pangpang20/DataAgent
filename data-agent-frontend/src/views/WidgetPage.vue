@@ -309,6 +309,24 @@ export default defineComponent({
         sessionId.value = response.data?.id;
         console.log('[Widget Page] Session created:', sessionId.value);
         
+        // Update session title with sessionId
+        if (sessionId.value) {
+          try {
+            await axios.put(
+              `${baseUrl.value}/api/sessions/${sessionId.value}/title`,
+              { title: `Widget Session ${sessionId.value}` },
+              {
+                headers: {
+                  'Content-Type': 'application/json',
+                  'X-API-Key': apiKey.value,
+                },
+              }
+            );
+          } catch (e) {
+            console.warn('[Widget Page] Failed to update session title:', e);
+          }
+        }
+        
         // Load preset questions
         loadPresetQuestions();
       } catch (error) {
