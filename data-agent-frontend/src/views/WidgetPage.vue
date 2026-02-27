@@ -70,6 +70,15 @@
         </div>
         <!-- Markdown Report Message -->
         <div v-else-if="msg.messageType === 'markdown-report'" class="markdown-message">
+          <div class="markdown-header">
+            <span class="report-label">Markdown 报告</span>
+            <button class="download-btn" @click="downloadMarkdown(msg.content)">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+                <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+              </svg>
+              下载
+            </button>
+          </div>
           <Markdown>{{ msg.content }}</Markdown>
         </div>
         <!-- Normal Text Message -->
@@ -463,6 +472,35 @@ export default defineComponent({
           eventSource.close();
           isLoading.value = false;
           isStreaming.value = false;
+          
+          // Convert streaming content to final message
+          if (nodeBlocks.value.length > 0) {
+            const lastBlock = nodeBlocks.value[nodeBlocks.value.length - 1];
+            if (lastBlock && lastBlock[0]) {
+              const finalData = lastBlock[0];
+              let messageType = 'text';
+              if (finalData.textType === 'RESULT_SET') {
+                messageType = 'result-set';
+              } else if (finalData.textType === 'MARK_DOWN') {
+                messageType = 'markdown-report';
+              }
+              
+              messages.value.push({
+                role: 'assistant',
+                content: finalData.text || '',
+                messageType,
+              });
+            }
+          }
+          
+          nodeBlocks.value = [];
+          scrollToBottom();
+          
+          // Notify parent of new message
+          sendToParent({
+            type: 'WIDGET_NEW_MESSAGE',
+            payload: { hasNewMessage: true }
+          });
         });
         
       } catch (error) {
@@ -513,6 +551,20 @@ export default defineComponent({
       window.removeEventListener('message', handleMessage);
     });
 
+    // Download markdown report
+    const downloadMarkdown = (content: string) => {
+      if (!content) return;
+      const blob = new Blob([content], { type: 'text/markdown' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `report_${new Date().getTime()}.md`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    };
+
     return {
       // State
       title,
@@ -535,6 +587,7 @@ export default defineComponent({
       sendMessage,
       sendPresetQuestion,
       toggleNodeVisibility,
+      downloadMarkdown,
     };
   },
 });
@@ -843,6 +896,40 @@ export default defineComponent({
   border-radius: 12px;
   padding: 16px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.markdown-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #eee;
+}
+
+.report-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #666;
+}
+
+.download-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  background: var(--primary-color, #409EFF);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.download-btn:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
 }
 
 /* Scrollbar */
