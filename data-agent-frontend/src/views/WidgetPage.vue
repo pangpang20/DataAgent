@@ -83,7 +83,13 @@
         </div>
         <!-- Normal Text Message -->
         <div v-else :class="['message', msg.role]">
-          <div class="message-content" v-html="msg.content"></div>
+          <div class="message-avatar">
+            <span v-if="msg.role === 'user'" class="avatar user-avatar">我</span>
+            <span v-else class="avatar assistant-avatar">AI</span>
+          </div>
+          <div class="message-content">
+            <div class="message-text" v-html="msg.content"></div>
+          </div>
         </div>
       </div>
 
@@ -281,10 +287,7 @@ export default defineComponent({
       isMaximized.value = !isMaximized.value;
       sendToParent({
         type: 'WIDGET_RESIZE',
-        payload: {
-          maximized: isMaximized.value,
-          height: isMaximized.value ? window.innerHeight - 100 : 620
-        }
+        payload: { maximized: isMaximized.value }
       });
     };
 
@@ -369,6 +372,29 @@ export default defineComponent({
       isNodeVisible.value[index] = !isNodeVisible.value[index];
     };
 
+    // Save assistant message to database
+    const saveAssistantMessage = async (content: string, messageType: string) => {
+      if (!sessionId.value || !content) return;
+      try {
+        await axios.post(
+          `${baseUrl.value}/api/sessions/${sessionId.value}/messages`,
+          {
+            role: 'assistant',
+            content,
+            messageType,
+          },
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              'X-API-Key': apiKey.value,
+            },
+          }
+        );
+      } catch (e) {
+        console.warn('[Widget Page] Failed to save assistant message:', e);
+      }
+    };
+
     // Send message
     const sendMessage = async () => {
       if (!userInput.value.trim() || isLoading.value || !sessionId.value) return;
@@ -436,7 +462,7 @@ export default defineComponent({
           isLoading.value = false;
           isStreaming.value = false;
           
-          // Convert streaming content to final message
+          // Convert streaming content to final message and save
           if (nodeBlocks.value.length > 0) {
             const lastBlock = nodeBlocks.value[nodeBlocks.value.length - 1];
             if (lastBlock && lastBlock[0]) {
@@ -448,11 +474,15 @@ export default defineComponent({
                 messageType = 'markdown-report';
               }
               
+              const content = finalData.text || '';
               messages.value.push({
                 role: 'assistant',
-                content: finalData.text || '',
+                content,
                 messageType,
               });
+              
+              // Save assistant message to database
+              saveAssistantMessage(content, messageType);
             }
           }
           
@@ -471,7 +501,7 @@ export default defineComponent({
           isLoading.value = false;
           isStreaming.value = false;
           
-          // Convert streaming content to final message
+          // Convert streaming content to final message and save
           if (nodeBlocks.value.length > 0) {
             const lastBlock = nodeBlocks.value[nodeBlocks.value.length - 1];
             if (lastBlock && lastBlock[0]) {
@@ -483,11 +513,15 @@ export default defineComponent({
                 messageType = 'markdown-report';
               }
               
+              const content = finalData.text || '';
               messages.value.push({
                 role: 'assistant',
-                content: finalData.text || '',
+                content,
                 messageType,
               });
+              
+              // Save assistant message to database
+              saveAssistantMessage(content, messageType);
             }
           }
           
@@ -698,37 +732,69 @@ export default defineComponent({
 
 .message {
   display: flex;
+  gap: 10px;
   margin-bottom: 12px;
+  max-width: 85%;
 }
 
 .message.user {
-  justify-content: flex-end;
+  margin-left: auto;
+  flex-direction: row-reverse;
 }
 
 .message.assistant {
-  justify-content: flex-start;
+  margin-right: auto;
+}
+
+.message-avatar {
+  flex-shrink: 0;
+}
+
+.avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.user-avatar {
+  background: var(--primary-color, #409EFF);
+  color: white;
+}
+
+.assistant-avatar {
+  background: #f0f0f0;
+  color: #666;
 }
 
 .message-content {
-  max-width: 80%;
-  padding: 12px 16px;
-  border-radius: 16px;
+  flex: 1;
+  min-width: 0;
+}
+
+.message-text {
+  padding: 10px 14px;
+  border-radius: 12px;
   font-size: 14px;
   line-height: 1.6;
   word-break: break-word;
 }
 
-.message.user .message-content {
+.message.user .message-text {
   background: var(--primary-color, #409EFF);
   color: white;
   border-bottom-right-radius: 4px;
 }
 
-.message.assistant .message-content {
+.message.assistant .message-text {
   background: white;
-  color: #333;
+  color: #303133;
+  border: 1px solid #e8e8e8;
   border-bottom-left-radius: 4px;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
 }
 
 /* Streaming */

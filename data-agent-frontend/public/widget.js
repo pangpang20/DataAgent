@@ -458,10 +458,32 @@
 
             case 'WIDGET_RESIZE':
                 // Handle resize request from iframe
-                if (payload && payload.height) {
-                    const iframeEl = document.getElementById(IFRAME_ID);
-                    if (iframeEl) {
-                        iframeEl.style.height = payload.height + 'px';
+                const iframeEl = document.getElementById(IFRAME_ID);
+                if (iframeEl && payload) {
+                    if (payload.maximized) {
+                        // Maximize: 50% width, 80% height, centered
+                        const maxWidth = Math.floor(window.innerWidth * 0.5);
+                        const maxHeight = Math.floor(window.innerHeight * 0.8);
+                        iframeEl.style.width = maxWidth + 'px';
+                        iframeEl.style.height = maxHeight + 'px';
+                        iframeEl.style.position = 'fixed';
+                        iframeEl.style.left = '50%';
+                        iframeEl.style.top = '50%';
+                        iframeEl.style.transform = 'translate(-50%, -50%)';
+                        iframeEl.style.right = 'auto';
+                        iframeEl.style.bottom = 'auto';
+                        iframeEl.classList.add('maximized');
+                    } else {
+                        // Restore to default size
+                        iframeEl.style.width = finalConfig.width;
+                        iframeEl.style.height = finalConfig.height;
+                        iframeEl.style.position = 'absolute';
+                        iframeEl.style.left = '';
+                        iframeEl.style.top = '';
+                        iframeEl.style.transform = '';
+                        iframeEl.style.right = '0';
+                        iframeEl.style.bottom = 'calc(100% + 16px)';
+                        iframeEl.classList.remove('maximized');
                     }
                 }
                 break;
