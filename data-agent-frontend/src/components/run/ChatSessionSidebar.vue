@@ -48,7 +48,8 @@
         ]"
         @click="handleSelectSession(session)"
       >
-        <div class="session-header">
+        <!-- Title row -->
+        <div class="session-title-row">
           <span
             class="session-title"
             @dblclick="startEditSessionTitle(session)"
@@ -65,6 +66,12 @@
             @keyup.esc="cancelEditSessionTitle(session)"
             ref="sessionTitleInputRef"
           />
+        </div>
+        <!-- Time and actions row -->
+        <div class="session-footer">
+          <div class="session-time">
+            {{ formatTime(session.updateTime || session.createTime) }}
+          </div>
           <div class="session-actions">
             <el-button type="text" size="small" @click.stop="startEditSessionTitle(session)">
               <el-icon><Edit /></el-icon>
@@ -79,9 +86,6 @@
               <el-icon><Delete /></el-icon>
             </el-button>
           </div>
-        </div>
-        <div class="session-time">
-          {{ formatTime(session.updateTime || session.createTime) }}
         </div>
       </div>
     </div>
@@ -425,10 +429,7 @@
     border-left: 4px solid #e6a23c;
   }
 
-  .session-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
+  .session-title-row {
     margin-bottom: 8px;
   }
 
@@ -436,11 +437,15 @@
     font-weight: 600;
     font-size: 14px;
     color: #303133;
-    flex: 1;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    margin-right: 8px;
+    display: block;
+    word-break: break-all;
+    line-height: 1.4;
+  }
+
+  .session-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
   }
 
   .session-actions {

@@ -483,27 +483,31 @@ export default defineComponent({
           isLoading.value = false;
           isStreaming.value = false;
           
-          // Convert streaming content to final message and save
-          if (nodeBlocks.value.length > 0) {
-            const lastBlock = nodeBlocks.value[nodeBlocks.value.length - 1];
-            if (lastBlock && lastBlock[0]) {
-              const finalData = lastBlock[0];
-              let messageType = 'text';
-              if (finalData.textType === 'RESULT_SET') {
-                messageType = 'result-set';
-              } else if (finalData.textType === 'MARK_DOWN') {
-                messageType = 'markdown-report';
+          // Save all important node blocks (RESULT_SET and MARK_DOWN)
+          for (const block of nodeBlocks.value) {
+            if (block && block[0]) {
+              const nodeData = block[0];
+              // Only save RESULT_SET and MARK_DOWN types
+              if (nodeData.textType === 'RESULT_SET' || nodeData.textType === 'MARK_DOWN') {
+                let messageType = 'text';
+                if (nodeData.textType === 'RESULT_SET') {
+                  messageType = 'result-set';
+                } else if (nodeData.textType === 'MARK_DOWN') {
+                  messageType = 'markdown-report';
+                }
+                
+                const content = nodeData.text || '';
+                if (content) {
+                  messages.value.push({
+                    role: 'assistant',
+                    content,
+                    messageType,
+                  });
+                  
+                  // Save to database
+                  saveAssistantMessage(content, messageType);
+                }
               }
-              
-              const content = finalData.text || '';
-              messages.value.push({
-                role: 'assistant',
-                content,
-                messageType,
-              });
-              
-              // Save assistant message to database
-              saveAssistantMessage(content, messageType);
             }
           }
           
@@ -522,27 +526,31 @@ export default defineComponent({
           isLoading.value = false;
           isStreaming.value = false;
           
-          // Convert streaming content to final message and save
-          if (nodeBlocks.value.length > 0) {
-            const lastBlock = nodeBlocks.value[nodeBlocks.value.length - 1];
-            if (lastBlock && lastBlock[0]) {
-              const finalData = lastBlock[0];
-              let messageType = 'text';
-              if (finalData.textType === 'RESULT_SET') {
-                messageType = 'result-set';
-              } else if (finalData.textType === 'MARK_DOWN') {
-                messageType = 'markdown-report';
+          // Save all important node blocks (RESULT_SET and MARK_DOWN)
+          for (const block of nodeBlocks.value) {
+            if (block && block[0]) {
+              const nodeData = block[0];
+              // Only save RESULT_SET and MARK_DOWN types
+              if (nodeData.textType === 'RESULT_SET' || nodeData.textType === 'MARK_DOWN') {
+                let messageType = 'text';
+                if (nodeData.textType === 'RESULT_SET') {
+                  messageType = 'result-set';
+                } else if (nodeData.textType === 'MARK_DOWN') {
+                  messageType = 'markdown-report';
+                }
+                
+                const content = nodeData.text || '';
+                if (content) {
+                  messages.value.push({
+                    role: 'assistant',
+                    content,
+                    messageType,
+                  });
+                  
+                  // Save to database
+                  saveAssistantMessage(content, messageType);
+                }
               }
-              
-              const content = finalData.text || '';
-              messages.value.push({
-                role: 'assistant',
-                content,
-                messageType,
-              });
-              
-              // Save assistant message to database
-              saveAssistantMessage(content, messageType);
             }
           }
           
