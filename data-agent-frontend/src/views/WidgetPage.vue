@@ -322,13 +322,11 @@ export default defineComponent({
         if (sessionId.value) {
           try {
             await axios.put(
-              `${baseUrl.value}/api/sessions/${sessionId.value}/title`,
-              { title: `Widget Session ${sessionId.value}` },
+              `${baseUrl.value}/api/sessions/${sessionId.value}/rename`,
+              null,
               {
-                headers: {
-                  'Content-Type': 'application/json',
-                  'X-API-Key': apiKey.value,
-                },
+                params: { title: `Widget Session ${sessionId.value}` },
+                headers: { 'X-API-Key': apiKey.value },
               }
             );
           } catch (e) {
