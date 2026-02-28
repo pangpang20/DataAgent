@@ -101,58 +101,65 @@
       </div>
 
       <!-- Streaming Response / Process Info Display -->
-      <div v-if="isStreaming || nodeBlocks.length > 0" class="streaming-response">
-        <div v-if="isStreaming" class="streaming-header">
-          <span class="loading-dot"></span>
-          <span>AI 正在思考...</span>
-        </div>
-        <div v-for="(nodeBlock, index) in nodeBlocks" :key="index" class="node-block">
-          <div class="node-header" @click="toggleNodeVisibility(index)">
-            <span class="node-title">{{ nodeBlock[0]?.nodeName || 'Processing' }}</span>
-            <span class="node-toggle">{{ isNodeVisible[index] ? '▼' : '▶' }}</span>
+      <div v-if="isStreaming || nodeBlocks.length > 0" class="message-wrapper">
+        <div class="message assistant">
+          <div class="message-avatar">
+            <span class="avatar assistant-avatar">AI</span>
           </div>
-          <div v-show="isNodeVisible[index]" class="node-content">
-            <!-- Result Set -->
-            <ResultSetDisplay
-              v-if="nodeBlock[0]?.textType === 'RESULT_SET' && nodeBlock[0]?.text"
-              :resultData="JSON.parse(nodeBlock[0].text)"
-              :pageSize="10"
-            />
-            <!-- Markdown Report -->
-            <div v-else-if="nodeBlock[0]?.textType === 'MARK_DOWN' && nodeBlock[0]?.text" class="markdown-report-block">
-              <div class="markdown-report-header">
-                <div class="report-info">
-                  <svg viewBox="0 0 24 24" width="18" height="18" fill="#409EFF">
-                    <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
-                  </svg>
-                  <span>Markdown 报告已生成</span>
+          <div class="message-content streaming-response">
+            <div v-if="isStreaming" class="streaming-header">
+              <span class="loading-dot"></span>
+              <span>AI 正在思考...</span>
+            </div>
+            <div v-for="(nodeBlock, index) in nodeBlocks" :key="index" class="node-block">
+              <div class="node-header" @click="toggleNodeVisibility(index)">
+                <span class="node-title">{{ nodeBlock[0]?.nodeName || 'Processing' }}</span>
+                <span class="node-toggle">{{ isNodeVisible[index] ? '▼' : '▶' }}</span>
+              </div>
+              <div v-show="isNodeVisible[index]" class="node-content">
+                <!-- Result Set -->
+                <ResultSetDisplay
+                  v-if="nodeBlock[0]?.textType === 'RESULT_SET' && nodeBlock[0]?.text"
+                  :resultData="JSON.parse(nodeBlock[0].text)"
+                  :pageSize="10"
+                />
+                <!-- Markdown Report -->
+                <div v-else-if="nodeBlock[0]?.textType === 'MARK_DOWN' && nodeBlock[0]?.text" class="markdown-report-block">
+                  <div class="markdown-report-header">
+                    <div class="report-info">
+                      <svg viewBox="0 0 24 24" width="18" height="18" fill="#409EFF">
+                        <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
+                      </svg>
+                      <span>Markdown 报告已生成</span>
+                    </div>
+                    <button class="download-btn primary" @click="downloadMarkdown(nodeBlock[0].text)">
+                      <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+                        <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+                      </svg>
+                      下载Markdown报告
+                    </button>
+                  </div>
+                  <div class="markdown-report-content">
+                    <Markdown :generating="isStreaming">
+                      {{ nodeBlock[0].text }}
+                    </Markdown>
+                  </div>
                 </div>
-                <button class="download-btn primary" @click="downloadMarkdown(nodeBlock[0].text)">
-                  <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
-                    <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
-                  </svg>
-                  下载Markdown报告
-                </button>
-              </div>
-              <div class="markdown-report-content">
-                <Markdown :generating="isStreaming">
-                  {{ nodeBlock[0].text }}
-                </Markdown>
+                <!-- Python/SQL/JSON Code -->
+                <div 
+                  v-else-if="['PYTHON', 'SQL', 'JSON'].includes(nodeBlock[0]?.textType) && nodeBlock[0]?.text" 
+                  class="code-block"
+                >
+                  <div class="code-header">
+                    <span class="code-lang">{{ nodeBlock[0].textType }}</span>
+                    <button class="copy-btn" @click="copyCode(nodeBlock[0].text)">复制</button>
+                  </div>
+                  <pre class="code-content"><code>{{ nodeBlock[0].text }}</code></pre>
+                </div>
+                <!-- Other content -->
+                <div v-else class="node-text" v-html="nodeBlock[0]?.text || ''"></div>
               </div>
             </div>
-            <!-- Python/SQL/JSON Code -->
-            <div 
-              v-else-if="['PYTHON', 'SQL', 'JSON'].includes(nodeBlock[0]?.textType) && nodeBlock[0]?.text" 
-              class="code-block"
-            >
-              <div class="code-header">
-                <span class="code-lang">{{ nodeBlock[0].textType }}</span>
-                <button class="copy-btn" @click="copyCode(nodeBlock[0].text)">复制</button>
-              </div>
-              <pre class="code-content"><code>{{ nodeBlock[0].text }}</code></pre>
-            </div>
-            <!-- Other content -->
-            <div v-else class="node-text" v-html="nodeBlock[0]?.text || ''"></div>
           </div>
         </div>
       </div>
@@ -838,6 +845,7 @@ export default defineComponent({
 
 /* Messages */
 .message-wrapper {
+  width: 100%;
   margin-bottom: 16px;
 }
 
@@ -910,7 +918,7 @@ export default defineComponent({
 
 /* Streaming */
 .streaming-response {
-  margin-bottom: 16px;
+  /* No extra margin since it's inside message-content */
 }
 
 .streaming-header {
