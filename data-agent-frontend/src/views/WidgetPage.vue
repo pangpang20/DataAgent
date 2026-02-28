@@ -537,25 +537,15 @@ export default defineComponent({
           isLoading.value = false;
           isStreaming.value = false;
           
-          // Save accumulated MARK_DOWN content (like AgentRun.vue)
+          // Save MARK_DOWN content to database only (already displayed in nodeBlocks)
           if (markdownReportContent.value) {
-            console.log('[Widget Page] Saving markdown report to messages');
-            messages.value.push({
-              role: 'assistant',
-              content: markdownReportContent.value,
-              messageType: 'markdown-report',
-            });
+            console.log('[Widget Page] Saving markdown report to database (not adding to messages to avoid duplicate)');
             saveAssistantMessage(markdownReportContent.value, 'markdown-report');
           }
           
-          // Save accumulated RESULT_SET content
+          // Save RESULT_SET content to database only (already displayed in nodeBlocks)
           if (resultSetContent.value) {
-            console.log('[Widget Page] Saving result set to messages');
-            messages.value.push({
-              role: 'assistant',
-              content: resultSetContent.value,
-              messageType: 'result-set',
-            });
+            console.log('[Widget Page] Saving result set to database (not adding to messages to avoid duplicate)');
             saveAssistantMessage(resultSetContent.value, 'result-set');
           }
           
