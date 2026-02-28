@@ -1152,6 +1152,15 @@ export default defineComponent({
   padding: 16px;
 }
 
+.markdown-report-block {
+  width: 100%;
+  box-sizing: border-box;
+  background: white;
+  border: 1px solid #e8e8e8;
+  border-radius: 12px;
+  padding: 16px;
+}
+
 .markdown-report-header {
   display: flex;
   justify-content: space-between;
