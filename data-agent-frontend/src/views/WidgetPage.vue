@@ -118,13 +118,28 @@
               :resultData="JSON.parse(nodeBlock[0].text)"
               :pageSize="10"
             />
-            <!-- Markdown -->
-            <Markdown
-              v-else-if="nodeBlock[0]?.textType === 'MARK_DOWN' && nodeBlock[0]?.text"
-              :generating="isStreaming"
-            >
-              {{ nodeBlock[0].text }}
-            </Markdown>
+            <!-- Markdown Report -->
+            <div v-else-if="nodeBlock[0]?.textType === 'MARK_DOWN' && nodeBlock[0]?.text" class="markdown-report-block">
+              <div class="markdown-report-header">
+                <div class="report-info">
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="#409EFF">
+                    <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
+                  </svg>
+                  <span>Markdown 报告已生成</span>
+                </div>
+                <button class="download-btn primary" @click="downloadMarkdown(nodeBlock[0].text)">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+                    <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+                  </svg>
+                  下载Markdown报告
+                </button>
+              </div>
+              <div class="markdown-report-content">
+                <Markdown :generating="isStreaming">
+                  {{ nodeBlock[0].text }}
+                </Markdown>
+              </div>
+            </div>
             <!-- Python/SQL/JSON Code -->
             <div 
               v-else-if="['PYTHON', 'SQL', 'JSON'].includes(nodeBlock[0]?.textType) && nodeBlock[0]?.text" 
@@ -331,6 +346,34 @@ export default defineComponent({
         return;
       }
       
+      // Try to restore session from localStorage
+      const storageKey = `widget_session_${agentId.value}`;
+      const savedSessionId = localStorage.getItem(storageKey);
+      
+      if (savedSessionId) {
+        // Verify session exists and load history
+        try {
+          const response = await axios.get(
+            `${baseUrl.value}/api/sessions/${savedSessionId}/messages`,
+            {
+              headers: { 'X-API-Key': apiKey.value },
+            }
+          );
+          // Session is valid, restore it
+          sessionId.value = savedSessionId;
+          console.log('[Widget Page] Session restored:', sessionId.value);
+          
+          // Load history messages
+          loadHistoryMessages(response.data || []);
+          loadPresetQuestions();
+          return;
+        } catch (e) {
+          console.warn('[Widget Page] Saved session invalid, creating new one');
+          localStorage.removeItem(storageKey);
+        }
+      }
+      
+      // Create new session
       try {
         const response = await axios.post(
           `${baseUrl.value}/api/agent/${agentId.value}/sessions`,
@@ -345,8 +388,10 @@ export default defineComponent({
         sessionId.value = response.data?.id;
         console.log('[Widget Page] Session created:', sessionId.value);
         
-        // Update session title with sessionId
+        // Save sessionId to localStorage
         if (sessionId.value) {
+          localStorage.setItem(storageKey, sessionId.value.toString());
+          
           try {
             await axios.put(
               `${baseUrl.value}/api/sessions/${sessionId.value}/rename`,
@@ -366,6 +411,28 @@ export default defineComponent({
       } catch (error) {
         console.error('[Widget Page] Failed to create session:', error);
       }
+    };
+
+    // Load history messages from database
+    const loadHistoryMessages = (historyMessages: any[]) => {
+      if (!historyMessages || historyMessages.length === 0) return;
+      
+      console.log('[Widget Page] Loading history messages:', historyMessages.length);
+      
+      // Clear current messages
+      messages.value = [];
+      
+      // Process each message
+      historyMessages.forEach((msg: any) => {
+        messages.value.push({
+          id: msg.id,
+          role: msg.role,
+          content: msg.content,
+          messageType: msg.messageType || 'text',
+        });
+      });
+      
+      scrollToBottom();
     };
 
     // Load preset questions
