@@ -910,6 +910,10 @@ export default defineComponent({
   min-width: 0;
 }
 
+.message.user .message-content {
+  flex: none;  /* User message content should not expand */
+}
+
 .message-text {
   padding: 10px 14px;
   border-radius: 12px;
