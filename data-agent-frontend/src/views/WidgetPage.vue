@@ -260,6 +260,7 @@ export default defineComponent({
     // Content accumulators for streaming data (like AgentRun.vue)
     const markdownReportContent = ref<string>('');
     const resultSetContent = ref<string>('');
+    const chatResponseContent = ref<string>('');
 
     // Get initial values from URL params
     const agentId = computed(() => route.params.id as string);
@@ -539,6 +540,7 @@ export default defineComponent({
         // Reset content accumulators
         markdownReportContent.value = '';
         resultSetContent.value = '';
+        chatResponseContent.value = '';
         
         eventSource.onmessage = (event) => {
           try {
@@ -577,7 +579,14 @@ export default defineComponent({
                 isNodeVisible.value[currentNodeIndex] = true;
               }
             } else {
-              // For other types, use the original logic
+              // For other types (including ChatResponseNode), accumulate and display
+              // Check if this is ChatResponseNode for saving
+              if (data.nodeName === 'ChatResponseNode') {
+                chatResponseContent.value += data.text || '';
+                console.log(`[Widget Page] ChatResponseNode accumulated: ${chatResponseContent.value.length} chars`);
+              }
+              
+              // Update display
               if (data.nodeName !== currentNodeName) {
                 currentNodeName = data.nodeName;
                 currentNodeIndex = nodeBlocks.value.length;
@@ -605,7 +614,7 @@ export default defineComponent({
             return;
           }
           isCompleted = true;
-          console.log(`[Widget Page] Stream completed via ${source}, markdownReport: ${markdownReportContent.value.length} chars, resultSet: ${resultSetContent.value.length} chars`);
+          console.log(`[Widget Page] Stream completed via ${source}, markdownReport: ${markdownReportContent.value.length} chars, resultSet: ${resultSetContent.value.length} chars, chatResponse: ${chatResponseContent.value.length} chars`);
           
           eventSource.close();
           isLoading.value = false;
@@ -621,6 +630,12 @@ export default defineComponent({
           if (resultSetContent.value) {
             console.log('[Widget Page] Saving result set to database (not adding to messages to avoid duplicate)');
             saveAssistantMessage(resultSetContent.value, 'result-set');
+          }
+          
+          // Save ChatResponseNode content (for chat/casual responses)
+          if (chatResponseContent.value && !markdownReportContent.value && !resultSetContent.value) {
+            console.log('[Widget Page] Saving chat response to database');
+            saveAssistantMessage(chatResponseContent.value, 'text');
           }
           
           // Do not clear nodeBlocks, keep process info visible like AgentRun.vue
