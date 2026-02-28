@@ -975,6 +975,8 @@ export default defineComponent({
 }
 
 .node-block {
+  width: 100%;
+  box-sizing: border-box;
   background: white;
   border-radius: 8px;
   margin-bottom: 8px;
