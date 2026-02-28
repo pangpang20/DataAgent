@@ -235,6 +235,9 @@ export default defineComponent({
     const isNodeVisible = ref<Record<number, boolean>>({});
     const messagesContainer = ref<HTMLElement | null>(null);
     const inputRef = ref<HTMLInputElement | null>(null);
+    // Content accumulators for streaming data (like AgentRun.vue)
+    const markdownReportContent = ref<string>('');
+    const resultSetContent = ref<string>('');
 
     // Get initial values from URL params
     const agentId = computed(() => route.params.id as string);
@@ -458,18 +461,61 @@ export default defineComponent({
         
         let currentNodeName = '';
         let currentNodeIndex = -1;
+        let isCompleted = false;  // Flag to prevent duplicate processing
+        // Reset content accumulators
+        markdownReportContent.value = '';
+        resultSetContent.value = '';
         
         eventSource.onmessage = (event) => {
           try {
             const data: StreamNodeData = JSON.parse(event.data);
+            console.log(`[Widget Page] Received: node=${data.nodeName}, type=${data.textType}, text=${(data.text || '').substring(0, 50)}...`);
             
-            if (data.nodeName !== currentNodeName) {
-              currentNodeName = data.nodeName;
-              currentNodeIndex = nodeBlocks.value.length;
-              nodeBlocks.value.push([data]);
-              isNodeVisible.value[currentNodeIndex] = true;
-            } else if (currentNodeIndex >= 0) {
-              nodeBlocks.value[currentNodeIndex] = [data];
+            // Accumulate content for MARK_DOWN and RESULT_SET types (like AgentRun.vue)
+            if (data.textType === 'MARK_DOWN') {
+              markdownReportContent.value += data.text || '';
+              console.log(`[Widget Page] MARK_DOWN accumulated: ${markdownReportContent.value.length} chars`);
+              // Update display block
+              const existingBlock = nodeBlocks.value.find(
+                (block) => block[0]?.nodeName === data.nodeName && block[0]?.textType === 'MARK_DOWN'
+              );
+              if (existingBlock) {
+                existingBlock[0].text = markdownReportContent.value;
+              } else {
+                currentNodeName = data.nodeName;
+                currentNodeIndex = nodeBlocks.value.length;
+                nodeBlocks.value.push([{ ...data, text: markdownReportContent.value }]);
+                isNodeVisible.value[currentNodeIndex] = true;
+              }
+            } else if (data.textType === 'RESULT_SET') {
+              // RESULT_SET is usually sent as a complete JSON, not chunked
+              resultSetContent.value = data.text || '';
+              console.log(`[Widget Page] RESULT_SET received: ${resultSetContent.value.length} chars`);
+              const existingBlock = nodeBlocks.value.find(
+                (block) => block[0]?.nodeName === data.nodeName && block[0]?.textType === 'RESULT_SET'
+              );
+              if (existingBlock) {
+                existingBlock[0].text = resultSetContent.value;
+              } else {
+                currentNodeName = data.nodeName;
+                currentNodeIndex = nodeBlocks.value.length;
+                nodeBlocks.value.push([{ ...data, text: resultSetContent.value }]);
+                isNodeVisible.value[currentNodeIndex] = true;
+              }
+            } else {
+              // For other types, use the original logic
+              if (data.nodeName !== currentNodeName) {
+                currentNodeName = data.nodeName;
+                currentNodeIndex = nodeBlocks.value.length;
+                nodeBlocks.value.push([data]);
+                isNodeVisible.value[currentNodeIndex] = true;
+              } else if (currentNodeIndex >= 0) {
+                // Append text content instead of replacing
+                const currentBlock = nodeBlocks.value[currentNodeIndex];
+                if (currentBlock && currentBlock[0]) {
+                  currentBlock[0].text = (currentBlock[0].text || '') + (data.text || '');
+                }
+              }
             }
             
             scrollToBottom();
@@ -478,41 +524,43 @@ export default defineComponent({
           }
         };
         
-        eventSource.onerror = () => {
+        // Helper function to handle stream completion
+        const handleStreamComplete = (source: string) => {
+          if (isCompleted) {
+            console.log(`[Widget Page] Stream already completed, ignoring ${source} event`);
+            return;
+          }
+          isCompleted = true;
+          console.log(`[Widget Page] Stream completed via ${source}, markdownReport: ${markdownReportContent.value.length} chars, resultSet: ${resultSetContent.value.length} chars`);
+          
           eventSource.close();
           isLoading.value = false;
           isStreaming.value = false;
           
-          // Save all important node blocks (RESULT_SET and MARK_DOWN)
-          for (const block of nodeBlocks.value) {
-            if (block && block[0]) {
-              const nodeData = block[0];
-              // Only save RESULT_SET and MARK_DOWN types
-              if (nodeData.textType === 'RESULT_SET' || nodeData.textType === 'MARK_DOWN') {
-                let messageType = 'text';
-                if (nodeData.textType === 'RESULT_SET') {
-                  messageType = 'result-set';
-                } else if (nodeData.textType === 'MARK_DOWN') {
-                  messageType = 'markdown-report';
-                }
-                
-                const content = nodeData.text || '';
-                if (content) {
-                  messages.value.push({
-                    role: 'assistant',
-                    content,
-                    messageType,
-                  });
-                  
-                  // Save to database
-                  saveAssistantMessage(content, messageType);
-                }
-              }
-            }
+          // Save accumulated MARK_DOWN content (like AgentRun.vue)
+          if (markdownReportContent.value) {
+            console.log('[Widget Page] Saving markdown report to messages');
+            messages.value.push({
+              role: 'assistant',
+              content: markdownReportContent.value,
+              messageType: 'markdown-report',
+            });
+            saveAssistantMessage(markdownReportContent.value, 'markdown-report');
+          }
+          
+          // Save accumulated RESULT_SET content
+          if (resultSetContent.value) {
+            console.log('[Widget Page] Saving result set to messages');
+            messages.value.push({
+              role: 'assistant',
+              content: resultSetContent.value,
+              messageType: 'result-set',
+            });
+            saveAssistantMessage(resultSetContent.value, 'result-set');
           }
           
           // Do not clear nodeBlocks, keep process info visible like AgentRun.vue
-          // nodeBlocks.value = [];
+          console.log(`[Widget Page] Keeping ${nodeBlocks.value.length} nodeBlocks visible`);
           scrollToBottom();
           
           // Notify parent of new message
@@ -522,48 +570,12 @@ export default defineComponent({
           });
         };
         
+        eventSource.onerror = () => {
+          handleStreamComplete('onerror');
+        };
+        
         eventSource.addEventListener('complete', () => {
-          eventSource.close();
-          isLoading.value = false;
-          isStreaming.value = false;
-          
-          // Save all important node blocks (RESULT_SET and MARK_DOWN)
-          for (const block of nodeBlocks.value) {
-            if (block && block[0]) {
-              const nodeData = block[0];
-              // Only save RESULT_SET and MARK_DOWN types
-              if (nodeData.textType === 'RESULT_SET' || nodeData.textType === 'MARK_DOWN') {
-                let messageType = 'text';
-                if (nodeData.textType === 'RESULT_SET') {
-                  messageType = 'result-set';
-                } else if (nodeData.textType === 'MARK_DOWN') {
-                  messageType = 'markdown-report';
-                }
-                
-                const content = nodeData.text || '';
-                if (content) {
-                  messages.value.push({
-                    role: 'assistant',
-                    content,
-                    messageType,
-                  });
-                  
-                  // Save to database
-                  saveAssistantMessage(content, messageType);
-                }
-              }
-            }
-          }
-          
-          // Do not clear nodeBlocks, keep process info visible like AgentRun.vue
-          // nodeBlocks.value = [];
-          scrollToBottom();
-          
-          // Notify parent of new message
-          sendToParent({
-            type: 'WIDGET_NEW_MESSAGE',
-            payload: { hasNewMessage: true }
-          });
+          handleStreamComplete('complete');
         });
         
       } catch (error) {
