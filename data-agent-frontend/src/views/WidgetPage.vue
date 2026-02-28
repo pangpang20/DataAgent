@@ -60,32 +60,44 @@
         :key="msg.id || index" 
         class="message-wrapper"
       >
-        <!-- Result Set Message -->
-        <div v-if="msg.messageType === 'result-set'" class="result-set-message">
-          <ResultSetDisplay
-            v-if="msg.content"
-            :resultData="JSON.parse(msg.content)"
-            :pageSize="10"
-          />
-        </div>
-        <!-- Markdown Report Message -->
-        <div v-else-if="msg.messageType === 'markdown-report'" class="markdown-report-message">
-          <div class="markdown-report-header">
-            <div class="report-info">
-              <svg viewBox="0 0 24 24" width="18" height="18" fill="#409EFF">
-                <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
-              </svg>
-              <span>Markdown 报告已生成</span>
-            </div>
-            <button class="download-btn primary" @click="downloadMarkdown(msg.content)">
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
-                <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
-              </svg>
-              下载Markdown报告
-            </button>
+        <!-- Result Set Message (with AI avatar) -->
+        <div v-if="msg.messageType === 'result-set'" class="message assistant history-message">
+          <div class="message-avatar">
+            <span class="avatar assistant-avatar">AI</span>
           </div>
-          <div class="markdown-report-content">
-            <Markdown>{{ msg.content }}</Markdown>
+          <div class="message-content">
+            <ResultSetDisplay
+              v-if="msg.content"
+              :resultData="JSON.parse(msg.content)"
+              :pageSize="10"
+            />
+          </div>
+        </div>
+        <!-- Markdown Report Message (with AI avatar) -->
+        <div v-else-if="msg.messageType === 'markdown-report'" class="message assistant history-message">
+          <div class="message-avatar">
+            <span class="avatar assistant-avatar">AI</span>
+          </div>
+          <div class="message-content">
+            <div class="markdown-report-block">
+              <div class="markdown-report-header">
+                <div class="report-info">
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="#409EFF">
+                    <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
+                  </svg>
+                  <span>Markdown 报告已生成</span>
+                </div>
+                <button class="download-btn primary" @click="downloadMarkdown(msg.content)">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+                    <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+                  </svg>
+                  下载Markdown报告
+                </button>
+              </div>
+              <div class="markdown-report-content">
+                <Markdown>{{ msg.content }}</Markdown>
+              </div>
+            </div>
           </div>
         </div>
         <!-- Normal Text Message -->
@@ -943,6 +955,16 @@ export default defineComponent({
 .streaming-message {
   max-width: 100% !important;
   width: 100%;
+}
+
+.history-message {
+  max-width: 100% !important;
+  width: 100%;
+}
+
+.history-message .message-avatar {
+  align-self: flex-start;
+  margin-top: 8px;
 }
 
 .streaming-message .message-avatar {
