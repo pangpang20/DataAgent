@@ -967,6 +967,11 @@ export default defineComponent({
   margin-top: 8px;
 }
 
+.history-message .message-content {
+  flex: 1;
+  width: 100%;
+}
+
 .streaming-message .message-avatar {
   align-self: flex-start;
   margin-top: 8px;
