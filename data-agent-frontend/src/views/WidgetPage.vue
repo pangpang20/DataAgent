@@ -100,9 +100,9 @@
         </div>
       </div>
 
-      <!-- Streaming Response -->
-      <div v-if="isStreaming" class="streaming-response">
-        <div class="streaming-header">
+      <!-- Streaming Response / Process Info Display -->
+      <div v-if="isStreaming || nodeBlocks.length > 0" class="streaming-response">
+        <div v-if="isStreaming" class="streaming-header">
           <span class="loading-dot"></span>
           <span>AI 正在思考...</span>
         </div>
@@ -511,7 +511,8 @@ export default defineComponent({
             }
           }
           
-          nodeBlocks.value = [];
+          // Do not clear nodeBlocks, keep process info visible like AgentRun.vue
+          // nodeBlocks.value = [];
           scrollToBottom();
           
           // Notify parent of new message
@@ -554,7 +555,8 @@ export default defineComponent({
             }
           }
           
-          nodeBlocks.value = [];
+          // Do not clear nodeBlocks, keep process info visible like AgentRun.vue
+          // nodeBlocks.value = [];
           scrollToBottom();
           
           // Notify parent of new message

@@ -294,7 +294,13 @@ public class SqlExecuteNode implements NodeAction {
 				log.debug("[SqlExecuteNode] Raw chart config from LLM: [{}]", chartConfigJson.trim());
 				String content = MarkdownParserUtil.extractText(chartConfigJson.trim());
 				log.debug("[SqlExecuteNode] Extracted chart config content: [{}]", content);
-				// 解析JSON并填充到ResultSetBO中
+				// Clean up escape characters that LLM may have incorrectly added
+				// e.g., \{"type":"bar"...\} -> {"type":"bar"...}
+				if (content != null) {
+					content = content.replace("\\\\", "").replace("\\{", "{").replace("\\}", "}");
+					log.debug("[SqlExecuteNode] Chart config after escape cleanup: [{}]", content);
+				}
+				// Parse JSON and fill into ResultSetBO
 				Map<String, Object> chartConfig = JsonUtil.getObjectMapper().readValue(content, Map.class);
 
 				// 提取图表配置信息并设置到ResultDisplayStyleBO

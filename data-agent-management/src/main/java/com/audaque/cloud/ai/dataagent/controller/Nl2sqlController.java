@@ -89,8 +89,8 @@ public class Nl2sqlController {
                 .humanFeedback(false)
                 .humanFeedbackContent(null)
                 .rejectedPlan(false)
-                .nl2sqlOnly(true)
-                .plainReport(false)
+                .nl2sqlOnly(false)
+                .plainReport(true)
                 .build();
 
         graphService.graphStreamProcess(sink, request);
