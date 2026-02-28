@@ -101,8 +101,8 @@
       </div>
 
       <!-- Streaming Response / Process Info Display -->
-      <div v-if="isStreaming || nodeBlocks.length > 0" class="message-wrapper">
-        <div class="message assistant">
+      <div v-if="isStreaming || nodeBlocks.length > 0" class="message-wrapper streaming-wrapper">
+        <div class="message assistant streaming-message">
           <div class="message-avatar">
             <span class="avatar assistant-avatar">AI</span>
           </div>
@@ -932,8 +932,24 @@ export default defineComponent({
 }
 
 /* Streaming */
+.streaming-wrapper {
+  width: 100%;
+}
+
+.streaming-message {
+  max-width: 100% !important;
+  width: 100%;
+}
+
+.streaming-message .message-avatar {
+  align-self: flex-start;
+  margin-top: 8px;
+}
+
 .streaming-response {
-  /* No extra margin since it's inside message-content */
+  display: flex;
+  flex-direction: column;
+  width: 100%;
 }
 
 .streaming-header {
