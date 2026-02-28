@@ -38,12 +38,13 @@ public final class FluxUtil {
 
 	/**
 	 * 级联两个具有前后关系的Flux
-	 * @param originFlux 第一个Flux
+	 * 
+	 * @param originFlux   第一个Flux
 	 * @param nextFluxFunc 根据第一个Flux的聚合结果生成第二个Flux
-	 * @param aggregator 聚合第一个Flux的所有数据
-	 * @param preFlux 在第一个Flux前添加的信息Flux
-	 * @param middleFlux 在第一个Flux和第二个Flux之间添加的信息Flux
-	 * @param endFlux 在第二个Flux后添加的信息Flux
+	 * @param aggregator   聚合第一个Flux的所有数据
+	 * @param preFlux      在第一个Flux前添加的信息Flux
+	 * @param middleFlux   在第一个Flux和第二个Flux之间添加的信息Flux
+	 * @param endFlux      在第二个Flux后添加的信息Flux
 	 */
 	public static <T, R> Flux<T> cascadeFlux(Flux<T> originFlux, Function<R, Flux<T>> nextFluxFunc,
 			Function<Flux<T>, Mono<R>> aggregator, Flux<T> preFlux, Flux<T> middleFlux, Flux<T> endFlux) {
@@ -61,9 +62,10 @@ public final class FluxUtil {
 
 	/**
 	 * 级联两个具有前后关系的Flux
-	 * @param originFlux 第一个Flux
+	 * 
+	 * @param originFlux   第一个Flux
 	 * @param nextFluxFunc 根据第一个Flux的聚合结果生成第二个Flux
-	 * @param aggregator 聚合第一个Flux的所有数据
+	 * @param aggregator   聚合第一个Flux的所有数据
 	 */
 	public static <T, R> Flux<T> cascadeFlux(Flux<T> originFlux, Function<R, Flux<T>> nextFluxFunc,
 			Function<Flux<T>, Mono<R>> aggregator) {
@@ -72,12 +74,13 @@ public final class FluxUtil {
 
 	/**
 	 * Quickly create streaming generator with start and end messages
-	 * @param nodeClass node class
-	 * @param state state
-	 * @param startMessage start message
+	 * 
+	 * @param nodeClass         node class
+	 * @param state             state
+	 * @param startMessage      start message
 	 * @param completionMessage completion message
-	 * @param resultMapper result mapping function
-	 * @param sourceFlux source data stream
+	 * @param resultMapper      result mapping function
+	 * @param sourceFlux        source data stream
 	 * @return Flux instance
 	 */
 	public static Flux<GraphResponse<StreamingOutput>> createStreamingGeneratorWithMessages(
@@ -110,11 +113,12 @@ public final class FluxUtil {
 
 	/**
 	 * create streaming generator with start and end flux
-	 * @param nodeClass node class
-	 * @param state state
-	 * @param sourceFlux source data stream
-	 * @param preFlux preFlux
-	 * @param sufFlux sufFlux
+	 * 
+	 * @param nodeClass    node class
+	 * @param state        state
+	 * @param sourceFlux   source data stream
+	 * @param preFlux      preFlux
+	 * @param sufFlux      sufFlux
 	 * @param sourceMapper result of <code>sourceFlux</code> mapping function
 	 * @return Flux instance
 	 */
@@ -132,13 +136,17 @@ public final class FluxUtil {
 	private static Flux<GraphResponse<StreamingOutput>> toStreamingResponseFlux(String nodeName, OverAllState state,
 			Flux<ChatResponse> sourceFlux, Supplier<Map<String, Object>> resultSupplier) {
 		Flux<GraphResponse<StreamingOutput>> streamingFlux = sourceFlux
-			.filter(response -> response != null && response.getResult() != null
-					&& response.getResult().getOutput() != null)
-			.map(response -> GraphResponse.of(new StreamingOutput<>(response.getResult().getOutput(), response,
-					nodeName, "", state, OutputType.from(true, nodeName))));
+				.filter(response -> response != null && response.getResult() != null
+						&& response.getResult().getOutput() != null)
+				.map(response -> {
+					// Extract text content from ChatResponse to use as chunk
+					String chunk = ChatResponseUtil.getText(response);
+					return GraphResponse.of(new StreamingOutput<>(response.getResult().getOutput(), response,
+							nodeName, chunk, state, OutputType.from(true, nodeName)));
+				});
 
 		return streamingFlux.concatWith(Mono.fromSupplier(() -> GraphResponse.done(resultSupplier.get())))
-			.onErrorResume(error -> Flux.just(GraphResponse.error(error)));
+				.onErrorResume(error -> Flux.just(GraphResponse.error(error)));
 	}
 
 }

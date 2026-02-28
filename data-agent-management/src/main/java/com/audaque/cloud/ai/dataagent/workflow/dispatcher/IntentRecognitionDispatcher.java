@@ -21,9 +21,9 @@ import com.alibaba.cloud.ai.graph.action.EdgeAction;
 import com.audaque.cloud.ai.dataagent.util.StateUtil;
 import lombok.extern.slf4j.Slf4j;
 
+import static com.audaque.cloud.ai.dataagent.constant.Constant.CHAT_RESPONSE_NODE;
 import static com.audaque.cloud.ai.dataagent.constant.Constant.EVIDENCE_RECALL_NODE;
 import static com.audaque.cloud.ai.dataagent.constant.Constant.INTENT_RECOGNITION_NODE_OUTPUT;
-import static com.alibaba.cloud.ai.graph.StateGraph.END;
 
 /**
  * 根据意图识别结果决定下一个节点的分发器
@@ -39,18 +39,17 @@ public class IntentRecognitionDispatcher implements EdgeAction {
 
 		if (intentResult == null || intentResult.getClassification() == null
 				|| intentResult.getClassification().trim().isEmpty()) {
-			log.warn("Intent recognition result is null or empty, defaulting to END");
-			return END;
+			log.warn("Intent recognition result is null or empty, routing to ChatResponseNode");
+			return CHAT_RESPONSE_NODE;
 		}
 
 		String classification = intentResult.getClassification();
 
 		// 根据分类结果决定下一个节点
 		if ("《闲聊或无关指令》".equals(classification)) {
-			log.warn("Intent classified as chat or irrelevant, ending conversation");
-			return END;
-		}
-		else {
+			log.info("Intent classified as chat or irrelevant, routing to ChatResponseNode");
+			return CHAT_RESPONSE_NODE;
+		} else {
 			log.info("Intent classified as potential data analysis request, proceeding to evidence recall");
 			return EVIDENCE_RECALL_NODE;
 		}

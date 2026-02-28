@@ -127,6 +127,8 @@ public final class Constant {
 
 	public static final String HUMAN_FEEDBACK_NODE = "HUMAN_FEEDBACK_NODE";
 
+	public static final String CHAT_RESPONSE_NODE = "CHAT_RESPONSE_NODE";
+
 	// Keys related to Python code execution
 	public static final String PYTHON_GENERATE_NODE = "PYTHON_GENERATE_NODE";
 

@@ -282,21 +282,23 @@ requests.post(
         const base = getBackendUrl();
         const id = resolvedAgentId.value;
         const config = embedConfig.value;
-        const configJson = JSON.stringify({
-          agentId: id,
-          apiKey: '<your_api_key>',
-          title: config.title,
-          position: config.position,
-          primaryColor: config.primaryColor,
-          welcomeMessage: config.welcomeMessage,
-        }, null, 2);
+        // Build config string manually: no quotes for keys, single quotes for values
+        const configStr = `{
+    agentId: ${id},
+    apiKey: '<your_api_key>',
+    baseUrl: '${base}',
+    title: '${config.title}',
+    position: '${config.position}',
+    primaryColor: '${config.primaryColor}',
+    welcomeMessage: '${config.welcomeMessage}'
+  }`;
         
         const scriptOpen = '<script>';
         const scriptClose = '<' + '/script>';
         const scriptSrc = `<script src="${base}/widget.js">`;
         return `<!-- 将以下代码添加到您的网页 </body> 标签之前 -->
 ${scriptOpen}
-  window.DataAgentConfig = ${configJson};
+  window.DataAgentConfig = ${configStr};
 ${scriptClose}
 ${scriptSrc}${scriptClose}`;
       });

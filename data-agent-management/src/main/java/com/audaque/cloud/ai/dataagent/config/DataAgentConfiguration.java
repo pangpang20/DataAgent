@@ -188,11 +188,13 @@ public class DataAgentConfiguration implements DisposableBean {
 				.addNode(PYTHON_ANALYZE_NODE, nodeBeanUtil.getNodeBeanAsync(PythonAnalyzeNode.class))
 				.addNode(REPORT_GENERATOR_NODE, nodeBeanUtil.getNodeBeanAsync(ReportGeneratorNode.class))
 				.addNode(SEMANTIC_CONSISTENCY_NODE, nodeBeanUtil.getNodeBeanAsync(SemanticConsistencyNode.class))
-				.addNode(HUMAN_FEEDBACK_NODE, nodeBeanUtil.getNodeBeanAsync(HumanFeedbackNode.class));
+				.addNode(HUMAN_FEEDBACK_NODE, nodeBeanUtil.getNodeBeanAsync(HumanFeedbackNode.class))
+				.addNode(CHAT_RESPONSE_NODE, nodeBeanUtil.getNodeBeanAsync(ChatResponseNode.class));
 
 		stateGraph.addEdge(START, INTENT_RECOGNITION_NODE)
 				.addConditionalEdges(INTENT_RECOGNITION_NODE, edge_async(new IntentRecognitionDispatcher()),
-						Map.of(EVIDENCE_RECALL_NODE, EVIDENCE_RECALL_NODE, END, END))
+						Map.of(EVIDENCE_RECALL_NODE, EVIDENCE_RECALL_NODE, CHAT_RESPONSE_NODE, CHAT_RESPONSE_NODE))
+				.addEdge(CHAT_RESPONSE_NODE, END)
 				.addEdge(EVIDENCE_RECALL_NODE, QUERY_ENHANCE_NODE)
 				.addConditionalEdges(QUERY_ENHANCE_NODE, edge_async(new QueryEnhanceDispatcher()),
 						Map.of(SCHEMA_RECALL_NODE, SCHEMA_RECALL_NODE, END, END))
