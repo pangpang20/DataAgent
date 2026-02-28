@@ -9,20 +9,21 @@ description: 远程部署 DataAgent 到 Linux 服务器。SSH 连接到目标服
 
 ## 服务器信息
 
-| 配置项   | 值                  |
-| -------- | ------------------- |
-| 服务器   | 172.16.1.137        |
-| 用户名   | root                |
-| 密码     | Audaque@123         |
-| 部署目录 | /data               |
-| 部署脚本 | deploy_dataagent.sh |
+| 配置项     | 值                  |
+| ---------- | ------------------- |
+| 服务器     | 172.16.1.137        |
+| 用户名     | root                |
+| 密码       | Audaque@123         |
+| 部署目录   | /data               |
+| 部署脚本   | deploy_dataagent.sh |
+| Java的位置 | /opt/java/bin/java  |
 
 ## 执行部署
 
 在 PowerShell 中使用 SSH 连接并执行部署：
 
 ```powershell
-ssh root@172.16.1.137 "cd /data && sh deploy_dataagent.sh"
+ssh root@172.16.1.137 "cd /data ; sh deploy_dataagent.sh"
 ```
 
 如果需要交互式输入密码，使用：
@@ -39,7 +40,7 @@ sh deploy_dataagent.sh
 如果安装了 sshpass（或在 WSL 中）：
 
 ```bash
-sshpass -p 'Audaque@123' ssh -o StrictHostKeyChecking=no root@172.16.1.137 "cd /data && sh deploy_dataagent.sh"
+sshpass -p 'Audaque@123' ssh -o StrictHostKeyChecking=no root@172.16.1.137 "cd /data ; sh deploy_dataagent.sh"
 ```
 
 ## 注意事项

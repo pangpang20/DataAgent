@@ -346,9 +346,9 @@ export default defineComponent({
         return;
       }
       
-      // Try to restore session from localStorage
+      // Try to restore session from sessionStorage (each tab has independent session)
       const storageKey = `widget_session_${agentId.value}`;
-      const savedSessionId = localStorage.getItem(storageKey);
+      const savedSessionId = sessionStorage.getItem(storageKey);
       
       if (savedSessionId) {
         // Verify session exists and load history
@@ -369,7 +369,7 @@ export default defineComponent({
           return;
         } catch (e) {
           console.warn('[Widget Page] Saved session invalid, creating new one');
-          localStorage.removeItem(storageKey);
+          sessionStorage.removeItem(storageKey);
         }
       }
       
@@ -388,9 +388,9 @@ export default defineComponent({
         sessionId.value = response.data?.id;
         console.log('[Widget Page] Session created:', sessionId.value);
         
-        // Save sessionId to localStorage
+        // Save sessionId to sessionStorage (survives refresh, but new tab gets new session)
         if (sessionId.value) {
-          localStorage.setItem(storageKey, sessionId.value.toString());
+          sessionStorage.setItem(storageKey, sessionId.value.toString());
           
           try {
             await axios.put(
