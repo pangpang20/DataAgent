@@ -12,20 +12,20 @@ git reset --hard; git clean -fd;git pull
 export JAVA_HOME=/opt/java
 export PATH=$JAVA_HOME/bin:$PATH
 
-package-dir="/data/DataAgent_src"
-deploy-dir="/data/dataagent"
+package_dir="/data/DataAgent_src"
+deploy_dir="/data/dataagent"
 
 log "=== Step 2: 编译打包 ==="
 cd /opt/DataAgent/engineering
-./build-dataagent.sh ${package-dir}
-version=$(grep "Build Time:" DataAgent_src/VERSION.txt | awk '{print $NF}')
-tar -czvf DataAgent_${}version}.tar.gz -C ${package-dir}
+./build-dataagent.sh ${package_dir}
+version=$(grep "Build Time:" ${package_dir}/VERSION.txt | awk '{print $NF}')
+tar -czvf DataAgent_${}version}.tar.gz -C ${package_dir}
 
 log "=== Step 3: 部署 DataAgent（使用 Milvus + 达梦） ==="
 ./build-dataagent.sh \
   --deploy \
-  --deploy-dir ${deploy-dir} \
-  --package-dir ${package-dir} \
+  --deploy-dir ${deploy_dir} \
+  --package-dir ${package_dir} \
   --db-type dameng \
   --db-host 172.16.1.137 \
   --db-port 5236 \
