@@ -19,7 +19,13 @@ log "=== Step 2: 编译打包 ==="
 cd /opt/DataAgent/engineering
 ./build-dataagent.sh ${package_dir}
 version=$(grep "Build Time:" ${package_dir}/VERSION.txt | awk '{print $NF}')
-tar -czvf DataAgent_${}version}.tar.gz -C ${package_dir}
+tar -czvf DataAgent_${version}.tar.gz -C ${package_dir} .
+
+# 清理历史包，只保留最近2个
+log "清理历史 tar.gz 包，保留最近2个..."
+ls -t DataAgent_*.tar.gz 2>/dev/null | tail -n +3 | xargs -r rm -f
+log "当前保留的包："
+ls -lh DataAgent_*.tar.gz 2>/dev/null || echo "无历史包"
 
 log "=== Step 3: 部署 DataAgent（使用 Milvus + 达梦） ==="
 ./build-dataagent.sh \
