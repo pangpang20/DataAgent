@@ -41,6 +41,8 @@ cd data-agent-management
 #进前端目录
 cd data-agent-frontend
 
+# 编译 Widget组件
+export BUILD_WIDGET='true'
 #安装依赖
 yarn install
 
@@ -49,15 +51,6 @@ yarn build
 ```
 
 编译输出位置：`data-agent-frontend/dist/`
-
-### 3. Widget编译（可选）
-
-```bash
-# 编译 Widget组件
-cd data-agent-frontend
-export BUILD_WIDGET='true'
-yarn build
-```
 
 ## 自动化编译脚本
 
@@ -80,16 +73,16 @@ cd engineering
 
 ###参数说明
 
-| 参数 | 说明 | 默认值 |
-|------|------|--------|
-| `--deploy` | 启用部署模式 | - |
-| `--deploy-dir` |部署目录 | /opt/dataagent |
-| `--package-dir` |打包文件目录 | ./output |
-| `--db-type` | 数据库类型 mysql/dameng | mysql |
-| `--db-host` | 数据库主机 | 127.0.0.1 |
-| `--db-port` | 数据库端口 | 3306/5236 |
-| `--db-user` | 数据库用户 | root |
-| `--db-password` | 数据库密码 | - |
+| 参数            | 说明                    | 默认值         |
+| --------------- | ----------------------- | -------------- |
+| `--deploy`      | 启用部署模式            | -              |
+| `--deploy-dir`  | 部署目录                | /opt/dataagent |
+| `--package-dir` | 打包文件目录            | ./output       |
+| `--db-type`     | 数据库类型 mysql/dameng | mysql          |
+| `--db-host`     | 数据库主机              | 127.0.0.1      |
+| `--db-port`     | 数据库端口              | 3306/5236      |
+| `--db-user`     | 数据库用户              | root           |
+| `--db-password` | 数据库密码              | -              |
 
 ##编译输出结构
 
