@@ -525,6 +525,26 @@ package_output() {
         \cp -r "$PROJECT_ROOT/data-agent-management/src/main/resources/sql/dameng/"* "$OUTPUT_DIR/config/sql/dameng/"
     fi
     
+    # 复制 Milvus 安装脚本
+    info "复制 Milvus 安装脚本..."
+    if [ -f "$PROJECT_ROOT/engineering/install_milvus.sh" ]; then
+        \cp "$PROJECT_ROOT/engineering/install_milvus.sh" "$OUTPUT_DIR/scripts/install_milvus.sh"
+        chmod +x "$OUTPUT_DIR/scripts/install_milvus.sh"
+        info "✅ Milvus 安装脚本已复制到 scripts 目录"
+    else
+        warn "Milvus 安装脚本不存在: $PROJECT_ROOT/engineering/install_milvus.sh"
+    fi
+    
+    # 复制构建脚本本身
+    info "复制构建脚本本身..."
+    if [ -f "$PROJECT_ROOT/engineering/build-dataagent.sh" ]; then
+        \cp "$PROJECT_ROOT/engineering/build-dataagent.sh" "$OUTPUT_DIR/scripts/build-dataagent.sh"
+        chmod +x "$OUTPUT_DIR/scripts/build-dataagent.sh"
+        info "✅ 构建脚本已复制到 scripts 目录"
+    else
+        warn "构建脚本不存在: $PROJECT_ROOT/engineering/build-dataagent.sh"
+    fi
+    
     # 生成版本信息
     info "生成版本信息..."
     cat > "$OUTPUT_DIR/VERSION.txt" <<EOF
@@ -593,7 +613,9 @@ output/
 │   └── sql/                     # 数据库初始化脚本
 │       ├── mysql/
 │       └── dameng/
-├── scripts/                      # 安装脚本（稍后添加）
+├── scripts/                      # 安装脚本
+│   ├── build-dataagent    # DataAgent 安装脚本
+│   ├── install_milvus.sh        # Milvus 向量数据库安装脚本
 ├── VERSION.txt                   # 版本信息
 └── INSTALL.txt                   # 本文件
 
@@ -601,13 +623,21 @@ Linux 安装：
 -----------
 1. 将 output 目录复制到目标服务器
 2. 运行安装脚本：
-   ./scripts/install-dataagent.sh --output-dir /path/to/output
+   ./scripts/build-dataagent--output-dir /path/to/output
 
 Windows 安装：
 -------------
 1. 将 output 目录复制到目标服务器
 2. 在 PowerShell 中运行：
    .\scripts\install-dataagent.ps1 -OutputDir "C:\path\to\output"
+
+额外功能：
+---------
+如果需要单独安装 Milvus 向量数据库：
+   ./scripts/install_milvus.sh
+
+如果需要重新构建项目：
+   ./scripts/build-dataagent.sh
 
 手动安装：
 ---------
