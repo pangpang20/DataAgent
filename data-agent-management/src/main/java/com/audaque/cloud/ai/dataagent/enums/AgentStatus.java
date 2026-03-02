@@ -15,6 +15,9 @@
  */
 package com.audaque.cloud.ai.dataagent.enums;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonValue;
+
 /**
  * 智能体状态枚举
  */
@@ -47,6 +50,11 @@ public enum AgentStatus {
         return code;
     }
 
+    @JsonValue
+    public String getValue() {
+        return code;
+    }
+
     public String getDescription() {
         return description;
     }
@@ -57,6 +65,7 @@ public enum AgentStatus {
      * @param code 状态代码
      * @return 对应的枚举值，如果未找到则返回null
      */
+    @JsonCreator
     public static AgentStatus fromCode(String code) {
         if (code == null || code.isEmpty()) {
             return null;

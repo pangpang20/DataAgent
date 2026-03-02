@@ -525,15 +525,6 @@ package_output() {
         \cp -r "$PROJECT_ROOT/data-agent-management/src/main/resources/sql/dameng/"* "$OUTPUT_DIR/config/sql/dameng/"
     fi
     
-    # 复制 Milvus 安装脚本
-    info "复制 Milvus 安装脚本..."
-    if [ -f "$PROJECT_ROOT/engineering/install_milvus.sh" ]; then
-        \cp "$PROJECT_ROOT/engineering/install_milvus.sh" "$OUTPUT_DIR/scripts/install_milvus.sh"
-        chmod +x "$OUTPUT_DIR/scripts/install_milvus.sh"
-        info "✅ Milvus 安装脚本已复制到 scripts 目录"
-    else
-        warn "Milvus 安装脚本不存在: $PROJECT_ROOT/engineering/install_milvus.sh"
-    fi
     
     # 复制构建脚本本身
     info "复制构建脚本本身..."
@@ -614,8 +605,7 @@ output/
 │       ├── mysql/
 │       └── dameng/
 ├── scripts/                      # 安装脚本
-│   ├── build-dataagent    # DataAgent 安装脚本
-│   ├── install_milvus.sh        # Milvus 向量数据库安装脚本
+│   ├── build-dataagent.sh           # DataAgent 安装脚本
 ├── VERSION.txt                   # 版本信息
 └── INSTALL.txt                   # 本文件
 
@@ -630,11 +620,6 @@ Windows 安装：
 1. 将 output 目录复制到目标服务器
 2. 在 PowerShell 中运行：
    .\scripts\install-dataagent.ps1 -OutputDir "C:\path\to\output"
-
-额外功能：
----------
-如果需要单独安装 Milvus 向量数据库：
-   ./scripts/install_milvus.sh
 
 如果需要重新构建项目：
    ./scripts/build-dataagent.sh
