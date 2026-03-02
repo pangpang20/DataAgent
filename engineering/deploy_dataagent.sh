@@ -19,7 +19,9 @@ log "=== Step 2: 编译打包 ==="
 cd /opt/DataAgent/engineering
 ./build-dataagent.sh ${package_dir}
 version=$(grep "Build Time:" ${package_dir}/VERSION.txt | awk '{print $NF}')
-tar -czvf /data/DataAgent_${version}.tar.gz -C ${package_dir} .
+tar -czvf "/data/DataAgent_${version}.tar.gz" \
+  --transform "s|^.|DataAgent_${version}|" \
+  -C "${package_dir}" .
 
 # 清理历史包，只保留最近2个
 log "清理历史 tar.gz 包，保留最近2个..."
