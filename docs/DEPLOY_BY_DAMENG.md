@@ -11,15 +11,25 @@
 - **Nginx**: 1.21.5 
 - **向量数据库milvus**: v2.6.7
 
+需要root权限执行安装命令。
+
+关闭防火墙
+
+```bash
+systemctl stop firewalld
+systemctl disable firewalld
+```
+
 
 ## 部署前准备
 
 ### 获取部署包和资源
 
-在开始部署前，您需要准备以下资源：`DataAgent_YYYYMMDD_xxxx.tar.gz`
+在开始部署前，您需要准备以下资源：`DataAgent_YYYYMMDD_xxxx.tar.gz` 上传到 /data 目录
 
 解压
 ```base
+cd /data
 tar -zxf DataAgent_20260302_144625.tar.gz
 mv DataAgent_20260302_144625 DataAgent
 ```
@@ -60,12 +70,16 @@ java -version
 ```
 
 如果未安装JDK 17+，请安装：
-```bash
-# CentOS/RHEL
-sudo yum install java-17-openjdk-devel -y
 
-# Ubuntu/Debian
-sudo apt-get install openjdk-17-jdk -y
+https://jdk.java.net/archive/ 下载 jdk17
+
+```bash
+# 以x86为例
+tar -zxf openjdk-17.0.2_linux-x64_bin.tar.gz
+
+# JAVA_HOME 为 /data/java
+ln -s /data/jdk-17.0.2 /data/java
+
 ```
 
 ## 第一步：创建达梦用户和数据库
@@ -99,11 +113,11 @@ sudo apt-get install openjdk-17-jdk -y
    DISQL DATA_AGENT/DATA_AGENT@localhost:5236
    
    -- 执行表结构脚本
-   START /path/to/schema.sql
+   START /data/DataAgent/config/sql/dameng/schema.sql
    ```
 3. 执行初始数据脚本：
    ```sql
-   START /path/to/data.sql
+   START /data/DataAgent/config/sql/dameng/data.sql
    ```
 
 ## 第二步：安装向量数据库
@@ -115,15 +129,28 @@ DataAgent使用向量数据库来支持RAG（检索增强生成）功能。
 1. 安装Docker和Docker Compose
 
 ```bash
-# 使用阿里云的 docker-ce 源）
-sudo dnf config-manager --add-repo https://mirrors.aliyun.com/docker-ce/linux/centos/docker-ce.repo
+# 添加源
+sudo dnf config-manager --add-repo https://mirrors.huaweicloud.com/docker-ce/linux/centos/docker-ce.repo
 
 # 关键步骤：把 $releasever 全部替换成 8
 sudo sed -i 's|$releasever|8|g' /etc/yum.repos.d/docker-ce.repo
 sudo dnf clean all
 sudo dnf makecache
-sudo dnf install docker-ce docker-ce-cli containerd.io docker-compose-plugin docker-buildx-plugin
 
+# 先卸载冲突包（podman 和 docker-runc）
+sudo dnf remove podman docker-runc -y
+
+# 如果提示还有依赖（如 buildah、skopeo 等 podman 相关包），一起卸载
+sudo dnf remove podman buildah skopeo podman-docker containers-common -y   
+
+# 强制清理残留（可选，如果上面没卸干净）
+sudo dnf autoremove -y
+
+# 安装 docker
+sudo dnf install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin -y
+
+# 启动服务
+systemctl enable --now docker
 
 ```
 
@@ -233,6 +260,8 @@ networks:
 3. 启动Milvus服务：
    ```bash
    docker-compose up -d
+   # 或者
+   docker compose up -d
    ```
 
 4. milvus WEB页面
@@ -260,10 +289,8 @@ sudo apt-get install nginx -y
 
 ```bash
 
-
-
 # 改为实际的java路径
-export JAVA_HOME="/usr/lib/jvm/jdk-17.0.2"
+export JAVA_HOME="/data/java"
 export PATH=$JAVA_HOME/bin:$PATH
 
 # 改为实际安装包目录，`DataAgent_YYYYMMDD_xxxx.tar.gz` 解压的路径
@@ -273,7 +300,7 @@ package_dir="/data/DataAgent"
 deploy_dir="/data/adqdataagent"
 
 # 进入解压的路径
-cd /path/to/scripts
+cd /data/DataAgent/scripts
 
 # 需要修改的参数信息： db-host，db-port，db-name, db-user，db-password, milvus-host（本机IP）
 # 其他使用默认
@@ -282,7 +309,7 @@ cd /path/to/scripts
   --deploy-dir ${deploy_dir} \
   --package-dir ${package_dir} \
   --db-type dameng \
-  --db-host 172.16.1.137 \
+  --db-host your-db-ip \
   --db-port 5236 \
   --db-name adq_data_agent \
   --db-user adq_data_agent \
@@ -290,7 +317,7 @@ cd /path/to/scripts
   --backend-port 8065 \
   --frontend-port 8080 \
   --vector-store milvus \
-  --milvus-host 172.16.1.137 \
+  --milvus-host your-milvus-ip \
   --milvus-port 19530 \
   --milvus-username root \
   --milvus-password Milvus \
@@ -299,14 +326,48 @@ cd /path/to/scripts
 
 ```
 
+部署成功后可以看到：
+
+```bash
+
+[INFO] 后端服务已启动 (systemd: dataagent.service)
+[INFO] 等待后端服务启动...
+............[INFO] ✅ 后端服务启动成功！
+
+[INFO] ==========================================
+[INFO]   部署完成！
+[INFO] ==========================================
+
+[INFO] 访问地址:
+[INFO]   后端: http://your-server-ip:8065
+[INFO]   健康检查: http://your-server-ip:8065/actuator/health
+
+[INFO] 前端部署:
+[INFO]   前端目录: /data/adqdataagent/frontend
+[INFO]   访问地址: http://your-server-ip:8080
+
+[INFO] 管理命令:
+[INFO]   查看服务状态: sudo systemctl status dataagent
+[INFO]   查看实时日志: sudo journalctl -u dataagent -f
+[INFO]   停止服务: sudo systemctl stop dataagent
+[INFO]   重启服务: sudo systemctl restart dataagent
+[INFO]   禁用开机启动: sudo systemctl disable dataagent
+
+[INFO] 配置信息:
+[INFO]   部署目录: /data/adqdataagent
+[INFO]   数据库类型: dameng
+[INFO]   数据库地址: your-db-ip:5236
+[INFO]   向量库类型: milvus
+```
+
 
 ## 第五步：访问应用，配置向量模型和大语言模型
 
 ### 5.1 访问应用
 
 打开浏览器，访问以下地址：
-- 前端界面：`http://your-server-ip` 或 `http://your-domain.com`
-- 后端API文档：`http://your-server-ip:8065/swagger-ui.html`
+- 前端界面：`http://your-server-ip:8080` 或 `http://your-domain.com:8080`
+- 后端健康检查: `http://your-server-ip:8065/actuator/health`
 
 ### 5.2 配置向量模型
 
