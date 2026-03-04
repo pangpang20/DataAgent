@@ -154,28 +154,105 @@ systemctl enable --now docker
 
 ```
 
+离线安装
+
+```bash
+cd /usr/local/src
+# 下载
+wget https://mirrors.ustc.edu.cn/docker-ce/linux/static/stable/aarch64/docker-26.1.3.tgz
+
+# 解压
+tar -zxvf docker-26.1.3.tgz
+cp docker/* /usr/bin/
+
+# 创建 systemd 服务
+cat > /usr/lib/systemd/system/docker.service << 'EOF'
+[Unit]
+Description=Docker Application Container Engine
+Documentation=https://docs.docker.com
+After=network-online.target firewalld.service
+Wants=network-online.target
+
+[Service]
+Type=notify
+ExecStart=/usr/bin/dockerd
+ExecReload=/bin/kill -s HUP $MAINPID
+LimitNOFILE=infinity
+LimitNPROC=infinity
+LimitCORE=infinity
+TimeoutStartSec=0
+Delegate=yes
+KillMode=process
+Restart=on-failure
+StartLimitBurst=3
+StartLimitInterval=60s
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+# 配置镜像加速 + 日志
+mkdir -p /etc/docker
+cat > /etc/docker/daemon.json << 'EOF'
+{
+  "registry-mirrors": [
+    "https://registry.docker-cn.com",
+    "https://hub-mirror.c.163.com",
+    "https://mirror.ccs.tencentyun.com",
+    "https://docker.mirrors.ustc.edu.cn"
+  ],
+  "log-driver": "json-file",
+  "log-opts": {
+    "max-size": "100m",
+    "max-file": "5"
+  }
+}
+EOF
+
+# 启动 & 自启
+systemctl daemon-reload
+systemctl start docker
+systemctl enable docker
+systemctl status docker
+
+
+docker --version
+docker run --rm hello-world
+
+# 创建插件目录（如果不存在）
+mkdir -p /usr/local/lib/docker/cli-plugins
+
+# 下载最新版 Compose 插件（自动获取最新版本）
+curl -SL https://github.com/docker/compose/releases/download/v5.1.0/docker-compose-linux-aarch64 -o /usr/local/lib/docker/cli-plugins/docker-compose
+
+
+# 赋予执行权限
+chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
+
+docker compose version
+```
 
 2. 导出并导入镜像
 
 导出镜像
 
-    ```bash
-    docker save \
-    milvusdb/milvus:v2.6.9 \
-    quay.io/coreos/etcd:v3.5.25 \
-    minio/minio:RELEASE.2024-12-18T13-15-44Z \
-    | gzip > milvus-images.tar.gz
+```bash
+docker save \
+milvusdb/milvus:v2.6.9 \
+quay.io/coreos/etcd:v3.5.25 \
+minio/minio:RELEASE.2024-12-18T13-15-44Z \
+| gzip > milvus-images.tar.gz
 
-    ```
+```
 
 从产品处获取离线的镜像文件 `milvus-images.tar.gz`
 
 导入镜像
 
-    ```bash
-    gzip -dc milvus-images.tar.gz | docker load
-    docker images
-    ```
+```bash
+gzip -dc milvus-images.tar.gz | docker load
+docker images
+```
 
 
 2. 创建Milvus配置文件：
