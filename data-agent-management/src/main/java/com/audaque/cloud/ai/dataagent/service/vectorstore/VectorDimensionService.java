@@ -19,6 +19,7 @@ import io.milvus.client.MilvusServiceClient;
 import io.milvus.grpc.DescribeCollectionResponse;
 import io.milvus.grpc.FieldSchema;
 import io.milvus.param.R;
+import io.milvus.param.RpcStatus;
 import io.milvus.param.collection.DescribeCollectionParam;
 import io.milvus.param.collection.DropCollectionParam;
 import lombok.extern.slf4j.Slf4j;
@@ -129,7 +130,7 @@ public class VectorDimensionService {
 					.withCollectionName(collectionName)
 					.build();
 
-			R<Boolean> response = milvusClient.get().dropCollection(param);
+			R<RpcStatus> response = milvusClient.get().dropCollection(param);
 			if (response.getStatus() == R.Status.Success.getCode()) {
 				log.info("Successfully dropped collection: {}", collectionName);
 				return true;
