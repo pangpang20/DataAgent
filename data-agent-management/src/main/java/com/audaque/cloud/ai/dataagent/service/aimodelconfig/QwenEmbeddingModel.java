@@ -21,7 +21,6 @@ import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.embedding.EmbeddingRequest;
 import org.springframework.ai.embedding.EmbeddingResponse;
 import org.springframework.ai.embedding.Embedding;
-import org.springframework.ai.embedding.EmbeddingResultMetadata;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -119,13 +118,15 @@ public class QwenEmbeddingModel implements EmbeddingModel {
 		// 按 index 排序
 		embeddings.sort(Comparator.comparingInt(Embedding::getIndex));
 
-		// 重新编号
+		// 重新编号 - 使用 Embedding.Builder 创建新的 Embedding
 		List<Embedding> fixedEmbeddings = new ArrayList<>();
 		for (int i = 0; i < embeddings.size(); i++) {
 			Embedding original = embeddings.get(i);
-			// 创建新的 Embedding，使用正确的构造函数
-			EmbeddingResultMetadata metadata = new EmbeddingResultMetadata(i);
-			Embedding fixed = new Embedding(original.getOutput(), metadata);
+			Embedding fixed = Embedding.builder()
+					.output(original.getOutput())
+					.index(i)
+					.metadata(original.getMetadata())
+					.build();
 			fixedEmbeddings.add(fixed);
 		}
 
