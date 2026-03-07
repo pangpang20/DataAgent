@@ -47,16 +47,22 @@ public class DynamicModelFactory {
 
 	/**
 	 * 统一使用 OpenAiChatModel，通过 baseUrl 实现多厂商兼容
+	 * 支持自定义认证头名称
 	 */
 	public ChatModel createChatModel(ModelConfigDTO config) {
 
-		log.info("Creating NEW ChatModel instance. Provider: {}, Model: {}, BaseUrl: {}", config.getProvider(),
-				config.getModelName(), config.getBaseUrl());
+		log.info("Creating NEW ChatModel instance. Provider: {}, Model: {}, BaseUrl: {}, AuthHeader: {}",
+				config.getProvider(), config.getModelName(), config.getBaseUrl(), config.getAuthHeaderName());
 		// 1. 验证参数
 		checkBasic(config);
 
 		// 2. 构建 OpenAiApi (核心通讯对象)
 		OpenAiApi.Builder apiBuilder = OpenAiApi.builder().apiKey(config.getApiKey()).baseUrl(config.getBaseUrl());
+
+		// 2.1 如果配置了自定义认证头，则设置
+		if (StringUtils.hasText(config.getAuthHeaderName())) {
+			apiBuilder.authHeader(config.getAuthHeaderName());
+		}
 
 		if (StringUtils.hasText(config.getCompletionsPath())) {
 			apiBuilder.completionsPath(config.getCompletionsPath());
@@ -89,13 +95,19 @@ public class DynamicModelFactory {
 
 	/**
 	 * Embedding 同理
+	 * 支持自定义认证头名称
 	 */
 	public EmbeddingModel createEmbeddingModel(ModelConfigDTO config) {
-		log.info("Creating NEW EmbeddingModel instance. Provider: {}, Model: {}, BaseUrl: {}", config.getProvider(),
-				config.getModelName(), config.getBaseUrl());
+		log.info("Creating NEW EmbeddingModel instance. Provider: {}, Model: {}, BaseUrl: {}, AuthHeader: {}",
+				config.getProvider(), config.getModelName(), config.getBaseUrl(), config.getAuthHeaderName());
 		checkBasic(config);
 
 		OpenAiApi.Builder apiBuilder = OpenAiApi.builder().apiKey(config.getApiKey()).baseUrl(config.getBaseUrl());
+
+		// 如果配置了自定义认证头，则设置
+		if (StringUtils.hasText(config.getAuthHeaderName())) {
+			apiBuilder.authHeader(config.getAuthHeaderName());
+		}
 
 		if (StringUtils.hasText(config.getEmbeddingsPath())) {
 			apiBuilder.embeddingsPath(config.getEmbeddingsPath());

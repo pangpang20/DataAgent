@@ -53,6 +53,11 @@ public class ModelConfigDTO {
 	// 仅当厂商路径非标准时填写
 	private String embeddingsPath;
 
+	// 自定义认证头名称（可选）
+	// 例如：szc-api-key
+	// 如果为空，则使用标准的 Authorization: Bearer
+	private String authHeaderName;
+
 	private Double temperature = 0.0;
 
 	private Integer maxTokens = 2000;

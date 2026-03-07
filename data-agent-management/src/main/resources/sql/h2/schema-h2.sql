@@ -258,6 +258,7 @@ CREATE TABLE IF NOT EXISTS `model_config` (
   `model_type` varchar(20) NOT NULL DEFAULT 'CHAT' COMMENT '模型类型 (CHAT/EMBEDDING)',
   `completions_path` varchar(255) DEFAULT NULL COMMENT 'Chat模型专用。附加到 Base URL 的路径。例如OpenAi的/v1/chat/completions',
   `embeddings_path` varchar(255) DEFAULT NULL COMMENT '嵌入模型专用。附加到 Base URL 的路径。',
+  `auth_header_name` varchar(100) DEFAULT NULL COMMENT '自定义认证头名称。例如：szc-api-key。为空则使用标准的Authorization: Bearer',
   `created_time` datetime DEFAULT NULL COMMENT '创建时间',
   `updated_time` datetime DEFAULT NULL COMMENT '更新时间',
   `is_deleted` int(11) DEFAULT '0' COMMENT '0=未删除, 1=已删除',

@@ -29,6 +29,7 @@ export interface ModelConfig {
   isActive?: boolean;
   completionsPath?: string; // 对话模型路径
   embeddingsPath?: string; // 嵌入模型路径
+  authHeaderName?: string; // 自定义认证头名称，例如：szc-api-key
 }
 
 export interface ModelCheckReady {

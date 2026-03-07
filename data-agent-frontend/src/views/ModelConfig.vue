@@ -250,6 +250,16 @@
             />
           </el-form-item>
 
+          <el-form-item label="自定义认证头" prop="authHeaderName">
+            <el-input
+              v-model="formData.authHeaderName"
+              placeholder="例如：szc-api-key。留空则使用标准的 Authorization: Bearer"
+            />
+            <div class="form-tip">
+              某些自定义模型可能使用非标准的认证头名称，如 szc-api-key。留空则使用标准的 Authorization: Bearer 方式。
+            </div>
+          </el-form-item>
+
           <el-form-item label="温度" prop="temperature">
             <el-slider
               v-model="formData.temperature"
@@ -322,6 +332,7 @@
         maxTokens: 2000,
         completionsPath: '',
         embeddingsPath: '',
+        authHeaderName: '',
         isActive: false,
       });
 
@@ -404,6 +415,7 @@
           maxTokens: 2000,
           completionsPath: '',
           embeddingsPath: '',
+          authHeaderName: '',
           isActive: false,
         };
         dialogVisible.value = true;

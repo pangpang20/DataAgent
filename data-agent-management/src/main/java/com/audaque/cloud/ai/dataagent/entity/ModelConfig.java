@@ -50,6 +50,11 @@ public class ModelConfig {
 
 	private String embeddingsPath;
 
+	// 自定义认证头名称（可选）
+	// 例如：szc-api-key
+	// 如果为空，则使用标准的 Authorization: Bearer
+	private String authHeaderName;
+
 	@JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
 	private LocalDateTime createdTime;
 

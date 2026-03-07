@@ -421,6 +421,7 @@ CREATE TABLE model_config (
     model_type VARCHAR(20) DEFAULT 'CHAT' NOT NULL,
     completions_path VARCHAR(255) DEFAULT NULL,
     embeddings_path VARCHAR(255) DEFAULT NULL,
+    auth_header_name VARCHAR(100) DEFAULT NULL,
     created_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     is_deleted INT DEFAULT 0,
@@ -438,6 +439,7 @@ COMMENT ON COLUMN model_config.max_tokens IS '输出响应最大令牌数';
 COMMENT ON COLUMN model_config.model_type IS '模型类型 (CHAT/EMBEDDING)';
 COMMENT ON COLUMN model_config.completions_path IS 'Chat模型专用。附加到 Base URL 的路径。例如OpenAi的/v1/chat/completions';
 COMMENT ON COLUMN model_config.embeddings_path IS '嵌入模型专用。附加到 Base URL 的路径。';
+COMMENT ON COLUMN model_config.auth_header_name IS '自定义认证头名称。例如：szc-api-key。为空则使用标准的Authorization: Bearer';
 COMMENT ON COLUMN model_config.created_time IS '创建时间';
 COMMENT ON COLUMN model_config.updated_time IS '更新时间';
 COMMENT ON COLUMN model_config.is_deleted IS '0=未删除, 1=已删除';
