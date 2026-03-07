@@ -212,16 +212,13 @@
             />
           </el-form-item>
 
-          <el-form-item label="API密钥" prop="apiKey">
+          <el-form-item label="API密钥" prop="apiKey" required>
             <el-input
               v-model="formData.apiKey"
               type="password"
               show-password
               :placeholder="formData.authHeaderName ? '使用自定义认证头时可为空' : '请输入API密钥'"
             />
-            <div v-if="!formData.authHeaderName" class="form-tip">
-              标准认证方式，将作为 Authorization: Bearer 头发送
-            </div>
           </el-form-item>
 
           <el-form-item label="Base URL" prop="baseUrl">
