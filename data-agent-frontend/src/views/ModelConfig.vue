@@ -256,10 +256,11 @@
           <el-form-item label="自定义认证头" prop="authHeaderName">
             <el-input
               v-model="formData.authHeaderName"
-              placeholder="例如：szc-api-key。留空则使用标准的 Authorization: Bearer"
+              placeholder="例如：szc-api-key（只填名称，不要填值）"
             />
             <div class="form-tip">
-              某些自定义模型可能使用非标准的认证头名称，如 szc-api-key。留空则使用标准的 Authorization: Bearer 方式。
+              <strong>只填写认证头名称</strong>，例如 <code>szc-api-key</code>。认证头的值请在"API密钥"字段填写。<br/>
+              留空则使用标准的 <code>Authorization: Bearer</code> 方式。
             </div>
           </el-form-item>
 
