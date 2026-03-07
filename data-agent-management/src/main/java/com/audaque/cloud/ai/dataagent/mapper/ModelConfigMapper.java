@@ -24,16 +24,16 @@ import java.util.List;
 public interface ModelConfigMapper {
 
 	@Select("""
-			SELECT id, provider, base_url, api_key, model_name, temperature, is_active, max_tokens, model_type, completions_path, embeddings_path, created_time, updated_time, is_deleted FROM model_config WHERE is_deleted = 0 ORDER BY created_time DESC
+			SELECT id, provider, base_url, api_key, model_name, temperature, is_active, max_tokens, model_type, completions_path, embeddings_path, auth_header_name, created_time, updated_time, is_deleted FROM model_config WHERE is_deleted = 0 ORDER BY created_time DESC
 			""")
 	List<ModelConfig> findAll();
 
 	@Select("""
-			SELECT id, provider, base_url, api_key, model_name, temperature, is_active, max_tokens, model_type, completions_path, embeddings_path, created_time, updated_time, is_deleted FROM model_config WHERE id = #{id} AND is_deleted = 0
+			SELECT id, provider, base_url, api_key, model_name, temperature, is_active, max_tokens, model_type, completions_path, embeddings_path, auth_header_name, created_time, updated_time, is_deleted FROM model_config WHERE id = #{id} AND is_deleted = 0
 			""")
 	ModelConfig findById(Integer id);
 
-	@Select("SELECT id, provider, base_url, api_key, model_name, temperature, is_active, max_tokens, model_type, completions_path, embeddings_path, created_time, updated_time, is_deleted FROM model_config WHERE model_type = #{modelType} AND is_active = 1 AND is_deleted = 0 ${@com.audaque.cloud.ai.dataagent.util.SqlDialectResolver@limit(0, 1)}")
+	@Select("SELECT id, provider, base_url, api_key, model_name, temperature, is_active, max_tokens, model_type, completions_path, embeddings_path, auth_header_name, created_time, updated_time, is_deleted FROM model_config WHERE model_type = #{modelType} AND is_active = 1 AND is_deleted = 0 ${@com.audaque.cloud.ai.dataagent.util.SqlDialectResolver@limit(0, 1)}")
 	ModelConfig selectActiveByType(@Param("modelType") String modelType);
 
 	@Update("UPDATE model_config SET is_active = 0 WHERE model_type = #{modelType} AND id != #{currentId} AND is_deleted = 0")
@@ -41,7 +41,7 @@ public interface ModelConfigMapper {
 
 	@Select("""
 			<script>
-				SELECT id, provider, base_url, api_key, model_name, temperature, is_active, max_tokens, model_type, completions_path, embeddings_path, created_time, updated_time, is_deleted FROM model_config
+				SELECT id, provider, base_url, api_key, model_name, temperature, is_active, max_tokens, model_type, completions_path, embeddings_path, auth_header_name, created_time, updated_time, is_deleted FROM model_config
 				<where>
 					is_deleted = 0
 					<if test='provider != null and provider != ""'>
@@ -70,8 +70,8 @@ public interface ModelConfigMapper {
 			@Param("modelType") String modelType);
 
 	@Insert("""
-			INSERT INTO model_config (provider, base_url, api_key, model_name, temperature, is_active, max_tokens, model_type, completions_path, embeddings_path, created_time, updated_time, is_deleted)
-			VALUES (#{provider}, #{baseUrl}, #{apiKey}, #{modelName}, #{temperature}, #{isActive}, #{maxTokens}, #{modelType}, #{completionsPath}, #{embeddingsPath}, #{createdTime}, #{updatedTime}, 0)
+			INSERT INTO model_config (provider, base_url, api_key, model_name, temperature, is_active, max_tokens, model_type, completions_path, embeddings_path, auth_header_name, created_time, updated_time, is_deleted)
+			VALUES (#{provider}, #{baseUrl}, #{apiKey}, #{modelName}, #{temperature}, #{isActive}, #{maxTokens}, #{modelType}, #{completionsPath}, #{embeddingsPath}, #{authHeaderName}, #{createdTime}, #{updatedTime}, 0)
 			""")
 	@Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
 	int insert(ModelConfig modelConfig);
@@ -90,6 +90,7 @@ public interface ModelConfigMapper {
 			            <if test='modelType != null'>model_type = #{modelType},</if>
 			            <if test='completionsPath != null'>completions_path = #{completionsPath},</if>
 			            <if test='embeddingsPath != null'>embeddings_path = #{embeddingsPath},</if>
+			            <if test='authHeaderName != null'>auth_header_name = #{authHeaderName},</if>
 			            <if test='isDeleted != null'>is_deleted = #{isDeleted},</if>
 			            updated_time = #{updatedTime}
 			          </trim>
