@@ -46,36 +46,55 @@ public class QwenEmbeddingModel implements EmbeddingModel {
 
 	@Override
 	public EmbeddingResponse call(EmbeddingRequest request) {
+		log.debug("QwenEmbeddingModel.call() called with {} texts", request.getInstructions().size());
 		EmbeddingResponse response = delegate.call(request);
 		return fixEmbeddingResponse(response);
 	}
 
 	@Override
 	public float[] embed(Document document) {
+		log.debug("QwenEmbeddingModel.embed(Document) called");
 		return delegate.embed(document);
 	}
 
 	@Override
 	public float[] embed(String text) {
+		log.debug("QwenEmbeddingModel.embed(String) called");
 		return delegate.embed(text);
 	}
 
+	/**
+	 * 重写 embed(List<String>) 方法，确保修复 index 问题
+	 * 这是 MilvusVectorStore 调用的方法
+	 */
 	@Override
 	public List<float[]> embed(List<String> texts) {
-		// 调用底层实现并修复结果
+		log.info("QwenEmbeddingModel.embed(List<String>) called with {} texts", texts.size());
+
+		// 直接调用 delegate 的 embedForResponse 获取原始响应
 		EmbeddingResponse response = delegate.embedForResponse(texts);
+
+		log.info("Received embedding response with {} results", response.getResults().size());
+		log.info("Original indices: {}", response.getResults().stream().map(Embedding::getIndex).toList());
+
+		// 修复 index 问题
 		EmbeddingResponse fixedResponse = fixEmbeddingResponse(response);
+
+		log.info("Fixed indices: {}", fixedResponse.getResults().stream().map(Embedding::getIndex).toList());
 
 		// 按 index 顺序提取 embedding
 		List<float[]> result = new ArrayList<>();
 		for (Embedding embedding : fixedResponse.getResults()) {
 			result.add(embedding.getOutput());
 		}
+
+		log.info("Returning {} embeddings", result.size());
 		return result;
 	}
 
 	@Override
 	public EmbeddingResponse embedForResponse(List<String> texts) {
+		log.debug("QwenEmbeddingModel.embedForResponse() called with {} texts", texts.size());
 		EmbeddingResponse response = delegate.embedForResponse(texts);
 		return fixEmbeddingResponse(response);
 	}
@@ -90,13 +109,19 @@ public class QwenEmbeddingModel implements EmbeddingModel {
 	 *
 	 * qwen3-embedding 返回的 data 数组中，index 可能不连续（如 [0, 2]），
 	 * 此方法会按 index 排序并重新编号为连续的 [0, 1, 2, ...]
+	 *
+	 * 同时检测返回的 embedding 数量是否与输入数量匹配
 	 */
 	private EmbeddingResponse fixEmbeddingResponse(EmbeddingResponse response) {
 		if (response == null || response.getResults() == null || response.getResults().isEmpty()) {
+			log.warn("Embedding response is null or empty");
 			return response;
 		}
 
 		List<Embedding> embeddings = new ArrayList<>(response.getResults());
+
+		log.info("Embedding response contains {} results", embeddings.size());
+		log.info("Embedding indices: {}", embeddings.stream().map(Embedding::getIndex).toList());
 
 		// 检查是否需要修复（index 是否连续）
 		boolean needsFix = false;
