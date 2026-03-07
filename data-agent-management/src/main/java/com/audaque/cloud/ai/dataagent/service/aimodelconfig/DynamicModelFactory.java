@@ -26,11 +26,13 @@ import org.springframework.ai.openai.OpenAiEmbeddingModel;
 import org.springframework.ai.openai.OpenAiEmbeddingOptions;
 import org.springframework.ai.openai.api.OpenAiApi;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.client.ClientHttpRequestInterceptor;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.retry.support.RetryTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
+import org.springframework.web.client.RestClient;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.netty.http.client.HttpClient;
@@ -115,7 +117,8 @@ public class DynamicModelFactory {
 
 	/**
 	 * 使用自定义认证头创建 OpenAiApi
-	 * 通过自定义 WebClient 来实现非标准认证头
+	 * 通过自定义 RestClient 来实现非标准认证头
+	 * 注意：Spring AI 1.1.0 的 OpenAiApi 使用 RestClient（同步），而不是 WebClient（响应式）
 	 */
 	private OpenAiApi createOpenAiApiWithCustomAuthHeader(ModelConfigDTO config) {
 		String authHeaderName = config.getAuthHeaderName();
@@ -123,34 +126,36 @@ public class DynamicModelFactory {
 
 		log.info("Using custom auth header: {} for API authentication", authHeaderName);
 
-		// 创建自定义 WebClient，添加自定义认证头
-		// 关键：使用 filter 移除 Spring AI 自动添加的 Authorization 头
-		WebClient.Builder webClientBuilder = WebClient.builder()
-				.clientConnector(new ReactorClientHttpConnector(
-						HttpClient.create().responseTimeout(Duration.ofSeconds(60))))
+		// 创建自定义 RestClient，添加自定义认证头
+		// 关键：使用 interceptor 移除 Spring AI 自动添加的 Authorization 头
+		RestClient.Builder restClientBuilder = RestClient.builder()
 				// 添加自定义认证头
 				.defaultHeader(authHeaderName, apiKey)
-				// 使用 filter 移除 Spring AI 自动添加的 Authorization 头
-				.filter((request, next) -> {
-					// 移除 Authorization 头，只保留自定义认证头
-					org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
-					request.headers().forEach((name, values) -> {
-						if (!"Authorization".equalsIgnoreCase(name)) {
-							headers.addAll(name, values);
-						}
+				// 使用 interceptor 移除 Spring AI 自动添加的 Authorization 头
+				.requestInterceptor((request, body, execution) -> {
+					// 记录请求信息用于调试
+					log.info("Request URL: {}", request.getURI());
+					log.info("Request headers before filter:");
+					request.getHeaders().forEach((name, values) -> {
+						log.info("  {}: {}", name, values);
 					});
-					return next.exchange(org.springframework.web.reactive.function.client.ClientRequest
-							.from(request)
-							.headers(h -> h.clear())
-							.headers(h -> h.addAll(headers))
-							.build());
+
+					// 移除 Authorization 头
+					request.getHeaders().remove("Authorization");
+
+					log.info("Request headers after filter:");
+					request.getHeaders().forEach((name, values) -> {
+						log.info("  {}: {}", name, values);
+					});
+
+					return execution.execute(request, body);
 				});
 
-		// 构建 OpenAiApi，使用空的 apiKey（因为我们通过 WebClient 添加了认证头）
+		// 构建 OpenAiApi，使用空的 apiKey（因为我们通过 RestClient 添加了认证头）
 		OpenAiApi.Builder apiBuilder = OpenAiApi.builder()
-				.apiKey("") // 空的 apiKey，因为认证头已经通过 WebClient 添加
+				.apiKey("") // 空的 apiKey，因为认证头已经通过 RestClient 添加
 				.baseUrl(config.getBaseUrl())
-				.webClientBuilder(webClientBuilder);
+				.restClientBuilder(restClientBuilder);
 
 		if (StringUtils.hasText(config.getCompletionsPath())) {
 			apiBuilder.completionsPath(config.getCompletionsPath());
