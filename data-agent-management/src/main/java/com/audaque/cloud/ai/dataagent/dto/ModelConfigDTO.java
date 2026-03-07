@@ -34,8 +34,8 @@ public class ModelConfigDTO {
 	@NotBlank(message = "provider must not be empty")
 	private String provider; // e.g. "openai", "deepseek"
 
-	@NotBlank(message = "apiKey must not be empty")
-	private String apiKey; // e.g. "https://api.openai.com"
+	// API密钥：标准认证时必填，使用自定义认证头时可为空
+	private String apiKey;
 
 	@NotBlank(message = "baseUrl must not be empty")
 	private String baseUrl;

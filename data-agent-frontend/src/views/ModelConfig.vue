@@ -217,8 +217,11 @@
               v-model="formData.apiKey"
               type="password"
               show-password
-              placeholder="请输入API密钥"
+              :placeholder="formData.authHeaderName ? '使用自定义认证头时可为空' : '请输入API密钥'"
             />
+            <div v-if="!formData.authHeaderName" class="form-tip">
+              标准认证方式，将作为 Authorization: Bearer 头发送
+            </div>
           </el-form-item>
 
           <el-form-item label="Base URL" prop="baseUrl">
@@ -357,7 +360,21 @@
         provider: [{ required: true, message: '请选择提供商', trigger: 'change' }],
         modelType: [{ required: true, message: '请选择模型类型', trigger: 'change' }],
         modelName: [{ required: true, message: '请输入模型名称', trigger: 'blur' }],
-        apiKey: [{ required: true, message: '请输入API密钥', trigger: 'blur' }],
+        apiKey: [
+          {
+            validator: (rule, value, callback) => {
+              // 如果填写了自定义认证头，API密钥可以为空（会使用自定义头）
+              if (formData.value.authHeaderName && formData.value.authHeaderName.trim()) {
+                callback();
+              } else if (!value || !value.trim()) {
+                callback(new Error('请输入API密钥'));
+              } else {
+                callback();
+              }
+            },
+            trigger: 'blur',
+          },
+        ],
         baseUrl: [{ required: true, message: '请输入API地址', trigger: 'blur' }],
         temperature: [
           { type: 'number', min: 0, max: 2, message: '温度值必须在0-2之间', trigger: 'blur' },

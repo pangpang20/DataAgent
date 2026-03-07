@@ -84,8 +84,16 @@ public class DynamicModelFactory {
 
 	private static void checkBasic(ModelConfigDTO config) {
 		Assert.hasText(config.getBaseUrl(), "baseUrl must not be empty");
-		Assert.hasText(config.getApiKey(), "apiKey must not be empty");
 		Assert.hasText(config.getModelName(), "modelName must not be empty");
+
+		// 如果使用自定义认证头，apiKey 可以为空
+		if (StringUtils.hasText(config.getAuthHeaderName())) {
+			// 自定义认证头模式：apiKey 可以为空，但 authHeaderName 必须有值
+			Assert.hasText(config.getAuthHeaderName(), "authHeaderName must not be empty when using custom auth header");
+		} else {
+			// 标准认证模式：apiKey 必须有值
+			Assert.hasText(config.getApiKey(), "apiKey must not be empty");
+		}
 	}
 
 	/**
