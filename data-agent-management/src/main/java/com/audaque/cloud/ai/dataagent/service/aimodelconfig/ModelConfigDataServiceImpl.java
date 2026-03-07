@@ -103,6 +103,9 @@ public class ModelConfigDataServiceImpl implements ModelConfigDataService {
 		if (dto.getEmbeddingsPath() != null) {
 			dto.setEmbeddingsPath(dto.getEmbeddingsPath().trim());
 		}
+		if (dto.getAuthHeaderName() != null) {
+			dto.setAuthHeaderName(dto.getAuthHeaderName().trim());
+		}
 		log.debug("Cleaned model config DTO successfully");
 	}
 
@@ -150,6 +153,7 @@ public class ModelConfigDataServiceImpl implements ModelConfigDataService {
 		oldEntity.setMaxTokens(dto.getMaxTokens()); // 新增字段
 		oldEntity.setCompletionsPath(dto.getCompletionsPath()); // 路径字段
 		oldEntity.setEmbeddingsPath(dto.getEmbeddingsPath()); // 路径字段
+		oldEntity.setAuthHeaderName(dto.getAuthHeaderName()); // 自定义认证头
 		oldEntity.setUpdatedTime(LocalDateTime.now()); // 更新时间
 
 		// 只有当前端传来的 Key 不包含 "****" 时，才说明用户真的改了 Key，否则保持原样
