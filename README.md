@@ -428,7 +428,13 @@ sudo systemctl restart nginx
 | [开发者指南](docs/DEVELOPER_GUIDE.md)                  | 开发环境搭建、详细配置手册、代码规范、扩展开发(向量库/模型)        |
 | [高级功能](docs/ADVANCED_FEATURES.md)                  | API Key 调用、MCP 服务器配置、自定义混合检索策略、Python执行器配置 |
 | [知识配置最佳实践](docs/KNOWLEDGE_USAGE.md)            | 语义模型，业务知识，智能体知识的解释和使用                         |
-| [📝 外部Prompt配置指南](docs/EXTERNAL_PROMPTS_GUIDE.md) | 外部Prompt目录配置、热更新、版本控制，无需重编译修改Prompt模板     |
+| [外部Prompt配置指南](docs/EXTERNAL_PROMPTS_GUIDE.md)   | 外部Prompt目录配置、热更新、版本控制，无需重编译修改Prompt模板     |
+| [编译与安装指南](docs/DEPLOY_GUIDE.md)                 | 编译脚本使用、安装脚本部署、离线部署流程                           |
+| [达梦数据库部署手册](docs/DEPLOY_BY_DAMENG.md)         | 基于达梦数据库(DM8)的完整部署流程                                  |
+| [Widget嵌入指南](docs/WIDGET_GUIDE.md)                 | 网页嵌入Widget使用、API Key生成、自定义主题配置                    |
+| [Embedding维度修改指南](docs/EMBEDDING_DIMENSION_GUIDE.md) | Embedding模型维度配置、Milvus Collection重建                   |
+| [Milvus启动配置指南](docs/MILVUS_STARTUP_GUIDE.md)     | Milvus服务手动启动、systemd开机自启动配置                          |
+| [Milvus使用指南](docs/MILVUS_USAGE_GUIDE.md)           | Milvus集合管理、数据查询、常用操作                                 |
 
 ## 📄 许可证
 
