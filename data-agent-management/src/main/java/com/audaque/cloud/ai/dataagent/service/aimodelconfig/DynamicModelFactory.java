@@ -124,10 +124,27 @@ public class DynamicModelFactory {
 		log.info("Using custom auth header: {} for API authentication", authHeaderName);
 
 		// 创建自定义 WebClient，添加自定义认证头
+		// 关键：使用 filter 移除 Spring AI 自动添加的 Authorization 头
 		WebClient.Builder webClientBuilder = WebClient.builder()
 				.clientConnector(new ReactorClientHttpConnector(
 						HttpClient.create().responseTimeout(Duration.ofSeconds(60))))
-				.defaultHeader(authHeaderName, apiKey);
+				// 添加自定义认证头
+				.defaultHeader(authHeaderName, apiKey)
+				// 使用 filter 移除 Spring AI 自动添加的 Authorization 头
+				.filter((request, next) -> {
+					// 移除 Authorization 头，只保留自定义认证头
+					org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
+					request.headers().forEach((name, values) -> {
+						if (!"Authorization".equalsIgnoreCase(name)) {
+							headers.addAll(name, values);
+						}
+					});
+					return next.exchange(org.springframework.web.reactive.function.client.ClientRequest
+							.from(request)
+							.headers(h -> h.clear())
+							.headers(h -> h.addAll(headers))
+							.build());
+				});
 
 		// 构建 OpenAiApi，使用空的 apiKey（因为我们通过 WebClient 添加了认证头）
 		OpenAiApi.Builder apiBuilder = OpenAiApi.builder()
