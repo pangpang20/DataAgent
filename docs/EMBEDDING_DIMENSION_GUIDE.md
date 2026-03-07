@@ -50,7 +50,7 @@ spring:
         embedding-dimension: 2560  # 修改为新 Embedding 模型的维度
 ```
 
-或者用命令
+或者用命令（推荐）
 
 ```bash
 sed -i '/embedding-dimension:/s/1024/2560/' application.yml
@@ -79,15 +79,20 @@ java -jar dataagent.jar
 
 启动后检查日志，确认 collection 创建成功：
 
-```
-MilvusVectorStore - Creating collection 'data_agent_vector' with dimension 2560
+```bash
+curl -X POST 'http://localhost:19530/v2/vectordb/collections/describe' \
+  -H 'Authorization: Bearer root:Milvus' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "collectionName": "data_agent_vector"
+  }'
+
 ```
 
 也可以通过 API 查询当前向量库维度：
 
-```bash
-curl http://localhost:8065/api/model-config/vector-dimension
-```
+http://172.16.1.137:9091/webui/collections 
+
 
 ## 常见问题
 
