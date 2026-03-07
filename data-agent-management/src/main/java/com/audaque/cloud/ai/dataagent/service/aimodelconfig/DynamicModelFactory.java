@@ -26,11 +26,16 @@ import org.springframework.ai.openai.OpenAiEmbeddingModel;
 import org.springframework.ai.openai.OpenAiEmbeddingOptions;
 import org.springframework.ai.openai.api.OpenAiApi;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.retry.support.RetryTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
+import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
+import reactor.netty.http.client.HttpClient;
+
+import java.time.Duration;
 
 @Slf4j
 @Service
@@ -57,17 +62,7 @@ public class DynamicModelFactory {
 		checkBasic(config);
 
 		// 2. 构建 OpenAiApi (核心通讯对象)
-		OpenAiApi.Builder apiBuilder = OpenAiApi.builder().apiKey(config.getApiKey()).baseUrl(config.getBaseUrl());
-
-		// 2.1 如果配置了自定义认证头，则设置
-		if (StringUtils.hasText(config.getAuthHeaderName())) {
-			apiBuilder.authHeader(config.getAuthHeaderName());
-		}
-
-		if (StringUtils.hasText(config.getCompletionsPath())) {
-			apiBuilder.completionsPath(config.getCompletionsPath());
-		}
-		OpenAiApi openAiApi = apiBuilder.build();
+		OpenAiApi openAiApi = createOpenAiApi(config);
 
 		// 3. 构建运行时选项 (设置默认的模型名称，如 "deepseek-chat" 或 "gpt-4")
 		OpenAiChatOptions openAiChatOptions = OpenAiChatOptions.builder()
@@ -94,6 +89,62 @@ public class DynamicModelFactory {
 	}
 
 	/**
+	 * 创建 OpenAiApi，支持自定义认证头
+	 */
+	private OpenAiApi createOpenAiApi(ModelConfigDTO config) {
+		// 如果配置了自定义认证头，使用自定义 WebClient
+		if (StringUtils.hasText(config.getAuthHeaderName())) {
+			return createOpenAiApiWithCustomAuthHeader(config);
+		}
+
+		// 标准认证方式：使用 Authorization: Bearer
+		OpenAiApi.Builder apiBuilder = OpenAiApi.builder()
+				.apiKey(config.getApiKey())
+				.baseUrl(config.getBaseUrl());
+
+		if (StringUtils.hasText(config.getCompletionsPath())) {
+			apiBuilder.completionsPath(config.getCompletionsPath());
+		}
+		if (StringUtils.hasText(config.getEmbeddingsPath())) {
+			apiBuilder.embeddingsPath(config.getEmbeddingsPath());
+		}
+
+		return apiBuilder.build();
+	}
+
+	/**
+	 * 使用自定义认证头创建 OpenAiApi
+	 * 通过自定义 WebClient 来实现非标准认证头
+	 */
+	private OpenAiApi createOpenAiApiWithCustomAuthHeader(ModelConfigDTO config) {
+		String authHeaderName = config.getAuthHeaderName();
+		String apiKey = config.getApiKey();
+
+		log.info("Using custom auth header: {} for API authentication", authHeaderName);
+
+		// 创建自定义 WebClient，添加自定义认证头
+		WebClient.Builder webClientBuilder = WebClient.builder()
+				.clientConnector(new ReactorClientHttpConnector(
+						HttpClient.create().responseTimeout(Duration.ofSeconds(60))))
+				.defaultHeader(authHeaderName, apiKey);
+
+		// 构建 OpenAiApi，使用空的 apiKey（因为我们通过 WebClient 添加了认证头）
+		OpenAiApi.Builder apiBuilder = OpenAiApi.builder()
+				.apiKey("") // 空的 apiKey，因为认证头已经通过 WebClient 添加
+				.baseUrl(config.getBaseUrl())
+				.webClientBuilder(webClientBuilder);
+
+		if (StringUtils.hasText(config.getCompletionsPath())) {
+			apiBuilder.completionsPath(config.getCompletionsPath());
+		}
+		if (StringUtils.hasText(config.getEmbeddingsPath())) {
+			apiBuilder.embeddingsPath(config.getEmbeddingsPath());
+		}
+
+		return apiBuilder.build();
+	}
+
+	/**
 	 * Embedding 同理
 	 * 支持自定义认证头名称
 	 */
@@ -102,18 +153,8 @@ public class DynamicModelFactory {
 				config.getProvider(), config.getModelName(), config.getBaseUrl(), config.getAuthHeaderName());
 		checkBasic(config);
 
-		OpenAiApi.Builder apiBuilder = OpenAiApi.builder().apiKey(config.getApiKey()).baseUrl(config.getBaseUrl());
+		OpenAiApi openAiApi = createOpenAiApi(config);
 
-		// 如果配置了自定义认证头，则设置
-		if (StringUtils.hasText(config.getAuthHeaderName())) {
-			apiBuilder.authHeader(config.getAuthHeaderName());
-		}
-
-		if (StringUtils.hasText(config.getEmbeddingsPath())) {
-			apiBuilder.embeddingsPath(config.getEmbeddingsPath());
-		}
-
-		OpenAiApi openAiApi = apiBuilder.build();
 		// 使用自定义重试模板
 		RetryTemplate retryTemplate = createRetryTemplate();
 		return new OpenAiEmbeddingModel(openAiApi, MetadataMode.EMBED,
