@@ -118,15 +118,12 @@ public class QwenEmbeddingModel implements EmbeddingModel {
 		// 按 index 排序
 		embeddings.sort(Comparator.comparingInt(Embedding::getIndex));
 
-		// 重新编号 - 使用 Embedding.Builder 创建新的 Embedding
+		// 重新编号 - 使用构造函数创建新的 Embedding
+		// Spring AI 1.1.0 Embedding 构造函数: Embedding(float[] output, int index)
 		List<Embedding> fixedEmbeddings = new ArrayList<>();
 		for (int i = 0; i < embeddings.size(); i++) {
 			Embedding original = embeddings.get(i);
-			Embedding fixed = Embedding.builder()
-					.output(original.getOutput())
-					.index(i)
-					.metadata(original.getMetadata())
-					.build();
+			Embedding fixed = new Embedding(original.getOutput(), i);
 			fixedEmbeddings.add(fixed);
 		}
 
