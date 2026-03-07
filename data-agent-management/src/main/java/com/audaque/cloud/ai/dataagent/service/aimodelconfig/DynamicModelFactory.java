@@ -142,7 +142,17 @@ public class DynamicModelFactory {
 						log.info("  {}: {}", name, values);
 					});
 
-					return execution.execute(request, body);
+					// 执行请求并记录响应
+					var response = execution.execute(request, body);
+					log.info("Response status: {}", response.getStatusCode());
+					log.info("Response headers: {}", response.getHeaders());
+					try {
+						String responseBody = new String(body, java.nio.charset.StandardCharsets.UTF_8);
+						log.info("Request body: {}", responseBody);
+					} catch (Exception e) {
+						log.debug("Could not log request body: {}", e.getMessage());
+					}
+					return response;
 				});
 
 		// 构建 OpenAiApi，使用空的 apiKey（因为我们通过 RestClient 添加了认证头）
@@ -174,9 +184,13 @@ public class DynamicModelFactory {
 
 		// 使用自定义重试模板
 		RetryTemplate retryTemplate = createRetryTemplate();
-		return new OpenAiEmbeddingModel(openAiApi, MetadataMode.EMBED,
+		EmbeddingModel baseModel = new OpenAiEmbeddingModel(openAiApi, MetadataMode.EMBED,
 				OpenAiEmbeddingOptions.builder().model(config.getModelName()).build(),
 				retryTemplate);
+
+		// 使用 QwenEmbeddingModel 包装，修复 qwen3-embedding 返回的 index 不连续问题
+		// 这个包装对所有兼容 OpenAI API 的 Embedding 模型都安全
+		return new QwenEmbeddingModel(baseModel);
 	}
 
 	/**

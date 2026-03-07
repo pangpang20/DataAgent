@@ -50,6 +50,13 @@ spring:
         embedding-dimension: 2560  # 修改为新 Embedding 模型的维度
 ```
 
+或者用命令
+
+```bash
+sed -i '/embedding-dimension:/s/1024/2560/' application.yml
+sed -i '/default-embedding-dimension:/s/1024/2560/' application.yml
+```
+
 或者通过环境变量配置：
 
 ```bash
