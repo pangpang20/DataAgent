@@ -217,8 +217,16 @@
               v-model="formData.apiKey"
               type="password"
               show-password
-              :placeholder="formData.authHeaderName ? '使用自定义认证头时可为空' : '请输入API密钥'"
+              placeholder="请输入API密钥"
             />
+            <div class="form-tip">
+              <span v-if="formData.authHeaderName">
+                将作为自定义认证头 <code>{{ formData.authHeaderName }}</code> 的值发送
+              </span>
+              <span v-else>
+                标准认证方式，将作为 <code>Authorization: Bearer</code> 头发送
+              </span>
+            </div>
           </el-form-item>
 
           <el-form-item label="Base URL" prop="baseUrl">
@@ -361,10 +369,8 @@
         apiKey: [
           {
             validator: (rule, value, callback) => {
-              // 如果填写了自定义认证头，API密钥可以为空（会使用自定义头）
-              if (formData.value.authHeaderName && formData.value.authHeaderName.trim()) {
-                callback();
-              } else if (!value || !value.trim()) {
+              // API密钥始终必填，无论是标准认证还是自定义认证头
+              if (!value || !value.trim()) {
                 callback(new Error('请输入API密钥'));
               } else {
                 callback();
