@@ -24,16 +24,16 @@ import java.util.List;
 public interface ModelConfigMapper {
 
 	@Select("""
-			SELECT id, provider, base_url, api_key, model_name, temperature, is_active, max_tokens, model_type, completions_path, embeddings_path, auth_header_name, created_time, updated_time, is_deleted FROM model_config WHERE is_deleted = 0 ORDER BY created_time DESC
+			SELECT id, provider, base_url AS baseUrl, api_key AS apiKey, model_name AS modelName, temperature, is_active AS isActive, max_tokens AS maxTokens, model_type AS modelType, completions_path AS completionsPath, embeddings_path AS embeddingsPath, auth_header_name AS authHeaderName, created_time AS createdTime, updated_time AS updatedTime, is_deleted AS isDeleted FROM model_config WHERE is_deleted = 0 ORDER BY created_time DESC
 			""")
 	List<ModelConfig> findAll();
 
 	@Select("""
-			SELECT id, provider, base_url, api_key, model_name, temperature, is_active, max_tokens, model_type, completions_path, embeddings_path, auth_header_name, created_time, updated_time, is_deleted FROM model_config WHERE id = #{id} AND is_deleted = 0
+			SELECT id, provider, base_url AS baseUrl, api_key AS apiKey, model_name AS modelName, temperature, is_active AS isActive, max_tokens AS maxTokens, model_type AS modelType, completions_path AS completionsPath, embeddings_path AS embeddingsPath, auth_header_name AS authHeaderName, created_time AS createdTime, updated_time AS updatedTime, is_deleted AS isDeleted FROM model_config WHERE id = #{id} AND is_deleted = 0
 			""")
 	ModelConfig findById(Integer id);
 
-	@Select("SELECT id, provider, base_url, api_key, model_name, temperature, is_active, max_tokens, model_type, completions_path, embeddings_path, auth_header_name, created_time, updated_time, is_deleted FROM model_config WHERE model_type = #{modelType} AND is_active = 1 AND is_deleted = 0 ${@com.audaque.cloud.ai.dataagent.util.SqlDialectResolver@limit(0, 1)}")
+	@Select("SELECT id, provider, base_url AS baseUrl, api_key AS apiKey, model_name AS modelName, temperature, is_active AS isActive, max_tokens AS maxTokens, model_type AS modelType, completions_path AS completionsPath, embeddings_path AS embeddingsPath, auth_header_name AS authHeaderName, created_time AS createdTime, updated_time AS updatedTime, is_deleted AS isDeleted FROM model_config WHERE model_type = #{modelType} AND is_active = 1 AND is_deleted = 0 ${@com.audaque.cloud.ai.dataagent.util.SqlDialectResolver@limit(0, 1)}")
 	ModelConfig selectActiveByType(@Param("modelType") String modelType);
 
 	@Update("UPDATE model_config SET is_active = 0 WHERE model_type = #{modelType} AND id != #{currentId} AND is_deleted = 0")
@@ -41,7 +41,7 @@ public interface ModelConfigMapper {
 
 	@Select("""
 			<script>
-				SELECT id, provider, base_url, api_key, model_name, temperature, is_active, max_tokens, model_type, completions_path, embeddings_path, auth_header_name, created_time, updated_time, is_deleted FROM model_config
+				SELECT id, provider, base_url AS baseUrl, api_key AS apiKey, model_name AS modelName, temperature, is_active AS isActive, max_tokens AS maxTokens, model_type AS modelType, completions_path AS completionsPath, embeddings_path AS embeddingsPath, auth_header_name AS authHeaderName, created_time AS createdTime, updated_time AS updatedTime, is_deleted AS isDeleted FROM model_config
 				<where>
 					is_deleted = 0
 					<if test='provider != null and provider != ""'>
