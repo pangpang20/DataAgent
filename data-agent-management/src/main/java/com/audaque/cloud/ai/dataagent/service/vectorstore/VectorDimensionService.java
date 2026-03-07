@@ -145,6 +145,17 @@ public class VectorDimensionService {
 	}
 
 	/**
+	 * 更新配置文件中的 embedding-dimension
+	 * 注意：这个方法只更新内存中的值，需要重启应用才能生效
+	 * @param newDimension 新的维度值
+	 */
+	public void updateConfiguredDimension(int newDimension) {
+		log.info("Updating configured embedding dimension from {} to {}", configuredDimension, newDimension);
+		this.configuredDimension = newDimension;
+		log.info("Configured dimension updated in memory. Note: Application restart required for Milvus collection recreation.");
+	}
+
+	/**
 	 * 维度检查结果
 	 */
 	public static class DimensionCheckResult {

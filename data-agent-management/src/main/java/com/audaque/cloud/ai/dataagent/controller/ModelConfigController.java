@@ -108,7 +108,7 @@ public class ModelConfigController {
 	public ApiResponse<String> forceActivate(@PathVariable Integer id) {
 		try {
 			modelConfigOpsService.forceActivateConfig(id);
-			return ApiResponse.success("模型强制切换成功！向量库已重建，历史向量数据已清空。");
+			return ApiResponse.success("模型强制切换成功！向量库已删除，维度配置已更新。请重启应用以创建新的向量库。");
 		}
 		catch (Exception e) {
 			return ApiResponse.error("强制切换失败: " + e.getMessage());

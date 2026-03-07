@@ -127,7 +127,10 @@ public class ModelConfigOpsService {
 						throw new RuntimeException("删除现有 collection 失败，无法切换模型");
 					}
 					
-					log.info("Collection dropped successfully. System will create new collection with dimension {} on next startup.",
+					// 更新配置文件中的维度
+					vectorDimensionService.updateConfiguredDimension(modelDimension);
+					
+					log.info("Collection dropped successfully. Dimension updated to {}. Please restart the application to create new collection.",
 							modelDimension);
 				}
 			} catch (RuntimeException e) {
