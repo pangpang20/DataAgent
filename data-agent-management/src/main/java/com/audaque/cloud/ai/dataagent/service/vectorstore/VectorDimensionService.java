@@ -20,6 +20,7 @@ import io.milvus.grpc.DescribeCollectionResponse;
 import io.milvus.grpc.FieldSchema;
 import io.milvus.param.R;
 import io.milvus.param.collection.DescribeCollectionParam;
+import io.milvus.param.collection.DropCollectionParam;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -109,6 +110,36 @@ public class VectorDimensionService {
 							"3. 使用维度匹配的 Embedding 模型",
 					collectionDimension, newModelDimension);
 			return new DimensionCheckResult(false, collectionDimension, newModelDimension, message);
+		}
+	}
+
+	/**
+	 * 删除当前的 Milvus collection
+	 * 用于在切换不同维度的 Embedding 模型时重建 collection
+	 * @return 是否删除成功
+	 */
+	public boolean dropCurrentCollection() {
+		if (milvusClient.isEmpty()) {
+			log.warn("MilvusClient not available, cannot drop collection");
+			return false;
+		}
+
+		try {
+			DropCollectionParam param = DropCollectionParam.newBuilder()
+					.withCollectionName(collectionName)
+					.build();
+
+			R<Boolean> response = milvusClient.get().dropCollection(param);
+			if (response.getStatus() == R.Status.Success.getCode()) {
+				log.info("Successfully dropped collection: {}", collectionName);
+				return true;
+			} else {
+				log.error("Failed to drop collection '{}': {}", collectionName, response.getMessage());
+				return false;
+			}
+		} catch (Exception e) {
+			log.error("Error dropping collection '{}': {}", collectionName, e.getMessage(), e);
+			return false;
 		}
 	}
 

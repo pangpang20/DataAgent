@@ -94,6 +94,61 @@ public class ModelConfigOpsService {
 	}
 
 	/**
+	 * 强制激活指定配置（用于切换不同维度的 Embedding 模型）
+	 * 会删除现有的 Milvus collection 并重新创建
+	 */
+	@Transactional(rollbackFor = Exception.class)
+	public void forceActivateConfig(Integer id) {
+		// 1. 查数据
+		ModelConfig entity = modelConfigDataService.findById(id);
+		if (entity == null) {
+			throw new RuntimeException("配置不存在");
+		}
+
+		// 2. 如果是 Embedding 模型，检查维度并处理不匹配情况
+		if (ModelType.EMBEDDING.equals(entity.getModelType())) {
+			try {
+				// 创建临时模型获取维度
+				ModelConfigDTO dto = convertToDTO(entity);
+				EmbeddingModel tempModel = modelFactory.createEmbeddingModel(dto);
+				int modelDimension = tempModel.dimensions();
+
+				// 检查与向量库的兼容性
+				VectorDimensionService.DimensionCheckResult result = 
+					vectorDimensionService.checkDimensionCompatibility(modelDimension);
+
+				if (!result.isCompatible()) {
+					// 维度不匹配，删除现有 collection
+					log.warn("Dimension mismatch detected. Collection: {}, Model: {}. Dropping collection...",
+							result.getCollectionDimension(), result.getModelDimension());
+					
+					boolean dropped = vectorDimensionService.dropCurrentCollection();
+					if (!dropped) {
+						throw new RuntimeException("删除现有 collection 失败，无法切换模型");
+					}
+					
+					log.info("Collection dropped successfully. System will create new collection with dimension {} on next startup.",
+							modelDimension);
+				}
+			} catch (RuntimeException e) {
+				throw e;
+			} catch (Exception e) {
+				log.error("Failed to check embedding dimension: {}", e.getMessage(), e);
+				throw new RuntimeException("检查 Embedding 维度失败: " + e.getMessage());
+			}
+		}
+
+		// 3. 刷新内存模型
+		log.info("Force activating config ID={}, Type={}...", id, entity.getModelType());
+		refreshMemoryModel(entity.getModelType());
+
+		// 4. 更新数据库状态
+		modelConfigDataService.switchActiveStatus(id, entity.getModelType());
+
+		log.info("Config ID={} force activated successfully.", id);
+	}
+
+	/**
 	 * 检查 Embedding 模型维度与向量库的兼容性
 	 */
 	private void checkEmbeddingDimensionCompatibility(ModelConfig entity) {

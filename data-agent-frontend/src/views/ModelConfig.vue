@@ -539,7 +539,36 @@
             ElMessage.success('模型启用成功');
             loadConfigs();
           } else {
-            ElMessage.error(result.message || '模型启用失败');
+            // 检查是否是维度不匹配的错误
+            if (result.message && result.message.includes('维度不匹配')) {
+              // 显示强制切换选项
+              try {
+                await ElMessageBox.confirm(
+                  result.message + '\n\n是否强制切换？这将删除现有向量库并重建，所有历史向量数据将永久丢失！',
+                  '维度不匹配 - 强制切换确认',
+                  {
+                    confirmButtonText: '强制切换（删除向量数据）',
+                    cancelButtonText: '取消',
+                    type: 'error',
+                    distinguishCancelAndClose: true,
+                  },
+                );
+                
+                // 用户确认强制切换
+                const forceResult = await modelConfigService.forceActivate(id);
+                if (forceResult.success) {
+                  ElMessage.success(forceResult.message || '模型强制切换成功');
+                  loadConfigs();
+                } else {
+                  ElMessage.error(forceResult.message || '模型强制切换失败');
+                }
+              } catch (error) {
+                // 用户取消了强制切换
+                console.log('用户取消了强制切换');
+              }
+            } else {
+              ElMessage.error(result.message || '模型启用失败');
+            }
           }
         } catch (error) {
           ElMessage.error('启用过程中发生错误');

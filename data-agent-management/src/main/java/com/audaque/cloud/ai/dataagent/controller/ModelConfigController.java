@@ -101,6 +101,21 @@ public class ModelConfigController {
 	}
 
 	/**
+	 * 5.1 强制启用/切换配置（用于切换不同维度的 Embedding 模型）
+	 * 会删除现有的 Milvus collection 并重新创建，所有向量数据将丢失
+	 */
+	@PostMapping("/force-activate/{id}")
+	public ApiResponse<String> forceActivate(@PathVariable Integer id) {
+		try {
+			modelConfigOpsService.forceActivateConfig(id);
+			return ApiResponse.success("模型强制切换成功！向量库已重建，历史向量数据已清空。");
+		}
+		catch (Exception e) {
+			return ApiResponse.error("强制切换失败: " + e.getMessage());
+		}
+	}
+
+	/**
 	 * 6. 连通性测试 接收前端表单里的配置参数，尝试发起一次真实调用
 	 */
 	@PostMapping("/test")

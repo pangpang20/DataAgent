@@ -87,6 +87,16 @@ class ModelConfigService {
   }
 
   /**
+   * 强制启用/切换模型配置（用于切换不同维度的 Embedding 模型）
+   * 会删除现有的 Milvus collection 并重新创建，所有向量数据将丢失
+   * @param id 配置ID
+   */
+  async forceActivate(id: number): Promise<ApiResponse<string>> {
+    const response = await axios.post<ApiResponse<string>>(`${API_BASE_URL}/force-activate/${id}`);
+    return response.data;
+  }
+
+  /**
    * 测试模型配置连接
    * @param config 模型配置对象
    */
