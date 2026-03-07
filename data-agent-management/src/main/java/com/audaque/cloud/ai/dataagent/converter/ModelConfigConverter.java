@@ -43,6 +43,7 @@ public class ModelConfigConverter {
 			.modelType(entity.getModelType().getCode())
 			.completionsPath(entity.getCompletionsPath())
 			.embeddingsPath(entity.getEmbeddingsPath())
+			.authHeaderName(entity.getAuthHeaderName())
 			.build();
 	}
 
@@ -64,6 +65,7 @@ public class ModelConfigConverter {
 		entity.setModelType(ModelType.fromCode(dto.getModelType()));
 		entity.setCompletionsPath(dto.getCompletionsPath());
 		entity.setEmbeddingsPath(dto.getEmbeddingsPath());
+		entity.setAuthHeaderName(dto.getAuthHeaderName());
 		// 默认值处理
 		entity.setIsActive(false);
 		entity.setIsDeleted(0);
