@@ -46,10 +46,29 @@ WorkingDirectory=/data/docker_milvus          # ← 改成你的 docker-compose.
 ExecStart=/usr/bin/docker compose up -d       # 注意：新版 docker 用 docker compose（空格），旧版可能是 docker-compose
 ExecStop=/usr/bin/docker compose down
 TimeoutStartSec=300                           # 启动超时，Milvus 启动慢可以调大
-Restart=on-failure                            # 失败时自动重启（可选）
 
 [Install]
 WantedBy=multi-user.target
+```
+
+以下是参考：
+
+```ini
+[Unit]
+Description=Milvus Standalone with Docker Compose
+Requires=docker.service
+After=docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=/opt/docker_milvus
+ExecStart=/usr/bin/docker-compose up -d
+ExecStop=/usr/bin/docker-compose down
+TimeoutStartSec=300
+
+[Install]
+WantedBy=multi-user.target 
 ```
 
 **重要说明：**
