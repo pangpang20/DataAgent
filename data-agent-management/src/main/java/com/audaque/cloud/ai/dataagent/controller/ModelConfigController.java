@@ -19,13 +19,16 @@ import com.audaque.cloud.ai.dataagent.enums.ModelType;
 import com.audaque.cloud.ai.dataagent.dto.ModelConfigDTO;
 import com.audaque.cloud.ai.dataagent.service.aimodelconfig.ModelConfigDataService;
 import com.audaque.cloud.ai.dataagent.service.aimodelconfig.ModelConfigOpsService;
+import com.audaque.cloud.ai.dataagent.service.vectorstore.VectorDimensionService;
 import com.audaque.cloud.ai.dataagent.vo.ApiResponse;
 import com.audaque.cloud.ai.dataagent.vo.ModelCheckVo;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @AllArgsConstructor
 @RestController
@@ -35,6 +38,8 @@ public class ModelConfigController {
 	private final ModelConfigDataService modelConfigDataService;
 
 	private final ModelConfigOpsService modelConfigOpsService;
+
+	private final VectorDimensionService vectorDimensionService;
 
 	// 1. 获取列表
 	@GetMapping("/list")
@@ -130,6 +135,25 @@ public class ModelConfigController {
 					.embeddingModelReady(embeddingModelReady)
 					.ready(ready)
 					.build());
+	}
+
+	/**
+	 * 8. 获取向量库维度信息
+	 * 用于检查当前 Embedding 模型与向量库的维度兼容性
+	 */
+	@GetMapping("/vector-dimension")
+	public ApiResponse<Map<String, Object>> getVectorDimension() {
+		try {
+			int collectionDimension = vectorDimensionService.getCollectionDimension();
+
+			Map<String, Object> result = new HashMap<>();
+			result.put("collectionDimension", collectionDimension);
+			result.put("message", "当前向量库 collection 的向量维度为: " + collectionDimension);
+
+			return ApiResponse.success("获取向量库维度成功", result);
+		} catch (Exception e) {
+			return ApiResponse.error("获取向量库维度失败: " + e.getMessage());
+		}
 	}
 
 }

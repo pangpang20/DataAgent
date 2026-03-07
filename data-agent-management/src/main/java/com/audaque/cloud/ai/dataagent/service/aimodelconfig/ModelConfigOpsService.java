@@ -18,6 +18,7 @@ package com.audaque.cloud.ai.dataagent.service.aimodelconfig;
 import com.audaque.cloud.ai.dataagent.enums.ModelType;
 import com.audaque.cloud.ai.dataagent.dto.ModelConfigDTO;
 import com.audaque.cloud.ai.dataagent.entity.ModelConfig;
+import com.audaque.cloud.ai.dataagent.service.vectorstore.VectorDimensionService;
 import com.audaque.cloud.ai.dataagent.util.JsonUtil;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -39,6 +40,8 @@ public class ModelConfigOpsService {
 	private final DynamicModelFactory modelFactory;
 
 	private final AiModelRegistry aiModelRegistry;
+
+	private final VectorDimensionService vectorDimensionService;
 
 	private final ObjectMapper objectMapper = JsonUtil.getObjectMapper();
 
@@ -75,14 +78,67 @@ public class ModelConfigOpsService {
 			throw new RuntimeException("配置不存在");
 		}
 
-		// 2. 刷新内存模型
+		// 2. 如果是 Embedding 模型，检查维度兼容性
+		if (ModelType.EMBEDDING.equals(entity.getModelType())) {
+			checkEmbeddingDimensionCompatibility(entity);
+		}
+
+		// 3. 刷新内存模型
 		log.info("Activating config ID={}, Type={}...", id, entity.getModelType());
 		refreshMemoryModel(entity.getModelType());
 
-		// 3. 更新数据库状态 (调用数据层)
+		// 4. 更新数据库状态 (调用数据层)
 		modelConfigDataService.switchActiveStatus(id, entity.getModelType());
 
 		log.info("Config ID={} activated successfully.", id);
+	}
+
+	/**
+	 * 检查 Embedding 模型维度与向量库的兼容性
+	 */
+	private void checkEmbeddingDimensionCompatibility(ModelConfig entity) {
+		try {
+			// 创建临时模型获取维度
+			ModelConfigDTO dto = convertToDTO(entity);
+			EmbeddingModel tempModel = modelFactory.createEmbeddingModel(dto);
+			int modelDimension = tempModel.dimensions();
+
+			// 检查与向量库的兼容性
+			VectorDimensionService.DimensionCheckResult result = vectorDimensionService.checkDimensionCompatibility(modelDimension);
+
+			if (!result.isCompatible()) {
+				log.warn("Embedding model dimension mismatch! {}", result.getMessage());
+				// 抛出异常，阻止激活
+				throw new RuntimeException(result.getMessage());
+			}
+
+			log.info("Embedding model dimension check passed. Collection: {}, Model: {}",
+					result.getCollectionDimension(), result.getModelDimension());
+		} catch (RuntimeException e) {
+			// 重新抛出已知的运行时异常
+			throw e;
+		} catch (Exception e) {
+			log.error("Failed to check embedding dimension compatibility: {}", e.getMessage(), e);
+			// 维度检查失败不阻止激活，但记录警告
+			log.warn("Could not verify embedding dimension compatibility. Proceeding with activation.");
+		}
+	}
+
+	private ModelConfigDTO convertToDTO(ModelConfig entity) {
+		ModelConfigDTO dto = new ModelConfigDTO();
+		dto.setId(entity.getId());
+		dto.setProvider(entity.getProvider());
+		dto.setApiKey(entity.getApiKey());
+		dto.setBaseUrl(entity.getBaseUrl());
+		dto.setModelName(entity.getModelName());
+		dto.setModelType(entity.getModelType() != null ? entity.getModelType().getCode() : null);
+		dto.setCompletionsPath(entity.getCompletionsPath());
+		dto.setEmbeddingsPath(entity.getEmbeddingsPath());
+		dto.setAuthHeaderName(entity.getAuthHeaderName());
+		dto.setTemperature(entity.getTemperature());
+		dto.setMaxTokens(entity.getMaxTokens());
+		dto.setIsActive(entity.getIsActive());
+		return dto;
 	}
 
 	/**
