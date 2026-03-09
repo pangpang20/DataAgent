@@ -199,7 +199,7 @@
                       <div
                         v-show="(autoExpandNodes || isNodeVisible[index]) && generateNodeHtml(nodeBlock)"
                         class="agent-response-content"
-                        v-html="generateNodeHtml(nodeBlock)"
+                        v-html="generateNodeHtmlContent(nodeBlock)"
                       ></div>
                     </div>
                   </div>
@@ -984,6 +984,13 @@
         ElMessage.success('Markdown报告下载成功');
       };
 
+      const generateNodeHtmlContent = (node: GraphNodeResponse[]) => {
+        const content = formatNodeContent(node);
+        if (!content || content.trim() === '') {
+          return '';
+        }
+        return content;
+      };
       // 生成节点容器的HTML代码
       const generateNodeHtml = (node: GraphNodeResponse[]) => {
         const content = formatNodeContent(node);
@@ -1026,7 +1033,7 @@
               // 使用 highlight.js 进行代码高亮
               const language = node[idx].textType.toLowerCase();
               const highlighted = hljs.highlight(pre, { language });
-              content += `<pre><div style="display: flex; justify-content: space-between; align-items: center; background: #f8f9fa; padding: 8px 12px; border-bottom: none; font-family: system-ui, sans-serif; font-size: 14px;"><span style="color: #666;">${language}</span><span hidden>${pre}</span><button onclick='copyTextToClipboard(this)' style="background: #f8f9fa; border: none; padding: 4px 12px; border-radius: 12px; font-size: 13px; cursor: pointer; transition: background 0.2s;">复制</button></div><code class="hljs ${language}">${highlighted.value}</code></pre>`;
+              content += `<pre><div style="display: flex; justify-content: space-between; align-items: center; background: #f8f9fa; padding: 4px 8px; border-bottom: 1px solid #e1e4e8; font-family: system-ui, sans-serif; font-size: 13px;"><span style="color: #666;">${language}</span><span hidden>${pre}</span><button onclick='copyTextToClipboard(this)' style="background: #f8f9fa; border: 1px solid #e1e4e8; padding: 2px 8px; border-radius: 4px; font-size: 12px; cursor: pointer; transition: background 0.2s;">复制</button></div><code class="hljs ${language}">${highlighted.value}</code></pre>`;
             } catch (error) {
               // 如果高亮失败，返回原始代码
               content += `<pre><code>${pre}</code></pre>`;
@@ -1399,6 +1406,7 @@
         formatMessageContent,
         formatNodeContent,
         generateNodeHtml,
+        generateNodeHtmlContent,
         handleNl2sqlOnlyChange,
         downloadHtmlReportFromMessage,
         downloadMarkdownReportFromMessage,
@@ -1557,6 +1565,10 @@
     transition: all 0.3s ease;
   }
 
+  .agent-response-block:not(:last-child) {
+    margin-bottom: 12px;
+  }
+
   .agent-response-block:hover {
     border-color: #409eff;
     box-shadow: 0 2px 8px rgba(64, 158, 255, 0.1);
@@ -1567,16 +1579,18 @@
     justify-content: space-between;
     align-items: center;
     background: #ecf5ff;
-    padding: 2px 4px;
+    padding: 4px 8px;
     font-weight: 600;
     color: #409eff;
     border-bottom: 1px solid #e8e8e8;
     font-size: 14px;
+    min-height: 28px;
   }
 
   .agent-response-title {
     flex: 1;
     margin-right: 10px;
+    line-height: 1.2;
   }
 
   .toggle-button {
@@ -1584,9 +1598,8 @@
   }
 
   .agent-response-content {
-    padding: 6px;
+    padding: 8px 12px;
     line-height: 1.6;
-    min-height: auto;
     font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
     font-size: 14px;
     white-space: pre-wrap;
@@ -1601,7 +1614,7 @@
   }
 
   .agent-response-content pre {
-    margin: 0;
+    margin: 4px 0 0 0;
     background: transparent;
     border: none;
     padding: 0;
@@ -1624,8 +1637,8 @@
     background: #f6f8fa !important;
     border: 1px solid #e1e4e8;
     border-radius: 6px;
-    padding: 16px;
-    margin: 8px 0;
+    padding: 12px;
+    margin: 4px 0;
     overflow-x: auto;
   }
 
@@ -1642,7 +1655,7 @@
     overflow-x: auto;
     color: #24292e;
     background: #f6f8fa;
-    padding: 16px;
+    padding: 12px;
     border-radius: 6px;
     border: 1px solid #e1e4e8;
   }
