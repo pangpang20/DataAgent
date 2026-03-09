@@ -110,6 +110,7 @@ public class SchemaServiceImpl implements SchemaService {
 			.map(doc -> (String) doc.getMetadata().getOrDefault("foreignKey", ""))
 			.flatMap(fk -> Arrays.stream(fk.split("、")))
 			.filter(StringUtils::isNotBlank)
+			.filter(fk -> fk.contains("=") && !fk.endsWith("=")) // 过滤掉 format 为 "TABLE.COLUMN=" 的不完整外键
 			.collect(Collectors.toSet());
 		schemaDTO.setForeignKeys(new ArrayList<>(foreignKeys));
 	}
@@ -249,11 +250,19 @@ public class SchemaServiceImpl implements SchemaService {
 	protected Map<String, List<String>> buildForeignKeyMap(List<ForeignKeyInfoBO> foreignKeys) {
 		Map<String, List<String>> map = new HashMap<>();
 		for (ForeignKeyInfoBO fk : foreignKeys) {
+			// 过滤掉空值，确保外键信息完整
+			if (StringUtils.isBlank(fk.getTable()) || StringUtils.isBlank(fk.getColumn())
+					|| StringUtils.isBlank(fk.getReferencedTable()) || StringUtils.isBlank(fk.getReferencedColumn())) {
+				log.warn("Skipping incomplete foreign key: table={}, column={}, referencedTable={}, referencedColumn={}",
+						fk.getTable(), fk.getColumn(), fk.getReferencedTable(), fk.getReferencedColumn());
+				continue;
+			}
+
 			String key = fk.getTable() + "." + fk.getColumn() + "=" + fk.getReferencedTable() + "."
 					+ fk.getReferencedColumn();
 
+			// 只在外键的源表存储，避免在引用表重复存储
 			map.computeIfAbsent(fk.getTable(), k -> new ArrayList<>()).add(key);
-			map.computeIfAbsent(fk.getReferencedTable(), k -> new ArrayList<>()).add(key);
 		}
 		return map;
 	}

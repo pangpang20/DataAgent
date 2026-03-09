@@ -193,13 +193,16 @@ public class TableMetadataService {
 
 	/**
 	 * 设置表的外键信息
-	 * 
+	 *
 	 * @param table         表信息
 	 * @param foreignKeyMap 外键映射
 	 */
 	private void setTableForeignKeys(TableInfoBO table, Map<String, List<String>> foreignKeyMap) {
 		List<String> foreignKeys = foreignKeyMap.getOrDefault(table.getName(), new ArrayList<>());
-		table.setForeignKey(String.join("、", foreignKeys));
+		// 只有当外键列表非空时才设置，避免存储空字符串
+		if (!foreignKeys.isEmpty()) {
+			table.setForeignKey(String.join("、", foreignKeys));
+		}
 	}
 
 	/**
