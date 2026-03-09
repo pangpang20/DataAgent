@@ -145,7 +145,10 @@
                         {{ isNodeVisible[index] ? '收起' : '展开' }}
                       </el-button>
                     </div>
-                    <div v-show="autoExpandNodes || isNodeVisible[index]" class="agent-response-content">
+                    <div
+                      v-show="(autoExpandNodes || isNodeVisible[index]) && getMarkdownContentFromNode(nodeBlock)"
+                      class="agent-response-content"
+                    >
                       <Markdown :generating="isStreaming">
                         {{ getMarkdownContentFromNode(nodeBlock) }}
                       </Markdown>
@@ -193,7 +196,11 @@
                           {{ isNodeVisible[index] ? '收起' : '展开' }}
                         </el-button>
                       </div>
-                      <div v-show="autoExpandNodes || isNodeVisible[index]" class="agent-response-content" v-html="generateNodeHtml(nodeBlock)"></div>
+                      <div
+                        v-show="(autoExpandNodes || isNodeVisible[index]) && generateNodeHtml(nodeBlock)"
+                        class="agent-response-content"
+                        v-html="generateNodeHtml(nodeBlock)"
+                      ></div>
                     </div>
                   </div>
                 </template>
@@ -981,6 +988,11 @@
       const generateNodeHtml = (node: GraphNodeResponse[]) => {
         const content = formatNodeContent(node);
 
+        // 如果内容为空，返回空字符串
+        if (!content || content.trim() === '') {
+          return '';
+        }
+
         return `
         <div class="agent-response-block" style="display: block !important; width: 100% !important;">
           <div class="agent-response-title">${node.length > 0 ? node[0].nodeName : '空节点'}</div>
@@ -1574,7 +1586,7 @@
   .agent-response-content {
     padding: 6px;
     line-height: 1.6;
-    min-height: 40px;
+    min-height: auto;
     font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
     font-size: 14px;
     white-space: pre-wrap;
