@@ -1428,7 +1428,7 @@
   .messages-area {
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 5px;
   }
 
   /* 消息容器样式 */
@@ -1532,7 +1532,7 @@
   .agent-response-container {
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 5px;
   }
 
   .agent-response-block {
