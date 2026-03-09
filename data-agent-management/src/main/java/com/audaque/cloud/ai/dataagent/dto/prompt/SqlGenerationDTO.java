@@ -20,6 +20,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 
+import java.util.List;
+
 @AllArgsConstructor
 @Builder
 @Data
@@ -46,5 +48,11 @@ public class SqlGenerationDTO {
 	 * - And so on...
 	 */
 	private int retryCount;
+
+	/**
+	 * History of failed SQL attempts for learning
+	 * Each entry contains: "Attempt #N: SQL\nError: ..."
+	 */
+	private List<String> failureHistory;
 
 }

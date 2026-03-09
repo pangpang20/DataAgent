@@ -37,7 +37,9 @@ import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static com.audaque.cloud.ai.dataagent.constant.Constant.*;
@@ -199,7 +201,10 @@ public class SqlGenerateNode implements NodeAction {
 		String dialect = StateUtil.getStringValue(state, DB_DIALECT_TYPE);
 		int retryCount = state.value(SQL_GENERATE_COUNT, 0);
 
-		log.debug("Building SQL generation DTO with retry count: {}", retryCount);
+		// Get failure history from state
+		List<String> failureHistory = state.value(SQL_FAILURE_HISTORY, new ArrayList<>());
+
+		log.debug("Building SQL generation DTO with retry count: {}, history size: {}", retryCount, failureHistory.size());
 
 		SqlGenerationDTO sqlGenerationDTO = SqlGenerationDTO.builder()
 				.evidence(evidence)
@@ -210,6 +215,7 @@ public class SqlGenerateNode implements NodeAction {
 				.executionDescription(executionDescription)
 				.dialect(dialect)
 				.retryCount(retryCount)
+				.failureHistory(failureHistory)
 				.build();
 
 		return nl2SqlService.generateSql(sqlGenerationDTO);

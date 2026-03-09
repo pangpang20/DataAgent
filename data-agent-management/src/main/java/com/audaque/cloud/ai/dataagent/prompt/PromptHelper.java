@@ -645,6 +645,13 @@ public class PromptHelper {
 		String schemaInfo = buildMixMacSqlDbPrompt(sqlGenerationDTO.getSchemaDTO(), true, compressionOptions);
 		log.debug("Schema info built for SQL error fixing with smart filtering, length: {} chars", schemaInfo.length());
 
+		// Build failure history string
+		String failureHistoryStr = "";
+		if (sqlGenerationDTO.getFailureHistory() != null && !sqlGenerationDTO.getFailureHistory().isEmpty()) {
+			failureHistoryStr = String.join("\n\n", sqlGenerationDTO.getFailureHistory());
+			log.debug("Failure history included, {} attempts recorded", sqlGenerationDTO.getFailureHistory().size());
+		}
+
 		Map<String, Object> params = new HashMap<>();
 		params.put("dialect", sqlGenerationDTO.getDialect());
 		params.put("question", sqlGenerationDTO.getQuery());
@@ -653,9 +660,11 @@ public class PromptHelper {
 		params.put("error_sql", sqlGenerationDTO.getSql());
 		params.put("error_message", sqlGenerationDTO.getExceptionMessage());
 		params.put("execution_description", sqlGenerationDTO.getExecutionDescription());
+		params.put("failure_history", failureHistoryStr);
 
-		log.debug("SQL error fixer params - error_message: {}",
-				sqlGenerationDTO.getExceptionMessage() != null ? "provided" : "null");
+		log.debug("SQL error fixer params - error_message: {}, failure_history: {}",
+				sqlGenerationDTO.getExceptionMessage() != null ? "provided" : "null",
+				!failureHistoryStr.isEmpty() ? "provided" : "empty");
 
 		String result = PromptConstant.getSqlErrorFixerPromptTemplate().render(params);
 		log.debug("SQL error fixer prompt rendered, total length: {} chars", result.length());

@@ -17,6 +17,7 @@ package com.audaque.cloud.ai.dataagent.workflow.node;
 
 import static com.audaque.cloud.ai.dataagent.constant.Constant.PLAN_CURRENT_STEP;
 import static com.audaque.cloud.ai.dataagent.constant.Constant.SQL_EXECUTE_NODE_OUTPUT;
+import static com.audaque.cloud.ai.dataagent.constant.Constant.SQL_FAILURE_HISTORY;
 import static com.audaque.cloud.ai.dataagent.constant.Constant.SQL_GENERATE_COUNT;
 import static com.audaque.cloud.ai.dataagent.constant.Constant.SQL_GENERATE_OUTPUT;
 import static com.audaque.cloud.ai.dataagent.constant.Constant.SQL_REGENERATE_REASON;
@@ -48,6 +49,7 @@ import com.alibaba.cloud.ai.graph.OverAllState;
 import com.alibaba.cloud.ai.graph.action.NodeAction;
 import com.alibaba.cloud.ai.graph.streaming.StreamingOutput;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -218,6 +220,16 @@ public class SqlExecuteNode implements NodeAction {
 						e.getClass().getSimpleName(), errorMessage);
 				log.debug("[SqlExecuteNode] DB config used: url={}, schema={}, dialectType={}",
 						dbConfig.getUrl(), dbConfig.getSchema(), dbConfig.getDialectType());
+
+				// Record failure history for learning
+				int attemptNumber = state.value(SQL_GENERATE_COUNT, 0);
+				List<String> failureHistory = state.value(SQL_FAILURE_HISTORY, new ArrayList<>());
+				String failureRecord = String.format("Attempt #%d:\nSQL: %s\nError: %s",
+						attemptNumber, sqlQuery, errorMessage);
+				failureHistory.add(failureRecord);
+				result.put(SQL_FAILURE_HISTORY, failureHistory);
+				log.debug("[SqlExecuteNode] Recorded failure history, total attempts: {}", failureHistory.size());
+
 				result.put(SQL_REGENERATE_REASON, SqlRetryDto.sqlExecute(errorMessage));
 				log.debug("[SqlExecuteNode] SqlRetryDto created with error message");
 				emitter.next(ChatResponseUtil.createResponse("SQL执行失败: " + errorMessage));

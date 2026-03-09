@@ -67,9 +67,19 @@ public class DamengJdbcDdl extends AbstractJdbcDdl {
 
 	@Override
 	public List<TableInfoBO> showTables(Connection connection, String schema, String tablePattern) {
-		String sql = "SELECT TABLE_NAME FROM USER_TABLES";
-		if (StringUtils.isNotBlank(tablePattern)) {
-			sql = "SELECT TABLE_NAME FROM USER_TABLES WHERE TABLE_NAME LIKE '%' || '" + tablePattern + "' || '%'";
+		// Use ALL_TABLES instead of USER_TABLES to support querying tables from different schemas
+		String sql;
+		if (StringUtils.isNotBlank(schema)) {
+			sql = "SELECT TABLE_NAME FROM ALL_TABLES WHERE OWNER = '" + schema.toUpperCase() + "'";
+			if (StringUtils.isNotBlank(tablePattern)) {
+				sql += " AND TABLE_NAME LIKE '%' || '" + tablePattern + "' || '%'";
+			}
+		} else {
+			// Fallback to USER_TABLES if no schema specified (backward compatibility)
+			sql = "SELECT TABLE_NAME FROM USER_TABLES";
+			if (StringUtils.isNotBlank(tablePattern)) {
+				sql = "SELECT TABLE_NAME FROM USER_TABLES WHERE TABLE_NAME LIKE '%' || '" + tablePattern + "' || '%'";
+			}
 		}
 		List<TableInfoBO> tableInfoList = Lists.newArrayList();
 		try {
@@ -97,7 +107,14 @@ public class DamengJdbcDdl extends AbstractJdbcDdl {
 			return Lists.newArrayList();
 		}
 		String tableListStr = String.join(", ", tables.stream().map(x -> "'" + x + "'").collect(Collectors.toList()));
-		String sql = "SELECT TABLE_NAME FROM USER_TABLES WHERE TABLE_NAME in(" + tableListStr + ")";
+		// Use ALL_TABLES instead of USER_TABLES to support querying tables from different schemas
+		String sql;
+		if (StringUtils.isNotBlank(schema)) {
+			sql = "SELECT TABLE_NAME FROM ALL_TABLES WHERE OWNER = '" + schema.toUpperCase() + "' AND TABLE_NAME in(" + tableListStr + ")";
+		} else {
+			// Fallback to USER_TABLES if no schema specified (backward compatibility)
+			sql = "SELECT TABLE_NAME FROM USER_TABLES WHERE TABLE_NAME in(" + tableListStr + ")";
+		}
 		List<TableInfoBO> tableInfoList = Lists.newArrayList();
 		try {
 			String[][] resultArr = SqlExecutor.executeSqlAndReturnArr(connection, sql);
@@ -120,8 +137,14 @@ public class DamengJdbcDdl extends AbstractJdbcDdl {
 
 	@Override
 	public List<ColumnInfoBO> showColumns(Connection connection, String schema, String table) {
-		String sql = "SELECT COLUMN_NAME, DATA_TYPE, DATA_LENGTH, NULLABLE FROM USER_TAB_COLUMNS WHERE TABLE_NAME='"
-				+ table + "'";
+		// Use ALL_TAB_COLUMNS instead of USER_TAB_COLUMNS to support querying columns from different schemas
+		String sql;
+		if (StringUtils.isNotBlank(schema)) {
+			sql = "SELECT COLUMN_NAME, DATA_TYPE, DATA_LENGTH, NULLABLE FROM ALL_TAB_COLUMNS WHERE OWNER = '" + schema.toUpperCase() + "' AND TABLE_NAME='" + table + "'";
+		} else {
+			// Fallback to USER_TAB_COLUMNS if no schema specified (backward compatibility)
+			sql = "SELECT COLUMN_NAME, DATA_TYPE, DATA_LENGTH, NULLABLE FROM USER_TAB_COLUMNS WHERE TABLE_NAME='" + table + "'";
+		}
 		List<ColumnInfoBO> columnInfoList = Lists.newArrayList();
 		try {
 			String[][] resultArr = SqlExecutor.executeSqlAndReturnArr(connection, null, sql);
@@ -153,9 +176,18 @@ public class DamengJdbcDdl extends AbstractJdbcDdl {
 			return Lists.newArrayList();
 		}
 		String tableListStr = String.join(", ", tables.stream().map(x -> "'" + x + "'").collect(Collectors.toList()));
-		String sql = "SELECT uc.TABLE_NAME, ucc.COLUMN_NAME, uc.CONSTRAINT_NAME, uc.R_OWNER, uc.R_CONSTRAINT_NAME "
-				+ "FROM USER_CONSTRAINTS uc JOIN USER_CONS_COLUMNS ucc ON uc.CONSTRAINT_NAME = ucc.CONSTRAINT_NAME "
-				+ "WHERE uc.CONSTRAINT_TYPE='R' AND uc.TABLE_NAME IN (" + tableListStr + ")";
+		// Use ALL_CONSTRAINTS and ALL_CONS_COLUMNS instead of USER_* views to support querying from different schemas
+		String sql;
+		if (StringUtils.isNotBlank(schema)) {
+			sql = "SELECT uc.TABLE_NAME, ucc.COLUMN_NAME, uc.CONSTRAINT_NAME, uc.R_OWNER, uc.R_CONSTRAINT_NAME "
+					+ "FROM ALL_CONSTRAINTS uc JOIN ALL_CONS_COLUMNS ucc ON uc.CONSTRAINT_NAME = ucc.CONSTRAINT_NAME AND uc.OWNER = ucc.OWNER "
+					+ "WHERE uc.CONSTRAINT_TYPE='R' AND uc.OWNER = '" + schema.toUpperCase() + "' AND uc.TABLE_NAME IN (" + tableListStr + ")";
+		} else {
+			// Fallback to USER_* views if no schema specified (backward compatibility)
+			sql = "SELECT uc.TABLE_NAME, ucc.COLUMN_NAME, uc.CONSTRAINT_NAME, uc.R_OWNER, uc.R_CONSTRAINT_NAME "
+					+ "FROM USER_CONSTRAINTS uc JOIN USER_CONS_COLUMNS ucc ON uc.CONSTRAINT_NAME = ucc.CONSTRAINT_NAME "
+					+ "WHERE uc.CONSTRAINT_TYPE='R' AND uc.TABLE_NAME IN (" + tableListStr + ")";
+		}
 		List<ForeignKeyInfoBO> foreignKeyInfoList = Lists.newArrayList();
 		try {
 			String[][] resultArr = SqlExecutor.executeSqlAndReturnArr(connection, null, sql);
