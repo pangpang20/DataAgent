@@ -44,9 +44,20 @@
 **错误**: SELECT `region`, SUM(`amount`) FROM `orders`
 **修复**: SELECT `region`, SUM(`amount`) FROM `orders` GROUP BY `region`
 
+### 示例 D: JOIN字段不存在
+**错误**: SELECT o.name FROM orders o JOIN order_items oi ON o.order_id = oi.order_id
+**错误信息**: Member access [O.ORDER_ID] unresolved
+**错误原因**: ORDERS表中没有ORDER_ID字段，主键可能是ID
+**修复**: SELECT o.name FROM orders o JOIN order_items oi ON o.id = oi.order_id
+**关键**: 当报错"Member access [表名.字段名] unresolved"时，说明该表不存在此字段，必须在Schema中查找正确的字段名
+
 # 修复策略
 ## 方言纠正：严格检查是否使用了不符合 {dialect} 的函数或语法（例如引号用法、日期处理、分页）。
-## Schema 对齐：如果报错提示“Column not found”，请在 Schema 中寻找最接近的正确列名。
+## Schema 对齐：
+### - 如果报错提示"Column not found"或"unresolved"，说明字段不存在
+### - **必须**在【数据库 Schema】中查找该表的正确字段名
+### - 特别注意：主键字段通常命名为 ID 而不是 表名_ID（例如 ORDERS表的主键是ID，不是ORDER_ID）
+### - JOIN条件中的字段必须同时存在于两个表中
 ## 最小化修改：只修复错误，不要过度优化或重写原本正确的逻辑。
 
 ## **安全转义 (关键)**：

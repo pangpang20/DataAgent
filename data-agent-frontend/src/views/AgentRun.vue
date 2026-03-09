@@ -1510,7 +1510,7 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    margin-bottom: 12px;
+    margin-bottom: 4px;
     padding-bottom: 8px;
     border-bottom: 1px solid #f0f0f0;
   }
@@ -1572,7 +1572,7 @@
   }
 
   .agent-response-content {
-    padding: 16px;
+    padding: 6px;
     line-height: 1.6;
     min-height: 40px;
     font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
