@@ -1135,6 +1135,8 @@
         if (value) {
           // 开启自动展开：将所有节点设为展开状态
           isNodeVisible.value = isNodeVisible.value.map(() => true);
+        }else{
+          isNodeVisible.value = isNodeVisible.value.map(() => false);
         }
         // 关闭自动展开时不做任何操作，保持各节点的当前状态
       };
@@ -1532,7 +1534,7 @@
   .agent-response-container {
     display: flex;
     flex-direction: column;
-    gap: 5px;
+    gap: 8px;
   }
 
   .agent-response-block {
@@ -1553,7 +1555,7 @@
     justify-content: space-between;
     align-items: center;
     background: #ecf5ff;
-    padding: 12px 16px;
+    padding: 2px 4px;
     font-weight: 600;
     color: #409eff;
     border-bottom: 1px solid #e8e8e8;
