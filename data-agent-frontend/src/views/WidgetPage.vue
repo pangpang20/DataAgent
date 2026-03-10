@@ -38,26 +38,15 @@
 
     <!-- Messages Area -->
     <div class="widget-messages" ref="messagesContainer">
-      <!-- Welcome Section -->
+      <!-- Welcome Section (only show welcome message, no preset questions) -->
       <div v-if="messages.length === 0 && !isStreaming" class="welcome-section">
         <div class="welcome-message">{{ welcomeMessage }}</div>
-        <!-- Preset Questions -->
-        <div v-if="presetQuestions.length > 0" class="preset-questions">
-          <div 
-            v-for="question in presetQuestions" 
-            :key="question.id"
-            class="preset-item"
-            @click="sendPresetQuestion(question.question)"
-          >
-            {{ question.question }}
-          </div>
-        </div>
       </div>
 
       <!-- Message List -->
-      <div 
-        v-for="(msg, index) in messages" 
-        :key="msg.id || index" 
+      <div
+        v-for="(msg, index) in messages"
+        :key="msg.id || index"
         class="message-wrapper"
       >
         <!-- Result Set Message (with AI avatar) -->
@@ -197,6 +186,27 @@
       </div>
     </div>
 
+    <!-- Preset Questions (always visible at bottom) -->
+    <div v-if="presetQuestions.length > 0" class="preset-section">
+      <div class="preset-questions-container">
+        <div class="questions-header">
+          <el-icon class="header-icon"><ChatLineRound /></el-icon>
+          <span class="header-title">预设问题</span>
+        </div>
+        <div class="questions-list">
+          <div
+            v-for="question in presetQuestions"
+            :key="question.id"
+            class="question-item"
+            @click="sendPresetQuestion(question.question)"
+          >
+            <span class="question-text">{{ question.question }}</span>
+            <el-icon class="question-arrow"><ArrowRight /></el-icon>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Input Area -->
     <div class="widget-input">
       <input
@@ -224,8 +234,10 @@
 import { defineComponent, ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import axios from 'axios';
+import { ChatLineRound, ArrowRight } from '@element-plus/icons-vue';
 import ResultSetDisplay from '@/components/run/ResultSetDisplay.vue';
 import Markdown from '@/components/run/Markdown.vue';
+import PresetQuestionService from '@/services/presetQuestion';
 
 interface Message {
   id?: number;
@@ -259,6 +271,8 @@ export default defineComponent({
   components: {
     ResultSetDisplay,
     Markdown,
+    ChatLineRound,
+    ArrowRight,
   },
   setup() {
     const route = useRoute();
@@ -492,6 +506,55 @@ export default defineComponent({
       isNodeVisible.value[index] = !isNodeVisible.value[index];
     };
 
+    // Escape HTML special characters
+    const escapeHtml = (text: string): string => {
+      if (!text) return '';
+      return text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    };
+
+    // Global function to copy code block (exposed to window for HTML button onclick)
+    (window as any).copyCodeBlock = (elementId: string) => {
+      const element = document.getElementById(elementId);
+      if (!element) return;
+
+      const text = element.textContent || element.innerText || '';
+      navigator.clipboard.writeText(text).then(() => {
+        // Show success feedback
+        const btn = event.target as HTMLButtonElement;
+        const originalText = btn.textContent;
+        btn.textContent = '已复制!';
+        btn.style.background = '#e7f3ff';
+        setTimeout(() => {
+          btn.textContent = originalText;
+          btn.style.background = '#f8f9fa';
+        }, 2000);
+      }).catch((err) => {
+        console.warn('[Widget Page] Failed to copy code:', err);
+      });
+    };
+
+    // Global function to download markdown report (exposed to window for HTML button onclick)
+    (window as any).downloadMarkdownReport = (elementId: string, filename: string) => {
+      const element = document.getElementById(elementId);
+      if (!element || !element.dataset.content) return;
+
+      const markdown = decodeURIComponent(element.dataset.content);
+      const blob = new Blob([markdown], { type: 'text/markdown' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    };
+
     // Save assistant message to database
     const saveAssistantMessage = async (content: string, messageType: string) => {
       if (!sessionId.value || !content) return;
@@ -655,7 +718,16 @@ export default defineComponent({
                 pre += node[p].text;
               }
               const language = n.textType.toLowerCase();
-              content += `<pre><div style="display: flex; justify-content: space-between; align-items: center; background: #f8f9fa; padding: 4px 8px; border-bottom: 1px solid #e1e4e8; font-family: system-ui, sans-serif; font-size: 13px;"><span style="color: #666;">${language}</span><span hidden>${pre}</span><button onclick="navigator.clipboard.writeText(this.previousElementSibling.textContent)" style="background: #f8f9fa; border: 1px solid #e1e4e8; padding: 2px 8px; border-radius: 4px; font-size: 12px; cursor: pointer; transition: background 0.2s;">复制</button></div><code style="display: block; padding: 12px; background: #f6f8fa; overflow-x: auto; font-family: 'Monaco', 'Menlo', monospace; font-size: 12px; line-height: 1.5;">${pre}</code></pre>`;
+              // Generate unique ID for this code block
+              const codeId = `code-${Date.now()}-${idx}`;
+              content += `
+                <div class="code-block-wrapper" style="margin-bottom: 12px;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; background: #f8f9fa; padding: 6px 12px; border-bottom: 1px solid #e1e4e8; font-family: system-ui, sans-serif; font-size: 13px;">
+                    <span style="color: #666; font-weight: 500;">${language}</span>
+                    <button onclick="copyCodeBlock('${codeId}')" style="background: #f8f9fa; border: 1px solid #e1e4e8; padding: 4px 12px; border-radius: 4px; font-size: 12px; cursor: pointer; transition: background 0.2s;">复制</button>
+                  </div>
+                  <pre id="${codeId}" style="margin: 0; padding: 12px; background: #f6f8fa; overflow-x: auto; font-family: 'Monaco', 'Menlo', monospace; font-size: 12px; line-height: 1.5; color: #24292e;"><code>${escapeHtml(pre)}</code></pre>
+                </div>`;
               if (p < node.length) {
                 idx = p - 1;
               } else {
@@ -670,6 +742,11 @@ export default defineComponent({
                 }
                 markdown += node[p].text;
               }
+              // Generate unique ID for this markdown block
+              const markdownId = `md-${Date.now()}-${idx}`;
+              // Store markdown content in a data attribute for download
+              const encodedMarkdown = encodeURIComponent(markdown);
+
               // Simple markdown to HTML conversion
               let html = markdown
                 .replace(/^### (.*$)/gim, '<h3>$1</h3>')
@@ -679,7 +756,25 @@ export default defineComponent({
                 .replace(/\*(.*)\*/gim, '<i>$1</i>')
                 .replace(/`(.*?)`/gim, '<code style="background: #f6f8fa; padding: 2px 6px; border-radius: 3px;">$1</code>')
                 .replace(/\n/gim, '<br>');
-              content += `<div class="markdown-report" style="line-height: 1.6;">${html}</div>`;
+
+              content += `
+                <div class="markdown-report-wrapper" style="margin-bottom: 12px;">
+                  <div class="markdown-report-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid #f0f0f0;">
+                    <div class="report-info" style="display: flex; align-items: center; gap: 8px; color: #409eff; font-size: 14px; font-weight: 500;">
+                      <svg viewBox="0 0 24 24" width="18" height="18" fill="#409EFF">
+                        <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
+                      </svg>
+                      <span>Markdown 报告已生成</span>
+                    </div>
+                    <button onclick="downloadMarkdownReport('${markdownId}', 'report_${Date.now()}.md')" class="download-btn primary" style="display: flex; align-items: center; gap: 4px; padding: 6px 12px; background: #409EFF; color: white; border: none; border-radius: 6px; font-size: 12px; cursor: pointer; transition: all 0.2s;">
+                      <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+                        <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+                      </svg>
+                      下载 Markdown 报告
+                    </button>
+                  </div>
+                  <div id="${markdownId}" class="markdown-report" data-content="${encodedMarkdown}" style="line-height: 1.6;">${html}</div>
+                </div>`;
               if (p < node.length) {
                 idx = p - 1;
               } else {
@@ -802,6 +897,9 @@ export default defineComponent({
 
     onUnmounted(() => {
       window.removeEventListener('message', handleMessage);
+      // Clean up global functions
+      delete (window as any).copyCodeBlock;
+      delete (window as any).downloadMarkdownReport;
     });
 
     // Download markdown report
@@ -1171,6 +1269,98 @@ export default defineComponent({
 @keyframes typing {
   0%, 60%, 100% { opacity: 0.3; transform: translateY(0); }
   30% { opacity: 1; transform: translateY(-4px); }
+}
+
+/* Preset Questions Section (always visible at bottom) */
+.preset-section {
+  padding: 12px 16px;
+  background: #fafafa;
+  border-top: 1px solid #f0f0f0;
+}
+
+.preset-questions-container {
+  max-width: 100%;
+}
+
+.questions-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.header-icon {
+  font-size: 16px;
+  color: #409eff;
+}
+
+.header-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: #606266;
+}
+
+.questions-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.question-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: white;
+  border: 1px solid #e8e8e8;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  max-width: calc(50% - 4px);
+}
+
+.question-item:hover {
+  background: #ecf5ff;
+  border-color: #409eff;
+  transform: translateY(-1px);
+}
+
+.question-item:active {
+  transform: translateY(0);
+}
+
+.question-text {
+  flex: 1;
+  font-size: 13px;
+  color: #303133;
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.question-item:hover .question-text {
+  color: #409eff;
+}
+
+.question-arrow {
+  flex-shrink: 0;
+  font-size: 14px;
+  color: #c0c4cc;
+  transition: all 0.2s ease;
+}
+
+.question-item:hover .question-arrow {
+  color: #409eff;
+  transform: translateX(2px);
+}
+
+@media (max-width: 768px) {
+  .question-item {
+    max-width: 100%;
+  }
 }
 
 /* Input Area */
