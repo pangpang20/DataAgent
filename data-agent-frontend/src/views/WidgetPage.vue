@@ -501,6 +501,7 @@ export default defineComponent({
             },
           }
         );
+        console.log(`[Widget Page] Message saved to database: messageType=${messageType}, contentLength=${content.length}`);
       } catch (e) {
         console.warn('[Widget Page] Failed to save assistant message:', e);
       }
@@ -545,7 +546,7 @@ export default defineComponent({
         const eventSource = new EventSource(
           `${baseUrl.value}/nl2sql/stream?sessionId=${sessionId.value}&question=${encodeURIComponent(messageContent)}&apiKey=${encodeURIComponent(apiKey.value)}`
         );
-        
+
         let currentNodeName = '';
         let currentNodeIndex = -1;
         let isCompleted = false;  // Flag to prevent duplicate processing
@@ -553,13 +554,15 @@ export default defineComponent({
         markdownReportContent.value = '';
         resultSetContent.value = '';
         chatResponseContent.value = '';
-        
+        // Track saved nodes to avoid duplicate saves
+        const savedNodes = new Set<string>();
+
         eventSource.onmessage = (event) => {
           try {
             const data: StreamNodeData = JSON.parse(event.data);
             console.log(`[Widget Page] Received: node=${data.nodeName}, type=${data.textType}, text=${(data.text || '').substring(0, 50)}...`);
-            
-            // Accumulate content for MARK_DOWN and RESULT_SET types (like AgentRun.vue)
+
+            // Accumulate content for MARK_DOWN types
             if (data.textType === 'MARK_DOWN') {
               markdownReportContent.value += data.text || '';
               console.log(`[Widget Page] MARK_DOWN accumulated: ${markdownReportContent.value.length} chars`);
@@ -590,16 +593,28 @@ export default defineComponent({
                 nodeBlocks.value.push([{ ...data, text: resultSetContent.value }]);
                 isNodeVisible.value[currentNodeIndex] = true;
               }
+              // Mark RESULT_SET as ready to save (will be saved on complete)
+              currentNodeName = data.nodeName;
+              currentNodeIndex = nodeBlocks.value.length - 1;
             } else {
               // For other types (including ChatResponseNode), accumulate and display
-              // Check if this is ChatResponseNode for saving
               if (data.nodeName === 'ChatResponseNode') {
                 chatResponseContent.value += data.text || '';
                 console.log(`[Widget Page] ChatResponseNode accumulated: ${chatResponseContent.value.length} chars`);
               }
-              
-              // Update display
+
+              // Update display and track current node
               if (data.nodeName !== currentNodeName) {
+                // Node changed - save previous node content if it was ChatResponseNode
+                if (currentNodeName === 'ChatResponseNode' && chatResponseContent.value) {
+                  const nodeKey = `ChatResponseNode_TEXT`;
+                  if (!savedNodes.has(nodeKey)) {
+                    savedNodes.add(nodeKey);
+                    saveAssistantMessage(chatResponseContent.value, 'text');
+                  }
+                  chatResponseContent.value = ''; // Reset for new node
+                }
+
                 currentNodeName = data.nodeName;
                 currentNodeIndex = nodeBlocks.value.length;
                 nodeBlocks.value.push([data]);
@@ -612,7 +627,7 @@ export default defineComponent({
                 }
               }
             }
-            
+
             scrollToBottom();
           } catch (e) {
             console.warn('[Widget Page] Parse error:', e);
@@ -627,33 +642,43 @@ export default defineComponent({
           }
           isCompleted = true;
           console.log(`[Widget Page] Stream completed via ${source}, markdownReport: ${markdownReportContent.value.length} chars, resultSet: ${resultSetContent.value.length} chars, chatResponse: ${chatResponseContent.value.length} chars`);
-          
+
           eventSource.close();
           isLoading.value = false;
           isStreaming.value = false;
-          
-          // Save MARK_DOWN content to database only (already displayed in nodeBlocks)
+
+          // Save remaining content that hasn't been saved yet
+          // Save MARK_DOWN content if not already saved
           if (markdownReportContent.value) {
-            console.log('[Widget Page] Saving markdown report to database (not adding to messages to avoid duplicate)');
-            saveAssistantMessage(markdownReportContent.value, 'markdown-report');
+            const nodeKey = `ReportGeneratorNode_MARK_DOWN`;
+            if (!savedNodes.has(nodeKey)) {
+              console.log('[Widget Page] Saving markdown report to database');
+              saveAssistantMessage(markdownReportContent.value, 'markdown-report');
+            }
           }
-          
-          // Save RESULT_SET content to database only (already displayed in nodeBlocks)
+
+          // Save RESULT_SET content if not already saved
           if (resultSetContent.value) {
-            console.log('[Widget Page] Saving result set to database (not adding to messages to avoid duplicate)');
-            saveAssistantMessage(resultSetContent.value, 'result-set');
+            const nodeKey = `result_set_RESULT_SET`;
+            if (!savedNodes.has(nodeKey)) {
+              console.log('[Widget Page] Saving result set to database');
+              saveAssistantMessage(resultSetContent.value, 'result-set');
+            }
           }
-          
-          // Save ChatResponseNode content (for chat/casual responses)
-          if (chatResponseContent.value && !markdownReportContent.value && !resultSetContent.value) {
-            console.log('[Widget Page] Saving chat response to database');
-            saveAssistantMessage(chatResponseContent.value, 'text');
+
+          // Save ChatResponseNode content
+          if (chatResponseContent.value) {
+            const nodeKey = `ChatResponseNode_TEXT`;
+            if (!savedNodes.has(nodeKey)) {
+              console.log('[Widget Page] Saving chat response to database');
+              saveAssistantMessage(chatResponseContent.value, 'text');
+            }
           }
-          
+
           // Do not clear nodeBlocks, keep process info visible like AgentRun.vue
           console.log(`[Widget Page] Keeping ${nodeBlocks.value.length} nodeBlocks visible`);
           scrollToBottom();
-          
+
           // Notify parent of new message
           sendToParent({
             type: 'WIDGET_NEW_MESSAGE',
@@ -807,16 +832,23 @@ export default defineComponent({
   border: none;
   color: white;
   cursor: pointer;
-  padding: 6px;
+  padding: 8px 10px;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 4px;
   transition: background-color 0.2s;
+  font-weight: 600;
 }
 
 .header-btn:hover {
-  background-color: rgba(255, 255, 255, 0.2);
+  background-color: rgba(255, 255, 255, 0.25);
+}
+
+.header-btn svg {
+  width: 20px;
+  height: 20px;
+  stroke-width: 2.5;
 }
 
 /* Messages Area */
