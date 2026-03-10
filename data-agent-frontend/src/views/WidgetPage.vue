@@ -635,24 +635,58 @@ export default defineComponent({
         };
         
         // Helper function to handle stream completion
-        const handleStreamComplete = (source: string) => {
+        const handleStreamComplete = async (source: string) => {
           if (isCompleted) {
             console.log(`[Widget Page] Stream already completed, ignoring ${source} event`);
             return;
           }
           isCompleted = true;
-          console.log(`[Widget Page] Stream completed via ${source}, markdownReport: ${markdownReportContent.value.length} chars, resultSet: ${resultSetContent.value.length} chars, chatResponse: ${chatResponseContent.value.length} chars`);
+          console.log(`[Widget Page] Stream completed via ${source}, markdownReport: ${markdownReportContent.value.length} chars, resultSet: ${resultSetContent.value.length} chars, chatResponse: ${chatResponseContent.value.length} chars, nodeBlocks: ${nodeBlocks.value.length}`);
 
           eventSource.close();
           isLoading.value = false;
           isStreaming.value = false;
 
-          // Save remaining content that hasn't been saved yet
+          // Helper function to save node block to database
+          const saveNodeBlock = async (block: StreamNodeData[]): Promise<void> => {
+            if (!block || block.length === 0) return;
+
+            const node = block[0];
+            if (!node.text) return;
+
+            // Determine messageType based on nodeName and textType
+            let messageType = 'text';
+            let content = node.text;
+
+            if (node.textType === 'MARK_DOWN') {
+              messageType = 'markdown-report';
+            } else if (node.textType === 'RESULT_SET') {
+              messageType = 'result-set';
+            } else if (node.textType === 'HTML') {
+              messageType = 'html-report';
+            }
+            // Other types (SQL, PYTHON, JSON, etc.) use 'text' messageType
+
+            console.log(`[Widget Page] Saving node block: node=${node.nodeName}, type=${node.textType}, length=${content.length}`);
+            await saveAssistantMessage(content, messageType);
+          };
+
+          // Save all nodeBlocks to database (like AgentRun.vue)
+          if (nodeBlocks.value && nodeBlocks.value.length > 0) {
+            console.log(`[Widget Page] Saving ${nodeBlocks.value.length} node blocks to database`);
+            const savePromises = nodeBlocks.value.map(block => saveNodeBlock(block));
+            await Promise.all(savePromises).catch(error => {
+              console.error('[Widget Page] Error saving node blocks:', error);
+            });
+          }
+
+          // Also save remaining content from accumulators that hasn't been saved yet
           // Save MARK_DOWN content if not already saved
           if (markdownReportContent.value) {
             const nodeKey = `ReportGeneratorNode_MARK_DOWN`;
             if (!savedNodes.has(nodeKey)) {
               console.log('[Widget Page] Saving markdown report to database');
+              savedNodes.add(nodeKey);
               saveAssistantMessage(markdownReportContent.value, 'markdown-report');
             }
           }
@@ -662,6 +696,7 @@ export default defineComponent({
             const nodeKey = `result_set_RESULT_SET`;
             if (!savedNodes.has(nodeKey)) {
               console.log('[Widget Page] Saving result set to database');
+              savedNodes.add(nodeKey);
               saveAssistantMessage(resultSetContent.value, 'result-set');
             }
           }
@@ -671,6 +706,7 @@ export default defineComponent({
             const nodeKey = `ChatResponseNode_TEXT`;
             if (!savedNodes.has(nodeKey)) {
               console.log('[Widget Page] Saving chat response to database');
+              savedNodes.add(nodeKey);
               saveAssistantMessage(chatResponseContent.value, 'text');
             }
           }
@@ -698,9 +734,13 @@ export default defineComponent({
         console.error('[Widget Page] Send message error:', error);
         isLoading.value = false;
         isStreaming.value = false;
+
+        // Save any content that was received before the error
+        handleStreamComplete('error');
+
         messages.value.push({
           role: 'assistant',
-          content: '抱歉，发送消息失败，请稍后再试。',
+          content: '抱歉，处理消息时遇到错误，请稍后再试。',
         });
         scrollToBottom();
       }
