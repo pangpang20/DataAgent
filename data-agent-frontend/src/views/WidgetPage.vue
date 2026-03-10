@@ -100,6 +100,15 @@
             </div>
           </div>
         </div>
+        <!-- HTML Format Message (with AI avatar) - for agent response blocks -->
+        <div v-else-if="msg.messageType === 'html'" class="message assistant history-message">
+          <div class="message-avatar">
+            <span class="avatar assistant-avatar">AI</span>
+          </div>
+          <div class="message-content">
+            <div class="message-html" v-html="msg.content"></div>
+          </div>
+        </div>
         <!-- Normal Text Message -->
         <div v-else :class="['message', msg.role]">
           <div class="message-avatar">
@@ -550,12 +559,6 @@ export default defineComponent({
         let currentNodeName = '';
         let currentNodeIndex = -1;
         let isCompleted = false;  // Flag to prevent duplicate processing
-        // Reset content accumulators
-        markdownReportContent.value = '';
-        resultSetContent.value = '';
-        chatResponseContent.value = '';
-        // Track saved nodes to avoid duplicate saves
-        const savedNodes = new Set<string>();
 
         eventSource.onmessage = (event) => {
           try {
@@ -593,7 +596,6 @@ export default defineComponent({
                 nodeBlocks.value.push([{ ...data, text: resultSetContent.value }]);
                 isNodeVisible.value[currentNodeIndex] = true;
               }
-              // Mark RESULT_SET as ready to save (will be saved on complete)
               currentNodeName = data.nodeName;
               currentNodeIndex = nodeBlocks.value.length - 1;
             } else {
@@ -605,16 +607,6 @@ export default defineComponent({
 
               // Update display and track current node
               if (data.nodeName !== currentNodeName) {
-                // Node changed - save previous node content if it was ChatResponseNode
-                if (currentNodeName === 'ChatResponseNode' && chatResponseContent.value) {
-                  const nodeKey = `ChatResponseNode_TEXT`;
-                  if (!savedNodes.has(nodeKey)) {
-                    savedNodes.add(nodeKey);
-                    saveAssistantMessage(chatResponseContent.value, 'text');
-                  }
-                  chatResponseContent.value = ''; // Reset for new node
-                }
-
                 currentNodeName = data.nodeName;
                 currentNodeIndex = nodeBlocks.value.length;
                 nodeBlocks.value.push([data]);
@@ -633,7 +625,82 @@ export default defineComponent({
             console.warn('[Widget Page] Parse error:', e);
           }
         };
-        
+
+        // Generate HTML for node block (similar to AgentRun.vue)
+        const generateNodeHtml = (node: StreamNodeData[]): string => {
+          if (!node || node.length === 0) return '';
+
+          const firstNode = node[0];
+          if (!firstNode.text) return '';
+
+          let content = '';
+
+          for (let idx = 0; idx < node.length; idx++) {
+            const n = node[idx];
+            if (n.textType === 'HTML') {
+              content += n.text;
+            } else if (n.textType === 'TEXT' || n.textType === 'STRING') {
+              content += n.text.replace(/\n/g, '<br>');
+            } else if (
+              n.textType === 'JSON' ||
+              n.textType === 'PYTHON' ||
+              n.textType === 'SQL'
+            ) {
+              let pre = '';
+              let p = idx;
+              for (; p < node.length; p++) {
+                if (node[p].textType !== n.textType) {
+                  break;
+                }
+                pre += node[p].text;
+              }
+              const language = n.textType.toLowerCase();
+              content += `<pre><div style="display: flex; justify-content: space-between; align-items: center; background: #f8f9fa; padding: 4px 8px; border-bottom: 1px solid #e1e4e8; font-family: system-ui, sans-serif; font-size: 13px;"><span style="color: #666;">${language}</span><span hidden>${pre}</span><button onclick="navigator.clipboard.writeText(this.previousElementSibling.textContent)" style="background: #f8f9fa; border: 1px solid #e1e4e8; padding: 2px 8px; border-radius: 4px; font-size: 12px; cursor: pointer; transition: background 0.2s;">复制</button></div><code style="display: block; padding: 12px; background: #f6f8fa; overflow-x: auto; font-family: 'Monaco', 'Menlo', monospace; font-size: 12px; line-height: 1.5;">${pre}</code></pre>`;
+              if (p < node.length) {
+                idx = p - 1;
+              } else {
+                break;
+              }
+            } else if (n.textType === 'MARK_DOWN') {
+              let markdown = '';
+              let p = idx;
+              for (; p < node.length; p++) {
+                if (node[p].textType !== 'MARK_DOWN') {
+                  break;
+                }
+                markdown += node[p].text;
+              }
+              // Simple markdown to HTML conversion
+              let html = markdown
+                .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+                .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+                .replace(/^# (.*$)/gim, '<h1>$1</h1>')
+                .replace(/\*\*(.*)\*\*/gim, '<b>$1</b>')
+                .replace(/\*(.*)\*/gim, '<i>$1</i>')
+                .replace(/`(.*?)`/gim, '<code style="background: #f6f8fa; padding: 2px 6px; border-radius: 3px;">$1</code>')
+                .replace(/\n/gim, '<br>');
+              content += `<div class="markdown-report" style="line-height: 1.6;">${html}</div>`;
+              if (p < node.length) {
+                idx = p - 1;
+              } else {
+                break;
+              }
+            } else if (n.textType === 'RESULT_SET') {
+              // For result set, store a marker that will be handled separately
+              content += `<div class="result-set-marker" data-result="${encodeURIComponent(n.text)}">[结果集数据]</div>`;
+            } else {
+              content += n.text.replace(/\n/g, '<br>');
+            }
+          }
+
+          return `
+          <div class="agent-response-block" style="display: block !important; width: 100% !important; margin-bottom: 12px;">
+            <div class="agent-response-title" style="padding: 10px 14px; background: #fafafa; border-bottom: 1px solid #f0f0f0; font-size: 13px; color: #666; font-weight: 500;">${firstNode.nodeName || 'Processing'}</div>
+            <div class="agent-response-content" style="padding: 12px 14px;">${content}</div>
+          </div>
+        `;
+        };
+
         // Helper function to handle stream completion
         const handleStreamComplete = async (source: string) => {
           if (isCompleted) {
@@ -647,67 +714,22 @@ export default defineComponent({
           isLoading.value = false;
           isStreaming.value = false;
 
-          // Helper function to save node block to database
-          const saveNodeBlock = async (block: StreamNodeData[]): Promise<void> => {
-            if (!block || block.length === 0) return;
-
-            const node = block[0];
-            if (!node.text) return;
-
-            // Determine messageType based on nodeName and textType
-            let messageType = 'text';
-            let content = node.text;
-
-            if (node.textType === 'MARK_DOWN') {
-              messageType = 'markdown-report';
-            } else if (node.textType === 'RESULT_SET') {
-              messageType = 'result-set';
-            } else if (node.textType === 'HTML') {
-              messageType = 'html-report';
-            }
-            // Other types (SQL, PYTHON, JSON, etc.) use 'text' messageType
-
-            console.log(`[Widget Page] Saving node block: node=${node.nodeName}, type=${node.textType}, length=${content.length}`);
-            await saveAssistantMessage(content, messageType);
-          };
-
-          // Save all nodeBlocks to database (like AgentRun.vue)
+          // Generate and save HTML for all nodeBlocks (like AgentRun.vue)
           if (nodeBlocks.value && nodeBlocks.value.length > 0) {
-            console.log(`[Widget Page] Saving ${nodeBlocks.value.length} node blocks to database`);
-            const savePromises = nodeBlocks.value.map(block => saveNodeBlock(block));
-            await Promise.all(savePromises).catch(error => {
-              console.error('[Widget Page] Error saving node blocks:', error);
-            });
-          }
+            console.log(`[Widget Page] Generating HTML for ${nodeBlocks.value.length} node blocks`);
 
-          // Also save remaining content from accumulators that hasn't been saved yet
-          // Save MARK_DOWN content if not already saved
-          if (markdownReportContent.value) {
-            const nodeKey = `ReportGeneratorNode_MARK_DOWN`;
-            if (!savedNodes.has(nodeKey)) {
-              console.log('[Widget Page] Saving markdown report to database');
-              savedNodes.add(nodeKey);
-              saveAssistantMessage(markdownReportContent.value, 'markdown-report');
+            // Generate combined HTML from all node blocks
+            let combinedHtml = '';
+            for (const block of nodeBlocks.value) {
+              const nodeHtml = generateNodeHtml(block);
+              if (nodeHtml) {
+                combinedHtml += nodeHtml;
+              }
             }
-          }
 
-          // Save RESULT_SET content if not already saved
-          if (resultSetContent.value) {
-            const nodeKey = `result_set_RESULT_SET`;
-            if (!savedNodes.has(nodeKey)) {
-              console.log('[Widget Page] Saving result set to database');
-              savedNodes.add(nodeKey);
-              saveAssistantMessage(resultSetContent.value, 'result-set');
-            }
-          }
-
-          // Save ChatResponseNode content
-          if (chatResponseContent.value) {
-            const nodeKey = `ChatResponseNode_TEXT`;
-            if (!savedNodes.has(nodeKey)) {
-              console.log('[Widget Page] Saving chat response to database');
-              savedNodes.add(nodeKey);
-              saveAssistantMessage(chatResponseContent.value, 'text');
+            if (combinedHtml) {
+              console.log(`[Widget Page] Saving combined HTML to database, length: ${combinedHtml.length}`);
+              await saveAssistantMessage(combinedHtml, 'html');
             }
           }
 
@@ -1354,5 +1376,34 @@ export default defineComponent({
 
 .widget-messages::-webkit-scrollbar-thumb:hover {
   background: #a8a8a8;
+}
+
+/* HTML Message Format */
+.message-html {
+  width: 100%;
+}
+
+.message-html .agent-response-block {
+  background: white;
+  border: 1px solid #e8e8e8;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  overflow: hidden;
+}
+
+.message-html .agent-response-title {
+  padding: 10px 14px;
+  background: #fafafa;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 13px;
+  color: #666;
+  font-weight: 500;
+}
+
+.message-html .agent-response-content {
+  padding: 12px 14px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #333;
 }
 </style>
