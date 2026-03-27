@@ -150,6 +150,12 @@ if [ -f "$DEPLOY_DIR/application.yml" ]; then
     log "备份配置文件 application.yml"
 fi
 
+# 备份 Nginx 配置
+if [ -f "$DEPLOY_DIR/nginx-dataagent.conf" ]; then
+    cp "$DEPLOY_DIR/nginx-dataagent.conf" "$BACKUP_DIR/"
+    log "备份 Nginx 配置 nginx-dataagent.conf"
+fi
+
 log "✅ 备份完成：$BACKUP_DIR"
 
 # ----------------------------------------------------------------------------
