@@ -33,6 +33,8 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 
+import java.io.InputStream;
+
 @Slf4j
 @Service
 public class DynamicModelFactory {
@@ -142,16 +144,30 @@ public class DynamicModelFactory {
 						log.info("  {}: {}", name, values);
 					});
 
+					// 记录请求体
+					try {
+						String requestBody = new String(body, java.nio.charset.StandardCharsets.UTF_8);
+						log.info("Request body: {}", requestBody);
+					} catch (Exception e) {
+						log.debug("Could not log request body: {}", e.getMessage());
+					}
+
 					// 执行请求并记录响应
 					var response = execution.execute(request, body);
 					log.info("Response status: {}", response.getStatusCode());
 					log.info("Response headers: {}", response.getHeaders());
+
+					// 记录响应体（用于调试）
 					try {
-						String responseBody = new String(body, java.nio.charset.StandardCharsets.UTF_8);
-						log.info("Request body: {}", responseBody);
+						InputStream responseStream = response.getBody();
+						if (responseStream != null) {
+							String responseBody = new String(responseStream.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+							log.info("Response body: {}", responseBody);
+						}
 					} catch (Exception e) {
-						log.debug("Could not log request body: {}", e.getMessage());
+						log.debug("Could not log response body: {}", e.getMessage());
 					}
+
 					return response;
 				});
 
