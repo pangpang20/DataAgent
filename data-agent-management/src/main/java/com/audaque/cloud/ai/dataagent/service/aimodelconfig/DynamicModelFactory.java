@@ -31,9 +31,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.reactive.function.client.ClientRequest;
+import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
-
-import java.io.InputStream;
 
 @Slf4j
 @Service
@@ -83,7 +83,7 @@ public class DynamicModelFactory {
 	private static void checkBasic(ModelConfigDTO config) {
 		Assert.hasText(config.getBaseUrl(), "baseUrl must not be empty");
 		Assert.hasText(config.getModelName(), "modelName must not be empty");
-		// API密钥始终必填，无论是标准认证还是自定义认证头
+		// API 密钥始终必填，无论是标准认证还是自定义认证头
 		Assert.hasText(config.getApiKey(), "apiKey must not be empty");
 	}
 
@@ -113,8 +113,8 @@ public class DynamicModelFactory {
 
 	/**
 	 * 使用自定义认证头创建 OpenAiApi
-	 * 通过自定义 RestClient 来实现非标准认证头
-	 * 注意：Spring AI 1.1.0 的 OpenAiApi 使用 RestClient（同步），而不是 WebClient（响应式）
+	 * 通过自定义 RestClient 和 WebClient 来实现非标准认证头
+	 * 注意：Spring AI 1.1.0 的 OpenAiApi 使用 RestClient（同步）和 WebClient（响应式流）
 	 */
 	private OpenAiApi createOpenAiApiWithCustomAuthHeader(ModelConfigDTO config) {
 		String authHeaderName = config.getAuthHeaderName();
@@ -123,59 +123,35 @@ public class DynamicModelFactory {
 		log.info("Using custom auth header: {} for API authentication", authHeaderName);
 
 		// 创建自定义 RestClient，添加自定义认证头
-		// 关键：使用 interceptor 移除 Spring AI 自动添加的 Authorization 头
 		RestClient.Builder restClientBuilder = RestClient.builder()
-				// 添加自定义认证头
 				.defaultHeader(authHeaderName, apiKey)
-				// 使用 interceptor 移除 Spring AI 自动添加的 Authorization 头
 				.requestInterceptor((request, body, execution) -> {
-					// 记录请求信息用于调试
-					log.info("Request URL: {}", request.getURI());
-					log.info("Request headers before filter:");
-					request.getHeaders().forEach((name, values) -> {
-						log.info("  {}: {}", name, values);
-					});
-
-					// 移除 Authorization 头
 					request.getHeaders().remove("Authorization");
-
-					log.info("Request headers after filter:");
-					request.getHeaders().forEach((name, values) -> {
-						log.info("  {}: {}", name, values);
-					});
-
-					// 记录请求体
-					try {
-						String requestBody = new String(body, java.nio.charset.StandardCharsets.UTF_8);
-						log.info("Request body: {}", requestBody);
-					} catch (Exception e) {
-						log.debug("Could not log request body: {}", e.getMessage());
-					}
-
-					// 执行请求并记录响应
 					var response = execution.execute(request, body);
-					log.info("Response status: {}", response.getStatusCode());
-					log.info("Response headers: {}", response.getHeaders());
-
-					// 记录响应体（用于调试）
-					try {
-						InputStream responseStream = response.getBody();
-						if (responseStream != null) {
-							String responseBody = new String(responseStream.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
-							log.info("Response body: {}", responseBody);
-						}
-					} catch (Exception e) {
-						log.debug("Could not log response body: {}", e.getMessage());
-					}
-
+					log.info("RestClient Response status: {}", response.getStatusCode());
 					return response;
 				});
 
-		// 构建 OpenAiApi，使用空的 apiKey（因为我们通过 RestClient 添加了认证头）
+		// 创建自定义 WebClient，添加自定义认证头（用于流式响应）
+		WebClient.Builder webClientBuilder =
+				WebClient.builder()
+						.defaultHeader(authHeaderName, apiKey)
+						.filter((request, next) -> {
+							var filteredRequest = ClientRequest.create(request.method(), request.url())
+									.headers(h -> h.addAll(request.headers()))
+									.headers(h -> h.remove("Authorization"))
+									.body(request.body())
+									.build();
+							log.debug("WebClient request to {}: headers={}",
+									filteredRequest.url(), filteredRequest.headers().keySet());
+							return next.exchange(filteredRequest);
+						});
+
 		OpenAiApi.Builder apiBuilder = OpenAiApi.builder()
-				.apiKey("") // 空的 apiKey，因为认证头已经通过 RestClient 添加
+				.apiKey("")
 				.baseUrl(config.getBaseUrl())
-				.restClientBuilder(restClientBuilder);
+				.restClientBuilder(restClientBuilder)
+				.webClientBuilder(webClientBuilder);
 
 		if (StringUtils.hasText(config.getCompletionsPath())) {
 			apiBuilder.completionsPath(config.getCompletionsPath());
@@ -198,14 +174,11 @@ public class DynamicModelFactory {
 
 		OpenAiApi openAiApi = createOpenAiApi(config);
 
-		// 使用自定义重试模板
 		RetryTemplate retryTemplate = createRetryTemplate();
 		EmbeddingModel baseModel = new OpenAiEmbeddingModel(openAiApi, MetadataMode.EMBED,
 				OpenAiEmbeddingOptions.builder().model(config.getModelName()).build(),
 				retryTemplate);
 
-		// 使用 QwenEmbeddingModel 包装，修复 qwen3-embedding 返回的 index 不连续问题
-		// 这个包装对所有兼容 OpenAI API 的 Embedding 模型都安全
 		return new QwenEmbeddingModel(baseModel);
 	}
 
