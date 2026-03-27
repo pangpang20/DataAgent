@@ -19,16 +19,23 @@ import com.audaque.cloud.ai.dataagent.enums.ModelType;
 import com.audaque.cloud.ai.dataagent.dto.ModelConfigDTO;
 import com.audaque.cloud.ai.dataagent.entity.ModelConfig;
 import com.audaque.cloud.ai.dataagent.service.vectorstore.VectorDimensionService;
+import com.audaque.cloud.ai.dataagent.util.ChatResponseUtil;
 import com.audaque.cloud.ai.dataagent.util.JsonUtil;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.ai.chat.messages.Message;
+import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.model.ChatModel;
+import org.springframework.ai.chat.model.ChatResponse;
+import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
+
+import java.util.List;
 
 @Slf4j
 @Service
@@ -251,17 +258,20 @@ public class ModelConfigOpsService {
 		// 1. 创建临时模型
 		ChatModel tempModel = modelFactory.createChatModel(config);
 
-		// 2. 发起最轻量的请求
+		// 2. 使用 Prompt 对象构建正确的请求格式（messages 为数组）
 		String promptText = "Hello";
+		Message userMessage = new UserMessage(promptText);
+		Prompt prompt = new Prompt(List.of(userMessage));
 
-		// 3. 调用
-		String response = tempModel.call(promptText);
+		// 3. 调用模型
+		ChatResponse response = tempModel.call(prompt);
 
 		// 4. 校验结果
-		if (!StringUtils.hasText(response)) {
+		String content = ChatResponseUtil.getText(response);
+		if (!StringUtils.hasText(content)) {
 			throw new RuntimeException("模型返回内容为空");
 		}
-		log.info("Chat Model test passed. Response: {}", response);
+		log.info("Chat Model test passed. Response: {}", content);
 	}
 
 	private void testEmbeddingModel(ModelConfigDTO config) {
