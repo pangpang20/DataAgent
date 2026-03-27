@@ -535,6 +535,16 @@ package_output() {
     else
         warn "构建脚本不存在: $PROJECT_ROOT/engineering/build-dataagent.sh"
     fi
+
+    # 复制更新脚本
+    info "复制更新脚本..."
+    if [ -f "$PROJECT_ROOT/engineering/update_dataagent.sh" ]; then
+        \cp "$PROJECT_ROOT/engineering/update_dataagent.sh" "$OUTPUT_DIR/scripts/update_dataagent.sh"
+        chmod +x "$OUTPUT_DIR/scripts/update_dataagent.sh"
+        info "✅ 更新脚本已复制到 scripts 目录"
+    else
+        warn "更新脚本不存在：$PROJECT_ROOT/engineering/update_dataagent.sh"
+    fi
     
     # 生成版本信息
     info "生成版本信息..."
