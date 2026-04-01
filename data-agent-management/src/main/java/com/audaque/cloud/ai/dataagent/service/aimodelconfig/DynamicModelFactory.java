@@ -53,26 +53,37 @@ public class DynamicModelFactory {
 	 * 支持自定义认证头名称
 	 */
 	public ChatModel createChatModel(ModelConfigDTO config) {
-
-		log.info("Creating NEW ChatModel instance. Provider: {}, Model: {}, BaseUrl: {}, AuthHeader: {}",
-				config.getProvider(), config.getModelName(), config.getBaseUrl(), config.getAuthHeaderName());
 		// 1. 验证参数
 		checkBasic(config);
 
 		// 2. 构建 OpenAiApi (核心通讯对象)
 		OpenAiApi openAiApi = createOpenAiApi(config);
 
-		// 3. 构建运行时选项 (设置默认的模型名称，如 "deepseek-chat" 或 "gpt-4")
+		// 3. 处理模型名称（针对 DashScope/通义千问 think 模式控制）
+		// 对于通义千问模型，通过 modelName 后添加 ?enable_thinking=false 来禁用 think
+		String modelName = config.getModelName();
+		if (config.getEnableThinking() != null && !config.getEnableThinking()) {
+			// 仅对通义千问模型添加参数
+			if (modelName.toLowerCase().contains("qwen")) {
+				modelName = modelName + "?enable_thinking=false";
+				log.info("Think mode disabled for Qwen model: {} -> {}", config.getModelName(), modelName);
+			}
+		}
+
+		log.info("Creating NEW ChatModel instance. Provider: {}, Model: {}, BaseUrl: {}, AuthHeader: {}, EnableThinking: {}",
+				config.getProvider(), config.getModelName(), config.getBaseUrl(), config.getAuthHeaderName(), config.getEnableThinking());
+
+		// 4. 构建运行时选项 (设置默认的模型名称，如 "deepseek-chat" 或 "gpt-4")
 		OpenAiChatOptions openAiChatOptions = OpenAiChatOptions.builder()
-				.model(config.getModelName())
+				.model(modelName)
 				.temperature(config.getTemperature())
 				.maxTokens(config.getMaxTokens())
 				.build();
 
-		// 4. 创建自定义重试模板，支持 429 错误重试
+		// 5. 创建自定义重试模板，支持 429 错误重试
 		RetryTemplate retryTemplate = createRetryTemplate();
 
-		// 5. 返回统一的 OpenAiChatModel，配置重试机制
+		// 6. 返回统一的 OpenAiChatModel，配置重试机制
 		return OpenAiChatModel.builder()
 				.openAiApi(openAiApi)
 				.defaultOptions(openAiChatOptions)

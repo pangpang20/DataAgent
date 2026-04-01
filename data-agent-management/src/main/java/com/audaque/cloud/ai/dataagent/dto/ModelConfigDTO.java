@@ -64,4 +64,8 @@ public class ModelConfigDTO {
 
 	private Boolean isActive = true;
 
+	// 是否启用 think 模式（仅对支持 think 的模型有效，如 qwen-plus, qwen-max 等）
+	// 默认：false（禁用）
+	private Boolean enableThinking = false;
+
 }

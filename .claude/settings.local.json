@@ -14,7 +14,8 @@
       "Bash(git commit -m 'feat\\(embedding\\): 仅对 Qwen 提供商使用批量处理包装类:*)",
       "Bash(journalctl -u dataagent --since \"17:20:00\" --no-pager)",
       "Bash(journalctl -u dataagent --since \"17:25:00\" --no-pager)",
-      "Bash(git commit -m 'refactor\\(util\\): 恢复 MarkdownParserUtil 和 ChatResponseUtil 原始逻辑:*)"
+      "Bash(git commit -m 'refactor\\(util\\): 恢复 MarkdownParserUtil 和 ChatResponseUtil 原始逻辑:*)",
+      "Bash(git commit -m 'feat\\(model\\): 添加 think 模式开关配置:*)"
     ]
   }
 }
