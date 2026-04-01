@@ -18,7 +18,8 @@
       "Bash(git commit -m 'feat\\(model\\): 添加 think 模式开关配置:*)",
       "Bash(git commit -m 'docs\\(sample\\): 在 application.yml.sample 中添加 think 模式配置:*)",
       "Bash(journalctl -u dataagent --since \"18:53:00\" --no-pager)",
-      "Bash(git commit -m 'fix\\(think\\): 移除错误的模型名称参数追加逻辑:*)"
+      "Bash(git commit -m 'fix\\(think\\): 移除错误的模型名称参数追加逻辑:*)",
+      "Bash(git commit -m 'feat\\(think\\): 添加 think 内容过滤支持自定义 think 模型:*)"
     ]
   }
 }

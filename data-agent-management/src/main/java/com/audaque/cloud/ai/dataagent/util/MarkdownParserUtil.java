@@ -29,16 +29,22 @@ public class MarkdownParserUtil {
 			return markdownCode;
 		}
 
+		// Filter out <think>...</think> content before processing
+		String filteredContent = markdownCode.replaceAll("(?i)<think>[\\s\\S]*?</think>", "").trim();
+		if (filteredContent.isEmpty()) {
+			return "";
+		}
+
 		// Find the start of a code block (3 or more backticks)
 		int startIndex = -1;
 		int delimiterLength = 0;
 
-		for (int i = 0; i <= markdownCode.length() - 3; i++) {
-			if (markdownCode.substring(i, i + 3).equals("```")) {
+		for (int i = 0; i <= filteredContent.length() - 3; i++) {
+			if (filteredContent.substring(i, i + 3).equals("```")) {
 				startIndex = i;
 				delimiterLength = 3;
 				// Count additional backticks
-				while (i + delimiterLength < markdownCode.length() && markdownCode.charAt(i + delimiterLength) == '`') {
+				while (i + delimiterLength < filteredContent.length() && filteredContent.charAt(i + delimiterLength) == '`') {
 					delimiterLength++;
 				}
 				break;
@@ -47,29 +53,29 @@ public class MarkdownParserUtil {
 
 		if (startIndex == -1) {
 			// No triple backtick code block found, try single backtick
-			return removeSingleBackticks(markdownCode);
+			return removeSingleBackticks(filteredContent);
 		}
 
 		// Skip the opening delimiter and optional language specification
 		int contentStart = startIndex + delimiterLength;
-		while (contentStart < markdownCode.length() && markdownCode.charAt(contentStart) != '\n') {
+		while (contentStart < filteredContent.length() && filteredContent.charAt(contentStart) != '\n') {
 			contentStart++;
 		}
-		if (contentStart < markdownCode.length() && markdownCode.charAt(contentStart) == '\n') {
+		if (contentStart < filteredContent.length() && filteredContent.charAt(contentStart) == '\n') {
 			contentStart++; // Skip the newline after language spec
 		}
 
 		// Find the closing delimiter
 		String closingDelimiter = "`".repeat(delimiterLength);
-		int endIndex = markdownCode.indexOf(closingDelimiter, contentStart);
+		int endIndex = filteredContent.indexOf(closingDelimiter, contentStart);
 
 		if (endIndex == -1) {
 			// No closing delimiter found, return from content start to end
-			return markdownCode.substring(contentStart);
+			return filteredContent.substring(contentStart);
 		}
 
 		// Extract just the content between delimiters
-		return markdownCode.substring(contentStart, endIndex);
+		return filteredContent.substring(contentStart, endIndex);
 	}
 
 	/**
