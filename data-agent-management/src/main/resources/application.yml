@@ -82,6 +82,14 @@ spring:
           default-topk-limit: 8
           default-similarity-threshold: 0.4
         llm-service-type: stream
+        # Think 模式配置（仅对支持 think 的模型有效，如 qwen-plus, qwen-max 等）
+        think:
+          # 是否启用 think 模式，默认 false（禁用）
+          # 禁用后模型将不输出<think></think>内容，减少 token 消耗和输出长度
+          enable: ${DATAAGENT_THINK_ENABLE:false}
+          # 指定哪些模型启用 think（仅在 enable=true 时生效）
+          # 例如：["qwen-max", "qwen-plus"]
+          models: ${DATAAGENT_THINK_MODELS:}
         code-executor:
           # 运行Python代码的环境（Docker模式需要Docker-in-Docker，Docker容器内不推荐）
           code-pool-executor: local
