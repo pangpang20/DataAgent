@@ -179,7 +179,14 @@ public class DynamicModelFactory {
 				OpenAiEmbeddingOptions.builder().model(config.getModelName()).build(),
 				retryTemplate);
 
-		return new QwenEmbeddingModel(baseModel);
+		// 只对 Qwen 提供商使用 QwenEmbeddingModel 包装类（解决 Qwen API 返回结果数量不足问题）
+		// 其他提供商（Ollama、OpenAI、Azure 等）直接返回原始模型
+		if ("qwen".equalsIgnoreCase(config.getProvider())) {
+			log.info("Using QwenEmbeddingModel wrapper for Qwen provider to handle batch processing limitations");
+			return new QwenEmbeddingModel(baseModel);
+		}
+		log.info("Using standard EmbeddingModel for provider: {}", config.getProvider());
+		return baseModel;
 	}
 
 	/**

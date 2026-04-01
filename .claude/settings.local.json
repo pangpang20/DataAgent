@@ -10,7 +10,8 @@
       "Bash(ls:*)",
       "Bash(mvn package:*)",
       "Bash(git commit -m 'fix\\(embedding\\): 添加批量处理解决 Qwen Embedding API 返回结果数量不足问题:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(git commit -m 'feat\\(embedding\\): 仅对 Qwen 提供商使用批量处理包装类:*)"
     ]
   }
 }
