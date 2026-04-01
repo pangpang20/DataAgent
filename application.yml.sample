@@ -211,7 +211,18 @@ spring:
         
         # LLM 服务类型
         llm-service-type: stream            # stream（流式）或 block（阻塞）
-        
+
+        # ====================================================================
+        # Think 模式配置（仅对支持 think 的模型有效，如 qwen-max, qwen-plus 等）
+        # ====================================================================
+        think:
+          # 是否启用 think 模式，默认 false（禁用）
+          # 禁用后模型将不输出<think></think>内容，减少 token 消耗和输出长度
+          enable: false
+          # 指定哪些模型启用 think（仅在 enable=true 时生效）
+          # 多个模型用逗号分隔，例如：qwen-max,qwen-plus
+          models:
+
         # Python 代码执行器配置
         code-executor:
           # 运行环境：local（本地环境执行）或 docker（Docker 容器内启动子容器执行）
