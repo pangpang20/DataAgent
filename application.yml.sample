@@ -131,8 +131,8 @@ spring:
 
     # LLM API 调用超时配置（毫秒）
     # 对于 think 模型或长上下文场景，建议增加超时时间
-    # connect-timeout: ${LLM_CONNECT_TIMEOUT:30000}      # 连接超时，默认 30 秒
-    # read-timeout: ${LLM_READ_TIMEOUT:120000}           # 读取超时，默认 120 秒（2 分钟）
+    connect-timeout: ${LLM_CONNECT_TIMEOUT:30000}      # 连接超时，默认 30 秒
+    read-timeout: ${LLM_READ_TIMEOUT:120000}           # 读取超时，默认 120 秒（2 分钟）
 
     # 向量存储配置
     vectorstore:
