@@ -45,6 +45,8 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 
+import org.springframework.beans.factory.annotation.Qualifier;
+
 import static com.audaque.cloud.ai.dataagent.constant.Constant.*;
 
 @Slf4j
@@ -60,6 +62,7 @@ public class EvidenceRecallNode implements NodeAction {
 
 	private final AgentKnowledgeMapper agentKnowledgeMapper;
 
+	@Qualifier("dbOperationExecutor")
 	private final Executor executor;
 
 	@Override
