@@ -286,6 +286,17 @@ spring:
       enabled: true
 
 # ============================================================================
+# 异步任务执行器配置（解决 Spring MVC 默认 SimpleAsyncTaskExecutor 警告）
+# ============================================================================
+# 说明：Spring MVC 处理异步请求时使用的线程池配置
+#      默认使用 SimpleAsyncTaskExecutor（每次创建新线程，不适合生产负载）
+#      建议配置 ThreadPoolTaskExecutor 以复用线程、控制并发
+spring.task.execution.pool.core-size: 10        # 核心线程数
+spring.task.execution.pool.max-size: 50         # 最大线程数
+spring.task.execution.pool.queue-capacity: 100  # 队列容量
+spring.task.execution.thread-name-prefix: dataagent-  # 线程名前缀
+
+# ============================================================================
 # MyBatis 配置
 # ============================================================================
 mybatis:

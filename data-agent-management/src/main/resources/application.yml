@@ -127,6 +127,12 @@ spring:
       max-request-size: 10MB
       enabled: true
 
+# 异步任务执行器配置（解决 Spring MVC 默认 SimpleAsyncTaskExecutor 警告）
+spring.task.execution.pool.core-size: 10
+spring.task.execution.pool.max-size: 50
+spring.task.execution.pool.queue-capacity: 100
+spring.task.execution.thread-name-prefix: dataagent-
+
 mybatis:
   configuration:
     map-underscore-to-camel-case: true
