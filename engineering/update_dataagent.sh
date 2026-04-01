@@ -203,7 +203,281 @@ cp "$NEW_JAR" "$DEPLOY_DIR/dataagent-backend.jar"
 log "✅ 后端 JAR 已替换"
 
 # ----------------------------------------------------------------------------
-# 步骤 6：替换前端文件
+# 步骤 6：比对并合并配置文件（仅添加新增配置项，跳过敏感配置）
+# ----------------------------------------------------------------------------
+log "检查配置文件更新..."
+
+TEMPLATE_CONFIG="$PACKAGE_DIR/config/application.yml.template"
+EXISTING_CONFIG="$DEPLOY_DIR/application.yml"
+
+if [ -f "$TEMPLATE_CONFIG" ] && [ -f "$EXISTING_CONFIG" ]; then
+    log "发现现有配置文件，开始比对新增配置项..."
+
+    # 使用 Python 进行 YAML 比对和合并
+    python3 << 'PYTHON_MERGE_SCRIPT'
+import re
+import sys
+import shutil
+import os
+
+template_path = os.environ.get('TEMPLATE_CONFIG')
+old_config_path = os.environ.get('EXISTING_CONFIG')
+
+def get_yaml_keys(content, prefix=""):
+    """递归获取 YAML 中所有配置项的完整路径"""
+    keys = set()
+    lines = content.split('\n')
+    stack = [(0, "")]
+
+    for line in lines:
+        stripped = line.strip()
+        if not stripped or stripped.startswith('#'):
+            continue
+
+        match = re.match(r'^(\s*)([\w.-]+)\s*:\s*(.*)$', line)
+        if match:
+            indent = len(match.group(1))
+            key = match.group(2)
+            value = match.group(3).strip()
+
+            while stack and indent <= stack[-1][0]:
+                stack.pop()
+
+            current_prefix = stack[-1][1] if stack else ""
+            full_path = f"{current_prefix}.{key}" if current_prefix else key
+            keys.add(full_path)
+
+            if not value or value.startswith('#'):
+                stack.append((indent, full_path))
+
+    return keys
+
+def extract_config_value(content, target_path):
+    """从 YAML 内容中提取指定路径的值"""
+    lines = content.split('\n')
+    path_parts = target_path.split('.')
+
+    for i, line in enumerate(lines):
+        stripped = line.strip()
+        if not stripped or stripped.startswith('#'):
+            continue
+
+        match = re.match(r'^(\s*)([\w.-]+)\s*:\s*(.*)$', line)
+        if match:
+            key = match.group(2)
+            value = match.group(3).strip()
+
+            if key == path_parts[-1]:
+                prefix_parts = path_parts[:-1]
+                current_prefix = ""
+                for j in range(i - 1, -1, -1):
+                    prev_line = lines[j]
+                    prev_stripped = prev_line.strip()
+                    if not prev_stripped or prev_stripped.startswith('#'):
+                        continue
+                    prev_match = re.match(r'^(\s*)([\w.-]+)\s*:', prev_line)
+                    if prev_match:
+                        prev_indent = len(prev_match.group(1))
+                        if prev_indent < len(line) - len(line.lstrip()):
+                            current_prefix = prev_match.group(2)
+                            break
+
+                if current_prefix == ".".join(prefix_parts):
+                    return value if value and not value.startswith('#') else None
+    return None
+
+def is_sensitive_config(key):
+    """判断是否为敏感配置（数据库、Redis、Milvus 等）"""
+    sensitive_patterns = [
+        'spring.datasource',
+        'spring.data.redis',
+        'spring.ai.vectorstore.milvus',
+        'spring.ai.vectorstore.elasticsearch',
+        '.url', '.username', '.password', '.host', '.port',
+        'oss.access-key', 'oss.access-key-id', 'oss.access-key-secret',
+    ]
+    for pattern in sensitive_patterns:
+        if pattern in key:
+            return True
+    return False
+
+# 读取文件
+with open(template_path, 'r', encoding='utf-8') as f:
+    template_content = f.read()
+
+with open(old_config_path, 'r', encoding='utf-8') as f:
+    old_content = f.read()
+
+# 获取所有配置项
+template_keys = get_yaml_keys(template_content)
+old_keys = get_yaml_keys(old_content)
+
+# 找出新增的非敏感配置项（有值的叶子节点）
+new_leaf_keys = []
+for key in template_keys:
+    if key not in old_keys:
+        # 跳过敏感配置
+        if is_sensitive_config(key):
+            print(f"SKIP_SENSITIVE: {key}", file=sys.stderr)
+            continue
+        value = extract_config_value(template_content, key)
+        if value is not None:
+            new_leaf_keys.append((key, value))
+
+if not new_leaf_keys:
+    print("NO_NEW_CONFIG")
+    sys.exit(0)
+
+# 将新增配置项追加到旧配置文件末尾
+with open(old_config_path, 'a', encoding='utf-8') as f:
+    f.write("\n")
+    f.write("# ============================================================================\n")
+    f.write("# 新增配置项（由 update_dataagent.sh 自动添加，已跳过数据库/Milvus/Redis 等敏感配置）\n")
+    f.write("# ============================================================================\n")
+
+    added_count = 0
+    for key, value in new_leaf_keys:
+        # 计算缩进
+        indent = "  " * (len(key.split('.')) - 1)
+        key_name = key.split('.')[-1]
+        f.write(f"{indent}{key_name}: {value}\n")
+        added_count += 1
+
+print(f"ADDED:{added_count}")
+PYTHON_MERGE_SCRIPT
+
+    merge_result=$?
+    if [ $merge_result -eq 0 ]; then
+        # 重新运行 Python 脚本获取结果
+        python_output=$(TEMPLATE_CONFIG="$TEMPLATE_CONFIG" EXISTING_CONFIG="$EXISTING_CONFIG" python3 << 'PYTHON_GET_RESULT'
+import re
+import sys
+import os
+
+template_path = os.environ.get('TEMPLATE_CONFIG')
+old_config_path = os.environ.get('EXISTING_CONFIG')
+
+def get_yaml_keys(content, prefix=""):
+    keys = set()
+    lines = content.split('\n')
+    stack = [(0, "")]
+
+    for line in lines:
+        stripped = line.strip()
+        if not stripped or stripped.startswith('#'):
+            continue
+
+        match = re.match(r'^(\s*)([\w.-]+)\s*:\s*(.*)$', line)
+        if match:
+            indent = len(match.group(1))
+            key = match.group(2)
+            value = match.group(3).strip()
+
+            while stack and indent <= stack[-1][0]:
+                stack.pop()
+
+            current_prefix = stack[-1][1] if stack else ""
+            full_path = f"{current_prefix}.{key}" if current_prefix else key
+            keys.add(full_path)
+
+            if not value or value.startswith('#'):
+                stack.append((indent, full_path))
+
+    return keys
+
+def extract_config_value(content, target_path):
+    lines = content.split('\n')
+    path_parts = target_path.split('.')
+
+    for i, line in enumerate(lines):
+        stripped = line.strip()
+        if not stripped or stripped.startswith('#'):
+            continue
+
+        match = re.match(r'^(\s*)([\w.-]+)\s*:\s*(.*)$', line)
+        if match:
+            key = match.group(2)
+            value = match.group(3).strip()
+
+            if key == path_parts[-1]:
+                prefix_parts = path_parts[:-1]
+                current_prefix = ""
+                for j in range(i - 1, -1, -1):
+                    prev_line = lines[j]
+                    prev_stripped = prev_line.strip()
+                    if not prev_stripped or prev_stripped.startswith('#'):
+                        continue
+                    prev_match = re.match(r'^(\s*)([\w.-]+)\s*:', prev_line)
+                    if prev_match:
+                        prev_indent = len(prev_match.group(1))
+                        if prev_indent < len(line) - len(line.lstrip()):
+                            current_prefix = prev_match.group(2)
+                            break
+
+                if current_prefix == ".".join(prefix_parts):
+                    return value if value and not value.startswith('#') else None
+    return None
+
+def is_sensitive_config(key):
+    sensitive_patterns = [
+        'spring.datasource',
+        'spring.data.redis',
+        'spring.ai.vectorstore.milvus',
+        'spring.ai.vectorstore.elasticsearch',
+        '.url', '.username', '.password', '.host', '.port',
+        'oss.access-key', 'oss.access-key-id', 'oss.access-key-secret',
+    ]
+    for pattern in sensitive_patterns:
+        if pattern in key:
+            return True
+    return False
+
+with open(template_path, 'r', encoding='utf-8') as f:
+    template_content = f.read()
+
+with open(old_config_path, 'r', encoding='utf-8') as f:
+    old_content = f.read()
+
+template_keys = get_yaml_keys(template_content)
+old_keys = get_yaml_keys(old_content)
+
+new_leaf_keys = []
+for key in template_keys:
+    if key not in old_keys:
+        if is_sensitive_config(key):
+            continue
+        value = extract_config_value(template_content, key)
+        if value is not None:
+            new_leaf_keys.append((key, value))
+
+if not new_leaf_keys:
+    print("NO_NEW_CONFIG")
+    sys.exit(0)
+
+print(f"ADDED:{len(new_leaf_keys)}")
+PYTHON_GET_RESULT
+)
+        if [ "$python_output" = "NO_NEW_CONFIG" ]; then
+            log "✅ 配置已是最新，无需添加新配置项"
+        else
+            added_num=$(echo "$python_output" | grep "ADDED:" | cut -d: -f2)
+            if [ -n "$added_num" ] && [ "$added_num" -gt 0 ]; then
+                log "✅ 已添加 $added_num 个新增配置项（已跳过数据库/Milvus/Redis 等敏感配置）"
+            fi
+        fi
+    else
+        log "警告：配置合并脚本执行失败，跳过配置更新"
+    fi
+elif [ ! -f "$EXISTING_CONFIG" ] && [ -f "$TEMPLATE_CONFIG" ]; then
+    log "现有配置文件不存在，从模板复制..."
+    cp "$TEMPLATE_CONFIG" "$EXISTING_CONFIG"
+    log "✅ 已创建新配置文件"
+elif [ ! -f "$TEMPLATE_CONFIG" ]; then
+    log "警告：更新包中未找到配置模板文件，跳过配置比对"
+fi
+
+# ----------------------------------------------------------------------------
+# 步骤 7：替换前端文件
 # ----------------------------------------------------------------------------
 if [ -d "$PACKAGE_DIR/frontend" ]; then
     log "替换前端文件..."
@@ -216,13 +490,13 @@ else
 fi
 
 # ----------------------------------------------------------------------------
-# 步骤 7：清理临时文件
+# 步骤 8：清理临时文件
 # ----------------------------------------------------------------------------
 log "清理临时文件..."
 rm -rf "$TEMP_DIR"
 
 # ----------------------------------------------------------------------------
-# 步骤 8：启动后端服务
+# 步骤 9：启动后端服务
 # ----------------------------------------------------------------------------
 log "启动后端服务..."
 systemctl start dataagent
@@ -242,7 +516,7 @@ for i in $(seq 1 $MAX_WAIT); do
 done
 
 # ----------------------------------------------------------------------------
-# 步骤 9：重新加载 Nginx
+# 步骤 10：重新加载 Nginx
 # ----------------------------------------------------------------------------
 if systemctl is-active --quiet nginx 2>/dev/null; then
     log "重新加载 Nginx..."
@@ -257,7 +531,7 @@ else
 fi
 
 # ----------------------------------------------------------------------------
-# 步骤 10：显示摘要
+# 步骤 11：显示摘要
 # ----------------------------------------------------------------------------
 echo ""
 log "=========================================="

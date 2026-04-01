@@ -30,7 +30,8 @@
       "mcp__knowledge-base__kb_capture_session",
       "Bash(git commit -m 'feat\\(log\\): 增强语义一致性校验的日志输出:*)",
       "Bash(git commit -m 'docs\\(prompt\\): 要求语义一致性校验使用中文输出:*)",
-      "Bash(git commit --no-verify -m ':*)"
+      "Bash(git commit --no-verify -m ':*)",
+      "Bash(bash -n /opt/DataAgent/engineering/update_dataagent.sh)"
     ]
   }
 }
