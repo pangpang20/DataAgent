@@ -30,8 +30,8 @@ public class StreamLlmService implements LlmService {
 
 	@Override
 	public Flux<ChatResponse> call(String system, String user) {
-		log.debug("StreamLlmService.call() - Sending request with system and user messages");
-		log.debug("System message length: {}, User message length: {}", 
+		log.trace("StreamLlmService.call() - Sending request with system and user messages");
+		log.trace("System message length: {}, User message length: {}",
 				system != null ? system.length() : 0, user != null ? user.length() : 0);
 		return registry.getChatClient()
 				.prompt()
@@ -39,46 +39,46 @@ public class StreamLlmService implements LlmService {
 				.user(user)
 				.stream()
 				.chatResponse()
-				.doOnSubscribe(s -> log.debug("LLM stream subscribed (system+user)"))
-				.doOnNext(r -> log.debug("LLM response received: hasResult={}, hasOutput={}", 
+				.doOnSubscribe(s -> log.trace("LLM stream subscribed (system+user)"))
+				.doOnNext(r -> log.trace("LLM response received: hasResult={}, hasOutput={}",
 						r != null && r.getResult() != null,
 						r != null && r.getResult() != null && r.getResult().getOutput() != null))
 				.doOnError(e -> log.error("LLM stream error (system+user): {}", e.getMessage(), e))
-				.doOnComplete(() -> log.debug("LLM stream completed (system+user)"));
+				.doOnComplete(() -> log.trace("LLM stream completed (system+user)"));
 	}
 
 	@Override
 	public Flux<ChatResponse> callSystem(String system) {
-		log.debug("StreamLlmService.callSystem() - Sending system message only");
-		log.debug("System message length: {}", system != null ? system.length() : 0);
+		log.trace("StreamLlmService.callSystem() - Sending system message only");
+		log.trace("System message length: {}", system != null ? system.length() : 0);
 		return registry.getChatClient()
 				.prompt()
 				.system(system)
 				.stream()
 				.chatResponse()
-				.doOnSubscribe(s -> log.debug("LLM stream subscribed (system only)"))
-				.doOnNext(r -> log.debug("LLM response received: hasResult={}, hasOutput={}", 
+				.doOnSubscribe(s -> log.trace("LLM stream subscribed (system only)"))
+				.doOnNext(r -> log.trace("LLM response received: hasResult={}, hasOutput={}",
 						r != null && r.getResult() != null,
 						r != null && r.getResult() != null && r.getResult().getOutput() != null))
 				.doOnError(e -> log.error("LLM stream error (system only): {}", e.getMessage(), e))
-				.doOnComplete(() -> log.debug("LLM stream completed (system only)"));
+				.doOnComplete(() -> log.trace("LLM stream completed (system only)"));
 	}
 
 	@Override
 	public Flux<ChatResponse> callUser(String user) {
-		log.debug("StreamLlmService.callUser() - Sending user message only");
-		log.debug("User message length: {}", user != null ? user.length() : 0);
+		log.trace("StreamLlmService.callUser() - Sending user message only");
+		log.trace("User message length: {}", user != null ? user.length() : 0);
 		return registry.getChatClient()
 				.prompt()
 				.user(user)
 				.stream()
 				.chatResponse()
-				.doOnSubscribe(s -> log.debug("LLM stream subscribed (user only)"))
-				.doOnNext(r -> log.debug("LLM response received: hasResult={}, hasOutput={}", 
+				.doOnSubscribe(s -> log.trace("LLM stream subscribed (user only)"))
+				.doOnNext(r -> log.trace("LLM response received: hasResult={}, hasOutput={}",
 						r != null && r.getResult() != null,
 						r != null && r.getResult() != null && r.getResult().getOutput() != null))
 				.doOnError(e -> log.error("LLM stream error (user only): {}", e.getMessage(), e))
-				.doOnComplete(() -> log.debug("LLM stream completed (user only)"));
+				.doOnComplete(() -> log.trace("LLM stream completed (user only)"));
 	}
 
 }

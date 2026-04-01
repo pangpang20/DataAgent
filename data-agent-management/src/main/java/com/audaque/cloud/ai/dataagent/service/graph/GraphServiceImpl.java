@@ -185,7 +185,7 @@ public class GraphServiceImpl implements GraphService {
 		CompletableFuture.runAsync(() -> {
 			// 在订阅之前检查上下文是否仍然有效
 			if (context.isCleaned()) {
-				log.debug("StreamContext cleaned before subscription for threadId: {}", threadId);
+				log.trace("StreamContext cleaned before subscription for threadId: {}", threadId);
 				return;
 			}
 			Disposable disposable = nodeOutputFlux.subscribe(output -> handleNodeOutput(graphRequest, output),
@@ -252,7 +252,7 @@ public class GraphServiceImpl implements GraphService {
 	 * 处理节点输出
 	 */
 	private void handleNodeOutput(GraphRequest request, NodeOutput output) {
-		log.debug("Received output: {}", output.getClass().getSimpleName());
+		log.trace("Received output: {}", output.getClass().getSimpleName());
 		if (output instanceof StreamingOutput streamingOutput) {
 			handleStreamNodeOutput(request, streamingOutput);
 		}
@@ -263,12 +263,12 @@ public class GraphServiceImpl implements GraphService {
 		StreamContext context = streamContextMap.get(threadId);
 		// 检查是否已经停止处理
 		if (context == null || context.getSink() == null) {
-			log.debug("Stream processing already stopped for threadId: {}, skipping output", threadId);
+			log.trace("Stream processing already stopped for threadId: {}, skipping output", threadId);
 			return;
 		}
 		String node = output.node();
 		String chunk = output.chunk();
-		log.debug("Received Stream output: {}", chunk);
+		log.trace("Received Stream output: {}", chunk);
 
 		if (chunk == null || chunk.isEmpty()) {
 			return;
