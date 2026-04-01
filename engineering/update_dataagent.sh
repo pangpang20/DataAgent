@@ -212,6 +212,8 @@ EXISTING_CONFIG="$DEPLOY_DIR/application.yml"
 
 if [ -f "$TEMPLATE_CONFIG" ] && [ -f "$EXISTING_CONFIG" ]; then
     log "发现现有配置文件，开始比对新增配置项..."
+    log "  Template: $TEMPLATE_CONFIG"
+    log "  Existing: $EXISTING_CONFIG"
 
     # 导出环境变量供 Python 脚本使用
     export TEMPLATE_CONFIG
@@ -232,6 +234,9 @@ if not template_path or not old_config_path:
     print("ERROR: Missing environment variables", file=sys.stderr)
     sys.exit(1)
 
+print(f"DEBUG: template_path={template_path}", file=sys.stderr)
+print(f"DEBUG: old_config_path={old_config_path}", file=sys.stderr)
+
 if not os.path.exists(template_path):
     print(f"ERROR: Template file not found: {template_path}", file=sys.stderr)
     sys.exit(1)
@@ -239,6 +244,8 @@ if not os.path.exists(template_path):
 if not os.path.exists(old_config_path):
     print(f"ERROR: Old config file not found: {old_config_path}", file=sys.stderr)
     sys.exit(1)
+
+print(f"DEBUG: Both files exist, starting comparison", file=sys.stderr)
 
 def get_yaml_keys(content, prefix=""):
     """递归获取 YAML 中所有配置项的完整路径"""
@@ -329,6 +336,9 @@ with open(old_config_path, 'r', encoding='utf-8') as f:
 template_keys = get_yaml_keys(template_content)
 old_keys = get_yaml_keys(old_content)
 
+print(f"DEBUG: template_keys count={len(template_keys)}", file=sys.stderr)
+print(f"DEBUG: old_keys count={len(old_keys)}", file=sys.stderr)
+
 # 找出新增的非敏感配置项（有值的叶子节点）
 new_leaf_keys = []
 for key in template_keys:
@@ -339,11 +349,18 @@ for key in template_keys:
             continue
         value = extract_config_value(template_content, key)
         if value is not None:
+            print(f"DEBUG: New config found: {key} = {value}", file=sys.stderr)
             new_leaf_keys.append((key, value))
+        else:
+            print(f"DEBUG: No value for key: {key}", file=sys.stderr)
+    else:
+        print(f"DEBUG: Key already exists: {key}", file=sys.stderr)
 
 if not new_leaf_keys:
     print("NO_NEW_CONFIG")
     sys.exit(0)
+
+print(f"DEBUG: Total new configs to add: {len(new_leaf_keys)}", file=sys.stderr)
 
 # 将新增配置项追加到旧配置文件末尾
 with open(old_config_path, 'a', encoding='utf-8') as f:
@@ -363,12 +380,20 @@ with open(old_config_path, 'a', encoding='utf-8') as f:
 print(f"ADDED:{added_count}")
 PYTHON_MERGE_SCRIPT
 )
+    python_exit_code=$?
+    log "Python script exit code: $python_exit_code"
+    log "Python output: $python_output"
+
     if [ "$python_output" = "NO_NEW_CONFIG" ]; then
         log "✅ 配置已是最新，无需添加新配置项"
     else
         added_num=$(echo "$python_output" | grep "ADDED:" | cut -d: -f2)
         if [ -n "$added_num" ] && [ "$added_num" -gt 0 ]; then
             log "✅ 已添加 $added_num 个新增配置项（已跳过数据库/Milvus/Redis 等敏感配置）"
+            log "✅ 新增配置已追加到配置文件末尾，请检查 $EXISTING_CONFIG"
+        else
+            log "警告：Python 脚本执行完成但未检测到新增配置项"
+            log "Python stderr output: $python_output"
         fi
     fi
 elif [ ! -f "$EXISTING_CONFIG" ] && [ -f "$TEMPLATE_CONFIG" ]; then
