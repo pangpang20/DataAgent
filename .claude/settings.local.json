@@ -11,7 +11,10 @@
       "Bash(mvn package:*)",
       "Bash(git commit -m 'fix\\(embedding\\): 添加批量处理解决 Qwen Embedding API 返回结果数量不足问题:*)",
       "Bash(git push:*)",
-      "Bash(git commit -m 'feat\\(embedding\\): 仅对 Qwen 提供商使用批量处理包装类:*)"
+      "Bash(git commit -m 'feat\\(embedding\\): 仅对 Qwen 提供商使用批量处理包装类:*)",
+      "Bash(journalctl -u dataagent --since \"17:20:00\" --no-pager)",
+      "Bash(journalctl -u dataagent --since \"17:25:00\" --no-pager)",
+      "Bash(git commit -m 'refactor\\(util\\): 恢复 MarkdownParserUtil 和 ChatResponseUtil 原始逻辑:*)"
     ]
   }
 }

@@ -29,22 +29,16 @@ public class MarkdownParserUtil {
 			return markdownCode;
 		}
 
-		// Filter out <think>...</think> content before processing
-		String filteredContent = markdownCode.replaceAll("(?i)<think>[\\s\\S]*?</think>", "").trim();
-		if (filteredContent.isEmpty()) {
-			return "";
-		}
-
 		// Find the start of a code block (3 or more backticks)
 		int startIndex = -1;
 		int delimiterLength = 0;
 
-		for (int i = 0; i <= filteredContent.length() - 3; i++) {
-			if (filteredContent.substring(i, i + 3).equals("```")) {
+		for (int i = 0; i <= markdownCode.length() - 3; i++) {
+			if (markdownCode.substring(i, i + 3).equals("```")) {
 				startIndex = i;
 				delimiterLength = 3;
 				// Count additional backticks
-				while (i + delimiterLength < filteredContent.length() && filteredContent.charAt(i + delimiterLength) == '`') {
+				while (i + delimiterLength < markdownCode.length() && markdownCode.charAt(i + delimiterLength) == '`') {
 					delimiterLength++;
 				}
 				break;
@@ -53,31 +47,31 @@ public class MarkdownParserUtil {
 
 		if (startIndex == -1) {
 			// No triple backtick code block found, try single backtick
-			return removeSingleBackticks(filteredContent);
+			return removeSingleBackticks(markdownCode);
 		}
 
 		// Skip the opening delimiter and optional language specification
 		int contentStart = startIndex + delimiterLength;
-		while (contentStart < filteredContent.length() && filteredContent.charAt(contentStart) != '\n') {
+		while (contentStart < markdownCode.length() && markdownCode.charAt(contentStart) != '\n') {
 			contentStart++;
 		}
-		if (contentStart < filteredContent.length() && filteredContent.charAt(contentStart) == '\n') {
+		if (contentStart < markdownCode.length() && markdownCode.charAt(contentStart) == '\n') {
 			contentStart++; // Skip the newline after language spec
 		}
 
 		// Find the closing delimiter
 		String closingDelimiter = "`".repeat(delimiterLength);
-		int endIndex = filteredContent.indexOf(closingDelimiter, contentStart);
+		int endIndex = markdownCode.indexOf(closingDelimiter, contentStart);
 
 		if (endIndex == -1) {
 			// No closing delimiter found, return from content start to end
-			return filteredContent.substring(contentStart);
+			return markdownCode.substring(contentStart);
 		}
 
 		// Extract just the content between delimiters
-		return filteredContent.substring(contentStart, endIndex);
+		return markdownCode.substring(contentStart, endIndex);
 	}
-	
+
 	/**
 	 * Remove single backticks from the beginning and end of the text.
 	 * This handles cases where LLM wraps SQL with single backticks like `SELECT ...`
@@ -88,15 +82,15 @@ public class MarkdownParserUtil {
 		if (text == null || text.isEmpty()) {
 			return text;
 		}
-			
+
 		String trimmed = text.trim();
-			
+
 		// Check if text starts and ends with single backtick
 		if (trimmed.startsWith("`") && trimmed.endsWith("`") && trimmed.length() > 1) {
 			// Remove the first and last backtick
 			return trimmed.substring(1, trimmed.length() - 1);
 		}
-			
+
 		return trimmed;
 	}
 
