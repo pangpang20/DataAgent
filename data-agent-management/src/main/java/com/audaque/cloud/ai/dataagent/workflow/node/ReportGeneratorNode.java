@@ -183,9 +183,6 @@ public class ReportGeneratorNode implements NodeAction {
 		sb.append("## 用户原始需求\n");
 		sb.append(userInput).append("\n\n");
 
-		sb.append("## 执行计划概述\n");
-		sb.append("**思考过程**: ").append(plan.getThoughtProcess()).append("\n\n");
-
 		sb.append("## 详细执行步骤\n");
 		List<ExecutionStep> executionPlan = plan.getExecutionPlan();
 		for (int i = 0; i < executionPlan.size(); i++) {
