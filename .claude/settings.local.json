@@ -26,7 +26,9 @@
       "Bash(ai:)",
       "Bash(connect-timeout: \\\\${LLM_CONNECT_TIMEOUT:30000})",
       "Bash(注意：当前 Spring AI 1.1.0 的 OpenAiApi.Builder 不支持直接配置超时，)",
-      "Bash(git commit -m 'docs\\(sample\\): 取消 application.yml.sample 中超时配置的注释:*)"
+      "Bash(git commit -m 'docs\\(sample\\): 取消 application.yml.sample 中超时配置的注释:*)",
+      "mcp__knowledge-base__kb_capture_session",
+      "Bash(git commit -m 'feat\\(log\\): 增强语义一致性校验的日志输出:*)"
     ]
   }
 }

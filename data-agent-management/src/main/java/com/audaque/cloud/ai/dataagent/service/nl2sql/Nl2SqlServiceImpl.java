@@ -70,7 +70,11 @@ public class Nl2SqlServiceImpl implements Nl2SqlService {
 		log.debug("Semantic consistency LLM call initiated");
 
 		return responseFlux
-				.doOnNext(response -> log.debug("Received semantic consistency response chunk"))
+				.doOnNext(response -> {
+					String text = ChatResponseUtil.getText(response);
+					log.debug("Received semantic consistency response chunk: [{}], length: {}",
+							text, text != null ? text.length() : 0);
+				})
 				.doOnComplete(() -> log.info("Semantic consistency check completed"))
 				.doOnError(e -> log.error("Semantic consistency check failed", e));
 	}
