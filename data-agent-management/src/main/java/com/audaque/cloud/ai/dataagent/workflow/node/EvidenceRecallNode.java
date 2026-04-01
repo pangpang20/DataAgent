@@ -42,6 +42,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 
 import static com.audaque.cloud.ai.dataagent.constant.Constant.*;
 
@@ -57,6 +59,8 @@ public class EvidenceRecallNode implements NodeAction {
 	private final JsonParseUtil jsonParseUtil;
 
 	private final AgentKnowledgeMapper agentKnowledgeMapper;
+
+	private final Executor executor;
 
 	@Override
 	public Map<String, Object> apply(OverAllState state) throws Exception {
@@ -155,17 +159,34 @@ public class EvidenceRecallNode implements NodeAction {
 	}
 
 	private DocumentRetrievalResult retrieveDocuments(String agentId, String standaloneQuery) {
-		// Get business knowledge documents with configurable top_k and threshold
-		List<Document> businessTermDocuments = vectorStoreService
-				.getDocumentsForAgent(agentId, standaloneQuery, DocumentMetadataConstant.BUSINESS_TERM)
-				.stream()
-				.toList();
+		log.info("Starting parallel retrieval of business and agent knowledge documents");
 
-		// Get agent knowledge documents with configurable top_k and threshold
-		List<Document> agentKnowledgeDocuments = vectorStoreService
-				.getDocumentsForAgent(agentId, standaloneQuery, DocumentMetadataConstant.AGENT_KNOWLEDGE)
-				.stream()
-				.toList();
+		// 【并行优化】业务知识和智能体知识的向量检索互不依赖，可以并行执行
+		CompletableFuture<List<Document>> businessFuture = CompletableFuture
+				.supplyAsync(() -> {
+					log.debug("Starting business term knowledge retrieval");
+					List<Document> result = vectorStoreService.getDocumentsForAgent(agentId, standaloneQuery,
+							DocumentMetadataConstant.BUSINESS_TERM).stream().toList();
+					log.debug("Business term knowledge retrieval completed, found {} documents", result.size());
+					return result;
+				}, executor);
+
+		CompletableFuture<List<Document>> agentFuture = CompletableFuture
+				.supplyAsync(() -> {
+					log.debug("Starting agent knowledge retrieval");
+					List<Document> result = vectorStoreService.getDocumentsForAgent(agentId, standaloneQuery,
+							DocumentMetadataConstant.AGENT_KNOWLEDGE).stream().toList();
+					log.debug("Agent knowledge retrieval completed, found {} documents", result.size());
+					return result;
+				}, executor);
+
+		// 等待两个检索都完成
+		CompletableFuture<Void> allFutures = CompletableFuture.allOf(businessFuture, agentFuture);
+		allFutures.join();
+
+		// 获取结果
+		List<Document> businessTermDocuments = businessFuture.join();
+		List<Document> agentKnowledgeDocuments = agentFuture.join();
 
 		// Merge all evidence documents
 		List<Document> allDocuments = new ArrayList<>();
