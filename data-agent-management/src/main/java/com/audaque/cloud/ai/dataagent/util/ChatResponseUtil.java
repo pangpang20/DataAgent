@@ -51,7 +51,20 @@ public class ChatResponseUtil {
 		if (output == null) {
 			return "";
 		}
-		return output.getText() == null ? "" : output.getText();
+		String text = output.getText() == null ? "" : output.getText();
+		// Filter out <think>...</think> blocks from LLM response
+		return filterThinkContent(text);
+	}
+
+	/**
+	 * Filter out <think>...</think> content from LLM thinking models
+	 */
+	private static String filterThinkContent(String text) {
+		if (text == null || text.isEmpty()) {
+			return text;
+		}
+		// Remove <think>...</think> blocks (case-insensitive, non-greedy match)
+		return text.replaceAll("(?i)<think>[\\s\\S]*?</think>", "").trim();
 	}
 
 }

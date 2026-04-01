@@ -698,12 +698,19 @@ export default defineComponent({
 
           let content = '';
 
+          // Filter out <think>...</think> content from LLM responses
+          const filterThinkContent = (text: string): string => {
+            if (!text) return text;
+            return text.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+          };
+
           for (let idx = 0; idx < node.length; idx++) {
             const n = node[idx];
             if (n.textType === 'HTML') {
               content += n.text;
             } else if (n.textType === 'TEXT' || n.textType === 'STRING') {
-              content += n.text.replace(/\n/g, '<br>');
+              const filteredText = filterThinkContent(n.text);
+              content += filteredText.replace(/\n/g, '<br>');
             } else if (
               n.textType === 'JSON' ||
               n.textType === 'PYTHON' ||
@@ -742,6 +749,8 @@ export default defineComponent({
                 }
                 markdown += node[p].text;
               }
+              // Filter out <think> content from markdown
+              markdown = filterThinkContent(markdown);
               // Generate unique ID for this markdown block
               const markdownId = `md-${Date.now()}-${idx}`;
               // Store markdown content in a data attribute for download

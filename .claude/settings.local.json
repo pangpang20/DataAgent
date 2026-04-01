@@ -2,7 +2,10 @@
   "permissions": {
     "allow": [
       "Bash(cp:*)",
-      "Bash(sed:*)"
+      "Bash(sed:*)",
+      "Bash(./mvnw package:*)",
+      "Bash(yarn build:*)",
+      "Bash(git add:*)"
     ]
   }
 }
