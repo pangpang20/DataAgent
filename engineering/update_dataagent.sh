@@ -213,15 +213,32 @@ EXISTING_CONFIG="$DEPLOY_DIR/application.yml"
 if [ -f "$TEMPLATE_CONFIG" ] && [ -f "$EXISTING_CONFIG" ]; then
     log "发现现有配置文件，开始比对新增配置项..."
 
+    # 导出环境变量供 Python 脚本使用
+    export TEMPLATE_CONFIG
+    export EXISTING_CONFIG
+
     # 使用 Python 进行 YAML 比对和合并
-    python3 << 'PYTHON_MERGE_SCRIPT'
+    python_output=$(python3 << 'PYTHON_MERGE_SCRIPT'
 import re
 import sys
-import shutil
 import os
+import shutil
 
 template_path = os.environ.get('TEMPLATE_CONFIG')
 old_config_path = os.environ.get('EXISTING_CONFIG')
+
+# 检查环境变量是否存在
+if not template_path or not old_config_path:
+    print("ERROR: Missing environment variables", file=sys.stderr)
+    sys.exit(1)
+
+if not os.path.exists(template_path):
+    print(f"ERROR: Template file not found: {template_path}", file=sys.stderr)
+    sys.exit(1)
+
+if not os.path.exists(old_config_path):
+    print(f"ERROR: Old config file not found: {old_config_path}", file=sys.stderr)
+    sys.exit(1)
 
 def get_yaml_keys(content, prefix=""):
     """递归获取 YAML 中所有配置项的完整路径"""
@@ -345,128 +362,14 @@ with open(old_config_path, 'a', encoding='utf-8') as f:
 
 print(f"ADDED:{added_count}")
 PYTHON_MERGE_SCRIPT
-
-    merge_result=$?
-    if [ $merge_result -eq 0 ]; then
-        # 重新运行 Python 脚本获取结果
-        python_output=$(TEMPLATE_CONFIG="$TEMPLATE_CONFIG" EXISTING_CONFIG="$EXISTING_CONFIG" python3 << 'PYTHON_GET_RESULT'
-import re
-import sys
-import os
-
-template_path = os.environ.get('TEMPLATE_CONFIG')
-old_config_path = os.environ.get('EXISTING_CONFIG')
-
-def get_yaml_keys(content, prefix=""):
-    keys = set()
-    lines = content.split('\n')
-    stack = [(0, "")]
-
-    for line in lines:
-        stripped = line.strip()
-        if not stripped or stripped.startswith('#'):
-            continue
-
-        match = re.match(r'^(\s*)([\w.-]+)\s*:\s*(.*)$', line)
-        if match:
-            indent = len(match.group(1))
-            key = match.group(2)
-            value = match.group(3).strip()
-
-            while stack and indent <= stack[-1][0]:
-                stack.pop()
-
-            current_prefix = stack[-1][1] if stack else ""
-            full_path = f"{current_prefix}.{key}" if current_prefix else key
-            keys.add(full_path)
-
-            if not value or value.startswith('#'):
-                stack.append((indent, full_path))
-
-    return keys
-
-def extract_config_value(content, target_path):
-    lines = content.split('\n')
-    path_parts = target_path.split('.')
-
-    for i, line in enumerate(lines):
-        stripped = line.strip()
-        if not stripped or stripped.startswith('#'):
-            continue
-
-        match = re.match(r'^(\s*)([\w.-]+)\s*:\s*(.*)$', line)
-        if match:
-            key = match.group(2)
-            value = match.group(3).strip()
-
-            if key == path_parts[-1]:
-                prefix_parts = path_parts[:-1]
-                current_prefix = ""
-                for j in range(i - 1, -1, -1):
-                    prev_line = lines[j]
-                    prev_stripped = prev_line.strip()
-                    if not prev_stripped or prev_stripped.startswith('#'):
-                        continue
-                    prev_match = re.match(r'^(\s*)([\w.-]+)\s*:', prev_line)
-                    if prev_match:
-                        prev_indent = len(prev_match.group(1))
-                        if prev_indent < len(line) - len(line.lstrip()):
-                            current_prefix = prev_match.group(2)
-                            break
-
-                if current_prefix == ".".join(prefix_parts):
-                    return value if value and not value.startswith('#') else None
-    return None
-
-def is_sensitive_config(key):
-    sensitive_patterns = [
-        'spring.datasource',
-        'spring.data.redis',
-        'spring.ai.vectorstore.milvus',
-        'spring.ai.vectorstore.elasticsearch',
-        '.url', '.username', '.password', '.host', '.port',
-        'oss.access-key', 'oss.access-key-id', 'oss.access-key-secret',
-    ]
-    for pattern in sensitive_patterns:
-        if pattern in key:
-            return True
-    return False
-
-with open(template_path, 'r', encoding='utf-8') as f:
-    template_content = f.read()
-
-with open(old_config_path, 'r', encoding='utf-8') as f:
-    old_content = f.read()
-
-template_keys = get_yaml_keys(template_content)
-old_keys = get_yaml_keys(old_content)
-
-new_leaf_keys = []
-for key in template_keys:
-    if key not in old_keys:
-        if is_sensitive_config(key):
-            continue
-        value = extract_config_value(template_content, key)
-        if value is not None:
-            new_leaf_keys.append((key, value))
-
-if not new_leaf_keys:
-    print("NO_NEW_CONFIG")
-    sys.exit(0)
-
-print(f"ADDED:{len(new_leaf_keys)}")
-PYTHON_GET_RESULT
 )
-        if [ "$python_output" = "NO_NEW_CONFIG" ]; then
-            log "✅ 配置已是最新，无需添加新配置项"
-        else
-            added_num=$(echo "$python_output" | grep "ADDED:" | cut -d: -f2)
-            if [ -n "$added_num" ] && [ "$added_num" -gt 0 ]; then
-                log "✅ 已添加 $added_num 个新增配置项（已跳过数据库/Milvus/Redis 等敏感配置）"
-            fi
-        fi
+    if [ "$python_output" = "NO_NEW_CONFIG" ]; then
+        log "✅ 配置已是最新，无需添加新配置项"
     else
-        log "警告：配置合并脚本执行失败，跳过配置更新"
+        added_num=$(echo "$python_output" | grep "ADDED:" | cut -d: -f2)
+        if [ -n "$added_num" ] && [ "$added_num" -gt 0 ]; then
+            log "✅ 已添加 $added_num 个新增配置项（已跳过数据库/Milvus/Redis 等敏感配置）"
+        fi
     fi
 elif [ ! -f "$EXISTING_CONFIG" ] && [ -f "$TEMPLATE_CONFIG" ]; then
     log "现有配置文件不存在，从模板复制..."
