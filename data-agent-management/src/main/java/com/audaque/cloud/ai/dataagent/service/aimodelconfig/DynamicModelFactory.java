@@ -48,12 +48,6 @@ public class DynamicModelFactory {
 	@Value("${spring.ai.retry.multiplier:2.0}")
 	private double multiplier;
 
-	@Value("${spring.ai.alibaba.data-agent.think.enable:false}")
-	private boolean thinkEnable;
-
-	@Value("${spring.ai.alibaba.data-agent.think.models:}")
-	private String thinkModels;
-
 	/**
 	 * 统一使用 OpenAiChatModel，通过 baseUrl 实现多厂商兼容
 	 * 支持自定义认证头名称
@@ -65,21 +59,11 @@ public class DynamicModelFactory {
 		// 2. 构建 OpenAiApi (核心通讯对象)
 		OpenAiApi openAiApi = createOpenAiApi(config);
 
-		// 3. 处理模型名称（针对 DashScope/通义千问 think 模式控制）
-		// 对于通义千问模型，通过 modelName 后添加 ?enable_thinking=false 来禁用 think
+		// 3. 使用原始模型名称
 		String modelName = config.getModelName();
-		boolean shouldDisableThink = shouldDisableThink(config.getModelName());
 
-		if (shouldDisableThink) {
-			// 仅对通义千问模型添加参数
-			if (modelName.toLowerCase().contains("qwen")) {
-				modelName = modelName + "?enable_thinking=false";
-				log.info("Think mode disabled for Qwen model: {} -> {}", config.getModelName(), modelName);
-			}
-		}
-
-		log.info("Creating NEW ChatModel instance. Provider: {}, Model: {}, BaseUrl: {}, AuthHeader: {}, ThinkConfig: {}",
-				config.getProvider(), config.getModelName(), config.getBaseUrl(), config.getAuthHeaderName(), thinkEnable);
+		log.info("Creating NEW ChatModel instance. Provider: {}, Model: {}, BaseUrl: {}, AuthHeader: {}",
+				config.getProvider(), config.getModelName(), config.getBaseUrl(), config.getAuthHeaderName());
 
 		// 4. 构建运行时选项 (设置默认的模型名称，如 "deepseek-chat" 或 "gpt-4")
 		OpenAiChatOptions openAiChatOptions = OpenAiChatOptions.builder()
@@ -97,31 +81,6 @@ public class DynamicModelFactory {
 				.defaultOptions(openAiChatOptions)
 				.retryTemplate(retryTemplate)
 				.build();
-	}
-
-	/**
-	 * 判断是否应该禁用 think 模式
-	 * @param modelName 模型名称
-	 * @return true=禁用 think, false=启用 think
-	 */
-	private boolean shouldDisableThink(String modelName) {
-		// 如果全局禁用 think，则禁用
-		if (!thinkEnable) {
-			return true;
-		}
-		// 如果启用了 think 但配置了 models 列表，检查当前模型是否在列表中
-		if (thinkEnable && StringUtils.hasText(thinkModels)) {
-			// models 配置格式：qwen-max,qwen-plus
-			String[] models = thinkModels.split(",");
-			for (String model : models) {
-				if (modelName.equalsIgnoreCase(model.trim())) {
-					return false; // 在允许列表中，启用 think
-				}
-			}
-			return true; // 不在允许列表中，禁用 think
-		}
-		// 其他情况：启用 think
-		return false;
 	}
 
 	private static void checkBasic(ModelConfigDTO config) {
