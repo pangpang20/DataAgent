@@ -219,182 +219,192 @@ if [ -f "$TEMPLATE_CONFIG" ] && [ -f "$EXISTING_CONFIG" ]; then
     export TEMPLATE_CONFIG
     export EXISTING_CONFIG
 
-    # 使用 Python 进行 YAML 比对和合并
+    # 使用 Python yaml 库进行可靠的 YAML 比对和合并
     python_output=$(python3 << 'PYTHON_MERGE_SCRIPT'
-import re
+import yaml
 import sys
 import os
-import shutil
 
 template_path = os.environ.get('TEMPLATE_CONFIG')
 old_config_path = os.environ.get('EXISTING_CONFIG')
 
-# 检查环境变量是否存在
 if not template_path or not old_config_path:
-    print("ERROR: Missing environment variables", file=sys.stderr)
+    print("ERROR: Missing environment variables")
     sys.exit(1)
 
-print(f"DEBUG: template_path={template_path}", file=sys.stderr)
-print(f"DEBUG: old_config_path={old_config_path}", file=sys.stderr)
-
 if not os.path.exists(template_path):
-    print(f"ERROR: Template file not found: {template_path}", file=sys.stderr)
+    print(f"ERROR: Template file not found: {template_path}")
     sys.exit(1)
 
 if not os.path.exists(old_config_path):
-    print(f"ERROR: Old config file not found: {old_config_path}", file=sys.stderr)
+    print(f"ERROR: Old config file not found: {old_config_path}")
     sys.exit(1)
 
-print(f"DEBUG: Both files exist, starting comparison", file=sys.stderr)
+# 敏感配置模式（不更新）
+SENSITIVE_PATTERNS = [
+    'spring.datasource',
+    'spring.data.redis',
+    'spring.ai.vectorstore.milvus',
+    'spring.ai.vectorstore.elasticsearch',
+    'oss.access-key',
+]
 
-def get_yaml_keys(content, prefix=""):
-    """递归获取 YAML 中所有配置项的完整路径"""
-    keys = set()
-    lines = content.split('\n')
-    stack = [(0, "")]
+def is_sensitive(key):
+    """判断是否为敏感配置"""
+    return any(p in key for p in SENSITIVE_PATTERNS)
 
-    for line in lines:
-        stripped = line.strip()
-        if not stripped or stripped.startswith('#'):
-            continue
+def flatten_yaml(data, parent_key='', sep='.'):
+    """将 YAML 扁平化为 dot notation: {server.port: 8065, ...}"""
+    items = {}
+    if isinstance(data, dict):
+        for k, v in data.items():
+            new_key = f"{parent_key}{sep}{k}" if parent_key else k
+            if isinstance(v, dict):
+                items.update(flatten_yaml(v, new_key, sep))
+            else:
+                items[new_key] = v
+    return items
 
-        match = re.match(r'^(\s*)([\w.-]+)\s*:\s*(.*)$', line)
-        if match:
-            indent = len(match.group(1))
-            key = match.group(2)
-            value = match.group(3).strip()
-
-            while stack and indent <= stack[-1][0]:
-                stack.pop()
-
-            current_prefix = stack[-1][1] if stack else ""
-            full_path = f"{current_prefix}.{key}" if current_prefix else key
-            keys.add(full_path)
-
-            if not value or value.startswith('#'):
-                stack.append((indent, full_path))
-
-    return keys
-
-def extract_config_value(content, target_path):
-    """从 YAML 内容中提取指定路径的值"""
-    lines = content.split('\n')
-    path_parts = target_path.split('.')
-
-    for i, line in enumerate(lines):
-        stripped = line.strip()
-        if not stripped or stripped.startswith('#'):
-            continue
-
-        match = re.match(r'^(\s*)([\w.-]+)\s*:\s*(.*)$', line)
-        if match:
-            key = match.group(2)
-            value = match.group(3).strip()
-
-            if key == path_parts[-1]:
-                prefix_parts = path_parts[:-1]
-                current_prefix = ""
-                for j in range(i - 1, -1, -1):
-                    prev_line = lines[j]
-                    prev_stripped = prev_line.strip()
-                    if not prev_stripped or prev_stripped.startswith('#'):
-                        continue
-                    prev_match = re.match(r'^(\s*)([\w.-]+)\s*:', prev_line)
-                    if prev_match:
-                        prev_indent = len(prev_match.group(1))
-                        if prev_indent < len(line) - len(line.lstrip()):
-                            current_prefix = prev_match.group(2)
-                            break
-
-                if current_prefix == ".".join(prefix_parts):
-                    return value if value and not value.startswith('#') else None
-    return None
-
-def is_sensitive_config(key):
-    """判断是否为敏感配置（数据库、Redis、Milvus 等）"""
-    sensitive_patterns = [
-        'spring.datasource',
-        'spring.data.redis',
-        'spring.ai.vectorstore.milvus',
-        'spring.ai.vectorstore.elasticsearch',
-        '.url', '.username', '.password', '.host', '.port',
-        'oss.access-key', 'oss.access-key-id', 'oss.access-key-secret',
-    ]
-    for pattern in sensitive_patterns:
-        if pattern in key:
-            return True
-    return False
-
-# 读取文件
-with open(template_path, 'r', encoding='utf-8') as f:
-    template_content = f.read()
-
-with open(old_config_path, 'r', encoding='utf-8') as f:
-    old_content = f.read()
-
-# 获取所有配置项
-template_keys = get_yaml_keys(template_content)
-old_keys = get_yaml_keys(old_content)
-
-print(f"DEBUG: template_keys count={len(template_keys)}", file=sys.stderr)
-print(f"DEBUG: old_keys count={len(old_keys)}", file=sys.stderr)
-
-# 找出新增的非敏感配置项（有值的叶子节点）
-new_leaf_keys = []
-for key in template_keys:
-    if key not in old_keys:
-        # 跳过敏感配置
-        if is_sensitive_config(key):
-            print(f"SKIP_SENSITIVE: {key}", file=sys.stderr)
-            continue
-        value = extract_config_value(template_content, key)
-        if value is not None:
-            print(f"DEBUG: New config found: {key} = {value}", file=sys.stderr)
-            new_leaf_keys.append((key, value))
+def dict_to_yaml(data, indent=0):
+    """将字典转换为带缩进的 YAML 字符串"""
+    lines = []
+    prefix = "  " * indent
+    for key, value in data.items():
+        if isinstance(value, dict):
+            lines.append(f"{prefix}{key}:")
+            lines.append(dict_to_yaml(value, indent + 1))
         else:
-            print(f"DEBUG: No value for key: {key}", file=sys.stderr)
-    else:
-        print(f"DEBUG: Key already exists: {key}", file=sys.stderr)
+            # 格式化值
+            if value is None:
+                yaml_value = "null"
+            elif isinstance(value, bool):
+                yaml_value = str(value).lower()
+            elif isinstance(value, str):
+                # 特殊字符需要引号
+                if any(c in value for c in [':', '#', '{', '}', '[', ']', '&', '*', '?', '|', '-', '<', '>', '!', '@', '%']):
+                    yaml_value = f"'{value}'"
+                else:
+                    yaml_value = value
+            else:
+                yaml_value = str(value)
+            lines.append(f"{prefix}{key}: {yaml_value}")
+    return "\n".join(lines)
 
-if not new_leaf_keys:
+def group_by_parent(keys_values):
+    """将扁平的 key-value 按父节点分组，重建层级结构"""
+    result = {}
+    for key, value in keys_values:
+        parts = key.split('.')
+        current = result
+        for i, part in enumerate(parts[:-1]):
+            if part not in current:
+                current[part] = {}
+            current = current[part]
+        current[parts[-1]] = value
+    return result
+
+# 读取 YAML 文件
+try:
+    with open(template_path, 'r', encoding='utf-8') as f:
+        template_data = yaml.safe_load(f)
+    with open(old_config_path, 'r', encoding='utf-8') as f:
+        old_data = yaml.safe_load(f)
+except Exception as e:
+    print(f"ERROR: Failed to load YAML files: {e}")
+    sys.exit(1)
+
+# 扁平化
+template_flat = flatten_yaml(template_data)
+old_flat = flatten_yaml(old_data)
+
+print(f"Template 配置项数量：{len(template_flat)}")
+print(f"Existing 配置项数量：{len(old_flat)}")
+
+# 找出新增的配置项（排除敏感配置）
+new_configs = []
+for key, value in template_flat.items():
+    if key not in old_flat:
+        if is_sensitive(key):
+            print(f"跳过敏感配置：{key}")
+            continue
+        # 排除包含敏感路径的配置
+        if any(s in key for s in ['.url', '.username', '.password', '.host', '.port']):
+            continue
+        new_configs.append((key, value))
+
+if not new_configs:
     print("NO_NEW_CONFIG")
     sys.exit(0)
 
-print(f"DEBUG: Total new configs to add: {len(new_leaf_keys)}", file=sys.stderr)
+print(f"发现 {len(new_configs)} 个新增配置项")
 
-# 将新增配置项追加到旧配置文件末尾
-with open(old_config_path, 'a', encoding='utf-8') as f:
-    f.write("\n")
-    f.write("# ============================================================================\n")
-    f.write("# 新增配置项（由 update_dataagent.sh 自动添加，已跳过数据库/Milvus/Redis 等敏感配置）\n")
-    f.write("# ============================================================================\n")
+# 按父节点分组，生成结构化的 YAML
+grouped_configs = {}
+for key, value in new_configs:
+    parts = key.split('.')
+    # 取前两级作为分组依据 (如 alibaba.data-agent)
+    group_key = '.'.join(parts[:-1]) if len(parts) > 1 else parts[0]
+    if group_key not in grouped_configs:
+        grouped_configs[group_key] = []
+    grouped_configs[group_key].append((key, value))
 
-    added_count = 0
-    for key, value in new_leaf_keys:
-        # 计算缩进
-        indent = "  " * (len(key.split('.')) - 1)
-        key_name = key.split('.')[-1]
-        f.write(f"{indent}{key_name}: {value}\n")
-        added_count += 1
+# 追加到配置文件
+try:
+    with open(old_config_path, 'a', encoding='utf-8') as f:
+        f.write("\n")
+        f.write("# ============================================================================\n")
+        f.write("# 新增配置项（由 update_dataagent.sh 自动添加，已跳过数据库/Milvus/Redis 等敏感配置）\n")
+        f.write("# ============================================================================\n")
 
-print(f"ADDED:{added_count}")
+        for group_key, items in grouped_configs.items():
+            # 按层级重建 YAML 结构
+            config_dict = {}
+            for key, value in items:
+                # 提取相对于 group 的子路径
+                if group_key:
+                    sub_key = key[len(group_key)+1:] if len(group_key) < len(key) else key.split('.')[-1]
+                else:
+                    sub_key = key
+                # 构建嵌套字典
+                parts = sub_key.split('.')
+                current = config_dict
+                for i, part in enumerate(parts[:-1]):
+                    if part not in current:
+                        current[part] = {}
+                    current = current[part]
+                current[parts[-1]] = value
+
+            # 生成 YAML 并写入
+            f.write(f"\n# Group: {group_key}\n")
+            yaml_content = dict_to_yaml(config_dict)
+            f.write(yaml_content)
+            f.write("\n")
+
+    print(f"ADDED:{len(new_configs)}")
+except Exception as e:
+    print(f"ERROR: Failed to write config: {e}")
+    sys.exit(1)
 PYTHON_MERGE_SCRIPT
 )
     python_exit_code=$?
-    log "Python script exit code: $python_exit_code"
-    log "Python output: $python_output"
 
-    if [ "$python_output" = "NO_NEW_CONFIG" ]; then
+    # 显示详细日志
+    echo "$python_output" | while read -r line; do
+        log "$line"
+    done
+
+    # 检查是否成功
+    if echo "$python_output" | grep -q "^ERROR:"; then
+        log "警告：配置合并执行出错，跳过配置更新"
+    elif [ "$python_output" = "NO_NEW_CONFIG" ]; then
         log "✅ 配置已是最新，无需添加新配置项"
-    else
-        added_num=$(echo "$python_output" | grep "ADDED:" | cut -d: -f2)
+    elif echo "$python_output" | grep -q "^ADDED:"; then
+        added_num=$(echo "$python_output" | grep "^ADDED:" | cut -d: -f2)
         if [ -n "$added_num" ] && [ "$added_num" -gt 0 ]; then
             log "✅ 已添加 $added_num 个新增配置项（已跳过数据库/Milvus/Redis 等敏感配置）"
-            log "✅ 新增配置已追加到配置文件末尾，请检查 $EXISTING_CONFIG"
-        else
-            log "警告：Python 脚本执行完成但未检测到新增配置项"
-            log "Python stderr output: $python_output"
         fi
+    else
+        log "警告：未检测到新增配置项"
     fi
 elif [ ! -f "$EXISTING_CONFIG" ] && [ -f "$TEMPLATE_CONFIG" ]; then
     log "现有配置文件不存在，从模板复制..."

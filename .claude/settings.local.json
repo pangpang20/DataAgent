@@ -35,7 +35,9 @@
       "Bash(grep -n \"getDocumentsForAgent\" /opt/DataAgent/data-agent-management/src/main/java/com/audaque/cloud/ai/dataagent/service/vectorstore/*.java)",
       "Bash(grep:*)",
       "Bash(./mvnw compile:*)",
-      "Bash(git commit -m ':*)"
+      "Bash(git commit -m ':*)",
+      "Bash(yq --version)",
+      "Bash(python3 -c \"import yaml; print\\('yaml available'\\)\")"
     ]
   }
 }
