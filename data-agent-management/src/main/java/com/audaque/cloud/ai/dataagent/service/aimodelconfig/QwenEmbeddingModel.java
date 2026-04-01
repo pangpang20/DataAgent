@@ -46,9 +46,27 @@ public class QwenEmbeddingModel implements EmbeddingModel {
 
 	@Override
 	public EmbeddingResponse call(EmbeddingRequest request) {
-		log.debug("QwenEmbeddingModel.call() called with {} texts", request.getInstructions().size());
-		EmbeddingResponse response = delegate.call(request);
-		return fixEmbeddingResponse(response);
+		int inputSize = request.getInstructions().size();
+		log.info("QwenEmbeddingModel.call() called with {} texts", inputSize);
+
+		// Qwen Embedding API 有批量处理限制，单次最多返回 8 个结果
+		// 将输入拆分为多个批次处理
+		int batchSize = 8;
+		List<Embedding> allEmbeddings = new ArrayList<>();
+
+		for (int i = 0; i < inputSize; i += batchSize) {
+			int endIndex = Math.min(i + batchSize, inputSize);
+			List<String> batch = request.getInstructions().subList(i, endIndex);
+			EmbeddingRequest batchRequest = new EmbeddingRequest(batch, request.getOptions());
+
+			log.debug("Processing batch {}-{} of {}", i + 1, endIndex, inputSize);
+			EmbeddingResponse response = delegate.call(batchRequest);
+			EmbeddingResponse fixedResponse = fixEmbeddingResponse(response);
+			allEmbeddings.addAll(fixedResponse.getResults());
+		}
+
+		log.info("Completed processing {} texts, got {} embeddings", inputSize, allEmbeddings.size());
+		return new EmbeddingResponse(allEmbeddings);
 	}
 
 	@Override
@@ -69,22 +87,29 @@ public class QwenEmbeddingModel implements EmbeddingModel {
 	 */
 	@Override
 	public List<float[]> embed(List<String> texts) {
-		log.info("QwenEmbeddingModel.embed(List<String>) called with {} texts", texts.size());
+		int inputSize = texts.size();
+		log.info("QwenEmbeddingModel.embed(List<String>) called with {} texts", inputSize);
 
-		// 直接调用 delegate 的 embedForResponse 获取原始响应
-		EmbeddingResponse response = delegate.embedForResponse(texts);
+		// Qwen Embedding API 有批量处理限制，单次最多返回 8 个结果
+		// 将输入拆分为多个批次处理
+		int batchSize = 8;
+		List<Embedding> allEmbeddings = new ArrayList<>();
 
-		log.info("Received embedding response with {} results", response.getResults().size());
-		log.info("Original indices: {}", response.getResults().stream().map(Embedding::getIndex).toList());
+		for (int i = 0; i < inputSize; i += batchSize) {
+			int endIndex = Math.min(i + batchSize, inputSize);
+			List<String> batch = texts.subList(i, endIndex);
 
-		// 修复 index 问题
-		EmbeddingResponse fixedResponse = fixEmbeddingResponse(response);
+			log.debug("Processing batch {}-{} of {}", i + 1, endIndex, inputSize);
+			EmbeddingResponse response = delegate.embedForResponse(batch);
+			EmbeddingResponse fixedResponse = fixEmbeddingResponse(response);
+			allEmbeddings.addAll(fixedResponse.getResults());
+		}
 
-		log.info("Fixed indices: {}", fixedResponse.getResults().stream().map(Embedding::getIndex).toList());
+		log.info("Completed processing {} texts, got {} embeddings", inputSize, allEmbeddings.size());
 
 		// 按 index 顺序提取 embedding
 		List<float[]> result = new ArrayList<>();
-		for (Embedding embedding : fixedResponse.getResults()) {
+		for (Embedding embedding : allEmbeddings) {
 			result.add(embedding.getOutput());
 		}
 

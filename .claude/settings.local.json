@@ -5,7 +5,12 @@
       "Bash(sed:*)",
       "Bash(./mvnw package:*)",
       "Bash(yarn build:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(unzip -p /opt/DataAgent/data-agent-management/target/spring-ai-audaque-data-agent-management-1.0.0-SNAPSHOT.jar BOOT-INF/classes/com/audaque/cloud/ai/dataagent/service/aimodelconfig/QwenEmbeddingModel.class)",
+      "Bash(ls:*)",
+      "Bash(mvn package:*)",
+      "Bash(git commit -m 'fix\\(embedding\\): 添加批量处理解决 Qwen Embedding API 返回结果数量不足问题:*)",
+      "Bash(git push:*)"
     ]
   }
 }
