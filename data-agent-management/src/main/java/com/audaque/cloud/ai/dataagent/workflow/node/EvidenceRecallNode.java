@@ -69,6 +69,14 @@ public class EvidenceRecallNode implements NodeAction {
 		log.info("Rewriting query before getting evidence in question: {}", question);
 		log.debug("Agent ID: {}", agentId);
 
+		// 【性能优化】在调用 LLM 之前先检查是否有知识库文档
+		// 如果没有知识库，直接跳过查询重写和向量检索，节省 LLM 调用和向量库查询时间
+		boolean hasKnowledge = vectorStoreService.hasDocuments(agentId);
+		if (!hasKnowledge) {
+			log.info("No knowledge base documents found for agent {}, skipping evidence recall", agentId);
+			return Map.of(EVIDENCE, "无");
+		}
+
 		String multiTurn = StateUtil.getStringValue(state, MULTI_TURN_CONTEXT, "(无)");
 
 		// 构建查询重写提示
