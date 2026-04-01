@@ -29,10 +29,10 @@ import com.alibaba.cloud.ai.graph.GraphResponse;
 import com.alibaba.cloud.ai.graph.OverAllState;
 import com.alibaba.cloud.ai.graph.action.NodeAction;
 import com.alibaba.cloud.ai.graph.streaming.StreamingOutput;
-import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.document.Document;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 import reactor.core.publisher.Flux;
@@ -45,13 +45,10 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 
-import org.springframework.beans.factory.annotation.Qualifier;
-
 import static com.audaque.cloud.ai.dataagent.constant.Constant.*;
 
 @Slf4j
 @Component
-@AllArgsConstructor
 public class EvidenceRecallNode implements NodeAction {
 
 	private final LlmService llmService;
@@ -62,8 +59,17 @@ public class EvidenceRecallNode implements NodeAction {
 
 	private final AgentKnowledgeMapper agentKnowledgeMapper;
 
-	@Qualifier("dbOperationExecutor")
 	private final Executor executor;
+
+	public EvidenceRecallNode(LlmService llmService, AgentVectorStoreService vectorStoreService,
+			JsonParseUtil jsonParseUtil, AgentKnowledgeMapper agentKnowledgeMapper,
+			@Qualifier("dbOperationExecutor") Executor executor) {
+		this.llmService = llmService;
+		this.vectorStoreService = vectorStoreService;
+		this.jsonParseUtil = jsonParseUtil;
+		this.agentKnowledgeMapper = agentKnowledgeMapper;
+		this.executor = executor;
+	}
 
 	@Override
 	public Map<String, Object> apply(OverAllState state) throws Exception {
