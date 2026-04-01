@@ -57,14 +57,19 @@ public class ChatResponseUtil {
 	}
 
 	/**
-	 * Filter out <think>...</think> content from LLM thinking models
+	 * Filter out <think>...</think> content from LLM thinking models.
+	 * IMPORTANT: Do NOT trim() the result - we need to preserve spaces between chunks
+	 * for proper SQL generation. When LLM streams "SELECT" + " CATEGORIES", trimming
+	 * each chunk would produce "SELECTCATEGORIES" instead of "SELECT CATEGORIES".
+	 * The final SQL trim is handled separately by Nl2SqlService.sqlTrim().
 	 */
 	private static String filterThinkContent(String text) {
 		if (text == null || text.isEmpty()) {
 			return text;
 		}
 		// Remove <think>...</think> blocks (case-insensitive, non-greedy match)
-		return text.replaceAll("(?i)<think>[\\s\\S]*?</think>", "").trim();
+		// Preserve all whitespace to maintain chunk boundaries for SQL generation
+		return text.replaceAll("(?i)<think>[\\s\\S]*?</think>", "");
 	}
 
 }
