@@ -139,6 +139,7 @@ public class DynamicModelFactory {
 		WebClient.Builder webClientBuilder =
 				WebClient.builder()
 						.defaultHeader(authHeaderName, apiKey)
+						.codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(-1))
 						.filter((request, next) -> {
 							var filteredRequest = ClientRequest.create(request.method(), request.url())
 									.headers(h -> h.addAll(request.headers()))

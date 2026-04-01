@@ -20,7 +20,12 @@
       "Bash(journalctl -u dataagent --since \"18:53:00\" --no-pager)",
       "Bash(git commit -m 'fix\\(think\\): 移除错误的模型名称参数追加逻辑:*)",
       "Bash(git commit -m 'feat\\(think\\): 添加 think 内容过滤支持自定义 think 模型:*)",
-      "Bash(git commit -m 'perf\\(log\\): 将流式响应日志降级为 TRACE 级别:*)"
+      "Bash(git commit -m 'perf\\(log\\): 将流式响应日志降级为 TRACE 级别:*)",
+      "Bash(yaml)",
+      "Bash(spring:)",
+      "Bash(ai:)",
+      "Bash(connect-timeout: \\\\${LLM_CONNECT_TIMEOUT:30000})",
+      "Bash(注意：当前 Spring AI 1.1.0 的 OpenAiApi.Builder 不支持直接配置超时，)"
     ]
   }
 }
