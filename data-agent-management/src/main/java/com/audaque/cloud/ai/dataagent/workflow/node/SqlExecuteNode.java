@@ -124,12 +124,11 @@ public class SqlExecuteNode implements NodeAction {
 	/**
 	 * Executes the SQL query against the database and handles the results.
 	 *
-	 * This method follows the business-logic-first pattern: 1. Execute the actual
-	 * SQL
+	 * This method follows the business-logic-first pattern: 1. Execute the actual SQL
 	 * query immediately 2. Process and store the results 3. Create streaming output
 	 * for
 	 * user experience only
-	 * 
+	 *
 	 * @param state       The overall state containing execution context
 	 * @param currentStep The current step number in the execution plan
 	 * @param sqlQuery    The SQL query to execute
@@ -156,8 +155,8 @@ public class SqlExecuteNode implements NodeAction {
 		// 先返回流式数据，在执行数据库查询
 		Flux<ChatResponse> displayFlux = Flux.create(emitter -> {
 			log.debug("[SqlExecuteNode] Starting streaming output emission");
-			emitter.next(ChatResponseUtil.createResponse("开始执行SQL..."));
-			emitter.next(ChatResponseUtil.createResponse("执行SQL查询："));
+			emitter.next(ChatResponseUtil.createResponse("开始执行 SQL..."));
+			emitter.next(ChatResponseUtil.createResponse("执行 SQL 查询："));
 			emitter.next(ChatResponseUtil.createPureResponse(TextType.SQL.getStartSign()));
 			emitter.next(ChatResponseUtil.createResponse(sqlQuery));
 			emitter.next(ChatResponseUtil.createPureResponse(TextType.SQL.getEndSign()));
@@ -172,9 +171,15 @@ public class SqlExecuteNode implements NodeAction {
 				log.debug("[SqlExecuteNode] Result columns: {}", resultSetBO.getColumn());
 				log.debug("[SqlExecuteNode] Result data size: {}",
 						resultSetBO.getData() != null ? resultSetBO.getData().size() : "null");
-				// 调用大模型获取图表配置信息并填充到ResultSetBO中
+				// 调用大模型获取图表配置信息并填充到 ResultSetBO 中
 				log.debug("[SqlExecuteNode] Enriching result with chart config");
-				DisplayStyleBO displayStyleBO = enrichResultSetWithChartConfig(state, resultSetBO);
+				DisplayStyleBO displayStyleBO;
+				try {
+					displayStyleBO = enrichResultSetWithChartConfig(state, resultSetBO);
+				} catch (Exception e) {
+					log.warn("[SqlExecuteNode] Chart config enrichment failed, using null display style: {}", e.getMessage());
+					displayStyleBO = null;
+				}
 				log.debug("[SqlExecuteNode] Chart config enrichment completed, display type: {}",
 						displayStyleBO != null ? displayStyleBO.getType() : "null");
 				resultBO.setResultSet(resultSetBO);
@@ -184,23 +189,21 @@ public class SqlExecuteNode implements NodeAction {
 				String strResultJson = JsonUtil.getObjectMapper().writeValueAsString(resultBO);
 				log.debug("[SqlExecuteNode] Result JSON length: {}", strResultJson.length());
 
-				// 数据执行成功
-				emitter.next(ChatResponseUtil.createResponse("执行SQL完成"));
-				emitter.next(ChatResponseUtil.createResponse("SQL查询结果："));
-				emitter.next(ChatResponseUtil.createPureResponse(TextType.RESULT_SET.getStartSign()));
-				emitter.next(ChatResponseUtil.createPureResponse(strResultJson));
-				emitter.next(ChatResponseUtil.createPureResponse(TextType.RESULT_SET.getEndSign()));
-
-				// Update step results with the query output
-				Map<String, String> existingResults = StateUtil.getObjectValue(state, SQL_EXECUTE_NODE_OUTPUT,
-						Map.class, new HashMap<>());
-				Map<String, String> updatedResults = PlanProcessUtil.addStepResult(existingResults, currentStep,
-						strResultSetJson);
+				// 数据执行成功 - 先输出文本提示，再根据是否有数据决定输出内容
+				emitter.next(ChatResponseUtil.createResponse("执行 SQL 完成"));
+				emitter.next(ChatResponseUtil.createResponse("SQL 查询结果："));
+				if (resultSetBO.getData() != null && !resultSetBO.getData().isEmpty()) {
+					emitter.next(ChatResponseUtil.createPureResponse(TextType.RESULT_SET.getStartSign()));
+					emitter.next(ChatResponseUtil.createPureResponse(strResultJson));
+					emitter.next(ChatResponseUtil.createPureResponse(TextType.RESULT_SET.getEndSign()));
+				} else {
+					emitter.next(ChatResponseUtil.createResponse("（无数据返回）"));
+				}
 
 				log.info("SQL execution successful, result count: {}",
 						resultSetBO.getData() != null ? resultSetBO.getData().size() : 0);
 
-				// 回写最终执行的sql，报告节点需要使用
+				// 回写最终执行的 sql，报告节点需要使用
 				ExecutionStep.ToolParameters currentStepParams = PlanProcessUtil.getCurrentExecutionStep(state)
 						.getToolParameters();
 				currentStepParams.setSqlQuery(sqlQuery);
@@ -209,9 +212,11 @@ public class SqlExecuteNode implements NodeAction {
 				// Prepare the final result object
 				// Store List of SQL query results for use by code execution node
 				// Reset sql generate count retry times when sql execute success
-				result.putAll(Map.of(SQL_EXECUTE_NODE_OUTPUT, updatedResults, SQL_REGENERATE_REASON,
-						SqlRetryDto.empty(), SQL_RESULT_LIST_MEMORY, resultSetBO.getData(), PLAN_CURRENT_STEP,
-						currentStep + 1, SQL_GENERATE_COUNT, 0));
+				result.putAll(Map.of(SQL_EXECUTE_NODE_OUTPUT, PlanProcessUtil.addStepResult(
+						StateUtil.getObjectValue(state, SQL_EXECUTE_NODE_OUTPUT, Map.class, new HashMap<>()),
+						currentStep, strResultSetJson), SQL_REGENERATE_REASON, SqlRetryDto.empty(),
+						SQL_RESULT_LIST_MEMORY, resultSetBO.getData(), PLAN_CURRENT_STEP, currentStep + 1,
+						SQL_GENERATE_COUNT, 0));
 				log.debug("[SqlExecuteNode] Result map prepared, next step: {}", currentStep + 1);
 			} catch (Exception e) {
 				String errorMessage = e.getMessage();
@@ -232,7 +237,7 @@ public class SqlExecuteNode implements NodeAction {
 
 				result.put(SQL_REGENERATE_REASON, SqlRetryDto.sqlExecute(errorMessage));
 				log.debug("[SqlExecuteNode] SqlRetryDto created with error message");
-				emitter.next(ChatResponseUtil.createResponse("SQL执行失败: " + errorMessage));
+				emitter.next(ChatResponseUtil.createResponse("SQL 执行失败：" + errorMessage));
 			} finally {
 				log.debug("[SqlExecuteNode] Completing streaming output emission");
 				emitter.complete();
@@ -249,14 +254,14 @@ public class SqlExecuteNode implements NodeAction {
 	}
 
 	/**
-	 * 调用大模型获取图表配置信息并填充到ResultSetBO中
-	 * 
+	 * 调用大模型获取图表配置信息并填充到 ResultSetBO 中
+	 *
 	 * @param state       整体状态
-	 * @param resultSetBO SQL执行结果
+	 * @param resultSetBO SQL 执行结果
 	 */
 	private DisplayStyleBO enrichResultSetWithChartConfig(OverAllState state, ResultSetBO resultSetBO) {
 		log.debug("[SqlExecuteNode] Entering enrichResultSetWithChartConfig");
-		// 创建ResultDisplayStyleBO对象
+		// 创建 ResultDisplayStyleBO 对象
 		DisplayStyleBO displayStyle = new DisplayStyleBO();
 		if (!this.properties.isEnableSqlResultChart()) {
 			log.debug("[SqlExecuteNode] SQL result chart is disabled, set display style as table default");
@@ -270,7 +275,7 @@ public class SqlExecuteNode implements NodeAction {
 			String userQuery = StateUtil.getCanonicalQuery(state);
 			log.debug("[SqlExecuteNode] User query for chart config: {}", userQuery);
 
-			// 将SQL结果转换为JSON字符串，限制数据量以避免提示词过长
+			// 将 SQL 结果转换为 JSON 字符串，限制数据量以避免提示词过长
 			String sqlResultJson = JsonUtil.getObjectMapper()
 					.writeValueAsString(resultSetBO.getData() != null
 							? resultSetBO.getData().stream().limit(SAMPLE_DATA_NUMBER).toList()
@@ -278,17 +283,17 @@ public class SqlExecuteNode implements NodeAction {
 			log.debug("[SqlExecuteNode] Sample data JSON length: {} (limited to {} rows)",
 					sqlResultJson.length(), SAMPLE_DATA_NUMBER);
 
-			// 构建用户提示词，包含SQL结果数据
+			// 构建用户提示词，包含 SQL 结果数据
 			String userPrompt = String.format("""
 					# 正式任务
 
-					<最新>用户输入: %s
-					范例数据: %s
+					<最新>用户输入：%s
+					范例数据：%s
 
 					# 输出
 					""", userQuery != null ? userQuery : "数据可视化", sqlResultJson);
 
-			// 加载data-view-analyze提示词模板（系统提示词）
+			// 加载 data-view-analyze 提示词模板（系统提示词）
 			String fullPrompt = PromptLoader.loadPrompt("data-view-analyze");
 			// 分割系统提示词和用户提示词模板
 			String[] parts = fullPrompt.split("=== 用户输入 ===", 2);
@@ -298,7 +303,7 @@ public class SqlExecuteNode implements NodeAction {
 			log.debug("Built chart config generation system prompt as follows \n {} \n", systemPrompt);
 			log.debug("Built chart config generation user prompt as follows \n {} \n", userPrompt);
 
-			// 调用LLM生成图表配置（使用系统提示词和用户提示词）
+			// 调用 LLM 生成图表配置（使用系统提示词和用户提示词）
 			log.debug("[SqlExecuteNode] Calling LLM for chart config generation");
 			String chartConfigJson = llmService.toStringFlux(llmService.call(systemPrompt, userPrompt))
 					.collect(StringBuilder::new, StringBuilder::append)
@@ -320,7 +325,7 @@ public class SqlExecuteNode implements NodeAction {
 				// Parse JSON and fill into ResultSetBO
 				Map<String, Object> chartConfig = JsonUtil.getObjectMapper().readValue(content, Map.class);
 
-				// 提取图表配置信息并设置到ResultDisplayStyleBO
+				// 提取图表配置信息并设置到 ResultDisplayStyleBO
 				if (chartConfig.containsKey("type")) {
 					displayStyle.setType((String) chartConfig.get("type"));
 				} else {
