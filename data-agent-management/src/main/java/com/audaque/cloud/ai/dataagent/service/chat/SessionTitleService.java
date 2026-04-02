@@ -105,14 +105,23 @@ public class SessionTitleService {
 					""";
 			String userPrompt = "用户输入：" + userMessage;
 			Flux<String> responseFlux = llmService.toStringFlux(llmService.call(systemPrompt, userPrompt));
-			return responseFlux.collect(StringBuilder::new, StringBuilder::append)
+			String rawTitle = responseFlux.collect(StringBuilder::new, StringBuilder::append)
 				.map(StringBuilder::toString)
 				.block(Duration.ofSeconds(15));
+			// Filter out thinking tags (<think>...</think> and <thinking>...</thinking>)
+			return filterThinkContent(rawTitle);
 		}
 		catch (Exception ex) {
 			log.warn("LLM title generation failed: {}", ex.getMessage());
 			return null;
 		}
+	}
+
+	private String filterThinkContent(String text) {
+		if (text == null || text.isEmpty()) {
+			return text;
+		}
+		return text.replaceAll("(?i)(<think>[\\s\\S]*?</think>|<thinking>[\\s\\S]*?</thinking>)", "");
 	}
 
 	private String normalizeTitle(String raw) {
