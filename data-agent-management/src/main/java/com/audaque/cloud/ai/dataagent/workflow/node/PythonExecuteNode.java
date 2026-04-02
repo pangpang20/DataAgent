@@ -28,6 +28,7 @@ import com.audaque.cloud.ai.dataagent.util.FluxUtil;
 import com.audaque.cloud.ai.dataagent.util.JsonUtil;
 import com.audaque.cloud.ai.dataagent.util.StateUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.JsonNode;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.stereotype.Component;
@@ -40,7 +41,7 @@ import java.util.Map;
 import static com.audaque.cloud.ai.dataagent.constant.Constant.*;
 
 /**
- * 根据SQL查询结果生成Python代码，并运行Python代码获取运行结果。
+ * 根据 SQL 查询结果生成 Python 代码，并运行 Python 代码获取运行结果。
  *
  */
 @Slf4j
@@ -92,8 +93,8 @@ public class PythonExecuteNode implements NodeAction {
 					String fallbackOutput = "{}";
 
 					Flux<ChatResponse> fallbackDisplayFlux = Flux.create(emitter -> {
-						emitter.next(ChatResponseUtil.createResponse("开始执行Python代码..."));
-						emitter.next(ChatResponseUtil.createResponse("Python代码执行失败已超过最大重试次数，采用降级策略继续处理。"));
+						emitter.next(ChatResponseUtil.createResponse("开始执行 Python 代码..."));
+						emitter.next(ChatResponseUtil.createResponse("Python 代码执行失败已超过最大重试次数，采用降级策略继续处理。"));
 						emitter.complete();
 					});
 
@@ -109,7 +110,7 @@ public class PythonExecuteNode implements NodeAction {
 				throw new RuntimeException(errorMsg);
 			}
 
-			// Python输出的JSON字符串可能有Unicode转义形式，需要解析回汉字
+			// Python 输出的 JSON 字符串可能有 Unicode 转义形式，需要解析回汉字
 			String stdout = taskResponse.stdOut();
 			Object value = jsonParseUtil.tryConvertToObject(stdout, Object.class);
 			if (value != null) {
@@ -119,14 +120,35 @@ public class PythonExecuteNode implements NodeAction {
 
 			log.info("Python Execute Success! StdOut: {}", finalStdout);
 
+			// Check if result contains chart image (base64 encoded)
+			JsonNode jsonNode = null;
+			String chartImageBase64 = null;
+			try {
+				jsonNode = objectMapper.readTree(stdout);
+				if (jsonNode.has("chart_image")) {
+					chartImageBase64 = jsonNode.get("chart_image").asText();
+					log.info("Chart image detected, length: {} chars", chartImageBase64.length());
+				}
+			} catch (Exception e) {
+				log.warn("Failed to parse JSON for chart image detection: {}", e.getMessage());
+			}
+			String finalChartImageBase64 = chartImageBase64;
+
 			// Create display flux for user experience only
 			Flux<ChatResponse> displayFlux = Flux.create(emitter -> {
-				emitter.next(ChatResponseUtil.createResponse("开始执行Python代码..."));
+				emitter.next(ChatResponseUtil.createResponse("开始执行 Python 代码..."));
+
+				// If chart image exists, display it first
+				if (finalChartImageBase64 != null && !finalChartImageBase64.isEmpty()) {
+					String imgTag = String.format("\n\n![chart](data:image/png;base64,%s)\n\n", finalChartImageBase64);
+					emitter.next(ChatResponseUtil.createPureResponse(imgTag));
+				}
+
 				emitter.next(ChatResponseUtil.createResponse("标准输出："));
 				emitter.next(ChatResponseUtil.createPureResponse(TextType.JSON.getStartSign()));
 				emitter.next(ChatResponseUtil.createResponse(finalStdout));
 				emitter.next(ChatResponseUtil.createPureResponse(TextType.JSON.getEndSign()));
-				emitter.next(ChatResponseUtil.createResponse("Python代码执行成功！"));
+				emitter.next(ChatResponseUtil.createResponse("Python 代码执行成功！"));
 				emitter.complete();
 			});
 
@@ -148,8 +170,8 @@ public class PythonExecuteNode implements NodeAction {
 
 			// Create error display flux
 			Flux<ChatResponse> errorDisplayFlux = Flux.create(emitter -> {
-				emitter.next(ChatResponseUtil.createResponse("开始执行Python代码..."));
-				emitter.next(ChatResponseUtil.createResponse("Python代码执行失败: " + errorMessage));
+				emitter.next(ChatResponseUtil.createResponse("开始执行 Python 代码..."));
+				emitter.next(ChatResponseUtil.createResponse("Python 代码执行失败：" + errorMessage));
 				emitter.complete();
 			});
 
