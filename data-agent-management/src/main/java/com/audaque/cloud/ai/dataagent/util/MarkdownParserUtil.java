@@ -29,8 +29,8 @@ public class MarkdownParserUtil {
 			return markdownCode;
 		}
 
-		// Filter out <think>...</think> content before processing
-		String filteredContent = markdownCode.replaceAll("(?i)<think>[\\s\\S]*?</think>", "").trim();
+		// Filter out <think>...</think> and <thinking>...</thinking> content before processing
+		String filteredContent = markdownCode.replaceAll("(?i)(<think>[\\s\\S]*?</think>|<thinking>[\\s\\S]*?</thinking>)", "").trim();
 		if (filteredContent.isEmpty()) {
 			return "";
 		}

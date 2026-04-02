@@ -57,7 +57,8 @@ public class ChatResponseUtil {
 	}
 
 	/**
-	 * Filter out <think>...</think> content from LLM thinking models.
+	 * Filter out thinking content from LLM thinking models.
+	 * Supports both <think>...</think> and <thinking>...</thinking> formats.
 	 * IMPORTANT: Do NOT trim() the result - we need to preserve spaces between chunks
 	 * for proper SQL generation. When LLM streams "SELECT" + " CATEGORIES", trimming
 	 * each chunk would produce "SELECTCATEGORIES" instead of "SELECT CATEGORIES".
@@ -67,9 +68,9 @@ public class ChatResponseUtil {
 		if (text == null || text.isEmpty()) {
 			return text;
 		}
-		// Remove <think>...</think> blocks (case-insensitive, non-greedy match)
+		// Remove <think>...</think> and <thinking>...</thinking> blocks (case-insensitive, non-greedy match)
 		// Preserve all whitespace to maintain chunk boundaries for SQL generation
-		return text.replaceAll("(?i)<think>[\\s\\S]*?</think>", "");
+		return text.replaceAll("(?i)(<think>[\\s\\S]*?</think>|<thinking>[\\s\\S]*?</thinking>)", "");
 	}
 
 }
