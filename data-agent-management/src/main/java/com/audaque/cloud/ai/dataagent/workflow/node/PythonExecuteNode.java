@@ -64,6 +64,8 @@ public class PythonExecuteNode implements NodeAction {
 		this.codeExecutorProperties = codeExecutorProperties;
 	}
 
+	private static final int MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB 最大图片限制
+
 	@Override
 	public Map<String, Object> apply(OverAllState state) throws Exception {
 
@@ -138,10 +140,15 @@ public class PythonExecuteNode implements NodeAction {
 			Flux<ChatResponse> displayFlux = Flux.create(emitter -> {
 				emitter.next(ChatResponseUtil.createResponse("开始执行 Python 代码..."));
 
-				// If chart image exists, display it first
+				// If chart image exists, display it first with security validation
 				if (finalChartImageBase64 != null && !finalChartImageBase64.isEmpty()) {
-					String imgTag = String.format("\n\n![chart](data:image/png;base64,%s)\n\n", finalChartImageBase64);
-					emitter.next(ChatResponseUtil.createPureResponse(imgTag));
+					// Security validation for base64 image
+					if (isValidBase64Image(finalChartImageBase64)) {
+						String imgTag = String.format("\n\n![chart](data:image/png;base64,%s)\n\n", finalChartImageBase64);
+						emitter.next(ChatResponseUtil.createPureResponse(imgTag));
+					} else {
+						log.warn("Invalid or oversized chart image, skipping display");
+					}
 				}
 
 				emitter.next(ChatResponseUtil.createResponse("标准输出："));
@@ -181,6 +188,36 @@ public class PythonExecuteNode implements NodeAction {
 
 			return Map.of(PYTHON_EXECUTE_NODE_OUTPUT, generator);
 		}
+	}
+
+	/**
+	 * Validates base64 image string for security.
+	 * Checks: 1) Valid base64 format, 2) Size limit, 3) No dangerous patterns
+	 */
+	private boolean isValidBase64Image(String base64) {
+		if (base64 == null || base64.isEmpty()) {
+			return false;
+		}
+
+		// Check size limit (5MB)
+		if (base64.length() > MAX_IMAGE_SIZE) {
+			log.warn("Base64 image exceeds size limit: {} > {}", base64.length(), MAX_IMAGE_SIZE);
+			return false;
+		}
+
+		// Check for valid base64 characters only
+		if (!base64.matches("^[A-Za-z0-9+/=]+$")) {
+			log.warn("Base64 image contains invalid characters");
+			return false;
+		}
+
+		// Check for PNG magic number at start (iVBORw0KGgo)
+		if (!base64.startsWith("iVBORw0KGgo")) {
+			log.warn("Base64 image does not start with PNG magic number");
+			return false;
+		}
+
+		return true;
 	}
 
 }
