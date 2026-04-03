@@ -22,6 +22,7 @@ import com.audaque.cloud.ai.dataagent.dto.schema.SchemaDTO;
 import com.audaque.cloud.ai.dataagent.prompt.PromptHelper;
 import com.audaque.cloud.ai.dataagent.service.aimodelconfig.AiModelRegistry;
 import com.audaque.cloud.ai.dataagent.service.llm.LlmService;
+import com.audaque.cloud.ai.dataagent.properties.DataAgentProperties;
 import com.audaque.cloud.ai.dataagent.util.*;
 import com.fasterxml.jackson.core.type.TypeReference;
 import lombok.AllArgsConstructor;
@@ -54,6 +55,8 @@ public class Nl2SqlServiceImpl implements Nl2SqlService {
 	private final JsonParseUtil jsonParseUtil;
 
 	private final AiModelRegistry aiModelRegistry;
+
+	private final DataAgentProperties properties;
 
 	@Override
 	public Flux<ChatResponse> performSemanticConsistency(SemanticConsistencyDTO semanticConsistencyDTO) {
@@ -113,8 +116,16 @@ public class Nl2SqlServiceImpl implements Nl2SqlService {
 		} else {
 			// Normal SQL generation process with dynamic temperature
 			log.debug("Generating new SQL from scratch with temperature: {}", temperature);
-			String prompt = PromptHelper.buildNewSqlGeneratorPrompt(sqlGenerationDTO);
-			log.debug("New SQL generator prompt as follows \n {} \n", prompt);
+
+			// 开源模型优化模式：使用简化提示词
+			String prompt;
+			if (properties.isEnableOpenSourceModelOptimization()) {
+				log.info("Open-source model optimization enabled, using lite prompt");
+				prompt = PromptHelper.buildLiteSqlGeneratorPrompt(sqlGenerationDTO);
+			} else {
+				prompt = PromptHelper.buildNewSqlGeneratorPrompt(sqlGenerationDTO);
+			}
+			log.debug("SQL generator prompt as follows \n {} \n", prompt);
 
 			// 使用用户角色调用，避免某些模型不支持 system 角色的问题
 			// 对于 retryCount >= 2 的情况，使用简化的 prompt

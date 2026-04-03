@@ -59,6 +59,11 @@ public class PromptConstant {
 		return new PromptTemplate(PromptLoader.loadPrompt("new-sql-generate"));
 	}
 
+	// 简化版 SQL 生成提示词（适用于开源模型）
+	public static PromptTemplate getLiteSqlGeneratorPromptTemplate() {
+		return new PromptTemplate(PromptLoader.loadPrompt("new-sql-generate-lite"));
+	}
+
 	public static PromptTemplate getPlannerPromptTemplate() {
 		return new PromptTemplate(PromptLoader.loadPrompt("planner"));
 	}

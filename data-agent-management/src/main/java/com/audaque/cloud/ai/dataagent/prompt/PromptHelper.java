@@ -581,6 +581,37 @@ public class PromptHelper {
 		return result;
 	}
 
+	/**
+	 * Build simplified SQL generator prompt for open-source models
+	 * Features: shorter prompt, more few-shot examples, simpler structure
+	 */
+	public static String buildLiteSqlGeneratorPrompt(SqlGenerationDTO sqlGenerationDTO) {
+		log.debug("Building lite SQL generator prompt for open-source models - dialect: {}, query: {}",
+				sqlGenerationDTO.getDialect(), sqlGenerationDTO.getQuery());
+
+		// Use aggressive schema filtering to reduce prompt length
+		SchemaCompressionOptions compressionOptions = StringUtils.isNotBlank(sqlGenerationDTO.getExecutionDescription())
+				? SchemaCompressionOptions.smart(sqlGenerationDTO.getExecutionDescription())
+				: SchemaCompressionOptions.none();
+
+		String schemaInfo = buildMixMacSqlDbPrompt(sqlGenerationDTO.getSchemaDTO(), true, compressionOptions);
+		// Truncate schema info if too long (open-source models often have context limits)
+		if (schemaInfo.length() > 4000) {
+			schemaInfo = schemaInfo.substring(0, 4000);
+			log.debug("Schema info truncated to 4000 chars for open-source model compatibility");
+		}
+		log.debug("Schema info built for lite SQL generation, length: {} chars", schemaInfo.length());
+
+		Map<String, Object> params = new HashMap<>();
+		params.put("dialect", sqlGenerationDTO.getDialect());
+		params.put("schema_info", schemaInfo);
+		params.put("execution_description", sqlGenerationDTO.getExecutionDescription());
+
+		String result = PromptConstant.getLiteSqlGeneratorPromptTemplate().render(params);
+		log.debug("Lite SQL generator prompt rendered, total length: {} chars", result.length());
+		return result;
+	}
+
 	public static String buildSemanticConsistenPrompt(SemanticConsistencyDTO semanticConsistencyDTO) {
 		log.debug("Building semantic consistency prompt - dialect: {}, user_query: {}",
 				semanticConsistencyDTO.getDialect(), semanticConsistencyDTO.getUserQuery());
