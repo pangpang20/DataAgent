@@ -107,11 +107,11 @@ public class SqlGenerateNode implements NodeAction {
 		}
 
 		// Get current execution step and SQL query
-		// 获取planner分配的当前执行步骤的sql任务要求，每个步骤的sql任务是不同的。
+		// 获取 planner 分配的当前执行步骤的 sql 任务要求，每个步骤的 sql 任务是不同的。
 		// 不要拿 user query 这个总体的大任务。
 		String promptForSql = getCurrentExecutionStepInstruction(state);
 
-		// 准备生成SQL
+		// 准备生成 SQL
 		String displayMessage;
 		Flux<String> sqlFlux;
 		SqlRetryDto retryDto = StateUtil.getObjectValue(state, SQL_REGENERATE_REASON, SqlRetryDto.class,
@@ -121,25 +121,25 @@ public class SqlGenerateNode implements NodeAction {
 				retryDto.errorType(), count);
 
 		if (retryDto.sqlExecuteFail()) {
-			displayMessage = "检测到SQL执行异常，开始重新生成SQL...";
+			displayMessage = "检测到 SQL 执行异常，开始重新生成 SQL...";
 			log.info("SQL execution failed, retrying - error type: {}, reason: {}", retryDto.errorType(),
 					retryDto.reason());
 			sqlFlux = handleRetryGenerateSql(state, StateUtil.getStringValue(state, SQL_GENERATE_OUTPUT, ""),
 					retryDto.reason(), promptForSql);
 		} else if (retryDto.semanticFail()) {
-			displayMessage = "语义一致性校验未通过，开始重新生成SQL...";
+			displayMessage = "语义一致性校验未通过，开始重新生成 SQL...";
 			log.info("Semantic consistency check failed, retrying - error type: {}, reason: {}", retryDto.errorType(),
 					retryDto.reason());
 			sqlFlux = handleRetryGenerateSql(state, StateUtil.getStringValue(state, SQL_GENERATE_OUTPUT, ""),
 					retryDto.reason(), promptForSql);
 		} else {
-			displayMessage = "开始生成SQL...";
+			displayMessage = "开始生成 SQL...";
 			log.info("Starting initial SQL generation for step {}", count + 1);
 			sqlFlux = handleGenerateSql(state, promptForSql);
 		}
 
 		// 准备返回结果，同时需要清除一些状态数据
-		// 注意：SQL_GENERATE_OUTPUT 初始值为空，只有成功生成SQL后才会被覆盖
+		// 注意：SQL_GENERATE_OUTPUT 初始值为空，只有成功生成 SQL 后才会被覆盖
 		Map<String, Object> result = new HashMap<>();
 		result.put(SQL_GENERATE_COUNT, count + 1);
 		result.put(SQL_REGENERATE_REASON, SqlRetryDto.empty());
@@ -166,7 +166,7 @@ public class SqlGenerateNode implements NodeAction {
 					sqlCollector.append(chunk);
 				}).map(ChatResponseUtil::createPureResponse))
 				.concatWith(Flux.just(ChatResponseUtil.createPureResponse(TextType.SQL.getEndSign()),
-						ChatResponseUtil.createResponse("SQL生成完成，准备执行")));
+						ChatResponseUtil.createResponse("SQL 生成完成，准备执行")));
 
 		Flux<GraphResponse<StreamingOutput>> generator = FluxUtil.createStreamingGeneratorWithMessages(this.getClass(),
 				state, v -> {
@@ -177,7 +177,7 @@ public class SqlGenerateNode implements NodeAction {
 					log.debug("LLM SQL output (after trim): [{}]", sql);
 					log.debug("LLM SQL output (after trim) length: {}, isEmpty: {}", sql.length(),
 							sql == null ? "null" : sql.isEmpty());
-					// 检查SQL是否为空，只有非空时才写入state
+					// 检查 SQL 是否为空，只有非空时才写入 state
 					if (sql != null && !sql.trim().isEmpty()) {
 						result.put(SQL_GENERATE_OUTPUT, sql);
 						log.info("SQL generation successful, SQL: {}", sql);
@@ -185,7 +185,14 @@ public class SqlGenerateNode implements NodeAction {
 						log.warn(
 								"LLM returned empty SQL, will trigger retry in dispatcher. Count: {}, Raw output length: {}",
 								count + 1, rawSql.length());
-						// 不写入SQL_GENERATE_OUTPUT，让dispatcher根据Optional.isEmpty()触发重试
+						// 不写入 SQL_GENERATE_OUTPUT，让 dispatcher 根据 Optional.isEmpty() 触发重试
+						// 但如果 LLM 返回空响应（generations=[]），说明模型可能不支持当前提示词格式
+						// 连续 3 次空响应则不再重试，直接报错
+						if (count >= 2) {
+							log.error("LLM returned empty SQL for {} consecutive times, aborting", count + 1);
+							// 写入特殊错误标记，让 dispatcher 直接终止
+							result.put(SQL_GENERATE_OUTPUT, StateGraph.END);
+						}
 					}
 					return result;
 				}, displayFlux);
