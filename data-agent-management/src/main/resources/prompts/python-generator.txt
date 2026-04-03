@@ -46,7 +46,7 @@
      img_base64 = base64.b64encode(buf.read()).decode('utf-8')
      plt.close(fig)
 
-     result = {"chart_image": img_base64, "data": {...}}
+     result = {{"chart_image": img_base64, "data": {{...}}}}
      ```
 9. **性能约束**：单线程执行，最大内存：{python_memory} MB，超时时间：{python_timeout}。
 
@@ -76,19 +76,19 @@ try:
 
     # 动态分析逻辑
     # 示例：计算某些统计指标
-    result = {
-        "summary": {},
+    result = {{
+        "summary": {{}},
         "details": []
-    }
+    }}
 
     # 示例逻辑：计算每列的平均值（可根据需求调整）
     for column in df.columns:
         if pd.api.types.is_numeric_dtype(df[column]):
-            result["summary"][column] = {
+            result["summary"][column] = {{
                 "mean": df[column].mean(),
                 "min": df[column].min(),
                 "max": df[column].max()
-            }
+            }}
 
     # 示例逻辑：将原始数据分组并统计（可根据需求调整）
     grouped = df.groupby(list(df.columns[:2])).size().reset_index(name="count")
@@ -137,9 +137,9 @@ try:
         df[col] = pd.to_numeric(df[col], errors='ignore')
 
     # 动态分析逻辑
-    result = {
+    result = {{
         "channel_stats": []
-    }
+    }}
 
     # 计算每个渠道的线索数量和转化率
     if "channel" in df.columns and "conversion" in df.columns:

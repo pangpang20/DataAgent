@@ -37,7 +37,9 @@
       "Bash(./mvnw compile:*)",
       "Bash(git commit -m ':*)",
       "Bash(yq --version)",
-      "Bash(python3 -c \"import yaml; print\\('yaml available'\\)\")"
+      "Bash(python3 -c \"import yaml; print\\('yaml available'\\)\")",
+      "Bash(git commit:*)",
+      "Bash(python3:*)"
     ]
   }
 }
