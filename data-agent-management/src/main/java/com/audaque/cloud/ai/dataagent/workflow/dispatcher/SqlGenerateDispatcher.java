@@ -98,6 +98,17 @@ public class SqlGenerateDispatcher implements EdgeAction {
 								properties.getMaxSqlExecutionErrorRetry());
 					}
 					break;
+				case UNKNOWN:
+					// 对于未知错误（如 LLM 返回空响应），使用更小的重试阈值
+					// 连续 3 次空响应说明模型可能不支持当前提示词格式
+					if (totalCount < 3) {
+						shouldRetry = true;
+						log.info("SQL unknown error retry allowed (fallback): {}/3", totalCount);
+					} else {
+						reachedLimitReason = "unknown error (empty response)";
+						log.warn("SQL unknown error retry limit reached: {}/3", totalCount);
+					}
+					break;
 				default:
 					// For unknown error types, use total count as fallback
 					if (totalCount < properties.getMaxSqlRetryCount()) {
