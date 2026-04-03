@@ -16,13 +16,15 @@
 package com.audaque.cloud.ai.dataagent.service.nl2sql;
 
 import com.audaque.cloud.ai.dataagent.bo.DbConfigBO;
+import com.audaque.cloud.ai.dataagent.dto.ModelConfigDTO;
 import com.audaque.cloud.ai.dataagent.dto.prompt.SemanticConsistencyDTO;
 import com.audaque.cloud.ai.dataagent.dto.prompt.SqlGenerationDTO;
 import com.audaque.cloud.ai.dataagent.dto.schema.SchemaDTO;
 import com.audaque.cloud.ai.dataagent.prompt.PromptHelper;
 import com.audaque.cloud.ai.dataagent.service.aimodelconfig.AiModelRegistry;
+import com.audaque.cloud.ai.dataagent.service.aimodelconfig.ModelCharacterDetector;
+import com.audaque.cloud.ai.dataagent.service.aimodelconfig.ModelConfigDataService;
 import com.audaque.cloud.ai.dataagent.service.llm.LlmService;
-import com.audaque.cloud.ai.dataagent.properties.DataAgentProperties;
 import com.audaque.cloud.ai.dataagent.util.*;
 import com.fasterxml.jackson.core.type.TypeReference;
 import lombok.AllArgsConstructor;
@@ -56,7 +58,9 @@ public class Nl2SqlServiceImpl implements Nl2SqlService {
 
 	private final AiModelRegistry aiModelRegistry;
 
-	private final DataAgentProperties properties;
+	private final ModelCharacterDetector modelCharacterDetector;
+
+	private final ModelConfigDataService modelConfigDataService;
 
 	@Override
 	public Flux<ChatResponse> performSemanticConsistency(SemanticConsistencyDTO semanticConsistencyDTO) {
@@ -119,8 +123,15 @@ public class Nl2SqlServiceImpl implements Nl2SqlService {
 
 			// 开源模型优化模式：使用简化提示词
 			String prompt;
-			if (properties.isEnableOpenSourceModelOptimization()) {
-				log.info("Open-source model optimization enabled, using lite prompt");
+			// 获取当前激活的模型配置，自动检测是否为开源模型
+			ModelConfigDTO activeConfig = modelConfigDataService.getActiveConfigByType(
+					com.audaque.cloud.ai.dataagent.enums.ModelType.CHAT);
+			boolean isOpenSourceModel = activeConfig != null && modelCharacterDetector.isOpenSourceModel(
+					activeConfig.getProvider(), activeConfig.getModelName());
+
+			if (isOpenSourceModel) {
+				log.info("Open-source model detected (provider: {}, model: {}), using lite prompt",
+						activeConfig.getProvider(), activeConfig.getModelName());
 				prompt = PromptHelper.buildLiteSqlGeneratorPrompt(sqlGenerationDTO);
 			} else {
 				prompt = PromptHelper.buildNewSqlGeneratorPrompt(sqlGenerationDTO);

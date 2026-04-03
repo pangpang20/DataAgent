@@ -107,12 +107,6 @@ public class DataAgentProperties {
 	 */
 	private Long enrichSqlResultTimeout = 3000L;
 
-	/**
-	 * 是否启用开源模型优化模式（简化提示词、增加 few-shot 示例）
-	 * 适用于 Qwen、Llama、ChatGLM 等开源模型部署场景
-	 */
-	private boolean enableOpenSourceModelOptimization = false;
-
 	@Getter
 	@Setter
 	public static class ReportTemplate {
