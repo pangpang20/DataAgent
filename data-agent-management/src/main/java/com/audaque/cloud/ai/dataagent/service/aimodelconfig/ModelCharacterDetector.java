@@ -180,7 +180,7 @@ public class ModelCharacterDetector {
 	 */
 	private boolean isOpenSourceProvider(String providerLower) {
 		return OPEN_SOURCE_PROVIDERS.contains(providerLower) ||
-				OPEN_SOURCE_PROVIDERS.stream().anyMatch(providerLower::contains);
+				OPEN_SOURCE_PROVIDERS.stream().anyMatch(p -> providerLower.startsWith(p));
 	}
 
 	/**
@@ -188,7 +188,7 @@ public class ModelCharacterDetector {
 	 */
 	private boolean isCommercialProvider(String providerLower) {
 		return COMMERCIAL_PROVIDERS.contains(providerLower) ||
-				COMMERCIAL_PROVIDERS.stream().anyMatch(providerLower::contains);
+				COMMERCIAL_PROVIDERS.stream().anyMatch(p -> providerLower.startsWith(p));
 	}
 
 	/**
