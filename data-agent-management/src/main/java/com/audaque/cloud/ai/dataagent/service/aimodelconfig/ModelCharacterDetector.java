@@ -48,7 +48,7 @@ public class ModelCharacterDetector {
 			// 阿里通义千问系列
 			"qwen", "qwen-local", "aliyun", "dashscope",
 			// GLM 系列（智谱 AI）
-			"glm", "zhipu", "chatglm", "coglm",
+			"glm", "zhipu", "coglm",
 			// Llama 系列（Meta）
 			"llama", "llama2", "llama3", "llama3.1", "llama4",
 			// DeepSeek 深度求索
