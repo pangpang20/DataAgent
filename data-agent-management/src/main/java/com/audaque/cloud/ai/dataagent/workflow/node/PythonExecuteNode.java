@@ -211,12 +211,6 @@ public class PythonExecuteNode implements NodeAction {
 			return false;
 		}
 
-		// Check for PNG magic number at start (iVBORw0KGgo)
-		if (!base64.startsWith("iVBORw0KGgo")) {
-			log.warn("Base64 image does not start with PNG magic number");
-			return false;
-		}
-
 		return true;
 	}
 
