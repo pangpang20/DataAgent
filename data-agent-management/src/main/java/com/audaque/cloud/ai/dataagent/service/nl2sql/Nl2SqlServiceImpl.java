@@ -116,15 +116,30 @@ public class Nl2SqlServiceImpl implements Nl2SqlService {
 			String prompt = PromptHelper.buildNewSqlGeneratorPrompt(sqlGenerationDTO);
 			log.debug("New SQL generator prompt as follows \n {} \n", prompt);
 
-			// Use aiModelRegistry directly for temperature control
-			chatResponseFlux = aiModelRegistry.getChatClient()
-					.prompt()
-					.system(prompt)
-					.options(OpenAiChatOptions.builder()
-							.temperature(temperature)
-							.build())
-					.stream()
-					.chatResponse();
+			// 使用用户角色调用，避免某些模型不支持 system 角色的问题
+			// 对于 retryCount >= 2 的情况，使用简化的 prompt
+			if (retryCount >= 2) {
+				log.info("Retry count >= 2, using simplified prompt and user role for better compatibility");
+				chatResponseFlux = aiModelRegistry.getChatClient()
+						.prompt()
+						.user("Please generate SQL query for: " + sqlGenerationDTO.getExecutionDescription() +
+								". Database schema: " + prompt.substring(0, Math.min(3000, prompt.length())))
+						.options(OpenAiChatOptions.builder()
+								.temperature(Math.max(temperature, 0.3))
+								.build())
+						.stream()
+						.chatResponse();
+			} else {
+				// Use aiModelRegistry directly for temperature control
+				chatResponseFlux = aiModelRegistry.getChatClient()
+						.prompt()
+						.system(prompt)
+						.options(OpenAiChatOptions.builder()
+								.temperature(temperature)
+								.build())
+						.stream()
+						.chatResponse();
+			}
 		}
 
 		// Add detailed logging to diagnose LLM response
