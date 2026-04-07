@@ -165,7 +165,12 @@ public class ReportGeneratorNode implements NodeAction {
 		Flux<ChatResponse> llmStream = llmService.callUser(reportPrompt);
 		// 纯md文本报告
 		if (plainReport) {
-			return llmStream;
+			return llmStream.map(chatResponse -> {
+				String text = ChatResponseUtil.getText(chatResponse);
+				// 去除 Markdown 代码块标记（```markdown 和 ```）
+				text = text.replaceAll("```markdown\\s*", "").replaceAll("```\\s*", "");
+				return ChatResponseUtil.createPureResponse(text);
+			});
 		}
 
 		// html报告，先发送html模板头，然后发送llm生成的内容，最后发送html模板尾部

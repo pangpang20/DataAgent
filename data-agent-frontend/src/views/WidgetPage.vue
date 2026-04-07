@@ -84,7 +84,7 @@
                 </button>
               </div>
               <div class="markdown-report-content">
-                <Markdown>{{ msg.content }}</Markdown>
+                <Markdown>{{ cleanMarkdownMarkers(msg.content) }}</Markdown>
               </div>
             </div>
           </div>
@@ -151,7 +151,7 @@
                   </div>
                   <div class="markdown-report-content">
                     <Markdown :generating="isStreaming">
-                      {{ nodeBlock[0].text }}
+                      {{ cleanMarkdownMarkers(nodeBlock[0].text) }}
                     </Markdown>
                   </div>
                 </div>
@@ -914,7 +914,9 @@ export default defineComponent({
     // Download markdown report
     const downloadMarkdown = (content: string) => {
       if (!content) return;
-      const blob = new Blob([content], { type: 'text/markdown' });
+      // Clean markdown markers before downloading
+      const cleanContent = cleanMarkdownMarkers(content);
+      const blob = new Blob([cleanContent], { type: 'text/markdown' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -923,6 +925,12 @@ export default defineComponent({
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
+    };
+
+    // Clean markdown markers (```markdown and ```)
+    const cleanMarkdownMarkers = (content: string): string => {
+      if (!content) return '';
+      return content.replace(/```markdown\s*/gi, '').replace(/```\s*/g, '');
     };
 
     // Copy code to clipboard
@@ -959,6 +967,7 @@ export default defineComponent({
       toggleNodeVisibility,
       downloadMarkdown,
       copyCode,
+      cleanMarkdownMarkers,
     };
   },
 });

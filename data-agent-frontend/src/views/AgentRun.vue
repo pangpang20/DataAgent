@@ -98,7 +98,7 @@
                 </div>
                 <div class="markdown-report-content">
                   <Markdown>
-                    {{ message.content }}
+                    {{ cleanMarkdownMarkers(message.content) }}
                   </Markdown>
                 </div>
               </div>
@@ -1342,8 +1342,9 @@
           const sessionId = currentSession.value?.id;
           if (sessionId) {
             const sessionState = getSessionState(sessionId);
-            // 返回实时更新的 markdown 内容
-            return sessionState.markdownReportContent || '';
+            // 返回实时更新的 markdown 内容，并清理 Markdown 标记
+            const content = sessionState.markdownReportContent || '';
+            return cleanMarkdownMarkers(content);
           }
         }
 
@@ -1366,7 +1367,14 @@
           }
         }
 
-        return markdown;
+        return cleanMarkdownMarkers(markdown);
+      };
+
+
+      // 清理 Markdown 代码块标记（```markdown 和 ```）
+      const cleanMarkdownMarkers = (content: string): string => {
+        if (!content) return '';
+        return content.replace(/```markdown\s*/gi, '').replace(/```\s*/g, '');
       };
 
       // HTML转义函数
@@ -1400,6 +1408,7 @@
         lastRequest,
         resultSetDisplayConfig,
         getMarkdownContentFromNode,
+        cleanMarkdownMarkers,
         selectSession,
         sendMessage,
         handleImageError,
