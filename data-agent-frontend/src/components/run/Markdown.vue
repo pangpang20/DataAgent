@@ -16,17 +16,18 @@
 
 <template>
   <div class="markdown-container">
-    <div class="markdown-content" v-html="renderedHtml" :key="contentKey"></div>
+    <div class="markdown-content" ref="markdownContentRef" :key="contentKey"></div>
   </div>
 </template>
 
 <script lang="ts">
-  import { defineComponent, computed, watch } from 'vue';
+  import { defineComponent, computed, watch, onMounted, onUnmounted, nextTick, ref } from 'vue';
   import { marked } from 'marked';
   import DOMPurify from 'dompurify';
   import hljs from 'highlight.js';
   import 'highlight.js/styles/github.css';
   import { copyToClipboard } from '@/utils/clipboard';
+  import * as echarts from 'echarts';
 
   export default defineComponent({
     name: 'Markdown',
@@ -48,6 +49,9 @@
         return div.innerHTML;
       };
 
+      // 存储 ECharts 实例的数组
+      const chartInstances: echarts.ECharts[] = [];
+
       // 创建自定义渲染器
       const createRenderer = () => {
         const renderer = new marked.Renderer();
@@ -55,6 +59,21 @@
         // 重写代码块渲染
         renderer.code = (code: string, language: string | undefined) => {
           const lang = language || 'text';
+
+          // 特殊处理 echarts 代码块
+          if (lang === 'echarts') {
+            const chartId = `echarts-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+            // 将 JSON 配置编码后存入 data 属性
+            const encodedConfig = encodeURIComponent(code);
+            return `
+              <div class="echarts-wrapper">
+                <div class="echarts-header">
+                  <span class="echarts-title">数据图表</span>
+                </div>
+                <div id="${chartId}" class="echarts-container" data-chart-config="${encodedConfig}"></div>
+              </div>
+            `;
+          }
 
           // 尝试高亮代码
           let highlightedCode = code;
@@ -106,6 +125,37 @@
         gfm: true, // GitHub Flavored Markdown
         breaks: true, // 支持换行
       });
+
+      // 渲染 ECharts 图表
+      const renderEcharts = (chartId: string, optionJson: string) => {
+        try {
+          const container = document.getElementById(chartId);
+          if (!container) {
+            console.warn(`ECharts container not found: ${chartId}`);
+            return;
+          }
+
+          // 解析 JSON 配置
+          const option = JSON.parse(optionJson);
+
+          // 初始化图表
+          const chart = echarts.init(container);
+          chart.setOption(option);
+          chartInstances.push(chart);
+
+          // 监听窗口大小变化
+          window.addEventListener('resize', () => {
+            chart.resize();
+          });
+        } catch (error) {
+          console.error('ECharts rendering error:', error);
+          // 如果渲染失败，显示错误信息
+          const container = document.getElementById(chartId);
+          if (container) {
+            container.innerHTML = `<div class="echarts-error">图表渲染失败：${error instanceof Error ? error.message : '未知错误'}</div>`;
+          }
+        }
+      };
 
       // 从插槽中提取文本内容
       const getSlotText = (): string => {
@@ -247,21 +297,60 @@
           // 同时监听 prop 和插槽内容
           return getSlotText() || props.content;
         },
-        newContent => {
+        (newContent, oldContent) => {
           // 内容变化时，computed 属性会自动重新计算
           // 这里可以添加调试日志
           if (process.env.NODE_ENV === 'development') {
             console.log('Markdown content updated, length:', newContent?.length || 0);
           }
+          // 内容变化后重新渲染 echarts 图表
+          nextTick(() => {
+            const echartsContainers = document.querySelectorAll('.echarts-container');
+            echartsContainers.forEach((container) => {
+              const config = container.getAttribute('data-chart-config');
+              if (config) {
+                try {
+                  renderEcharts(container.id, decodeURIComponent(config));
+                } catch (error) {
+                  console.error('Failed to decode echarts config:', error);
+                }
+              }
+            });
+          });
         },
       );
 
-      // 组件挂载时设置复制函数
-      setupCopyFunction();
+      // 组件挂载时设置复制函数和渲染图表
+      onMounted(() => {
+        setupCopyFunction();
+        // 渲染所有 echarts 图表
+        nextTick(() => {
+          const echartsContainers = document.querySelectorAll('.echarts-container');
+          echartsContainers.forEach((container) => {
+            const config = container.getAttribute('data-chart-config');
+            if (config) {
+              try {
+                renderEcharts(container.id, decodeURIComponent(config));
+              } catch (error) {
+                console.error('Failed to decode echarts config:', error);
+              }
+            }
+          });
+        });
+      });
+
+      // 组件卸载时清理 echarts 实例
+      onUnmounted(() => {
+        chartInstances.forEach(chart => {
+          chart.dispose();
+        });
+        chartInstances.length = 0;
+      });
 
       return {
         renderedHtml,
         contentKey,
+        renderEcharts,
       };
     },
   });
@@ -527,5 +616,45 @@
   /* 删除线样式 */
   .markdown-content :deep(del) {
     text-decoration: line-through;
+  }
+
+  /* ECharts 图表样式 */
+  .markdown-content :deep(.echarts-wrapper) {
+    margin: 16px 0;
+    border: 1px solid #e1e4e8;
+    border-radius: 6px;
+    overflow: hidden;
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+
+  .markdown-content :deep(.echarts-header) {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #f6f8fa;
+    padding: 8px 12px;
+    border-bottom: 1px solid #e1e4e8;
+  }
+
+  .markdown-content :deep(.echarts-title) {
+    font-size: 12px;
+    font-weight: 600;
+    color: #24292e;
+  }
+
+  .markdown-content :deep(.echarts-container) {
+    width: 100%;
+    height: 350px;
+    padding: 16px;
+  }
+
+  .markdown-content :deep(.echarts-error) {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: #f44336;
+    font-size: 12px;
   }
 </style>
