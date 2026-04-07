@@ -66,7 +66,7 @@
                ax.plot(data_df[x_col].astype(str), data_df[y_col], marker='o', color='#5584FF')
 
            # 设置标题和标签
-           ax.set_title(f'{y_col} by {x_col}', fontsize=12, fontweight='bold')
+           ax.set_title(f'{{y_col}} by {{x_col}}', fontsize=12, fontweight='bold')
            ax.set_xlabel(x_col, fontsize=10)
            ax.set_ylabel(y_col, fontsize=10)
 
@@ -88,12 +88,12 @@
 
            return img_base64
        except Exception as e:
-           print(f"Chart creation failed: {e}", file=sys.stderr)
+           print(f"Chart creation failed: {{e}}", file=sys.stderr)
            return None
 
    # 使用示例
    # chart_image = create_chart(df, 'category_column', 'value_column')
-   # result = {"chart_image": chart_image, "data": {...}}
+   # result = {{"chart_image": chart_image, "data": {{...}}}}
    ```
 
    **注意事项**：
@@ -136,7 +136,7 @@ def create_chart(data_df, x_col, y_col):
         else:
             ax.plot(data_df[x_col].astype(str), data_df[y_col], marker='o', color='#5584FF')
 
-        ax.set_title(f'{y_col} by {x_col}', fontsize=12, fontweight='bold')
+        ax.set_title(f'{{y_col}} by {{x_col}}', fontsize=12, fontweight='bold')
         ax.set_xlabel(x_col, fontsize=10)
         ax.set_ylabel(y_col, fontsize=10)
         plt.xticks(rotation=45, ha='right')
@@ -151,7 +151,7 @@ def create_chart(data_df, x_col, y_col):
 
         return img_base64
     except Exception as e:
-        print(f"Chart creation failed: {e}", file=sys.stderr)
+        print(f"Chart creation failed: {{e}}", file=sys.stderr)
         return None
 
 # 错误处理
@@ -167,11 +167,11 @@ try:
         df[col] = pd.to_numeric(df[col], errors='ignore')
 
     # 动态分析逻辑
-    result = {
-        "summary": {},
+    result = {{
+        "summary": {{}},
         "details": [],
         "chart_image": None  # 默认为 null，生成成功后替换
-    }
+    }}
 
     # TODO: 根据用户需求填充分析逻辑
     # 示例：如果有分类列和数值列，生成柱状图
@@ -230,7 +230,7 @@ def create_chart(data_df, x_col, y_col):
     try:
         fig, ax = plt.subplots(figsize=(10, 6), dpi=100)
         ax.bar(data_df[x_col].astype(str), data_df[y_col], color='#5584FF')
-        ax.set_title(f'{y_col} by {x_col}', fontsize=12, fontweight='bold')
+        ax.set_title(f'{{y_col}} by {{x_col}}', fontsize=12, fontweight='bold')
         ax.set_xlabel(x_col, fontsize=10)
         ax.set_ylabel(y_col, fontsize=10)
         plt.xticks(rotation=45, ha='right')
@@ -244,7 +244,7 @@ def create_chart(data_df, x_col, y_col):
         plt.close(fig)
         return img_base64
     except Exception as e:
-        print(f"Chart creation failed: {e}", file=sys.stderr)
+        print(f"Chart creation failed: {{e}}", file=sys.stderr)
         return None
 
 try:
@@ -255,15 +255,15 @@ try:
         df[col] = pd.to_numeric(df[col], errors='ignore')
 
     # 计算汇总统计
-    result = {
-        "summary": {
+    result = {{
+        "summary": {{
             "total_products": len(df),
             "total_revenue": df['TOTAL_REVENUE'].sum() if 'TOTAL_REVENUE' in df.columns else 0,
             "average_revenue": df['TOTAL_REVENUE'].mean() if 'TOTAL_REVENUE' in df.columns else 0
-        },
+        }},
         "products": df.to_dict('records'),
         "chart_image": None
-    }
+    }}
 
     # 生成图表：产品销售额对比
     if 'NAME' in df.columns and 'TOTAL_REVENUE' in df.columns and len(df) >= 2:
@@ -295,7 +295,7 @@ def create_chart(data_df, x_col, y_col):
     try:
         fig, ax = plt.subplots(figsize=(10, 6), dpi=100)
         ax.plot(data_df[x_col].astype(str), data_df[y_col], marker='o', color='#5584FF', linewidth=2)
-        ax.set_title(f'{y_col} 趋势', fontsize=12, fontweight='bold')
+        ax.set_title(f'{{y_col}} 趋势', fontsize=12, fontweight='bold')
         ax.set_xlabel(x_col, fontsize=10)
         ax.set_ylabel(y_col, fontsize=10)
         plt.xticks(rotation=45, ha='right')
@@ -309,7 +309,7 @@ def create_chart(data_df, x_col, y_col):
         plt.close(fig)
         return img_base64
     except Exception as e:
-        print(f"Chart creation failed: {e}", file=sys.stderr)
+        print(f"Chart creation failed: {{e}}", file=sys.stderr)
         return None
 
 try:
@@ -319,10 +319,10 @@ try:
     for col in df.columns:
         df[col] = pd.to_numeric(df[col], errors='ignore')
 
-    result = {
+    result = {{
         "monthly_data": df.to_dict('records'),
         "chart_image": None
-    }
+    }}
 
     # 生成趋势图
     if len(df) >= 2:
@@ -355,10 +355,10 @@ try:
     # 只有单一汇总值，不需要图表
     total = df['sales'].sum() if 'sales' in df.columns else 0
 
-    result = {
+    result = {{
         "total_sales": total,
         "chart_image": None  # 单一数值，不需要图表
-    }
+    }}
 
     print(json.dumps(result, ensure_ascii=False))
 
