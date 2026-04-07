@@ -163,7 +163,7 @@ public class ReportGeneratorNode implements NodeAction {
 				analysisStepsAndData, summaryAndRecommendations, optimizationConfigs, plainReport);
 		log.debug("Report Node Prompt: \n {} \n", reportPrompt);
 		Flux<ChatResponse> llmStream = llmService.callUser(reportPrompt);
-		// 纯md文本报告
+		// 纯 md 文本报告
 		if (plainReport) {
 			return llmStream.map(chatResponse -> {
 				String text = ChatResponseUtil.getText(chatResponse);
@@ -173,10 +173,17 @@ public class ReportGeneratorNode implements NodeAction {
 			});
 		}
 
-		// html报告，先发送html模板头，然后发送llm生成的内容，最后发送html模板尾部
+		// html 报告，先发送 html 模板头，然后发送 llm 生成的内容，最后发送 html 模板尾部
+		// 同时去除可能包含的 Markdown 代码块标记
 		ChatResponse headerResponse = ChatResponseUtil.createPureResponse(reportTemplateUtil.getHeader());
 		ChatResponse footerResponse = ChatResponseUtil.createPureResponse(reportTemplateUtil.getFooter());
-		return Flux.concat(Flux.just(headerResponse), llmStream, Flux.just(footerResponse));
+		// 对 LLM 流进行清理，去除 Markdown 代码块标记
+		Flux<ChatResponse> cleanedLlmStream = llmStream.map(chatResponse -> {
+			String text = ChatResponseUtil.getText(chatResponse);
+			text = text.replaceAll("```markdown\\s*", "").replaceAll("```\\s*", "");
+			return ChatResponseUtil.createPureResponse(text);
+		});
+		return Flux.concat(Flux.just(headerResponse), cleanedLlmStream, Flux.just(footerResponse));
 
 	}
 
@@ -231,7 +238,7 @@ public class ReportGeneratorNode implements NodeAction {
 						if (step.getToolParameters() != null) {
 							sb.append("**参数描述**: ").append(step.getToolParameters().getInstruction()).append("\n");
 							if (step.getToolParameters().getSqlQuery() != null) {
-								sb.append("**执行SQL**: \n```sql\n")
+								sb.append("**执行 SQL**: \n```sql\n")
 									.append(step.getToolParameters().getSqlQuery())
 									.append("\n```\n");
 							}

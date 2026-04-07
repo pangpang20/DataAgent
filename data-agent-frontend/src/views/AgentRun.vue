@@ -865,10 +865,12 @@
                   nodeBlocks.value = [];
                 }
               } else if (sessionState.markdownReportContent) {
+                // 清理 Markdown 代码块标记后保存
+                const cleanedMarkdownContent = sessionState.markdownReportContent.replace(/```markdown\s*/gi, '').replace(/```\s*/g, '');
                 const markdownMessage: ChatMessage = {
                   sessionId,
                   role: 'assistant',
-                  content: sessionState.markdownReportContent,
+                  content: cleanedMarkdownContent,
                   messageType: 'markdown-report',
                 };
 
@@ -972,7 +974,10 @@
           return;
         }
 
-        const blob = new Blob([content], { type: 'text/markdown' });
+        // 清理 Markdown 代码块标记（```markdown 和 ```）
+        const cleanedContent = content.replace(/```markdown\s*/gi, '').replace(/```\s*/g, '');
+
+        const blob = new Blob([cleanedContent], { type: 'text/markdown' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
