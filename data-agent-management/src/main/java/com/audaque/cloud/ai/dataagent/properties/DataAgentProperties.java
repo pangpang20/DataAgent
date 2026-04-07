@@ -105,7 +105,7 @@ public class DataAgentProperties {
 	/**
 	 * 执行SQL结果图表化超时时间，默认3000ms
 	 */
-	private Long enrichSqlResultTimeout = 10000L;
+	private Long enrichSqlResultTimeout = 30000L;
 
 	@Getter
 	@Setter
