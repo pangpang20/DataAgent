@@ -227,10 +227,11 @@ try:
     }}
 
     # TODO: 根据用户需求填充分析逻辑
-    # 示例：如果有分类列和数值列，生成柱状图
-    # if len(df.columns) >= 2 and has_matplotlib:
-    #     x_col = df.columns[0]
-    #     y_col = df.columns[1]
+    # 重要：如果有分类列和数值列且数据行数>=2，必须生成图表
+    # 示例：
+    # if len(df.columns) >= 2 and len(df) >= 2 and has_matplotlib:
+    #     x_col = df.columns[0]  # 第一个列作为 x 轴（分类）
+    #     y_col = df.columns[1]  # 第二个列作为 y 轴（数值）
     #     result["chart_image"] = create_chart(df, x_col, y_col)
 
     # 输出结果为 JSON 对象
