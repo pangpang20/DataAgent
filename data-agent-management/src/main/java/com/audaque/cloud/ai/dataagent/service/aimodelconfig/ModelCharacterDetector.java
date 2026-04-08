@@ -43,13 +43,57 @@ public class ModelCharacterDetector {
 	 * 1. 上下文窗口有限
 	 * 2. 需要更多示例引导
 	 * 3. 对复杂指令遵循能力较弱
+	 * 
+	 * 注意：仅包含本地部署工具（如 Ollama、LocalAI 等），其他模型厂商（如 Qwen、GLM、Llama 等）
+	 * 虽然基于开源模型，但通常通过商业 API 提供服务，应归类为商业提供商。
 	 */
 	private static final Set<String> OPEN_SOURCE_PROVIDERS = Set.of(
-			// 阿里通义千问系列
+			// Ollama（本地运行开源模型）
+			"ollama",
+			// LocalAI / vLLM 等本地部署
+			"localai", "vllm", "local");
+
+	/**
+	 * 已知开源模型/本地部署模型的模型名称关键词
+	 * 用于补充判断，特别是当提供商名称不标准时
+	 * 
+	 * 注意：仅包含本地部署工具相关的关键词，其他模型系列（如 Qwen、Llama、GLM 等）
+	 * 虽然模型本身开源，但通常通过商业 API 提供服务，不应在此列出。
+	 */
+	private static final Set<String> OPEN_SOURCE_MODEL_KEYWORDS = Set.of(
+			// Ollama 相关
+			"ollama",
+			// LocalAI 相关
+			"localai",
+			// vLLM 相关
+			"vllm");
+
+	/**
+	 * 已知商业闭源模型的提供商列表
+	 * 这些提供商的模型通常：
+	 * 1. 上下文窗口大
+	 * 2. 指令遵循能力强
+	 * 3. 不需要额外的 few-shot 示例
+	 * 
+	 * 包含：
+	 * - 国际大厂：OpenAI、Anthropic、Google、Microsoft
+	 * - 国内厂商：阿里通义、智谱 AI、深度求索、百川智能等
+	 * - 开源模型的商业 API 服务：Llama、Qwen、GLM 等通过云服务的 API
+	 */
+	private static final Set<String> COMMERCIAL_PROVIDERS = Set.of(
+			// OpenAI
+			"openai",
+			// Anthropic (Claude)
+			"anthropic", "claude",
+			// Google (Gemini)
+			"google", "gemini",
+			// Microsoft (Azure OpenAI)
+			"azure", "microsoft",
+			// 阿里通义千问（商业 API）
 			"qwen", "qwen-local", "aliyun", "dashscope",
 			// GLM 系列（智谱 AI）
 			"glm", "zhipu", "coglm",
-			// Llama 系列（Meta）
+			// Llama 系列（商业 API 服务）
 			"llama", "llama2", "llama3", "llama3.1", "llama4",
 			// DeepSeek 深度求索
 			"deepseek",
@@ -60,18 +104,22 @@ public class ModelCharacterDetector {
 			// InternLM 书生·浦语
 			"internlm", "xverse",
 			// ChatGLM
-			"chatglm", "chatglm2", "chatglm3",
-			// Ollama（本地运行开源模型）
-			"ollama",
-			// LocalAI / vLLM 等本地部署
-			"localai", "vllm", "local");
+			"chatglm", "chatglm2", "chatglm3");
 
 	/**
-	 * 已知开源模型/本地部署模型的模型名称关键词
-	 * 用于补充判断，特别是当提供商名称不标准时
+	 * 已知商业闭源模型的模型名称关键词
+	 * 包含主流商业模型和开源模型的商业 API 服务
 	 */
-	private static final Set<String> OPEN_SOURCE_MODEL_KEYWORDS = Set.of(
-			// Qwen 系列
+	private static final Set<String> COMMERCIAL_MODEL_KEYWORDS = Set.of(
+			// GPT 系列
+			"gpt-4", "gpt-3.5", "gpt-3", "gpt4", "gpt35",
+			// Claude 系列
+			"claude",
+			// Gemini 系列
+			"gemini",
+			// o1 系列
+			"o1-preview", "o1-mini", "o1-",
+			// Qwen 系列（通义千问）
 			"qwen", "qwq",
 			// Llama 系列
 			"llama",
@@ -89,42 +137,12 @@ public class ModelCharacterDetector {
 			"xverse",
 			// MiniCPM
 			"minicpm",
-			// Phi 系列（微软）
+			// Phi 系列
 			"phi",
 			// Mistral 系列
 			"mistral", "mixtral",
 			// Falcon 系列
 			"falcon");
-
-	/**
-	 * 已知商业闭源模型的提供商列表
-	 * 这些提供商的模型通常：
-	 * 1. 上下文窗口大
-	 * 2. 指令遵循能力强
-	 * 3. 不需要额外的 few-shot 示例
-	 */
-	private static final Set<String> COMMERCIAL_PROVIDERS = Set.of(
-			// OpenAI
-			"openai",
-			// Anthropic (Claude)
-			"anthropic", "claude",
-			// Google (Gemini)
-			"google", "gemini",
-			// Microsoft (Azure OpenAI)
-			"azure", "microsoft");
-
-	/**
-	 * 已知商业闭源模型的模型名称关键词
-	 */
-	private static final Set<String> COMMERCIAL_MODEL_KEYWORDS = Set.of(
-			// GPT 系列
-			"gpt-4", "gpt-3.5", "gpt-3", "gpt4", "gpt35",
-			// Claude 系列
-			"claude",
-			// Gemini 系列
-			"gemini",
-			// o1 系列
-			"o1-preview", "o1-mini", "o1-");
 
 	/**
 	 * 检测是否为开源模型/本地部署模型
