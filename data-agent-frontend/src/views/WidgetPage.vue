@@ -218,12 +218,23 @@
         ref="inputRef"
       />
       <button 
+        v-if="!isStreaming"
         class="send-btn"
         @click="sendMessage" 
         :disabled="!userInput.trim() || isLoading"
       >
         <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
           <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+        </svg>
+      </button>
+      <button 
+        v-else
+        class="send-btn stop-btn"
+        @click="stopStreaming"
+        :disabled="isLoading"
+      >
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+          <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
         </svg>
       </button>
     </div>
@@ -296,6 +307,8 @@ export default defineComponent({
     const markdownReportContent = ref<string>('');
     const resultSetContent = ref<string>('');
     const chatResponseContent = ref<string>('');
+    // EventSource reference for stopping stream
+    const eventSourceRef = ref<EventSource | null>(null);
 
     // Get initial values from URL params
     const agentId = computed(() => route.params.id as string);
@@ -618,6 +631,9 @@ export default defineComponent({
         const eventSource = new EventSource(
           `${baseUrl.value}/nl2sql/stream?sessionId=${sessionId.value}&question=${encodeURIComponent(messageContent)}&apiKey=${encodeURIComponent(apiKey.value)}`
         );
+        
+        // Store eventSource reference for stopping
+        eventSourceRef.value = eventSource;
 
         let currentNodeName = '';
         let currentNodeIndex = -1;
@@ -850,16 +866,19 @@ export default defineComponent({
         
         eventSource.onerror = () => {
           handleStreamComplete('onerror');
+          eventSourceRef.value = null;
         };
         
         eventSource.addEventListener('complete', () => {
           handleStreamComplete('complete');
+          eventSourceRef.value = null;
         });
         
       } catch (error) {
         console.error('[Widget Page] Send message error:', error);
         isLoading.value = false;
         isStreaming.value = false;
+        eventSourceRef.value = null;
 
         // Save any content that was received before the error
         handleStreamComplete('error');
@@ -870,6 +889,165 @@ export default defineComponent({
         });
         scrollToBottom();
       }
+    };
+
+    // Stop streaming response
+    const stopStreaming = async () => {
+      if (!eventSourceRef.value) {
+        console.warn('[Widget Page] No active stream to stop');
+        return;
+      }
+
+      console.log('[Widget Page] Stopping active stream');
+      
+      // Close the EventSource connection
+      eventSourceRef.value.close();
+      eventSourceRef.value = null;
+      
+      // Update state
+      isLoading.value = false;
+      isStreaming.value = false;
+      
+      // Save any content that was received before stopping
+      if (nodeBlocks.value && nodeBlocks.value.length > 0) {
+        console.log(`[Widget Page] Saving ${nodeBlocks.value.length} node blocks before stop`);
+        
+        // Generate and save HTML for all nodeBlocks
+        const generateNodeHtml = (node: StreamNodeData[]): string => {
+          if (!node || node.length === 0) return '';
+
+          const firstNode = node[0];
+          if (!firstNode.text) return '';
+
+          let content = '';
+
+          // Filter out <think>...</think> content from LLM responses
+          const filterThinkContent = (text: string): string => {
+            if (!text) return text;
+            return text.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+          };
+
+          for (let idx = 0; idx < node.length; idx++) {
+            const n = node[idx];
+            if (n.textType === 'HTML') {
+              content += n.text;
+            } else if (n.textType === 'TEXT' || n.textType === 'STRING') {
+              const filteredText = filterThinkContent(n.text);
+              content += filteredText.replace(/\n/g, '<br>');
+            } else if (
+              n.textType === 'JSON' ||
+              n.textType === 'PYTHON' ||
+              n.textType === 'SQL'
+            ) {
+              let pre = '';
+              let p = idx;
+              for (; p < node.length; p++) {
+                if (node[p].textType !== n.textType) {
+                  break;
+                }
+                pre += node[p].text;
+              }
+              const language = n.textType.toLowerCase();
+              const codeId = `code-${Date.now()}-${idx}`;
+              content += `
+                <div class="code-block-wrapper" style="margin-bottom: 12px;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; background: #f8f9fa; padding: 6px 12px; border-bottom: 1px solid #e1e4e8; font-family: system-ui, sans-serif; font-size: 13px;">
+                    <span style="color: #666; font-weight: 500;">${language}</span>
+                    <button onclick="copyCodeBlock('${codeId}')" style="background: #f8f9fa; border: 1px solid #e1e4e8; padding: 4px 12px; border-radius: 4px; font-size: 12px; cursor: pointer; transition: background 0.2s;">复制</button>
+                  </div>
+                  <pre id="${codeId}" style="margin: 0; padding: 12px; background: #f6f8fa; overflow-x: auto; font-family: 'Monaco', 'Menlo', monospace; font-size: 12px; line-height: 1.5; color: #24292e;"><code>${escapeHtml(pre)}</code></pre>
+                </div>`;
+              if (p < node.length) {
+                idx = p - 1;
+              } else {
+                break;
+              }
+            } else if (n.textType === 'MARK_DOWN') {
+              let markdown = '';
+              let p = idx;
+              for (; p < node.length; p++) {
+                if (node[p].textType !== 'MARK_DOWN') {
+                  break;
+                }
+                markdown += node[p].text;
+              }
+              markdown = filterThinkContent(markdown);
+              const markdownId = `md-${Date.now()}-${idx}`;
+              const encodedMarkdown = encodeURIComponent(markdown);
+
+              let html = markdown
+                .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+                .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+                .replace(/^# (.*$)/gim, '<h1>$1</h1>')
+                .replace(/\*\*(.*)\*\*/gim, '<b>$1</b>')
+                .replace(/\*(.*)\*/gim, '<i>$1</i>')
+                .replace(/`(.*?)`/gim, '<code style="background: #f6f8fa; padding: 2px 6px; border-radius: 3px;">$1</code>')
+                .replace(/\n/gim, '<br>');
+
+              content += `
+                <div class="markdown-report-wrapper" style="margin-bottom: 12px;">
+                  <div class="markdown-report-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid #f0f0f0;">
+                    <div class="report-info" style="display: flex; align-items: center; gap: 8px; color: #409eff; font-size: 14px; font-weight: 500;">
+                      <svg viewBox="0 0 24 24" width="18" height="18" fill="#409EFF">
+                        <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
+                      </svg>
+                      <span>Markdown 报告已生成</span>
+                    </div>
+                    <button onclick="downloadMarkdownReport('${markdownId}', 'report_${Date.now()}.md')" class="download-btn primary" style="display: flex; align-items: center; gap: 4px; padding: 6px 12px; background: #409EFF; color: white; border: none; border-radius: 6px; font-size: 12px; cursor: pointer; transition: all 0.2s;">
+                      <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+                        <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+                      </svg>
+                      下载 Markdown 报告
+                    </button>
+                  </div>
+                  <div id="${markdownId}" class="markdown-report" data-content="${encodedMarkdown}" style="line-height: 1.6;">${html}</div>
+                </div>`;
+              if (p < node.length) {
+                idx = p - 1;
+              } else {
+                break;
+              }
+            } else if (n.textType === 'RESULT_SET') {
+              content += `<div class="result-set-marker" data-result="${encodeURIComponent(n.text)}">[结果集数据]</div>`;
+            } else {
+              content += n.text.replace(/\n/g, '<br>');
+            }
+          }
+
+          return `
+          <div class="agent-response-block" style="display: block !important; width: 100% !important; margin-bottom: 12px;">
+            <div class="agent-response-title" style="padding: 10px 14px; background: #fafafa; border-bottom: 1px solid #f0f0f0; font-size: 13px; color: #666; font-weight: 500;">${firstNode.nodeName || 'Processing'}</div>
+            <div class="agent-response-content" style="padding: 12px 14px;">${content}</div>
+          </div>
+        `;
+        };
+
+        // Generate combined HTML from all node blocks
+        let combinedHtml = '';
+        for (const block of nodeBlocks.value) {
+          const nodeHtml = generateNodeHtml(block);
+          if (nodeHtml) {
+            combinedHtml += nodeHtml;
+          }
+        }
+
+        if (combinedHtml) {
+          console.log(`[Widget Page] Saving combined HTML to database after stop, length: ${combinedHtml.length}`);
+          await saveAssistantMessage(combinedHtml, 'html');
+        }
+      }
+      
+      // Keep nodeBlocks visible
+      console.log(`[Widget Page] Keeping ${nodeBlocks.value.length} nodeBlocks visible after stop`);
+      scrollToBottom();
+      
+      // Notify parent of new message
+      sendToParent({
+        type: 'WIDGET_NEW_MESSAGE',
+        payload: { hasNewMessage: true }
+      });
+      
+      console.log('[Widget Page] Stream stopped successfully');
     };
 
     // Watch messages length for auto-scroll
@@ -968,6 +1146,7 @@ export default defineComponent({
       downloadMarkdown,
       copyCode,
       cleanMarkdownMarkers,
+      stopStreaming,
     };
   },
 });
@@ -1436,6 +1615,14 @@ export default defineComponent({
   opacity: 0.5;
   cursor: not-allowed;
   box-shadow: none;
+}
+
+.send-btn.stop-btn {
+  background: #ff4d4f;
+}
+
+.send-btn.stop-btn:hover:not(:disabled) {
+  background: #ff7875;
 }
 
 /* Result Set & Markdown */
