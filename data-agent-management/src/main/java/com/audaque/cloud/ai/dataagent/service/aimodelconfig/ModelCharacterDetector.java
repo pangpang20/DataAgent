@@ -147,7 +147,7 @@ public class ModelCharacterDetector {
 	/**
 	 * 检测是否为开源模型/本地部署模型
 	 *
-	 * @param provider 模型提供商
+	 * @param provider  模型提供商
 	 * @param modelName 模型名称
 	 * @return true 如果是开源模型，需要轻量级提示词；false 如果是商业模型，可使用完整提示词
 	 */
