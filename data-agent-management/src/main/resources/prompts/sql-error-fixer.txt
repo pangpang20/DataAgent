@@ -26,7 +26,12 @@
 
 ## 6. 历史失败记录 (如果有)
 {failure_history}
-*如果有多次尝试失败，这里会显示之前的失败记录。请避免重复相同的错误。*
+
+**⚠️ 重要警告：**
+- 如果历史失败记录显示**相同的 SQL 已经尝试了多次**，说明**当前的修复策略是错误的**！
+- **严禁**再次输出与历史失败记录中完全相同的 SQL
+- 必须**换一种修复思路**，重新检查 Schema 和错误信息
+- 如果报错都是"Member access [XXX] unresolved"，请仔细核对【数据库 Schema】中该字段是否真实存在
 
 ## 🚨 关键诊断：Member access Unresolved 错误
 **当错误信息是"Member access [XXX] unresolved"时，请立即执行以下诊断：**
@@ -34,20 +39,28 @@
 1. **检查表中是否存在该字段**
    - 在【数据库 Schema】中找到对应的表定义
    - 确认报错字段是否在该表的字段列表中
+   - **如果历史失败记录中已经多次修复过相同字段，说明你的修复方法是错的！**
 
 2. **检查表关联关系（外键）**
    - 查看【Foreign keys】部分的定义
    - 确认正确的关联字段
+   - **注意：JOIN 条件中的字段必须同时存在于两个表中**
 
 3. **特别注意：多对多关系**
    - 如果表之间是多对多关系（如 PRODUCTS 和 CATEGORIES）
    - **必须**通过中间表（如 PRODUCT_CATEGORIES）关联
-   - **错误示例**: `JOIN categories c ON p.category_id = c.id` (products表没有category_id字段)
+   - **错误示例**: `JOIN categories c ON p.category_id = c.id` (products 表没有 category_id 字段)
    - **正确示例**: `JOIN product_categories pc ON p.id = pc.product_id JOIN categories c ON pc.category_id = c.id`
 
 4. **常见字段命名规则**
    - 主键通常是 `id` 而不是 `表名_id` (如 `orders.order_id` 不存在，正确的是 `orders.id`)
    - 外键字段名可能与主键不同，需以 Schema 为准
+
+5. **🔴 血泪教训：如果历史失败记录中相同 SQL 重复出现 3 次以上**
+   - **立即停止**当前的修复思路
+   - **重新仔细阅读**报错信息和 Schema
+   - **检查 JOIN 条件**：是否把不存在的字段当成了关联条件
+   - **检查字段归属**：是否把 A 表的字段安到了 B 表上
 
 ## 7. 参考成功案例
 *下面是类似问题的正确 SQL 示例，可以作为参考：*
