@@ -22,8 +22,8 @@
        sys.exit(1)
    ```
 
-5. **依赖限制**：所有使用的库必须是 `continuumio/anaconda3` 默认安装的库，如 `pandas`, `numpy`, `json`, `sys` 等。
-   - **重要**：`matplotlib` 可能未安装，使用前必须检查是否可用
+5. **依赖限制**：所有使用的库必须是 `continuumio/miniconda3` 默认安装的常用库（如 `pandas`, `numpy`, `json`, `sys` 等）。
+   - **重要**：miniconda3 可能未安装 `matplotlib`，使用前必须检查是否可用。如果检测到 matplotlib 不可用，在代码中通过 `pip install matplotlib` 动态安装。
 
 6. **动态处理**：禁止硬编码列名/值，所有逻辑基于输入数据动态构建。
 
@@ -49,8 +49,10 @@
    # 在结果中包含 chart_image 字段
    import base64
    from io import BytesIO
+   import subprocess
+   import sys
 
-   # 检查 matplotlib 是否可用
+   # 检查 matplotlib 是否可用，如果不可用则尝试安装
    has_matplotlib = False
    try:
        import matplotlib
@@ -58,7 +60,16 @@
        import matplotlib.pyplot as plt
        has_matplotlib = True
    except ImportError:
-       print("matplotlib not available, skipping chart generation", file=sys.stderr)
+       print("matplotlib not available, attempting to install...", file=sys.stderr)
+       try:
+           subprocess.check_call([sys.executable, "-m", "pip", "install", "matplotlib", "--quiet"])
+           import matplotlib
+           matplotlib.use('Agg')
+           import matplotlib.pyplot as plt
+           has_matplotlib = True
+           print("matplotlib installed successfully", file=sys.stderr)
+       except Exception as e:
+           print(f"Failed to install matplotlib: {e}", file=sys.stderr)
 
    def create_chart(data_df, x_col, y_col):
        """创建图表并返回 base64 编码"""
@@ -130,8 +141,9 @@ import traceback
 import base64
 from io import BytesIO
 import pandas as pd
+import subprocess
 
-# 检查 matplotlib 是否可用
+# 检查 matplotlib 是否可用，如果不可用则尝试动态安装
 has_matplotlib = False
 try:
     import matplotlib
@@ -139,17 +151,16 @@ try:
     import matplotlib.pyplot as plt
     has_matplotlib = True
 except ImportError:
-    print("matplotlib not available, skipping chart generation", file=sys.stderr)
-
-# 检查 matplotlib 是否可用
-has_matplotlib = False
-try:
-    import matplotlib
-    matplotlib.use('Agg')  # 必须在 import pyplot 之前设置
-    import matplotlib.pyplot as plt
-    has_matplotlib = True
-except ImportError:
-    print("matplotlib not available, skipping chart generation", file=sys.stderr)
+    print("matplotlib not available, attempting to install...", file=sys.stderr)
+    try:
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "matplotlib", "--quiet"])
+        import matplotlib
+        matplotlib.use('Agg')
+        import matplotlib.pyplot as plt
+        has_matplotlib = True
+        print("matplotlib installed successfully", file=sys.stderr)
+    except Exception as e:
+        print(f"Failed to install matplotlib: {e}", file=sys.stderr)
 
 def create_chart(data_df, x_col, y_col):
     """创建图表并返回 base64 编码"""
@@ -250,19 +261,26 @@ import traceback
 import base64
 from io import BytesIO
 import pandas as pd
+import subprocess
 
-# 检查 matplotlib 是否可用
+# 检查 matplotlib 是否可用，如果不可用则尝试动态安装
 has_matplotlib = False
 try:
     import matplotlib
-    matplotlib.use('Agg')  # 必须在 import pyplot 之前设置
+    matplotlib.use('Agg')
     import matplotlib.pyplot as plt
     has_matplotlib = True
 except ImportError:
-    print("matplotlib not available, skipping chart generation", file=sys.stderr)
-import matplotlib
-matplotlib.use('Agg')
-import matplotlib.pyplot as plt
+    print("matplotlib not available, attempting to install...", file=sys.stderr)
+    try:
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "matplotlib", "--quiet"])
+        import matplotlib
+        matplotlib.use('Agg')
+        import matplotlib.pyplot as plt
+        has_matplotlib = True
+        print("matplotlib installed successfully", file=sys.stderr)
+    except Exception as e:
+        print(f"Failed to install matplotlib: {e}", file=sys.stderr)
 
 def create_chart(data_df, x_col, y_col):
     try:
@@ -303,7 +321,6 @@ try:
         "chart_image": None
     }}
 
-    # 生成图表：产品销售额对比
     if 'NAME' in df.columns and 'TOTAL_REVENUE' in df.columns and len(df) >= 2 and has_matplotlib:
         result["chart_image"] = create_chart(df, 'NAME', 'TOTAL_REVENUE')
 
@@ -325,19 +342,26 @@ import traceback
 import base64
 from io import BytesIO
 import pandas as pd
+import subprocess
 
-# 检查 matplotlib 是否可用
+# 检查 matplotlib 是否可用，如果不可用则尝试动态安装
 has_matplotlib = False
 try:
     import matplotlib
-    matplotlib.use('Agg')  # 必须在 import pyplot 之前设置
+    matplotlib.use('Agg')
     import matplotlib.pyplot as plt
     has_matplotlib = True
 except ImportError:
-    print("matplotlib not available, skipping chart generation", file=sys.stderr)
-import matplotlib
-matplotlib.use('Agg')
-import matplotlib.pyplot as plt
+    print("matplotlib not available, attempting to install...", file=sys.stderr)
+    try:
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "matplotlib", "--quiet"])
+        import matplotlib
+        matplotlib.use('Agg')
+        import matplotlib.pyplot as plt
+        has_matplotlib = True
+        print("matplotlib installed successfully", file=sys.stderr)
+    except Exception as e:
+        print(f"Failed to install matplotlib: {e}", file=sys.stderr)
 
 def create_chart(data_df, x_col, y_col):
     try:
@@ -392,16 +416,26 @@ import sys
 import json
 import traceback
 import pandas as pd
+import subprocess
 
-# 检查 matplotlib 是否可用
+# 检查 matplotlib 是否可用，如果不可用则尝试动态安装
 has_matplotlib = False
 try:
     import matplotlib
-    matplotlib.use('Agg')  # 必须在 import pyplot 之前设置
+    matplotlib.use('Agg')
     import matplotlib.pyplot as plt
     has_matplotlib = True
 except ImportError:
-    print("matplotlib not available, skipping chart generation", file=sys.stderr)
+    print("matplotlib not available, attempting to install...", file=sys.stderr)
+    try:
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "matplotlib", "--quiet"])
+        import matplotlib
+        matplotlib.use('Agg')
+        import matplotlib.pyplot as plt
+        has_matplotlib = True
+        print("matplotlib installed successfully", file=sys.stderr)
+    except Exception as e:
+        print(f"Failed to install matplotlib: {e}", file=sys.stderr)
 
 try:
     input_data = json.load(sys.stdin)
