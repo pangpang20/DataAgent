@@ -121,7 +121,7 @@
 
    # 使用示例
    # chart_image = create_chart(df, 'category_column', 'value_column')
-   # result = {{"chart_image": chart_image, "data": {{...}}}}
+   # result = {"chart_image": chart_image, "data": {...}}
    ```
 
    **注意事项**：
