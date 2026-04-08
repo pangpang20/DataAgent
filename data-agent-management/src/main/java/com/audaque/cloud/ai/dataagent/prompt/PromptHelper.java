@@ -413,8 +413,15 @@ public class PromptHelper {
 				workingSchema = filterSchemaByReferences(schemaDTO, referencedEntities);
 				log.info("Schema filtered: {} -> {} tables",
 						schemaDTO.getTable().size(), workingSchema.getTable().size());
+
+				// 诊断：如果过滤后表数量为 0，说明 smart filtering 失败，回退到原始 schema
+				if (workingSchema.getTable().isEmpty()) {
+					log.error("Smart filtering resulted in EMPTY table list! Root cause: extracted entities '{}' do not match any table names in schema", referencedEntities);
+					log.warn("Falling back to original schema ({} tables) to prevent empty schema error", schemaDTO.getTable().size());
+					workingSchema = schemaDTO;
+				}
 			} else {
-				log.warn("No entities extracted, using original schema");
+				log.warn("No entities extracted from execution description: '{}'. Using original schema.", compressionOptions.executionDescription);
 			}
 		}
 
