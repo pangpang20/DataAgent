@@ -42,6 +42,12 @@ spring:
       separator: ;
       encoding: utf-8
   ai:
+    # LLM API 调用超时配置
+    timeout:
+      # 连接超时（毫秒）：建立 TCP 连接的最大等待时间
+      connect-timeout: 10000
+      # 读取超时（毫秒）：等待 API 响应的最大等待时间，建议设置为 60-120 秒
+      read-timeout: 120000
     # LLM API 调用重试配置（针对 429、500、503、504 等错误）
     retry:
       max-attempts: 5                # 最大重试次数（包括首次调用）

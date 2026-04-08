@@ -88,12 +88,14 @@ public class DataAgentConfiguration implements DisposableBean {
 
 	@Bean
 	@ConditionalOnMissingBean(RestClientCustomizer.class)
-	public RestClientCustomizer restClientCustomizer(@Value("${rest.connect.timeout:600}") long connectTimeout,
-			@Value("${rest.read.timeout:600}") long readTimeout) {
+	public RestClientCustomizer restClientCustomizer(
+			@Value("${spring.ai.timeout.connect-timeout:10000}") long connectTimeout,
+			@Value("${spring.ai.timeout.read-timeout:120000}") long readTimeout) {
+		log.info("RestClient timeout configured: connectTimeout={}ms, readTimeout={}ms", connectTimeout, readTimeout);
 		return restClientBuilder -> restClientBuilder
 				.requestFactory(ClientHttpRequestFactoryBuilder.reactor().withCustomizer(factory -> {
-					factory.setConnectTimeout(Duration.ofSeconds(connectTimeout));
-					factory.setReadTimeout(Duration.ofSeconds(readTimeout));
+					factory.setConnectTimeout(Duration.ofMillis(connectTimeout));
+					factory.setReadTimeout(Duration.ofMillis(readTimeout));
 				}).build());
 	}
 
