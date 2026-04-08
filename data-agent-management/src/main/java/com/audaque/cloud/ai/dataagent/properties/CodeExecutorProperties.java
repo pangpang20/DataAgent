@@ -46,7 +46,7 @@ public class CodeExecutorProperties {
 	 * replace
 	 * this configuration
 	 */
-	String imageName = "continuumio/miniconda3:latest";
+	String imageName = "continuumio/anaconda3:latest";
 
 	/**
 	 * Container name prefix
