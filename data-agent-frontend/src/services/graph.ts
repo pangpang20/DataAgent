@@ -79,6 +79,7 @@ class GraphService {
     }
 
     const url = `${API_BASE_URL}/stream/search?${params.toString()}`;
+    const stopUrl = `${API_BASE_URL}/stream/stop`;
 
     const eventSource = new EventSource(url);
 
@@ -120,7 +121,21 @@ class GraphService {
     });
 
     // 返回关闭函数，允许外部控制
-    return () => {
+    return async () => {
+      // 1. 先调用后端停止接口，通知后端停止处理
+      if (request.threadId) {
+        try {
+          const stopParams = new URLSearchParams();
+          stopParams.append('threadId', request.threadId);
+          await fetch(`${stopUrl}?${stopParams.toString()}`, {
+            method: 'POST',
+          });
+          console.log(`Stop signal sent for threadId: ${request.threadId}`);
+        } catch (stopError) {
+          console.error('Failed to send stop signal:', stopError);
+        }
+      }
+      // 2. 关闭前端 EventSource 连接
       eventSource.close();
     };
   }

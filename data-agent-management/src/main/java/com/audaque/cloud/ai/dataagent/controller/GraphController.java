@@ -95,4 +95,13 @@ public class GraphController {
 			.doOnComplete(() -> log.info("Stream completed successfully, threadId: {}", request.getThreadId()));
 	}
 
+	/**
+	 * 主动停止流式处理（前端主动调用）
+	 */
+	@PostMapping("/stream/stop")
+	public void stopStream(@RequestParam("threadId") String threadId) {
+		log.info("Received stop request for threadId: {}", threadId);
+		graphService.stopStreamProcessing(threadId);
+	}
+
 }
