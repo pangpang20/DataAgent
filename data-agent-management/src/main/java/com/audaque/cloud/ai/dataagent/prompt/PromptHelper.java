@@ -595,7 +595,8 @@ public class PromptHelper {
 				: SchemaCompressionOptions.none();
 
 		String schemaInfo = buildMixMacSqlDbPrompt(sqlGenerationDTO.getSchemaDTO(), true, compressionOptions);
-		// Truncate schema info if too long (open-source models often have context limits)
+		// Truncate schema info if too long (open-source models often have context
+		// limits)
 		if (schemaInfo.length() > 4000) {
 			schemaInfo = schemaInfo.substring(0, 4000);
 			log.debug("Schema info truncated to 4000 chars for open-source model compatibility");
@@ -676,6 +677,19 @@ public class PromptHelper {
 		String schemaInfo = buildMixMacSqlDbPrompt(sqlGenerationDTO.getSchemaDTO(), true, compressionOptions);
 		log.debug("Schema info built for SQL error fixing with smart filtering, length: {} chars", schemaInfo.length());
 
+		// Extract db_id from schema (ensure it's not empty)
+		String dbId = "";
+		if (sqlGenerationDTO.getSchemaDTO() != null) {
+			dbId = sqlGenerationDTO.getSchemaDTO().getName();
+			if (dbId == null || dbId.trim().isEmpty()) {
+				dbId = "UNKNOWN"; // Fallback to prevent empty DB_ID
+				log.warn("Schema name is empty, using 'UNKNOWN' as DB_ID");
+			}
+		} else {
+			dbId = "MISSING"; // Fallback to prevent empty DB_ID
+			log.error("Schema DTO is null, using 'MISSING' as DB_ID");
+		}
+
 		// Build failure history string
 		String failureHistoryStr = "";
 		if (sqlGenerationDTO.getFailureHistory() != null && !sqlGenerationDTO.getFailureHistory().isEmpty()) {
@@ -687,13 +701,15 @@ public class PromptHelper {
 		params.put("dialect", sqlGenerationDTO.getDialect());
 		params.put("question", sqlGenerationDTO.getQuery());
 		params.put("schema_info", schemaInfo);
+		params.put("db_id", dbId); // Add db_id parameter
 		params.put("evidence", sqlGenerationDTO.getEvidence());
 		params.put("error_sql", sqlGenerationDTO.getSql());
 		params.put("error_message", sqlGenerationDTO.getExceptionMessage());
 		params.put("execution_description", sqlGenerationDTO.getExecutionDescription());
 		params.put("failure_history", failureHistoryStr);
 
-		log.debug("SQL error fixer params - error_message: {}, failure_history: {}",
+		log.debug("SQL error fixer params - db_id: {}, error_message: {}, failure_history: {}",
+				dbId,
 				sqlGenerationDTO.getExceptionMessage() != null ? "provided" : "null",
 				!failureHistoryStr.isEmpty() ? "provided" : "empty");
 
