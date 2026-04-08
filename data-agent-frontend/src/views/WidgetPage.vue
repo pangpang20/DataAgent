@@ -1105,10 +1105,14 @@ export default defineComponent({
       URL.revokeObjectURL(url);
     };
 
-    // Clean markdown markers (```markdown and ```)
+    // Clean markdown markers (```markdown, ```echarts, and ```)
     const cleanMarkdownMarkers = (content: string): string => {
       if (!content) return '';
-      return content.replace(/```markdown\s*/gi, '').replace(/```\s*/g, '');
+      // Remove markdown code block markers but keep echarts code blocks for rendering
+      return content
+        .replace(/```markdown\s*/gi, '')
+        .replace(/```echarts\s*/gi, '```echarts') // Keep echarts markers for custom rendering
+        .replace(/```\s*/g, '');
     };
 
     // Copy code to clipboard
