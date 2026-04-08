@@ -19,7 +19,7 @@ import com.alibaba.cloud.ai.graph.GraphResponse;
 import com.alibaba.cloud.ai.graph.OverAllState;
 import com.alibaba.cloud.ai.graph.action.NodeAction;
 import com.alibaba.cloud.ai.graph.streaming.StreamingOutput;
-import com.audaque.cloud.ai.dataagent.prompt.PromptConstant;
+import com.audaque.cloud.ai.dataagent.prompt.PromptLoader;
 import com.audaque.cloud.ai.dataagent.service.llm.LlmService;
 import com.audaque.cloud.ai.dataagent.util.FluxUtil;
 import com.audaque.cloud.ai.dataagent.util.PlanProcessUtil;
@@ -86,8 +86,11 @@ public class PythonAnalyzeNode implements NodeAction {
 			return Map.of(PYTHON_ANALYSIS_NODE_OUTPUT, generator);
 		}
 
-		String systemPrompt = PromptConstant.getPythonAnalyzePromptTemplate()
-				.render(Map.of("python_output", pythonOutput, "user_query", userQuery));
+		// 直接加载提示词模板并手动替换变量（避免 ST 模板引擎解析 JSON 示例中的大括号）
+		String promptTemplate = PromptLoader.loadPrompt("python-analyze");
+		String systemPrompt = promptTemplate
+				.replace("{user_query}", userQuery != null ? userQuery : "")
+				.replace("{python_output}", pythonOutput != null ? pythonOutput : "");
 
 		Flux<ChatResponse> pythonAnalyzeFlux = llmService.callSystem(systemPrompt);
 
