@@ -98,7 +98,7 @@ spring:
           models: ${DATAAGENT_THINK_MODELS:}
         code-executor:
           # 运行Python代码的环境（Docker模式需要Docker-in-Docker，Docker容器内不推荐）
-          code-pool-executor: local
+          code-pool-executor: ${CODE_EXECUTOR:docker}
           # Python执行的最大重试次数
           python-max-tries-count: 5
           
