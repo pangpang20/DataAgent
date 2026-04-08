@@ -685,13 +685,11 @@ public class PromptHelper {
 				sqlGenerationDTO.getDialect(),
 				sqlGenerationDTO.getSql() != null ? sqlGenerationDTO.getSql().length() : 0);
 
-		// Use smart schema filtering based on execution description
-		SchemaCompressionOptions compressionOptions = StringUtils.isNotBlank(sqlGenerationDTO.getExecutionDescription())
-				? SchemaCompressionOptions.smart(sqlGenerationDTO.getExecutionDescription())
-				: SchemaCompressionOptions.none();
-
-		String schemaInfo = buildMixMacSqlDbPrompt(sqlGenerationDTO.getSchemaDTO(), true, compressionOptions);
-		log.debug("Schema info built for SQL error fixing with smart filtering, length: {} chars", schemaInfo.length());
+		// IMPORTANT: Do NOT use smart filtering for SQL error fixing
+		// SQL error fixing requires COMPLETE schema information to validate column names
+		// Smart filtering would remove columns and cause the fix to fail
+		String schemaInfo = buildMixMacSqlDbPrompt(sqlGenerationDTO.getSchemaDTO(), true, SchemaCompressionOptions.none());
+		log.debug("Schema info built for SQL error fixing (full schema), length: {} chars", schemaInfo.length());
 
 		// Extract db_id from schema (ensure it's not empty)
 		String dbId = "";

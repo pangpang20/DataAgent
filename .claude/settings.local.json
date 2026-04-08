@@ -40,7 +40,8 @@
       "Bash(python3 -c \"import yaml; print\\('yaml available'\\)\")",
       "Bash(git commit:*)",
       "Bash(python3:*)",
-      "Bash(npm run:*)"
+      "Bash(npm run:*)",
+      "Bash(mvn compile:*)"
     ]
   }
 }
