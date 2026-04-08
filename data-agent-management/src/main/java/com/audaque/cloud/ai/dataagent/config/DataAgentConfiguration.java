@@ -58,6 +58,7 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.netty.http.client.HttpClient;
 
@@ -85,6 +86,31 @@ public class DataAgentConfiguration implements DisposableBean {
 	 * 专用线程池，用于数据库操作的并行处理
 	 */
 	private ExecutorService dbOperationExecutor;
+
+	/**
+	 * 配置 Spring MVC 异步任务执行器
+	 * 替代 SimpleAsyncTaskExecutor，提供线程池复用能力
+	 */
+	@Bean(name = "applicationTaskExecutor")
+	public ThreadPoolTaskExecutor applicationTaskExecutor(
+			@Value("${spring.task.execution.pool.core-size:10}") int coreSize,
+			@Value("${spring.task.execution.pool.max-size:50}") int maxSize,
+			@Value("${spring.task.execution.pool.queue-capacity:100}") int queueCapacity,
+			@Value("${spring.task.execution.thread-name-prefix:dataagent-}") String threadNamePrefix) {
+
+		log.info("Configuring ThreadPoolTaskExecutor: coreSize={}, maxSize={}, queueCapacity={}, threadNamePrefix={}",
+				coreSize, maxSize, queueCapacity, threadNamePrefix);
+
+		ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+		executor.setCorePoolSize(coreSize);
+		executor.setMaxPoolSize(maxSize);
+		executor.setQueueCapacity(queueCapacity);
+		executor.setThreadNamePrefix(threadNamePrefix);
+		executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
+		executor.initialize();
+
+		return executor;
+	}
 
 	@Bean
 	@ConditionalOnMissingBean(RestClientCustomizer.class)
