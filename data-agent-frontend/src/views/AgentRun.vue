@@ -1377,10 +1377,14 @@
       };
 
 
-      // 清理 Markdown 代码块标记（```markdown 和 ```）
+      // 清理 Markdown 代码块标记（```markdown, ```echarts, and ```）
       const cleanMarkdownMarkers = (content: string): string => {
         if (!content) return '';
-        return content.replace(/```markdown\s*/gi, '').replace(/```\s*/g, '');
+        // Remove markdown code block markers but keep echarts code blocks for rendering
+        return content
+          .replace(/```markdown\s*/gi, '')
+          .replace(/```echarts\s*/gi, '```echarts') // Keep echarts markers for custom rendering
+          .replace(/```\s*/g, '');
       };
 
       // HTML转义函数
