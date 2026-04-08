@@ -22,7 +22,8 @@
        sys.exit(1)
    ```
 
-5. **依赖限制**：所有使用的库必须是 `continuumio/anaconda3` 默认安装的库，如 `pandas`, `numpy`, `json`, `sys`, `matplotlib` 等。
+5. **依赖限制**：所有使用的库必须是 `continuumio/anaconda3` 默认安装的库，如 `pandas`, `numpy`, `json`, `sys` 等。
+   - **重要**：`matplotlib` 可能未安装，使用前必须检查是否可用
 
 6. **动态处理**：禁止硬编码列名/值，所有逻辑基于输入数据动态构建。
 
@@ -48,12 +49,21 @@
    # 在结果中包含 chart_image 字段
    import base64
    from io import BytesIO
-   import matplotlib
-   matplotlib.use('Agg')  # 必须在 import pyplot 之前设置
-   import matplotlib.pyplot as plt
+
+   # 检查 matplotlib 是否可用
+   has_matplotlib = False
+   try:
+       import matplotlib
+       matplotlib.use('Agg')  # 必须在 import pyplot 之前设置
+       import matplotlib.pyplot as plt
+       has_matplotlib = True
+   except ImportError:
+       print("matplotlib not available, skipping chart generation", file=sys.stderr)
 
    def create_chart(data_df, x_col, y_col):
        """创建图表并返回 base64 编码"""
+       if not has_matplotlib:
+           return None
        try:
            fig, ax = plt.subplots(figsize=(10, 6), dpi=100)
 
@@ -121,13 +131,30 @@ import base64
 from io import BytesIO
 import pandas as pd
 
-# 设置 matplotlib 后端为非 GUI 模式（必须在 import pyplot 之前）
-import matplotlib
-matplotlib.use('Agg')
-import matplotlib.pyplot as plt
+# 检查 matplotlib 是否可用
+has_matplotlib = False
+try:
+    import matplotlib
+    matplotlib.use('Agg')  # 必须在 import pyplot 之前设置
+    import matplotlib.pyplot as plt
+    has_matplotlib = True
+except ImportError:
+    print("matplotlib not available, skipping chart generation", file=sys.stderr)
+
+# 检查 matplotlib 是否可用
+has_matplotlib = False
+try:
+    import matplotlib
+    matplotlib.use('Agg')  # 必须在 import pyplot 之前设置
+    import matplotlib.pyplot as plt
+    has_matplotlib = True
+except ImportError:
+    print("matplotlib not available, skipping chart generation", file=sys.stderr)
 
 def create_chart(data_df, x_col, y_col):
     """创建图表并返回 base64 编码"""
+    if not has_matplotlib:
+        return None
     try:
         fig, ax = plt.subplots(figsize=(10, 6), dpi=100)
 
@@ -176,7 +203,7 @@ try:
 
     # TODO: 根据用户需求填充分析逻辑
     # 示例：如果有分类列和数值列，生成柱状图
-    # if len(df.columns) >= 2:
+    # if len(df.columns) >= 2 and has_matplotlib:
     #     x_col = df.columns[0]
     #     y_col = df.columns[1]
     #     result["chart_image"] = create_chart(df, x_col, y_col)
@@ -223,6 +250,16 @@ import traceback
 import base64
 from io import BytesIO
 import pandas as pd
+
+# 检查 matplotlib 是否可用
+has_matplotlib = False
+try:
+    import matplotlib
+    matplotlib.use('Agg')  # 必须在 import pyplot 之前设置
+    import matplotlib.pyplot as plt
+    has_matplotlib = True
+except ImportError:
+    print("matplotlib not available, skipping chart generation", file=sys.stderr)
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -267,7 +304,7 @@ try:
     }}
 
     # 生成图表：产品销售额对比
-    if 'NAME' in df.columns and 'TOTAL_REVENUE' in df.columns and len(df) >= 2:
+    if 'NAME' in df.columns and 'TOTAL_REVENUE' in df.columns and len(df) >= 2 and has_matplotlib:
         result["chart_image"] = create_chart(df, 'NAME', 'TOTAL_REVENUE')
 
     print(json.dumps(result, ensure_ascii=False))
@@ -288,6 +325,16 @@ import traceback
 import base64
 from io import BytesIO
 import pandas as pd
+
+# 检查 matplotlib 是否可用
+has_matplotlib = False
+try:
+    import matplotlib
+    matplotlib.use('Agg')  # 必须在 import pyplot 之前设置
+    import matplotlib.pyplot as plt
+    has_matplotlib = True
+except ImportError:
+    print("matplotlib not available, skipping chart generation", file=sys.stderr)
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -326,7 +373,7 @@ try:
     }}
 
     # 生成趋势图
-    if len(df) >= 2:
+    if len(df) >= 2 and has_matplotlib:
         result["chart_image"] = create_chart(df, 'month', 'sales')
 
     print(json.dumps(result, ensure_ascii=False))
@@ -345,6 +392,16 @@ import sys
 import json
 import traceback
 import pandas as pd
+
+# 检查 matplotlib 是否可用
+has_matplotlib = False
+try:
+    import matplotlib
+    matplotlib.use('Agg')  # 必须在 import pyplot 之前设置
+    import matplotlib.pyplot as plt
+    has_matplotlib = True
+except ImportError:
+    print("matplotlib not available, skipping chart generation", file=sys.stderr)
 
 try:
     input_data = json.load(sys.stdin)

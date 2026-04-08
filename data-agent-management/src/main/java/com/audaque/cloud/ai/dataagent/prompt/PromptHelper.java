@@ -162,6 +162,15 @@ public class PromptHelper {
 			log.debug("Extracted Chinese table reference: {}", entity);
 		}
 
+		// Pattern 5: English table names followed by Chinese '表' character (e.g., "ORDERS 表", "ORDER_ITEMS 表")
+		Pattern englishTableWithChinesePattern = Pattern.compile("([A-Z][A-Z0-9_]*) 表");
+		Matcher englishTableWithChineseMatcher = englishTableWithChinesePattern.matcher(executionDescription);
+		while (englishTableWithChineseMatcher.find()) {
+			String entity = englishTableWithChineseMatcher.group(1).toLowerCase();
+			referencedEntities.add(entity);
+			log.debug("Extracted English table name with Chinese suffix: {}", entity);
+		}
+
 		log.info("Extracted {} referenced entities from execution description: {}",
 				referencedEntities.size(), referencedEntities);
 		return referencedEntities;
