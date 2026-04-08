@@ -86,7 +86,7 @@
                # 数据点多，使用折线图
                ax.plot(data_df[x_col].astype(str), data_df[y_col], marker='o', color='#5584FF')
 
-           # 设置标题和标签
+           # 设置标题和标签（支持中文显示）
            ax.set_title(f'{{y_col}} by {{x_col}}', fontsize=12, fontweight='bold')
            ax.set_xlabel(x_col, fontsize=10)
            ax.set_ylabel(y_col, fontsize=10)
@@ -124,6 +124,14 @@
    - x 轴标签旋转 45 度避免重叠
    - **图片格式必须使用 PNG**
    - 如果图表生成失败，`chart_image` 设为 `null`，但不能抛异常
+   - **中文字体配置**：如果图表需要显示中文，必须在代码开头配置字体，例如：
+     ```python
+     import matplotlib.pyplot as plt
+     # 配置中文字体（miniconda3 镜像中可用的中文字体）
+     available_fonts = ['WenQuanYi Zen Hei', 'Noto Sans CJK JP', 'Noto Serif CJK JP']
+     plt.rcParams['font.sans-serif'] = available_fonts  # 设置默认字体
+     plt.rcParams['axes.unicode_minus'] = False  # 解决负号显示问题
+     ```
 
 9. **性能约束**：单线程执行，最大内存：{python_memory} MB，超时时间：{python_timeout}。
 
@@ -142,13 +150,21 @@ import base64
 from io import BytesIO
 import pandas as pd
 import subprocess
+import matplotlib
+
+# 配置 matplotlib 使用非交互式后端（必须在 pyplot 之前）
+matplotlib.use('Agg')
+
+# 配置中文字体支持（miniconda3 镜像中可用的中文字体）
+import matplotlib.pyplot as plt
+available_fonts = ['WenQuanYi Zen Hei', 'Noto Sans CJK JP', 'Noto Serif CJK JP']
+plt.rcParams['font.sans-serif'] = available_fonts  # 设置默认字体
+plt.rcParams['axes.unicode_minus'] = False  # 解决负号显示问题
 
 # 检查 matplotlib 是否可用，如果不可用则尝试动态安装
 has_matplotlib = False
 try:
-    import matplotlib
-    matplotlib.use('Agg')  # 必须在 import pyplot 之前设置
-    import matplotlib.pyplot as plt
+    # matplotlib 已经在上面向导入并配置
     has_matplotlib = True
 except ImportError:
     print("matplotlib not available, attempting to install...", file=sys.stderr)
@@ -157,6 +173,10 @@ except ImportError:
         import matplotlib
         matplotlib.use('Agg')
         import matplotlib.pyplot as plt
+        # 配置中文字体
+        available_fonts = ['WenQuanYi Zen Hei', 'Noto Sans CJK JP', 'Noto Serif CJK JP']
+        plt.rcParams['font.sans-serif'] = available_fonts
+        plt.rcParams['axes.unicode_minus'] = False
         has_matplotlib = True
         print("matplotlib installed successfully", file=sys.stderr)
     except Exception as e:
@@ -262,13 +282,21 @@ import base64
 from io import BytesIO
 import pandas as pd
 import subprocess
+import matplotlib
+
+# 配置 matplotlib 使用非交互式后端（必须在 pyplot 之前）
+matplotlib.use('Agg')
+
+# 配置中文字体支持（miniconda3 镜像中可用的中文字体）
+import matplotlib.pyplot as plt
+available_fonts = ['WenQuanYi Zen Hei', 'Noto Sans CJK JP', 'Noto Serif CJK JP']
+plt.rcParams['font.sans-serif'] = available_fonts  # 设置默认字体
+plt.rcParams['axes.unicode_minus'] = False  # 解决负号显示问题
 
 # 检查 matplotlib 是否可用，如果不可用则尝试动态安装
 has_matplotlib = False
 try:
-    import matplotlib
-    matplotlib.use('Agg')
-    import matplotlib.pyplot as plt
+    # matplotlib 已经在上面向导入并配置
     has_matplotlib = True
 except ImportError:
     print("matplotlib not available, attempting to install...", file=sys.stderr)
@@ -277,6 +305,10 @@ except ImportError:
         import matplotlib
         matplotlib.use('Agg')
         import matplotlib.pyplot as plt
+        # 配置中文字体
+        available_fonts = ['WenQuanYi Zen Hei', 'Noto Sans CJK JP', 'Noto Serif CJK JP']
+        plt.rcParams['font.sans-serif'] = available_fonts
+        plt.rcParams['axes.unicode_minus'] = False
         has_matplotlib = True
         print("matplotlib installed successfully", file=sys.stderr)
     except Exception as e:
@@ -343,13 +375,21 @@ import base64
 from io import BytesIO
 import pandas as pd
 import subprocess
+import matplotlib
+
+# 配置 matplotlib 使用非交互式后端（必须在 pyplot 之前）
+matplotlib.use('Agg')
+
+# 配置中文字体支持（miniconda3 镜像中可用的中文字体）
+import matplotlib.pyplot as plt
+available_fonts = ['WenQuanYi Zen Hei', 'Noto Sans CJK JP', 'Noto Serif CJK JP']
+plt.rcParams['font.sans-serif'] = available_fonts  # 设置默认字体
+plt.rcParams['axes.unicode_minus'] = False  # 解决负号显示问题
 
 # 检查 matplotlib 是否可用，如果不可用则尝试动态安装
 has_matplotlib = False
 try:
-    import matplotlib
-    matplotlib.use('Agg')
-    import matplotlib.pyplot as plt
+    # matplotlib 已经在上面向导入并配置
     has_matplotlib = True
 except ImportError:
     print("matplotlib not available, attempting to install...", file=sys.stderr)
@@ -358,6 +398,10 @@ except ImportError:
         import matplotlib
         matplotlib.use('Agg')
         import matplotlib.pyplot as plt
+        # 配置中文字体
+        available_fonts = ['WenQuanYi Zen Hei', 'Noto Sans CJK JP', 'Noto Serif CJK JP']
+        plt.rcParams['font.sans-serif'] = available_fonts
+        plt.rcParams['axes.unicode_minus'] = False
         has_matplotlib = True
         print("matplotlib installed successfully", file=sys.stderr)
     except Exception as e:
@@ -417,13 +461,21 @@ import json
 import traceback
 import pandas as pd
 import subprocess
+import matplotlib
+
+# 配置 matplotlib 使用非交互式后端（必须在 pyplot 之前）
+matplotlib.use('Agg')
+
+# 配置中文字体支持（miniconda3 镜像中可用的中文字体）
+import matplotlib.pyplot as plt
+available_fonts = ['WenQuanYi Zen Hei', 'Noto Sans CJK JP', 'Noto Serif CJK JP']
+plt.rcParams['font.sans-serif'] = available_fonts  # 设置默认字体
+plt.rcParams['axes.unicode_minus'] = False  # 解决负号显示问题
 
 # 检查 matplotlib 是否可用，如果不可用则尝试动态安装
 has_matplotlib = False
 try:
-    import matplotlib
-    matplotlib.use('Agg')
-    import matplotlib.pyplot as plt
+    # matplotlib 已经在上面向导入并配置
     has_matplotlib = True
 except ImportError:
     print("matplotlib not available, attempting to install...", file=sys.stderr)
@@ -432,6 +484,10 @@ except ImportError:
         import matplotlib
         matplotlib.use('Agg')
         import matplotlib.pyplot as plt
+        # 配置中文字体
+        available_fonts = ['WenQuanYi Zen Hei', 'Noto Sans CJK JP', 'Noto Serif CJK JP']
+        plt.rcParams['font.sans-serif'] = available_fonts
+        plt.rcParams['axes.unicode_minus'] = False
         has_matplotlib = True
         print("matplotlib installed successfully", file=sys.stderr)
     except Exception as e:
