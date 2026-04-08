@@ -227,20 +227,15 @@ try:
     }}
 
     # TODO: 根据用户需求填充分析逻辑
-    # 重要：必须根据输入数据的实际列名动态生成图表调用代码！
-    # 步骤：
-    # 1. 识别分类列（字符串类型，如'NAME', 'PRODUCT', 'CATEGORY'等）
-    # 2. 识别数值列（数字类型，如'TOTAL_SALES', 'AMOUNT', 'COUNT'等）
-    # 3. 如果数据行数>=2 且有分类列和数值列，必须调用 create_chart()
-    # 示例代码（请根据实际列名修改）：
-    # if len(df.columns) >= 2 and len(df) >= 2 and has_matplotlib:
-    #     # 自动识别列类型
-    #     category_cols = [col for col in df.columns if df[col].dtype == 'object']
-    #     numeric_cols = [col for col in df.columns if pd.api.types.is_numeric_dtype(df[col])]
-    #     if category_cols and numeric_cols:
-    #         x_col = category_cols[0]  # 第一个分类列作为 x 轴
-    #         y_col = numeric_cols[0]   # 第一个数值列作为 y 轴
-    #         result["chart_image"] = create_chart(df, x_col, y_col)
+    # ===== 重要：必须展开以下注释代码，根据实际列名修改！=====
+    if len(df) >= 2 and has_matplotlib:
+        category_cols = [col for col in df.columns if df[col].dtype == 'object']
+        numeric_cols = [col for col in df.columns if pd.api.types.is_numeric_dtype(df[col])]
+        if category_cols and numeric_cols:
+            x_col = category_cols[0]
+            y_col = numeric_cols[0]
+            result["chart_image"] = create_chart(df, x_col, y_col)
+            print(f"Chart generated for {{x_col}} vs {{y_col}}", file=sys.stderr)
 
     # 输出结果为 JSON 对象
     print(json.dumps(result, ensure_ascii=False))

@@ -116,6 +116,14 @@ public class PythonExecuteNode implements NodeAction {
 
 			// Python 输出的 JSON 字符串可能有 Unicode 转义形式，需要解析回汉字
 			String stdout = taskResponse.stdOut();
+			String stderr = taskResponse.stdErr();
+
+			// 记录 Python 执行的完整输出，便于调试
+			log.info("Python Execute - StdOut length: {}, StdErr length: {}", stdout.length(), stderr.length());
+			if (!stderr.isEmpty()) {
+				log.info("Python Execute - StdErr: {}", stderr);
+			}
+
 			Object value = jsonParseUtil.tryConvertToObject(stdout, Object.class);
 			if (value != null) {
 				stdout = objectMapper.writeValueAsString(value);
@@ -131,7 +139,11 @@ public class PythonExecuteNode implements NodeAction {
 				jsonNode = objectMapper.readTree(stdout);
 				if (jsonNode.has("chart_image")) {
 					chartImageBase64 = jsonNode.get("chart_image").asText();
-					log.info("Chart image detected, length: {} chars", chartImageBase64.length());
+					if (chartImageBase64 == null || chartImageBase64.isEmpty() || chartImageBase64.equals("null")) {
+						log.info("Chart image is null/empty, Python code did not generate chart");
+					} else {
+						log.info("Chart image detected, length: {} chars", chartImageBase64.length());
+					}
 				}
 			} catch (Exception e) {
 				log.warn("Failed to parse JSON for chart image detection: {}", e.getMessage());
