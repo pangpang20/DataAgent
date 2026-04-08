@@ -140,11 +140,12 @@ public class PythonExecuteNode implements NodeAction {
 			Flux<ChatResponse> displayFlux = Flux.create(emitter -> {
 				emitter.next(ChatResponseUtil.createResponse("开始执行 Python 代码..."));
 
-				// If chart image exists, display it first with security validation
+				// If chart image exists, display it first with HTML img tag
 				if (finalChartImageBase64 != null && !finalChartImageBase64.isEmpty()) {
 					// Security validation for base64 image
 					if (isValidBase64Image(finalChartImageBase64)) {
-						String imgTag = String.format("\n\n![chart](data:image/png;base64,%s)\n\n", finalChartImageBase64);
+						// Use HTML img tag directly instead of Markdown syntax for better browser compatibility
+						String imgTag = String.format("<img src=\"data:image/png;base64,%s\" alt=\"chart\" style=\"max-width: 100%%; height: auto;\" />", finalChartImageBase64);
 						emitter.next(ChatResponseUtil.createPureResponse(imgTag));
 					} else {
 						log.warn("Invalid or oversized chart image, skipping display");
