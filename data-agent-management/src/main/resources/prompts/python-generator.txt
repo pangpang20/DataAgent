@@ -24,6 +24,7 @@
 
 5. **依赖限制**：所有使用的库必须是 `continuumio/miniconda3` 默认安装的常用库（如 `pandas`, `numpy`, `json`, `sys` 等）。
    - **重要**：miniconda3 可能未安装 `matplotlib`，使用前必须检查是否可用。如果检测到 matplotlib 不可用，在代码中通过 `pip install matplotlib` 动态安装。
+   - **中文字体支持**：使用 matplotlib 时必须设置中文字体，推荐使用 `SimHei` 或 `Arial Unicode MS`，并设置 `axes.unicode_minus=False` 以正确显示负号。
 
 6. **动态处理**：禁止硬编码列名/值，所有逻辑基于输入数据动态构建。
 
@@ -58,6 +59,9 @@
        import matplotlib
        matplotlib.use('Agg')  # 必须在 import pyplot 之前设置
        import matplotlib.pyplot as plt
+       # 设置中文字体支持
+       plt.rcParams['font.sans-serif'] = ['SimHei', 'Arial Unicode MS', 'DejaVu Sans']  # 支持中文显示
+       plt.rcParams['axes.unicode_minus'] = False  # 支持负号显示
        has_matplotlib = True
    except ImportError:
        print("matplotlib not available, attempting to install...", file=sys.stderr)
@@ -66,6 +70,9 @@
            import matplotlib
            matplotlib.use('Agg')
            import matplotlib.pyplot as plt
+           # 设置中文字体支持
+           plt.rcParams['font.sans-serif'] = ['SimHei', 'Arial Unicode MS', 'DejaVu Sans']
+           plt.rcParams['axes.unicode_minus'] = False
            has_matplotlib = True
            print("matplotlib installed successfully", file=sys.stderr)
        except Exception as e:
@@ -86,8 +93,8 @@
                # 数据点多，使用折线图
                ax.plot(data_df[x_col].astype(str), data_df[y_col], marker='o', color='#5584FF')
 
-           # 设置标题和标签
-           ax.set_title(f'{{y_col}} by {{x_col}}', fontsize=12, fontweight='bold')
+           # 设置标题和标签（使用中文）
+           ax.set_title(f'{{y_col}} 分布', fontsize=12, fontweight='bold')
            ax.set_xlabel(x_col, fontsize=10)
            ax.set_ylabel(y_col, fontsize=10)
 
@@ -97,7 +104,7 @@
            # 添加网格线
            ax.grid(axis='y', alpha=0.3)
 
-           # 调整布局防止截断
+           # 调整布局防止标签被截断
            plt.tight_layout()
 
            # 保存为 base64，使用 PNG 格式
@@ -149,6 +156,9 @@ try:
     import matplotlib
     matplotlib.use('Agg')  # 必须在 import pyplot 之前设置
     import matplotlib.pyplot as plt
+    # 设置中文字体支持
+    plt.rcParams['font.sans-serif'] = ['SimHei', 'Arial Unicode MS', 'DejaVu Sans']  # 支持中文显示
+    plt.rcParams['axes.unicode_minus'] = False  # 支持负号显示
     has_matplotlib = True
 except ImportError:
     print("matplotlib not available, attempting to install...", file=sys.stderr)
@@ -157,6 +167,9 @@ except ImportError:
         import matplotlib
         matplotlib.use('Agg')
         import matplotlib.pyplot as plt
+        # 设置中文字体支持
+        plt.rcParams['font.sans-serif'] = ['SimHei', 'Arial Unicode MS', 'DejaVu Sans']
+        plt.rcParams['axes.unicode_minus'] = False
         has_matplotlib = True
         print("matplotlib installed successfully", file=sys.stderr)
     except Exception as e:
@@ -175,7 +188,8 @@ def create_chart(data_df, x_col, y_col):
         else:
             ax.plot(data_df[x_col].astype(str), data_df[y_col], marker='o', color='#5584FF')
 
-        ax.set_title(f'{{y_col}} by {{x_col}}', fontsize=12, fontweight='bold')
+        # 设置标题和标签（使用中文）
+        ax.set_title(f'{{y_col}} 分布', fontsize=12, fontweight='bold')
         ax.set_xlabel(x_col, fontsize=10)
         ax.set_ylabel(y_col, fontsize=10)
         plt.xticks(rotation=45, ha='right')

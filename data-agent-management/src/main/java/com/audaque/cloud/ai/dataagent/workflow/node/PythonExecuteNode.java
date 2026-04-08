@@ -152,10 +152,7 @@ public class PythonExecuteNode implements NodeAction {
 					}
 				}
 
-				emitter.next(ChatResponseUtil.createResponse("标准输出："));
-				emitter.next(ChatResponseUtil.createPureResponse(TextType.JSON.getStartSign()));
-				emitter.next(ChatResponseUtil.createResponse(finalStdout));
-				emitter.next(ChatResponseUtil.createPureResponse(TextType.JSON.getEndSign()));
+				// 不再显示标准输出的 JSON 原始数据，直接进入下一节点处理
 				emitter.next(ChatResponseUtil.createResponse("Python 代码执行成功！"));
 				emitter.complete();
 			});
