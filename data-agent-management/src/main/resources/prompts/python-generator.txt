@@ -76,7 +76,7 @@
            has_matplotlib = True
            print("matplotlib installed successfully", file=sys.stderr)
        except Exception as e:
-           print(f"Failed to install matplotlib: {e}", file=sys.stderr)
+           print(f"Failed to install matplotlib: {{{e}}}", file=sys.stderr)
 
    def create_chart(data_df, x_col, y_col):
        """创建图表并返回 base64 编码"""
@@ -94,7 +94,7 @@
                ax.plot(data_df[x_col].astype(str), data_df[y_col], marker='o', color='#5584FF')
 
            # 设置标题和标签（使用中文）
-           ax.set_title(f'{{y_col}} 分布', fontsize=12, fontweight='bold')
+           ax.set_title(f'{{{y_col}}} 分布', fontsize=12, fontweight='bold')
            ax.set_xlabel(x_col, fontsize=10)
            ax.set_ylabel(y_col, fontsize=10)
 
@@ -116,7 +116,7 @@
 
            return img_base64
        except Exception as e:
-           print(f"Chart creation failed: {{e}}", file=sys.stderr)
+           print(f"Chart creation failed: {{{e}}}", file=sys.stderr)
            return None
 
    # 使用示例
@@ -173,7 +173,7 @@ except ImportError:
         has_matplotlib = True
         print("matplotlib installed successfully", file=sys.stderr)
     except Exception as e:
-        print(f"Failed to install matplotlib: {e}", file=sys.stderr)
+        print(f"Failed to install matplotlib: {{{e}}}", file=sys.stderr)
 
 def create_chart(data_df, x_col, y_col):
     """创建图表并返回 base64 编码"""
@@ -189,7 +189,7 @@ def create_chart(data_df, x_col, y_col):
             ax.plot(data_df[x_col].astype(str), data_df[y_col], marker='o', color='#5584FF')
 
         # 设置标题和标签（使用中文）
-        ax.set_title(f'{{y_col}} 分布', fontsize=12, fontweight='bold')
+        ax.set_title(f'{{{y_col}}} 分布', fontsize=12, fontweight='bold')
         ax.set_xlabel(x_col, fontsize=10)
         ax.set_ylabel(y_col, fontsize=10)
         plt.xticks(rotation=45, ha='right')
@@ -204,7 +204,7 @@ def create_chart(data_df, x_col, y_col):
 
         return img_base64
     except Exception as e:
-        print(f"Chart creation failed: {{e}}", file=sys.stderr)
+        print(f"Chart creation failed: {{{e}}}", file=sys.stderr)
         return None
 
 # 错误处理
@@ -294,13 +294,13 @@ except ImportError:
         has_matplotlib = True
         print("matplotlib installed successfully", file=sys.stderr)
     except Exception as e:
-        print(f"Failed to install matplotlib: {e}", file=sys.stderr)
+        print(f"Failed to install matplotlib: {{{e}}}", file=sys.stderr)
 
 def create_chart(data_df, x_col, y_col):
     try:
         fig, ax = plt.subplots(figsize=(10, 6), dpi=100)
         ax.bar(data_df[x_col].astype(str), data_df[y_col], color='#5584FF')
-        ax.set_title(f'{{y_col}} by {{x_col}}', fontsize=12, fontweight='bold')
+        ax.set_title(f'{{{y_col}}} by {{x_col}}', fontsize=12, fontweight='bold')
         ax.set_xlabel(x_col, fontsize=10)
         ax.set_ylabel(y_col, fontsize=10)
         plt.xticks(rotation=45, ha='right')
@@ -314,7 +314,7 @@ def create_chart(data_df, x_col, y_col):
         plt.close(fig)
         return img_base64
     except Exception as e:
-        print(f"Chart creation failed: {{e}}", file=sys.stderr)
+        print(f"Chart creation failed: {{{e}}}", file=sys.stderr)
         return None
 
 try:
@@ -375,13 +375,13 @@ except ImportError:
         has_matplotlib = True
         print("matplotlib installed successfully", file=sys.stderr)
     except Exception as e:
-        print(f"Failed to install matplotlib: {e}", file=sys.stderr)
+        print(f"Failed to install matplotlib: {{{e}}}", file=sys.stderr)
 
 def create_chart(data_df, x_col, y_col):
     try:
         fig, ax = plt.subplots(figsize=(10, 6), dpi=100)
         ax.plot(data_df[x_col].astype(str), data_df[y_col], marker='o', color='#5584FF', linewidth=2)
-        ax.set_title(f'{{y_col}} 趋势', fontsize=12, fontweight='bold')
+        ax.set_title(f'{{{y_col}}} 趋势', fontsize=12, fontweight='bold')
         ax.set_xlabel(x_col, fontsize=10)
         ax.set_ylabel(y_col, fontsize=10)
         plt.xticks(rotation=45, ha='right')
@@ -395,7 +395,7 @@ def create_chart(data_df, x_col, y_col):
         plt.close(fig)
         return img_base64
     except Exception as e:
-        print(f"Chart creation failed: {{e}}", file=sys.stderr)
+        print(f"Chart creation failed: {{{e}}}", file=sys.stderr)
         return None
 
 try:
@@ -449,7 +449,7 @@ except ImportError:
         has_matplotlib = True
         print("matplotlib installed successfully", file=sys.stderr)
     except Exception as e:
-        print(f"Failed to install matplotlib: {e}", file=sys.stderr)
+        print(f"Failed to install matplotlib: {{{e}}}", file=sys.stderr)
 
 try:
     input_data = json.load(sys.stdin)

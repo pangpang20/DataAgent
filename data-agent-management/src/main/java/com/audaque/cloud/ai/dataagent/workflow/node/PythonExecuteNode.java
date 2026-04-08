@@ -72,7 +72,8 @@ public class PythonExecuteNode implements NodeAction {
 			// Get context
 			String pythonCode = StateUtil.getStringValue(state, PYTHON_GENERATE_NODE_OUTPUT);
 			List<Map<String, String>> sqlResults = StateUtil.hasValue(state, SQL_RESULT_LIST_MEMORY)
-					? StateUtil.getListValue(state, SQL_RESULT_LIST_MEMORY) : new ArrayList<>();
+					? StateUtil.getListValue(state, SQL_RESULT_LIST_MEMORY)
+					: new ArrayList<>();
 
 			// 检查重试次数
 			int triesCount = StateUtil.getObjectValue(state, PYTHON_TRIES_COUNT, Integer.class, 0);
@@ -89,7 +90,9 @@ public class PythonExecuteNode implements NodeAction {
 
 				// 检查是否超过最大重试次数
 				if (triesCount >= codeExecutorProperties.getPythonMaxTriesCount()) {
-					log.error("Python execution failed and exceeded maximum retry count (attempts: {}), activating fallback logic. Error: {}", triesCount, errorMsg);
+					log.error(
+							"Python execution failed and exceeded maximum retry count (attempts: {}), activating fallback logic. Error: {}",
+							triesCount, errorMsg);
 
 					String fallbackOutput = "{}";
 
@@ -100,10 +103,10 @@ public class PythonExecuteNode implements NodeAction {
 					});
 
 					Flux<GraphResponse<StreamingOutput>> fallbackGenerator = FluxUtil
-						.createStreamingGeneratorWithMessages(this.getClass(), state,
-								v -> Map.of(PYTHON_EXECUTE_NODE_OUTPUT, fallbackOutput, PYTHON_IS_SUCCESS, false,
-										PYTHON_FALLBACK_MODE, true),
-								fallbackDisplayFlux);
+							.createStreamingGeneratorWithMessages(this.getClass(), state,
+									v -> Map.of(PYTHON_EXECUTE_NODE_OUTPUT, fallbackOutput, PYTHON_IS_SUCCESS, false,
+											PYTHON_FALLBACK_MODE, true),
+									fallbackDisplayFlux);
 
 					return Map.of(PYTHON_EXECUTE_NODE_OUTPUT, fallbackGenerator);
 				}
@@ -143,8 +146,11 @@ public class PythonExecuteNode implements NodeAction {
 				if (finalChartImageBase64 != null && !finalChartImageBase64.isEmpty()) {
 					// Security validation for base64 image
 					if (isValidBase64Image(finalChartImageBase64)) {
-						// Use HTML img tag directly instead of Markdown syntax for better browser compatibility
-						String imgTag = String.format("<img src=\"data:image/png;base64,%s\" alt=\"chart\" style=\"max-width: 100%%; height: auto;\" />", finalChartImageBase64);
+						// Use HTML img tag directly instead of Markdown syntax for better browser
+						// compatibility
+						String imgTag = String.format(
+								"<img src=\"data:image/png;base64,%s\" alt=\"chart\" style=\"max-width: 100%%; height: auto;\" />",
+								finalChartImageBase64);
 						emitter.next(ChatResponseUtil.createPureResponse(imgTag));
 					} else {
 						log.warn("Invalid or oversized chart image, skipping display");
@@ -163,8 +169,7 @@ public class PythonExecuteNode implements NodeAction {
 					v -> Map.of(PYTHON_EXECUTE_NODE_OUTPUT, finalStdout, PYTHON_IS_SUCCESS, true), displayFlux);
 
 			return Map.of(PYTHON_EXECUTE_NODE_OUTPUT, generator);
-		}
-		catch (Exception e) {
+		} catch (Exception e) {
 			String errorMessage = e.getMessage();
 			log.error("Python Execute Exception: {}", errorMessage);
 
