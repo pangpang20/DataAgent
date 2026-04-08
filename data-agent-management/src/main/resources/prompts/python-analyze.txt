@@ -38,13 +38,13 @@
 [文本总结内容]
 
 ```echarts
-\{
-  "title": \{ "text": "图表标题" \},
-  "tooltip": \{ "trigger": "axis" \},
-  "xAxis": \{ "type": "category", "data": ["类别1", "类别2"] \},
-  "yAxis": \{ "type": "value" \},
-  "series": [\{ "type": "bar", "data": [值1, 值2] \}]
-\}
+{
+  "title": { "text": "图表标题" },
+  "tooltip": { "trigger": "axis" },
+  "xAxis": { "type": "category", "data": ["类别1", "类别2"] },
+  "yAxis": { "type": "value" },
+  "series": [{ "type": "bar", "data": [值1, 值2] }]
+}
 ```
 ```
 
@@ -91,36 +91,36 @@
 
 **Python分析结果**：
 ```json
-\{
+{
   "channel_stats": [
-    \{"channel": "线上广告", "lead_count": 500, "conversion_rate": 0.15\},
-    \{"channel": "线下活动", "lead_count": 300, "conversion_rate": 0.25\},
-    \{"channel": "合作伙伴", "lead_count": 200, "conversion_rate": 0.1\}
+    {"channel": "线上广告", "lead_count": 500, "conversion_rate": 0.15},
+    {"channel": "线下活动", "lead_count": 300, "conversion_rate": 0.25},
+    {"channel": "合作伙伴", "lead_count": 200, "conversion_rate": 0.1}
   ]
-\}
+}
 ```
 
 **输出**：
 线上广告带来了500条线索，转化率为15%；线下活动带来了300条线索，转化率为25%；合作伙伴带来了200条线索，转化率为10%。
 
 ```echarts
-\{
-  "title": \{ "text": "各渠道线索数量与转化率对比" \},
-  "tooltip": \{ "trigger": "axis" \},
-  "legend": \{ "data": ["线索数量", "转化率(%)"] \},
-  "xAxis": \{ 
+{
+  "title": { "text": "各渠道线索数量与转化率对比" },
+  "tooltip": { "trigger": "axis" },
+  "legend": { "data": ["线索数量", "转化率(%)"] },
+  "xAxis": { 
     "type": "category", 
     "data": ["线上广告", "线下活动", "合作伙伴"] 
-  \},
+  },
   "yAxis": [
-    \{ "type": "value", "name": "线索数量" \},
-    \{ "type": "value", "name": "转化率(%)", "max": 100 \}
+    { "type": "value", "name": "线索数量" },
+    { "type": "value", "name": "转化率(%)", "max": 100 }
   ],
   "series": [
-    \{ "name": "线索数量", "type": "bar", "data": [500, 300, 200] \},
-    \{ "name": "转化率(%)", "type": "line", "yAxisIndex": 1, "data": [15, 25, 10] \}
+    { "name": "线索数量", "type": "bar", "data": [500, 300, 200] },
+    { "name": "转化率(%)", "type": "line", "yAxisIndex": 1, "data": [15, 25, 10] }
   ]
-\}
+}
 ```
 
 ---
@@ -131,9 +131,9 @@
 
 **Python分析结果**：
 ```json
-\{
+{
   "total_sales": 1250000
-\}
+}
 ```
 
 **输出**：
@@ -147,7 +147,7 @@
 
 **Python分析结果**：
 ```json
-\{\}
+{}
 ```
 
 **输出**：
@@ -173,38 +173,38 @@
 
 **Python分析结果**：
 ```json
-\{
+{
   "monthly_sales": [
-    \{"month": "1月", "sales": 120000\},
-    \{"month": "2月", "sales": 135000\},
-    \{"month": "3月", "sales": 148000\},
-    \{"month": "4月", "sales": 152000\},
-    \{"month": "5月", "sales": 165000\},
-    \{"month": "6月", "sales": 178000\}
+    {"month": "1月", "sales": 120000},
+    {"month": "2月", "sales": 135000},
+    {"month": "3月", "sales": 148000},
+    {"month": "4月", "sales": 152000},
+    {"month": "5月", "sales": 165000},
+    {"month": "6月", "sales": 178000}
   ]
-\}
+}
 ```
 
 **输出**：
 过去6个月销售额呈现稳步增长趋势，从1月的12万元增长至6月的17.8万元，累计增长48.3%。
 
 ```echarts
-\{
-  "title": \{ "text": "6个月销售趋势" \},
-  "tooltip": \{ "trigger": "axis" \},
-  "xAxis": \{
+{
+  "title": { "text": "6个月销售趋势" },
+  "tooltip": { "trigger": "axis" },
+  "xAxis": {
     "type": "category",
     "data": ["1月", "2月", "3月", "4月", "5月", "6月"]
-  \},
-  "yAxis": \{ "type": "value", "name": "销售额(元)" \},
-  "series": [\{
+  },
+  "yAxis": { "type": "value", "name": "销售额(元)" },
+  "series": [{
     "name": "销售额",
     "type": "line",
     "data": [120000, 135000, 148000, 152000, 165000, 178000],
     "smooth": true,
-    "areaStyle": \{\}
-  \}]
-\}
+    "areaStyle": {}
+  }]
+}
 ```
 
 ---
@@ -223,13 +223,13 @@
 [总结内容]
 
 ```echarts
-\{
-  "title": \{ "text": "图表标题" \},
-  "tooltip": \{ ... \},
-  "xAxis": \{ ... \},
-  "yAxis": \{ ... \},
-  "series": [\{ ... \}]
-\}
+{
+  "title": { "text": "图表标题" },
+  "tooltip": { ... },
+  "xAxis": { ... },
+  "yAxis": { ... },
+  "series": [{ ... }]
+}
 ```
 ```
 

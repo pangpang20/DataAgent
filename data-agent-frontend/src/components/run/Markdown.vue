@@ -16,7 +16,7 @@
 
 <template>
   <div class="markdown-container">
-    <div class="markdown-content" ref="markdownContentRef" :key="contentKey"></div>
+    <div class="markdown-content" v-html="renderedHtml" :key="contentKey"></div>
   </div>
 </template>
 
