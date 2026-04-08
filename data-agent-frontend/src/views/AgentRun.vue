@@ -916,7 +916,7 @@
 
               ElMessage.success(`会话[${sessionTitle}]处理完成`);
               currentNodeName = null;
-              closeStream();
+              await closeStream();
               // 只有当前会话才重新加载消息
               if (currentSession.value?.id === sessionId) {
                 await selectSession(currentSession.value);
@@ -1222,8 +1222,8 @@
             return;
           }
 
-          // 关闭 EventSource 连接
-          sessionState.closeStream();
+          // 关闭 EventSource 连接（先调用后端停止接口，再关闭前端连接）
+          await sessionState.closeStream();
           sessionState.closeStream = null;
 
           // 保存已接收的节点消息
