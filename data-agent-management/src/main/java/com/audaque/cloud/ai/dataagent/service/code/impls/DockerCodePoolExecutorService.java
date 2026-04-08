@@ -43,6 +43,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.github.dockerjava.api.model.HostConfig.newHostConfig;
 
@@ -57,6 +58,11 @@ public class DockerCodePoolExecutorService extends AbstractCodePoolExecutorServi
 
 	private final ConcurrentHashMap<String, Path> containerTempPath;
 
+	/**
+	 * 镜像是否已拉取的标志
+	 */
+	private final AtomicBoolean imagePulled = new AtomicBoolean(false);
+
 	public DockerCodePoolExecutorService(CodeExecutorProperties properties) {
 		super(properties);
 		// Initialize DockerClient
@@ -67,27 +73,9 @@ public class DockerCodePoolExecutorService extends AbstractCodePoolExecutorServi
 			.build();
 		this.dockerClient = this.createDockerClientWithFallback(config);
 		this.containerTempPath = new ConcurrentHashMap<>();
-
-		// Check if image exists locally
-		boolean imageExists = this.dockerClient.listImagesCmd()
-			.withImageNameFilter(properties.getImageName())
-			.exec()
-			.stream()
-			.anyMatch(image -> Arrays.asList(image.getRepoTags()).contains(properties.getImageName()));
-
-		if (!imageExists) {
-			// Pull image
-			try {
-				this.dockerClient.pullImageCmd(properties.getImageName())
-					.exec(new PullImageResultCallback())
-					.awaitCompletion();
-				log.info("pull image {} success", properties.getImageName());
-			}
-			catch (Exception e) {
-				log.error("pull image {} error", properties.getImageName(), e);
-				throw new RuntimeException(e);
-			}
-		}
+		// 不在启动时检查/拉取镜像，避免阻塞启动流程
+		// 镜像检查和拉取延迟到首次执行任务时进行
+		log.info("DockerCodePoolExecutorService initialized (image pull deferred to first execution)");
 	}
 
 	/**
@@ -223,6 +211,46 @@ public class DockerCodePoolExecutorService extends AbstractCodePoolExecutorServi
 	}
 
 	/**
+	 * 确保镜像已拉取（仅在首次调用时拉取）
+	 */
+	private void ensureImageAvailable() {
+		if (imagePulled.get()) {
+			return;
+		}
+
+		synchronized (this) {
+			if (imagePulled.get()) {
+				return;
+			}
+
+			// Check if image exists locally
+			boolean imageExists = this.dockerClient.listImagesCmd()
+				.withImageNameFilter(properties.getImageName())
+				.exec()
+				.stream()
+				.anyMatch(image -> Arrays.asList(image.getRepoTags()).contains(properties.getImageName()));
+
+			if (!imageExists) {
+				log.info("Image {} not found locally, pulling...", properties.getImageName());
+				try {
+					this.dockerClient.pullImageCmd(properties.getImageName())
+						.exec(new PullImageResultCallback())
+						.awaitCompletion();
+					log.info("pull image {} success", properties.getImageName());
+				}
+				catch (Exception e) {
+					log.error("pull image {} error", properties.getImageName(), e);
+					throw new RuntimeException("Failed to pull Docker image: " + properties.getImageName(), e);
+				}
+			} else {
+				log.info("Image {} found locally", properties.getImageName());
+			}
+
+			imagePulled.set(true);
+		}
+	}
+
+	/**
 	 * Clean up existing container with same name
 	 */
 	private void cleanupExistingResources(String containName) {
@@ -238,6 +266,9 @@ public class DockerCodePoolExecutorService extends AbstractCodePoolExecutorServi
 
 	@Override
 	protected String createNewContainer() throws Exception {
+		// 确保镜像已可用（首次执行时拉取）
+		this.ensureImageAvailable();
+
 		String containerName = this.generateContainerName();
 		// First clean up possibly existing container with same name
 		this.cleanupExistingResources(containerName);
