@@ -618,9 +618,11 @@
         const sessionState = getSessionState(sessionId);
         try {
           lastRequest.value = request;
-          // 准备流式请求
+          // 准备流式请求 - 同时更新视图状态和会话状态
           isStreaming.value = true;
+          sessionState.isStreaming = true;
           nodeBlocks.value = [];
+          sessionState.nodeBlocks = [];
 
           let currentNodeName: string | null = null;
           let currentBlockIndex: number = -1;
@@ -1130,7 +1132,6 @@
 
       // 重置报告状态
       const resetReportState = (sessionState: SessionRuntimeState, request: GraphRequest) => {
-        sessionState.isStreaming = true;
         sessionState.nodeBlocks = [];
         sessionState.lastRequest = request;
         sessionState.htmlReportContent = '';
