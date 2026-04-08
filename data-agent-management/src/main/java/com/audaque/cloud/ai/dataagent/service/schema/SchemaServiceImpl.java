@@ -20,6 +20,7 @@ import com.audaque.cloud.ai.dataagent.bo.schema.ForeignKeyInfoBO;
 import com.audaque.cloud.ai.dataagent.bo.schema.TableInfoBO;
 import com.audaque.cloud.ai.dataagent.constant.DocumentMetadataConstant;
 import com.audaque.cloud.ai.dataagent.enums.BizDataSourceTypeEnum;
+import com.audaque.cloud.ai.dataagent.enums.DatabaseDialectEnum;
 import com.audaque.cloud.ai.dataagent.util.JsonUtil;
 import com.audaque.cloud.ai.dataagent.properties.DataAgentProperties;
 import com.audaque.cloud.ai.dataagent.connector.accessor.Accessor;
@@ -450,17 +451,65 @@ public class SchemaServiceImpl implements SchemaService {
 	 */
 	@Override
 	public void extractDatabaseName(SchemaDTO schemaDTO, DbConfigBO dbConfig) {
-		String pattern = ":\\d+/([^/?&]+)";
-		if (BizDataSourceTypeEnum.isMysqlDialect(dbConfig.getDialectType())) {
+		if (dbConfig == null || schemaDTO == null) {
+			log.warn("Cannot extract database name: dbConfig or schemaDTO is null");
+			return;
+		}
+
+		String dialectType = dbConfig.getDialectType();
+
+		// MySQL, SQLite, H2, Dameng and other JDBC URLs with :port/database pattern
+		if (BizDataSourceTypeEnum.isMysqlDialect(dialectType)
+				|| BizDataSourceTypeEnum.isDialect(dialectType, DatabaseDialectEnum.DAMENG.getCode())
+				|| BizDataSourceTypeEnum.isDialect(dialectType, DatabaseDialectEnum.SQLite.getCode())
+				|| BizDataSourceTypeEnum.isDialect(dialectType, DatabaseDialectEnum.H2.getCode())) {
+			String pattern = ":\\d+/([^/?&]+)";
 			Pattern regex = Pattern.compile(pattern);
 			Matcher matcher = regex.matcher(dbConfig.getUrl());
 			if (matcher.find()) {
 				schemaDTO.setName(matcher.group(1));
+				log.info("Extracted database name from URL: {}", schemaDTO.getName());
+			} else {
+				log.warn("Failed to extract database name from URL: {}", dbConfig.getUrl());
 			}
 		}
-		else if (BizDataSourceTypeEnum.isPgDialect(dbConfig.getDialectType())) {
+		// PostgreSQL and compatible databases (including Holo, ADB-PG)
+		else if (BizDataSourceTypeEnum.isPgDialect(dialectType)) {
 			schemaDTO.setName(dbConfig.getSchema());
+			log.info("Using PostgreSQL schema name: {}", schemaDTO.getName());
 		}
+		// SQL Server
+		else if (BizDataSourceTypeEnum.isSqlServerDialect(dialectType)) {
+			// SQL Server URL format: jdbc:sqlserver://host:port;databaseName=xxx
+			String databaseName = extractSqlServerDatabaseName(dbConfig.getUrl());
+			if (databaseName != null) {
+				schemaDTO.setName(databaseName);
+				log.info("Extracted SQL Server database name: {}", databaseName);
+			}
+		}
+	}
+
+	/**
+	 * Extract database name from SQL Server JDBC URL
+	 * Format: jdbc:sqlserver://host:port[;databaseName=xxx][;otherParams]
+	 */
+	private String extractSqlServerDatabaseName(String url) {
+		if (url == null || url.isEmpty()) {
+			return null;
+		}
+		// Try to find databaseName parameter
+		int dbIndex = url.indexOf(";databaseName=");
+		if (dbIndex != -1) {
+			int endIndex = url.indexOf(";", dbIndex + 14);
+			if (endIndex == -1) {
+				endIndex = url.indexOf("?", dbIndex);
+			}
+			if (endIndex == -1) {
+				return url.substring(dbIndex + 14);
+			}
+			return url.substring(dbIndex + 14, endIndex);
+		}
+		return null;
 	}
 
 	@Override
