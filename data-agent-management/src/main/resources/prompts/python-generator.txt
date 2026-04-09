@@ -156,7 +156,7 @@ try:
     import matplotlib
     matplotlib.use('Agg')  # 必须在 import pyplot 之前设置
     import matplotlib.pyplot as plt
-    from matplotlib.font_manager import FontProperties
+    import matplotlib.font_manager as fm
     import os
     
     # 设置中文字体支持 - 按优先级列出所有可能的中文字体
@@ -176,14 +176,18 @@ try:
     plt.rcParams['font.sans-serif'] = all_fonts
     plt.rcParams['axes.unicode_minus'] = False  # 支持负号显示
     
-    # 尝试加载中文字体，如果失败则使用备用方案
-    try:
-        # 检查系统中是否有可用的中文字体
-        font_prop = FontProperties(family=all_fonts)
-        print(f"Chinese font loaded successfully: {font_prop.get_name()}", file=sys.stderr)
-    except Exception as font_error:
-        print(f"Warning: Could not load Chinese font, using fallback: {font_error}", file=sys.stderr)
-        # 如果无法加载中文字体，使用英文标签
+    # 检查系统中是否有可用的中文字体
+    available_fonts = [f.name for f in fm.fontManager.ttflist]
+    loaded_font = None
+    for font in all_fonts:
+        if font in available_fonts:
+            loaded_font = font
+            break
+    
+    if loaded_font:
+        print(f"Chinese font available: {loaded_font}", file=sys.stderr)
+    else:
+        print("Warning: No Chinese font found, using DejaVu Sans fallback", file=sys.stderr)
         plt.rcParams['font.sans-serif'] = ['DejaVu Sans', 'sans-serif']
     
     has_matplotlib = True
@@ -194,7 +198,7 @@ except ImportError:
         import matplotlib
         matplotlib.use('Agg')
         import matplotlib.pyplot as plt
-        from matplotlib.font_manager import FontProperties
+        import matplotlib.font_manager as fm
         import os
         
         # 设置中文字体支持 - 按优先级列出所有可能的中文字体
@@ -207,11 +211,18 @@ except ImportError:
         plt.rcParams['font.sans-serif'] = all_fonts
         plt.rcParams['axes.unicode_minus'] = False
         
-        try:
-            font_prop = FontProperties(family=all_fonts)
-            print(f"Chinese font loaded successfully: {font_prop.get_name()}", file=sys.stderr)
-        except Exception as font_error:
-            print(f"Warning: Could not load Chinese font, using fallback: {font_error}", file=sys.stderr)
+        # 检查系统中是否有可用的中文字体
+        available_fonts = [f.name for f in fm.fontManager.ttflist]
+        loaded_font = None
+        for font in all_fonts:
+            if font in available_fonts:
+                loaded_font = font
+                break
+        
+        if loaded_font:
+            print(f"Chinese font available: {loaded_font}", file=sys.stderr)
+        else:
+            print("Warning: No Chinese font found, using DejaVu Sans fallback", file=sys.stderr)
             plt.rcParams['font.sans-serif'] = ['DejaVu Sans', 'sans-serif']
         
         has_matplotlib = True
@@ -331,7 +342,7 @@ try:
     import matplotlib
     matplotlib.use('Agg')
     import matplotlib.pyplot as plt
-    from matplotlib.font_manager import FontProperties
+    import matplotlib.font_manager as fm
     
     # 设置中文字体支持
     chinese_fonts = ['SimHei', 'Microsoft YaHei', 'SimSun', 'FangSong', 'KaiTi']
@@ -343,11 +354,18 @@ try:
     plt.rcParams['font.sans-serif'] = all_fonts
     plt.rcParams['axes.unicode_minus'] = False
     
-    try:
-        font_prop = FontProperties(family=all_fonts)
-        print(f"Chinese font loaded: {font_prop.get_name()}", file=sys.stderr)
-    except Exception as font_error:
-        print(f"Warning: Chinese font load failed, using fallback: {font_error}", file=sys.stderr)
+    # 检查系统中是否有可用的中文字体
+    available_fonts = [f.name for f in fm.fontManager.ttflist]
+    loaded_font = None
+    for font in all_fonts:
+        if font in available_fonts:
+            loaded_font = font
+            break
+    
+    if loaded_font:
+        print(f"Chinese font available: {loaded_font}", file=sys.stderr)
+    else:
+        print("Warning: No Chinese font found, using DejaVu Sans fallback", file=sys.stderr)
         plt.rcParams['font.sans-serif'] = ['DejaVu Sans', 'sans-serif']
     
     has_matplotlib = True
@@ -449,7 +467,7 @@ try:
     import matplotlib
     matplotlib.use('Agg')
     import matplotlib.pyplot as plt
-    from matplotlib.font_manager import FontProperties
+    import matplotlib.font_manager as fm
     
     # 设置中文字体支持
     chinese_fonts = ['SimHei', 'Microsoft YaHei', 'SimSun', 'FangSong', 'KaiTi']
@@ -461,11 +479,18 @@ try:
     plt.rcParams['font.sans-serif'] = all_fonts
     plt.rcParams['axes.unicode_minus'] = False
     
-    try:
-        font_prop = FontProperties(family=all_fonts)
-        print(f"Chinese font loaded: {font_prop.get_name()}", file=sys.stderr)
-    except Exception as font_error:
-        print(f"Warning: Chinese font load failed, using fallback: {font_error}", file=sys.stderr)
+    # 检查系统中是否有可用的中文字体
+    available_fonts = [f.name for f in fm.fontManager.ttflist]
+    loaded_font = None
+    for font in all_fonts:
+        if font in available_fonts:
+            loaded_font = font
+            break
+    
+    if loaded_font:
+        print(f"Chinese font available: {loaded_font}", file=sys.stderr)
+    else:
+        print("Warning: No Chinese font found, using DejaVu Sans fallback", file=sys.stderr)
         plt.rcParams['font.sans-serif'] = ['DejaVu Sans', 'sans-serif']
     
     has_matplotlib = True
@@ -560,7 +585,7 @@ try:
     import matplotlib
     matplotlib.use('Agg')
     import matplotlib.pyplot as plt
-    from matplotlib.font_manager import FontProperties
+    import matplotlib.font_manager as fm
     
     # 设置中文字体支持
     chinese_fonts = ['SimHei', 'Microsoft YaHei', 'SimSun', 'FangSong', 'KaiTi']
@@ -572,11 +597,18 @@ try:
     plt.rcParams['font.sans-serif'] = all_fonts
     plt.rcParams['axes.unicode_minus'] = False
     
-    try:
-        font_prop = FontProperties(family=all_fonts)
-        print(f"Chinese font loaded: {font_prop.get_name()}", file=sys.stderr)
-    except Exception as font_error:
-        print(f"Warning: Chinese font load failed, using fallback: {font_error}", file=sys.stderr)
+    # 检查系统中是否有可用的中文字体
+    available_fonts = [f.name for f in fm.fontManager.ttflist]
+    loaded_font = None
+    for font in all_fonts:
+        if font in available_fonts:
+            loaded_font = font
+            break
+    
+    if loaded_font:
+        print(f"Chinese font available: {loaded_font}", file=sys.stderr)
+    else:
+        print("Warning: No Chinese font found, using DejaVu Sans fallback", file=sys.stderr)
         plt.rcParams['font.sans-serif'] = ['DejaVu Sans', 'sans-serif']
     
     has_matplotlib = True
