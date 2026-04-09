@@ -162,8 +162,11 @@ public class SqlGenerateNode implements NodeAction {
 				ChatResponseUtil.createPureResponse(TextType.SQL.getStartSign()));
 		Flux<ChatResponse> displayFlux = preFlux
 				.concatWith(sqlFlux.doOnNext(chunk -> {
-					log.debug("SqlGenerateNode received SQL chunk: [{}]", chunk);
-					sqlCollector.append(chunk);
+					log.info("SqlGenerateNode received SQL chunk: [{}], length={}", chunk, chunk != null ? chunk.length() : -1);
+					if (chunk == null || chunk.isEmpty()) {
+						log.warn("Received NULL or empty SQL chunk from LLM!");
+					}
+					sqlCollector.append(chunk != null ? chunk : "");
 				}).map(ChatResponseUtil::createPureResponse))
 				.concatWith(Flux.just(ChatResponseUtil.createPureResponse(TextType.SQL.getEndSign()),
 						ChatResponseUtil.createResponse("SQL 生成完成，准备执行")));
