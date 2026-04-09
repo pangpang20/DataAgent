@@ -162,7 +162,8 @@ public class SqlGenerateNode implements NodeAction {
 				ChatResponseUtil.createPureResponse(TextType.SQL.getStartSign()));
 		Flux<ChatResponse> displayFlux = preFlux
 				.concatWith(sqlFlux.doOnNext(chunk -> {
-					log.info("SqlGenerateNode received SQL chunk: [{}], length={}", chunk, chunk != null ? chunk.length() : -1);
+					log.info("SqlGenerateNode received SQL chunk: [{}], length={}", chunk,
+							chunk != null ? chunk.length() : -1);
 					if (chunk == null || chunk.isEmpty()) {
 						log.warn("Received NULL or empty SQL chunk from LLM!");
 					}
@@ -214,7 +215,8 @@ public class SqlGenerateNode implements NodeAction {
 		// Get failure history from state
 		List<String> failureHistory = state.value(SQL_FAILURE_HISTORY, new ArrayList<>());
 
-		log.debug("Building SQL generation DTO with retry count: {}, history size: {}", retryCount, failureHistory.size());
+		log.debug("Building SQL generation DTO with retry count: {}, history size: {}", retryCount,
+				failureHistory.size());
 
 		SqlGenerationDTO sqlGenerationDTO = SqlGenerationDTO.builder()
 				.evidence(evidence)

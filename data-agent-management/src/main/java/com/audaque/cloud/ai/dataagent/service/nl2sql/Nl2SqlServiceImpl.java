@@ -169,16 +169,18 @@ public class Nl2SqlServiceImpl implements Nl2SqlService {
 				.doOnNext(response -> {
 					if (response != null && response.getResult() != null && response.getResult().getOutput() != null) {
 						String text = response.getResult().getOutput().getText();
-						log.info("LLM ChatResponse chunk received: text=[{}], textLength={}", 
+						log.info("LLM ChatResponse chunk received: text=[{}], textLength={}",
 								text, text != null ? text.length() : -1);
 						if (text == null || text.isEmpty()) {
 							log.warn("LLM returned empty text! Full response: {}", response);
 						}
 					} else {
-						log.error("LLM ChatResponse chunk is NULL or has null result/output! Response structure: response={}, result={}, output={}", 
-								response, 
+						log.error(
+								"LLM ChatResponse chunk is NULL or has null result/output! Response structure: response={}, result={}, output={}",
+								response,
 								response != null ? response.getResult() : "N/A",
-								response != null && response.getResult() != null ? response.getResult().getOutput() : "N/A");
+								response != null && response.getResult() != null ? response.getResult().getOutput()
+										: "N/A");
 					}
 				})
 				.doOnComplete(() -> log.info("LLM SQL generation stream completed successfully"))
