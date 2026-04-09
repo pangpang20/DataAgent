@@ -119,8 +119,8 @@ public class PythonExecuteNode implements NodeAction {
 			String stderr = taskResponse.stdErr();
 
 			// 记录 Python 执行的完整输出，便于调试
-			log.info("Python Execute - StdOut length: {}, StdErr length: {}", stdout.length(), stderr.length());
-			if (!stderr.isEmpty()) {
+			log.info("Python Execute - StdOut length: {}", stdout.length());
+			if (stderr != null && !stderr.isEmpty()) {
 				log.info("Python Execute - StdErr: {}", stderr);
 			}
 
