@@ -119,10 +119,11 @@ public class PythonExecuteNode implements NodeAction {
 			String stderr = taskResponse.stdErr();
 
 			// 记录 Python 执行的完整输出，便于调试
-			log.info("Python Execute - StdOut length: {}", stdout.length());
+			log.info("Python Execute - StdOut length: {}, StdErr length: {}", stdout.length(), stderr != null ? stderr.length() : 0);
 			if (stderr != null && !stderr.isEmpty()) {
 				log.info("Python Execute - StdErr: {}", stderr);
 			}
+			log.info("Python Execute - StdOut (first 500 chars): {}", stdout.length() > 500 ? stdout.substring(0, 500) : stdout);
 
 			Object value = jsonParseUtil.tryConvertToObject(stdout, Object.class);
 			if (value != null) {
@@ -143,10 +144,14 @@ public class PythonExecuteNode implements NodeAction {
 						log.info("Chart image is null/empty, Python code did not generate chart");
 					} else {
 						log.info("Chart image detected, length: {} chars", chartImageBase64.length());
+						// Log first 100 chars of base64 for debugging
+						log.info("Chart image base64 (first 100 chars): {}", chartImageBase64.length() > 100 ? chartImageBase64.substring(0, 100) : chartImageBase64);
 					}
+				} else {
+					log.warn("chart_image field NOT found in Python output JSON!");
 				}
 			} catch (Exception e) {
-				log.warn("Failed to parse JSON for chart image detection: {}", e.getMessage());
+				log.error("Failed to parse JSON for chart image detection: {}. JSON: {}", e.getMessage(), stdout);
 			}
 			String finalChartImageBase64 = chartImageBase64;
 
