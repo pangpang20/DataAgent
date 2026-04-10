@@ -83,6 +83,8 @@ public class ReportGeneratorNode implements NodeAction {
 		@SuppressWarnings("unchecked")
 		HashMap<String, String> executionResults = StateUtil.getObjectValue(state, SQL_EXECUTE_NODE_OUTPUT,
 				HashMap.class, new HashMap<>());
+		// Get Python execution result (may contain chart_image)
+		String pythonExecuteResult = StateUtil.getStringValue(state, PYTHON_EXECUTE_NODE_OUTPUT, "");
 
 		boolean plainReport = StateUtil.getObjectValue(state, PLAIN_REPORT, Boolean.class, false);
 
@@ -105,7 +107,7 @@ public class ReportGeneratorNode implements NodeAction {
 
 		// Generate report streaming flux
 		Flux<ChatResponse> reportGenerationFlux = generateReport(userInput, plan, executionResults,
-				summaryAndRecommendations, agentId, plainReport);
+				summaryAndRecommendations, agentId, plainReport, pythonExecuteResult);
 
 		TextType reportTextType = plainReport ? TextType.MARK_DOWN : TextType.HTML;
 
@@ -148,12 +150,12 @@ public class ReportGeneratorNode implements NodeAction {
 	 * Generates the analysis report.
 	 */
 	private Flux<ChatResponse> generateReport(String userInput, Plan plan, HashMap<String, String> executionResults,
-			String summaryAndRecommendations, Long agentId, boolean plainReport) {
+			String summaryAndRecommendations, Long agentId, boolean plainReport, String pythonExecuteResult) {
 		// Build user requirements and plan description
 		String userRequirementsAndPlan = buildUserRequirementsAndPlan(userInput, plan);
 
 		// Build analysis steps and data results description
-		String analysisStepsAndData = buildAnalysisStepsAndData(plan, executionResults);
+		String analysisStepsAndData = buildAnalysisStepsAndData(plan, executionResults, pythonExecuteResult);
 
 		// Get optimization configs if available (优先按智能体加载)
 		List<UserPromptConfig> optimizationConfigs = promptConfigService.getOptimizationConfigs("report-generator",
@@ -213,11 +215,11 @@ public class ReportGeneratorNode implements NodeAction {
 	/**
 	 * Builds analysis steps and data results description.
 	 */
-	private String buildAnalysisStepsAndData(Plan plan, HashMap<String, String> executionResults) {
+	private String buildAnalysisStepsAndData(Plan plan, HashMap<String, String> executionResults, String pythonExecuteResult) {
 		StringBuilder sb = new StringBuilder();
 		sb.append("## 数据执行结果\n");
 
-		if (executionResults.isEmpty()) {
+		if (executionResults.isEmpty() && pythonExecuteResult.isEmpty()) {
 			sb.append("暂无执行结果数据\n");
 		}
 		else {
@@ -250,6 +252,30 @@ public class ReportGeneratorNode implements NodeAction {
 				}
 
 				sb.append("**执行结果**: \n```json\n").append(stepResult).append("\n```\n\n");
+			}
+
+			// Add Python execution result with chart if available
+			if (pythonExecuteResult != null && !pythonExecuteResult.isEmpty()) {
+				sb.append("### Python 分析结果\n");
+				try {
+					// Parse JSON to check for chart_image
+					com.fasterxml.jackson.databind.JsonNode jsonNode = 
+						new com.fasterxml.jackson.databind.ObjectMapper().readTree(pythonExecuteResult);
+					if (jsonNode.has("chart_image")) {
+						String chartImage = jsonNode.get("chart_image").asText();
+						if (chartImage != null && !chartImage.isEmpty() && !chartImage.equals("null")) {
+							sb.append("\n![分析图表](data:image/png;base64,").append(chartImage).append(")\n\n");
+						}
+					}
+					// Add summary if available
+					if (jsonNode.has("summary")) {
+						sb.append("**分析摘要**: ").append(jsonNode.get("summary").asText()).append("\n\n");
+					}
+				}
+				catch (Exception e) {
+					log.warn("Failed to parse Python execution result: {}", e.getMessage());
+					sb.append("**Python 执行结果**: \n```json\n").append(pythonExecuteResult).append("\n```\n\n");
+				}
 			}
 		}
 
