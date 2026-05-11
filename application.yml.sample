@@ -39,7 +39,7 @@ spring:
   main:
     allow-bean-definition-overriding: true
   autoconfigure:
-    exclude: ${VECTOR_STORE_EXCLUDE:org.springframework.ai.vectorstore.milvus.autoconfigure.MilvusVectorStoreAutoConfiguration,org.springframework.ai.vectorstore.elasticsearch.autoconfigure.ElasticsearchVectorStoreAutoConfiguration}
+    exclude: ${VECTOR_STORE_EXCLUDE:}
   datasource:
     # ========================================================================
     # 数据库平台类型（可选：mysql | dameng）
