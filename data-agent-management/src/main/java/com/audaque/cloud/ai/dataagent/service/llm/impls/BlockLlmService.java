@@ -18,10 +18,12 @@ package com.audaque.cloud.ai.dataagent.service.llm.impls;
 import com.audaque.cloud.ai.dataagent.service.aimodelconfig.AiModelRegistry;
 import com.audaque.cloud.ai.dataagent.service.llm.LlmService;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.model.ChatResponse;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+@Slf4j
 @AllArgsConstructor
 public class BlockLlmService implements LlmService {
 
@@ -29,6 +31,8 @@ public class BlockLlmService implements LlmService {
 
 	@Override
 	public Flux<ChatResponse> call(String system, String user) {
+		log.debug("BlockLlmService.call() - System message: {}", system);
+		log.debug("BlockLlmService.call() - User message: {}", user);
 		return Mono
 			.fromCallable(() -> registry.getChatClient().prompt().system(system).user(user).call().chatResponse())
 			.flux();
@@ -36,11 +40,13 @@ public class BlockLlmService implements LlmService {
 
 	@Override
 	public Flux<ChatResponse> callSystem(String system) {
+		log.debug("BlockLlmService.callSystem() - System message: {}", system);
 		return Mono.fromCallable(() -> registry.getChatClient().prompt().system(system).user("请根据以上指令执行").call().chatResponse()).flux();
 	}
 
 	@Override
 	public Flux<ChatResponse> callUser(String user) {
+		log.debug("BlockLlmService.callUser() - User message: {}", user);
 		return Mono.fromCallable(() -> registry.getChatClient().prompt().user(user).call().chatResponse()).flux();
 	}
 

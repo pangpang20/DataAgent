@@ -30,9 +30,9 @@ public class StreamLlmService implements LlmService {
 
 	@Override
 	public Flux<ChatResponse> call(String system, String user) {
-		log.trace("StreamLlmService.call() - Sending request with system and user messages");
-		log.trace("System message length: {}, User message length: {}",
-				system != null ? system.length() : 0, user != null ? user.length() : 0);
+		log.debug("StreamLlmService.call() - Sending request with system and user messages");
+		log.debug("System message: {}", system);
+		log.debug("User message: {}", user);
 		return registry.getChatClient()
 				.prompt()
 				.system(system)
@@ -49,8 +49,8 @@ public class StreamLlmService implements LlmService {
 
 	@Override
 	public Flux<ChatResponse> callSystem(String system) {
-		log.trace("StreamLlmService.callSystem() - Sending system message with default user message");
-		log.trace("System message length: {}", system != null ? system.length() : 0);
+		log.debug("StreamLlmService.callSystem() - Sending system message with default user message");
+		log.debug("System message: {}", system);
 		return registry.getChatClient()
 				.prompt()
 				.system(system)
@@ -67,8 +67,8 @@ public class StreamLlmService implements LlmService {
 
 	@Override
 	public Flux<ChatResponse> callUser(String user) {
-		log.trace("StreamLlmService.callUser() - Sending user message only");
-		log.trace("User message length: {}", user != null ? user.length() : 0);
+		log.debug("StreamLlmService.callUser() - Sending user message only");
+		log.debug("User message: {}", user);
 		return registry.getChatClient()
 				.prompt()
 				.user(user)
