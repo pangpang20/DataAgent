@@ -28,6 +28,7 @@ import org.springframework.core.io.Resource;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.UUID;
@@ -90,6 +91,39 @@ public class OssFileStorageServiceImpl implements FileStorageService {
 			try (InputStream inputStream = file.getInputStream()) {
 				ossClient.putObject(ossProperties.getBucketName(), objectKey, inputStream, metadata);
 				log.info("File uploaded successfully: {}", objectKey);
+				return objectKey;
+			} catch (IOException e) {
+				log.error("File storage failed, input stream error", e);
+				throw new RuntimeException("文件存储失败: " + e.getMessage(), e);
+			}
+		} catch (Exception e) {
+			log.error("File storage failed, OSS upload error", e);
+			throw new RuntimeException("文件存储失败: " + e.getMessage(), e);
+		}
+	}
+
+	@Override
+	public String storeFile(byte[] data, String fileName, String subPath) {
+		try {
+			if (data == null || data.length == 0) {
+				log.warn("Data is empty, cannot upload to OSS");
+				return null;
+			}
+
+			String objectKey = buildObjectKey(subPath, fileName);
+
+			ObjectMetadata metadata = new ObjectMetadata();
+			metadata.setContentLength(data.length);
+			if (fileName.endsWith(".png")) {
+				metadata.setContentType("image/png");
+			} else if (fileName.endsWith(".jpg") || fileName.endsWith(".jpeg")) {
+				metadata.setContentType("image/jpeg");
+			}
+			metadata.setCacheControl("no-cache");
+
+			try (InputStream inputStream = new ByteArrayInputStream(data)) {
+				ossClient.putObject(ossProperties.getBucketName(), objectKey, inputStream, metadata);
+				log.info("File uploaded successfully from byte array: {}", objectKey);
 				return objectKey;
 			} catch (IOException e) {
 				log.error("File storage failed, input stream error", e);

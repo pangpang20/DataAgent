@@ -264,7 +264,13 @@ public class ReportGeneratorNode implements NodeAction {
 					if (jsonNode.has("chart_image")) {
 						String chartImage = jsonNode.get("chart_image").asText();
 						if (chartImage != null && !chartImage.isEmpty() && !chartImage.equals("null")) {
-							sb.append("\n![分析图表](data:image/png;base64,").append(chartImage).append(")\n\n");
+							if (chartImage.startsWith("http://") || chartImage.startsWith("https://")
+									|| chartImage.startsWith("/")) {
+								sb.append("\n![分析图表](").append(chartImage).append(")\n\n");
+							}
+							else {
+								sb.append("\n![分析图表](data:image/png;base64,").append(chartImage).append(")\n\n");
+							}
 						}
 					}
 					// Add summary if available

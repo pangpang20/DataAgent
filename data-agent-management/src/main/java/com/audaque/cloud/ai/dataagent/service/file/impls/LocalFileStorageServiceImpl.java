@@ -24,6 +24,7 @@ import org.springframework.core.io.Resource;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -61,6 +62,28 @@ public class LocalFileStorageServiceImpl implements FileStorageService {
 
 		} catch (IOException e) {
 			log.error("File storage failed", e);
+			throw new RuntimeException("文件存储失败: " + e.getMessage(), e);
+		}
+	}
+
+	@Override
+	public String storeFile(byte[] data, String fileName, String subPath) {
+		try {
+			String storagePath = buildStoragePath(subPath, fileName);
+
+			Path parentDir = Paths.get(fileStorageProperties.getPath(), storagePath).getParent();
+			if (parentDir != null && !Files.exists(parentDir)) {
+				Files.createDirectories(parentDir);
+			}
+
+			Path filePath = Paths.get(fileStorageProperties.getPath(), storagePath);
+			Files.copy(new ByteArrayInputStream(data), filePath);
+
+			log.info("File stored successfully from byte array: {}", storagePath);
+			return storagePath;
+
+		} catch (IOException e) {
+			log.error("File storage failed from byte array", e);
 			throw new RuntimeException("文件存储失败: " + e.getMessage(), e);
 		}
 	}

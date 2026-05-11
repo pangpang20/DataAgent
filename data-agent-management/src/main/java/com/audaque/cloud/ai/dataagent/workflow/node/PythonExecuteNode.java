@@ -17,6 +17,7 @@ package com.audaque.cloud.ai.dataagent.workflow.node;
 
 import com.audaque.cloud.ai.dataagent.util.JsonParseUtil;
 import com.audaque.cloud.ai.dataagent.properties.CodeExecutorProperties;
+import com.audaque.cloud.ai.dataagent.service.file.FileStorageService;
 import com.alibaba.cloud.ai.graph.GraphResponse;
 import com.alibaba.cloud.ai.graph.OverAllState;
 import com.alibaba.cloud.ai.graph.action.NodeAction;
@@ -28,14 +29,17 @@ import com.audaque.cloud.ai.dataagent.util.JsonUtil;
 import com.audaque.cloud.ai.dataagent.util.StateUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
 
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import static com.audaque.cloud.ai.dataagent.constant.Constant.*;
 
@@ -55,12 +59,15 @@ public class PythonExecuteNode implements NodeAction {
 
 	private final CodeExecutorProperties codeExecutorProperties;
 
+	private final FileStorageService fileStorageService;
+
 	public PythonExecuteNode(CodePoolExecutorService codePoolExecutor, JsonParseUtil jsonParseUtil,
-			CodeExecutorProperties codeExecutorProperties) {
+			CodeExecutorProperties codeExecutorProperties, FileStorageService fileStorageService) {
 		this.codePoolExecutor = codePoolExecutor;
 		this.objectMapper = JsonUtil.getObjectMapper();
 		this.jsonParseUtil = jsonParseUtil;
 		this.codeExecutorProperties = codeExecutorProperties;
+		this.fileStorageService = fileStorageService;
 	}
 
 	private static final int MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB 最大图片限制
@@ -129,49 +136,64 @@ public class PythonExecuteNode implements NodeAction {
 			if (value != null) {
 				stdout = objectMapper.writeValueAsString(value);
 			}
-			String finalStdout = stdout;
+			String originalStdout = stdout;
 
-			log.info("Python Execute Success! StdOut: {}", finalStdout);
+			log.info("Python Execute Success! StdOut: {}", originalStdout);
 
 			// Check if result contains chart image (base64 encoded)
 			JsonNode jsonNode = null;
 			String chartImageBase64 = null;
+			String chartImageUrl = null;
+			String outputStdout = originalStdout;
 			try {
-				jsonNode = objectMapper.readTree(stdout);
+				jsonNode = objectMapper.readTree(originalStdout);
 				if (jsonNode.has("chart_image")) {
 					chartImageBase64 = jsonNode.get("chart_image").asText();
 					if (chartImageBase64 == null || chartImageBase64.isEmpty() || chartImageBase64.equals("null")) {
 						log.info("Chart image is null/empty, Python code did not generate chart");
 					} else {
 						log.info("Chart image detected, length: {} chars", chartImageBase64.length());
-						// Log first 100 chars of base64 for debugging
-						log.info("Chart image base64 (first 100 chars): {}", chartImageBase64.length() > 100 ? chartImageBase64.substring(0, 100) : chartImageBase64);
+						// Decode base64 and persist to storage
+						if (isValidBase64Image(chartImageBase64)) {
+							chartImageUrl = persistChartImage(chartImageBase64);
+							if (chartImageUrl != null) {
+								// Replace base64 with URL in the JSON for downstream nodes
+								((ObjectNode) jsonNode).put("chart_image", chartImageUrl);
+								outputStdout = objectMapper.writeValueAsString(jsonNode);
+								log.info("Chart image persisted, URL: {}", chartImageUrl);
+							}
+						} else {
+							log.warn("Invalid or oversized chart image, skipping persistence");
+						}
 					}
 				} else {
 					log.warn("chart_image field NOT found in Python output JSON!");
 				}
 			} catch (Exception e) {
-				log.error("Failed to parse JSON for chart image detection: {}. JSON: {}", e.getMessage(), stdout);
+				log.error("Failed to parse JSON for chart image detection: {}. JSON: {}", e.getMessage(), originalStdout);
 			}
+			String finalStdout = outputStdout;
+			String finalChartImageUrl = chartImageUrl;
 			String finalChartImageBase64 = chartImageBase64;
 
 			// Create display flux for user experience only
 			Flux<ChatResponse> displayFlux = Flux.create(emitter -> {
 				emitter.next(ChatResponseUtil.createResponse("开始执行 Python 代码..."));
 
-				// If chart image exists, display it first with HTML img tag
-				if (finalChartImageBase64 != null && !finalChartImageBase64.isEmpty()) {
-					// Security validation for base64 image
-					if (isValidBase64Image(finalChartImageBase64)) {
-						// Use HTML img tag directly instead of Markdown syntax for better browser
-						// compatibility
-						String imgTag = String.format(
-								"<img src=\"data:image/png;base64,%s\" alt=\"chart\" style=\"max-width: 100%%; height: auto;\" />",
-								finalChartImageBase64);
-						emitter.next(ChatResponseUtil.createPureResponse(imgTag));
-					} else {
-						log.warn("Invalid or oversized chart image, skipping display");
-					}
+				// If chart image URL exists, display it with HTML img tag
+				if (finalChartImageUrl != null && !finalChartImageUrl.isEmpty()) {
+					String imgTag = String.format(
+							"<img src=\"%s\" alt=\"chart\" style=\"max-width: 100%%; height: auto;\" />",
+							finalChartImageUrl);
+					emitter.next(ChatResponseUtil.createPureResponse(imgTag));
+				}
+				// Fallback: if persistence failed but base64 is valid, use inline base64
+				else if (finalChartImageBase64 != null && !finalChartImageBase64.isEmpty()
+						&& isValidBase64Image(finalChartImageBase64)) {
+					String imgTag = String.format(
+							"<img src=\"data:image/png;base64,%s\" alt=\"chart\" style=\"max-width: 100%%; height: auto;\" />",
+							finalChartImageBase64);
+					emitter.next(ChatResponseUtil.createPureResponse(imgTag));
 				}
 
 				// 不再显示标准输出的 JSON 原始数据，直接进入下一节点处理
@@ -206,6 +228,24 @@ public class PythonExecuteNode implements NodeAction {
 					errorDisplayFlux);
 
 			return Map.of(PYTHON_EXECUTE_NODE_OUTPUT, generator);
+		}
+	}
+
+	/**
+	 * 持久化图表图片：解码 base64 → 存储到文件服务 → 返回访问 URL
+	 * 失败时返回 null，不影响主流程
+	 */
+	private String persistChartImage(String base64) {
+		try {
+			byte[] imageBytes = Base64.getDecoder().decode(base64);
+			String fileName = "chart_" + UUID.randomUUID() + ".png";
+			String storagePath = fileStorageService.storeFile(imageBytes, fileName, "charts");
+			String url = fileStorageService.getFileUrl(storagePath);
+			log.info("Chart image persisted: {} -> {}", fileName, url);
+			return url;
+		} catch (Exception e) {
+			log.warn("Failed to persist chart image, falling back to base64: {}", e.getMessage());
+			return null;
 		}
 	}
 

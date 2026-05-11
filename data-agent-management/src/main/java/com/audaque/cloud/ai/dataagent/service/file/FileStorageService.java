@@ -43,6 +43,15 @@ public interface FileStorageService {
 	String getFileUrl(String filePath);
 
 	/**
+	 * 存储字节数组为文件
+	 * @param data 文件字节内容
+	 * @param fileName 文件名（含扩展名，如 chart_xxx.png）
+	 * @param subPath 子目录（如 charts）
+	 * @return 存储后的文件路径
+	 */
+	String storeFile(byte[] data, String fileName, String subPath);
+
+	/**
 	 * 获取文件资源对象
 	 * @param filePath 文件路径
 	 * @return 文件资源对象
