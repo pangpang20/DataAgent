@@ -48,11 +48,15 @@ spring:
       connect-timeout: 10000
       # 读取超时（毫秒）：等待 API 响应的最大等待时间，建议设置为 60-120 秒
       read-timeout: 120000
+    # LLM API 并发速率限制（匹配网关最大并发数，防止 429 错误）
+    rate-limit:
+      max-concurrent: 5              # 最大并发请求数，超过此数的请求将排队等待
     # LLM API 调用重试配置（针对 429、500、503、504 等错误）
     retry:
       max-attempts: 5                # 最大重试次数（包括首次调用）
       initial-interval: 2000         # 初始重试间隔（毫秒）
       multiplier: 2.0                # 指数退避倍数（每次重试间隔为上次的 multiplier 倍）
+      max-interval: 30000            # 最大重试间隔（毫秒），防止指数退避间隔过大
     vectorstore:
       milvus:
         enabled: true

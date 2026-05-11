@@ -48,6 +48,12 @@ public class DynamicModelFactory {
 	@Value("${spring.ai.retry.multiplier:2.0}")
 	private double multiplier;
 
+	@Value("${spring.ai.retry.max-interval:30000}")
+	private long maxInterval;
+
+	@Value("${spring.ai.rate-limit.max-concurrent:5}")
+	private int maxConcurrent;
+
 	/**
 	 * 统一使用 OpenAiChatModel，通过 baseUrl 实现多厂商兼容
 	 * 支持自定义认证头名称
@@ -75,12 +81,16 @@ public class DynamicModelFactory {
 		// 5. 创建自定义重试模板，支持 429 错误重试
 		RetryTemplate retryTemplate = createRetryTemplate();
 
-		// 6. 返回统一的 OpenAiChatModel，配置重试机制
-		return OpenAiChatModel.builder()
+		// 6. 创建 OpenAiChatModel，配置重试机制
+		ChatModel chatModel = OpenAiChatModel.builder()
 				.openAiApi(openAiApi)
 				.defaultOptions(openAiChatOptions)
 				.retryTemplate(retryTemplate)
 				.build();
+
+		// 7. 使用 RateLimitedChatModel 包装，限制并发请求数
+		log.info("Wrapping ChatModel with RateLimitedChatModel, maxConcurrent={}", maxConcurrent);
+		return new RateLimitedChatModel(chatModel, maxConcurrent);
 	}
 
 	private static void checkBasic(ModelConfigDTO config) {
@@ -199,8 +209,7 @@ public class DynamicModelFactory {
 	private RetryTemplate createRetryTemplate() {
 		return RetryTemplate.builder()
 				.maxAttempts(maxAttempts)
-				.exponentialBackoff(initialInterval, multiplier,
-						initialInterval * (long) Math.pow(multiplier, maxAttempts - 1))
+				.exponentialBackoff(initialInterval, multiplier, maxInterval)
 				.retryOn(WebClientResponseException.TooManyRequests.class)
 				.retryOn(WebClientResponseException.ServiceUnavailable.class)
 				.retryOn(WebClientResponseException.GatewayTimeout.class)
