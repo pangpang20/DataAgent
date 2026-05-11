@@ -18,9 +18,12 @@ package com.audaque.cloud.ai.dataagent.util;
 import com.alibaba.cloud.ai.graph.OverAllState;
 import com.audaque.cloud.ai.dataagent.dto.planner.ExecutionStep;
 import com.audaque.cloud.ai.dataagent.dto.planner.Plan;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.converter.BeanOutputConverter;
 import org.springframework.core.ParameterizedTypeReference;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,6 +36,7 @@ import static com.audaque.cloud.ai.dataagent.constant.Constant.PLAN_CURRENT_STEP
  * execute based on predefined plans
  *
  */
+@Slf4j
 public final class PlanProcessUtil {
 
 	private static final BeanOutputConverter<Plan> converter;
@@ -92,7 +96,8 @@ public final class PlanProcessUtil {
 	}
 
 	/**
-	 * Get the plan object from state
+	 * Get the plan object from state. Attempts to repair truncated JSON if initial parsing
+	 * fails (e.g., when LLM output is cut off due to maxTokens limit).
 	 * @param state the overall state containing plan information
 	 * @return the parsed plan object
 	 * @throws IllegalStateException if plan output is empty or plan parsing fails
@@ -100,11 +105,111 @@ public final class PlanProcessUtil {
 	public static Plan getPlan(OverAllState state) {
 		String plannerNodeOutput = (String) state.value(PLANNER_NODE_OUTPUT)
 			.orElseThrow(() -> new IllegalStateException("计划节点输出为空"));
-		Plan plan = converter.convert(plannerNodeOutput);
-		if (plan == null) {
-			throw new IllegalStateException("计划解析失败");
+		try {
+			Plan plan = converter.convert(plannerNodeOutput);
+			if (plan == null) {
+				throw new IllegalStateException("计划解析失败");
+			}
+			return plan;
 		}
-		return plan;
+		catch (Exception e) {
+			log.warn("Initial plan JSON parsing failed, attempting truncation repair: {}", e.getMessage());
+			String repaired = repairTruncatedJson(plannerNodeOutput);
+			if (!repaired.equals(plannerNodeOutput)) {
+				try {
+					Plan plan = converter.convert(repaired);
+					if (plan != null) {
+						log.info("Truncated plan JSON repaired successfully");
+						return plan;
+					}
+				}
+				catch (Exception repairError) {
+					log.error("Repaired JSON still failed to parse: {}", repairError.getMessage());
+				}
+			}
+			throw new IllegalStateException("计划解析失败: " + e.getMessage(), e);
+		}
+	}
+
+	/**
+	 * Attempt to repair truncated JSON by closing unclosed strings, arrays, and objects.
+	 * Handles the common case where LLM output is cut off mid-string due to maxTokens.
+	 */
+	static String repairTruncatedJson(String json) {
+		if (json == null || json.isEmpty()) {
+			return json;
+		}
+
+		StringBuilder sb = new StringBuilder(json);
+		Deque<Character> stack = new ArrayDeque<>();
+		boolean inString = false;
+		boolean escaped = false;
+
+		for (int i = 0; i < sb.length(); i++) {
+			char c = sb.charAt(i);
+
+			if (escaped) {
+				escaped = false;
+				continue;
+			}
+
+			if (c == '\\' && inString) {
+				escaped = true;
+				continue;
+			}
+
+			if (c == '"') {
+				inString = !inString;
+				if (inString) {
+					stack.push('"');
+				}
+				else {
+					if (!stack.isEmpty() && stack.peek() == '"') {
+						stack.pop();
+					}
+				}
+				continue;
+			}
+
+			if (inString) {
+				continue;
+			}
+
+			if (c == '{' || c == '[') {
+				stack.push(c);
+			}
+			else if (c == '}') {
+				if (!stack.isEmpty() && stack.peek() == '{') {
+					stack.pop();
+				}
+			}
+			else if (c == ']') {
+				if (!stack.isEmpty() && stack.peek() == '[') {
+					stack.pop();
+				}
+			}
+		}
+
+		// Close unclosed string
+		if (inString) {
+			sb.append('"');
+		}
+
+		// Close unclosed arrays and objects in reverse order
+		while (!stack.isEmpty()) {
+			char open = stack.pop();
+			if (open == '"') {
+				// unmatched quote — already handled by inString flag
+			}
+			else if (open == '{') {
+				sb.append('}');
+			}
+			else if (open == '[') {
+				sb.append(']');
+			}
+		}
+
+		return sb.toString();
 	}
 
 	/**
