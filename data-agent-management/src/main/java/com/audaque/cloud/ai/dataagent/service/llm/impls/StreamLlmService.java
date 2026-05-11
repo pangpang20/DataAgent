@@ -49,19 +49,20 @@ public class StreamLlmService implements LlmService {
 
 	@Override
 	public Flux<ChatResponse> callSystem(String system) {
-		log.trace("StreamLlmService.callSystem() - Sending system message only");
+		log.trace("StreamLlmService.callSystem() - Sending system message with default user message");
 		log.trace("System message length: {}", system != null ? system.length() : 0);
 		return registry.getChatClient()
 				.prompt()
 				.system(system)
+				.user("请根据以上指令执行")
 				.stream()
 				.chatResponse()
-				.doOnSubscribe(s -> log.trace("LLM stream subscribed (system only)"))
+				.doOnSubscribe(s -> log.trace("LLM stream subscribed (system+default user)"))
 				.doOnNext(r -> log.trace("LLM response received: hasResult={}, hasOutput={}",
 						r != null && r.getResult() != null,
 						r != null && r.getResult() != null && r.getResult().getOutput() != null))
-				.doOnError(e -> log.error("LLM stream error (system only): {}", e.getMessage(), e))
-				.doOnComplete(() -> log.trace("LLM stream completed (system only)"));
+				.doOnError(e -> log.error("LLM stream error (system+default user): {}", e.getMessage(), e))
+				.doOnComplete(() -> log.trace("LLM stream completed (system+default user)"));
 	}
 
 	@Override

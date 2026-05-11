@@ -36,7 +36,7 @@ public class BlockLlmService implements LlmService {
 
 	@Override
 	public Flux<ChatResponse> callSystem(String system) {
-		return Mono.fromCallable(() -> registry.getChatClient().prompt().system(system).call().chatResponse()).flux();
+		return Mono.fromCallable(() -> registry.getChatClient().prompt().system(system).user("请根据以上指令执行").call().chatResponse()).flux();
 	}
 
 	@Override
