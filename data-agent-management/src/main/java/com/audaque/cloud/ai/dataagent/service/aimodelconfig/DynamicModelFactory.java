@@ -34,6 +34,7 @@ import org.springframework.web.client.RestClient;
 import org.springframework.web.reactive.function.client.ClientRequest;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
+import reactor.core.publisher.Mono;
 
 @Slf4j
 @Service
@@ -112,7 +113,9 @@ public class DynamicModelFactory {
 		// 标准认证方式：使用 Authorization: Bearer
 		OpenAiApi.Builder apiBuilder = OpenAiApi.builder()
 				.apiKey(config.getApiKey())
-				.baseUrl(config.getBaseUrl());
+				.baseUrl(config.getBaseUrl())
+				.webClientBuilder(WebClient.builder()
+						.filter(createErrorResponseInterceptor()));
 
 		if (StringUtils.hasText(config.getCompletionsPath())) {
 			apiBuilder.completionsPath(config.getCompletionsPath());
@@ -150,6 +153,7 @@ public class DynamicModelFactory {
 				WebClient.builder()
 						.defaultHeader(authHeaderName, apiKey)
 						.codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(-1))
+						.filter(createErrorResponseInterceptor())
 						.filter((request, next) -> {
 							var filteredRequest = ClientRequest.create(request.method(), request.url())
 									.headers(h -> h.addAll(request.headers()))
@@ -204,6 +208,32 @@ public class DynamicModelFactory {
 	}
 
 	/**
+	 * 创建 WebClient 响应拦截器：在 Spring AI 解析响应之前拦截错误响应（4xx/5xx），
+	 * 提取 API 返回的真实错误信息并抛出有意义的异常，避免 MessageAggregator 解析失败导致错误信息丢失。
+	 * 对于正常响应（2xx），直接透传不影响流式处理。
+	 */
+	private org.springframework.web.reactive.function.client.ExchangeFilterFunction createErrorResponseInterceptor() {
+		return org.springframework.web.reactive.function.client.ExchangeFilterFunction.ofResponseProcessor(
+				clientResponse -> {
+					if (clientResponse.statusCode().isError()) {
+						return clientResponse.bodyToMono(String.class)
+								.defaultIfEmpty("")
+								.flatMap(errorBody -> {
+									log.error("LLM API error response: status={}, body={}",
+											clientResponse.statusCode(), errorBody);
+									return Mono.error(WebClientResponseException.create(
+											clientResponse.statusCode().value(),
+											clientResponse.statusCode().toString(),
+											clientResponse.headers().asHttpHeaders(),
+											errorBody.getBytes(),
+											java.nio.charset.StandardCharsets.UTF_8));
+								});
+					}
+					return Mono.just(clientResponse);
+				});
+	}
+
+	/**
 	 * 创建自定义重试模板，支持 429 (Too Many Requests) 和其他可重试错误
 	 */
 	private RetryTemplate createRetryTemplate() {
@@ -211,6 +241,7 @@ public class DynamicModelFactory {
 				.maxAttempts(maxAttempts)
 				.exponentialBackoff(initialInterval, multiplier, maxInterval)
 				.retryOn(WebClientResponseException.TooManyRequests.class)
+				.retryOn(WebClientResponseException.BadRequest.class)
 				.retryOn(WebClientResponseException.ServiceUnavailable.class)
 				.retryOn(WebClientResponseException.GatewayTimeout.class)
 				.retryOn(WebClientResponseException.InternalServerError.class)
@@ -224,6 +255,10 @@ public class DynamicModelFactory {
 							log.warn("LLM API rate limit (429), retrying attempt {}, backoff: {} ms",
 									context.getRetryCount() + 1,
 									initialInterval * (long) Math.pow(multiplier, context.getRetryCount()));
+						} else if (throwable instanceof WebClientResponseException.BadRequest) {
+							log.warn("LLM API bad request (400), retrying attempt {}: {}",
+									context.getRetryCount() + 1,
+									((WebClientResponseException) throwable).getResponseBodyAsString());
 						} else {
 							log.warn("LLM API call failed, retrying attempt {}: {}",
 									context.getRetryCount() + 1, throwable.getMessage());
