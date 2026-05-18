@@ -16,6 +16,7 @@ INSERT INTO sys_user_role (user_id, role_id)
 SELECT u.id, r.id FROM sys_user u, sys_role r WHERE u.username = 'admin' AND r.role_key = 'SUPER_ADMIN';
 
 -- 菜单数据
+SET IDENTITY_INSERT sys_menu ON;
 INSERT INTO sys_menu (id, parent_id, menu_name, menu_type, path, component, icon, permission, sort_order) VALUES (1, 0, 'Agent管理', 'directory', '/agent', NULL, 'robot', NULL, 1);
 INSERT INTO sys_menu (id, parent_id, menu_name, menu_type, path, component, icon, permission, sort_order) VALUES (2, 0, '系统管理', 'directory', '/system', NULL, 'setting', NULL, 2);
 INSERT INTO sys_menu (id, parent_id, menu_name, menu_type, path, component, icon, permission, sort_order) VALUES (3, 0, '审计日志', 'directory', '/audit', NULL, 'document', NULL, 3);
@@ -42,6 +43,7 @@ INSERT INTO sys_menu (id, parent_id, menu_name, menu_type, path, component, icon
 INSERT INTO sys_menu (id, parent_id, menu_name, menu_type, path, component, icon, permission, sort_order) VALUES (2014, 202, '分配权限', 'button', NULL, NULL, NULL, 'system:role:assign-permission', 4);
 INSERT INTO sys_menu (id, parent_id, menu_name, menu_type, path, component, icon, permission, sort_order) VALUES (301, 3, '登录日志', 'menu', '/audit/login-log', 'audit/LoginLog', NULL, 'audit:login-log:list', 1);
 INSERT INTO sys_menu (id, parent_id, menu_name, menu_type, path, component, icon, permission, sort_order) VALUES (302, 3, '操作日志', 'menu', '/audit/operation-log', 'audit/OperationLog', NULL, 'audit:operation-log:list', 2);
+SET IDENTITY_INSERT sys_menu OFF;
 
 -- 权限标识
 INSERT INTO sys_permission (permission_name, permission_key, description, resource_type) VALUES ('查看Agent列表', 'agent:list', '查看Agent列表', 'agent');

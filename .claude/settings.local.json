@@ -41,7 +41,16 @@
       "Bash(git commit:*)",
       "Bash(python3:*)",
       "Bash(npm run:*)",
-      "Bash(mvn compile:*)"
+      "Bash(mvn compile:*)",
+      "Skill(git-commit-push)",
+      "Bash(git checkout *)",
+      "Bash(./mvnw -B clean compile -DskipTests=true -pl data-agent-management)",
+      "Bash(./mvnw test *)",
+      "Bash(./mvnw -B clean test -pl data-agent-management)",
+      "Bash(./mvnw -B clean compile -DskipTests=true)",
+      "Bash(./mvnw spring-javaformat:validate -pl data-agent-management)",
+      "Bash(./mvnw spring-javaformat:apply -pl data-agent-management)",
+      "Bash(git status *)"
     ]
   }
 }
