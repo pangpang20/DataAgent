@@ -23,7 +23,7 @@ INSERT INTO sys_menu (id, parent_id, menu_name, menu_type, path, component, icon
 INSERT INTO sys_menu (id, parent_id, menu_name, menu_type, path, component, icon, permission, sort_order) VALUES (101, 1, 'Agent列表', 'menu', '/agent/list', 'agent/List', NULL, 'agent:list', 1);
 INSERT INTO sys_menu (id, parent_id, menu_name, menu_type, path, component, icon, permission, sort_order) VALUES (102, 1, '创建Agent', 'menu', '/agent/create', 'agent/Create', NULL, 'agent:create', 2);
 INSERT INTO sys_menu (id, parent_id, menu_name, menu_type, path, component, icon, permission, sort_order) VALUES (103, 1, 'Agent详情', 'menu', '/agent/detail/:id', 'agent/Detail', NULL, 'agent:detail', 3);
-INSERT INTO sys_menu (id, parent_id, menu_name, menu_type, path, component, icon, permission, sort_order) VALUES (1001, 101, '编辑Agent', 'button', NULL, NULL, NULL, 'agent:edit', 1);
+INSERT INTO sys_menu (id, parent_id, menu_name, menu_type, path, component, icon, permission, sort_order) VALUES (1001, 101, '编辑Agent', 'button', NULL, NULL, NULL, 'agent:update', 1);
 INSERT INTO sys_menu (id, parent_id, menu_name, menu_type, path, component, icon, permission, sort_order) VALUES (1002, 101, '删除Agent', 'button', NULL, NULL, NULL, 'agent:delete', 2);
 INSERT INTO sys_menu (id, parent_id, menu_name, menu_type, path, component, icon, permission, sort_order) VALUES (1003, 101, '发布Agent', 'button', NULL, NULL, NULL, 'agent:publish', 3);
 INSERT INTO sys_menu (id, parent_id, menu_name, menu_type, path, component, icon, permission, sort_order) VALUES (1004, 101, 'API Key管理', 'button', NULL, NULL, NULL, 'agent:apikey', 4);
@@ -48,11 +48,13 @@ SET IDENTITY_INSERT sys_menu OFF;
 -- 权限标识
 INSERT INTO sys_permission (permission_name, permission_key, description, resource_type) VALUES ('查看Agent列表', 'agent:list', '查看Agent列表', 'agent');
 INSERT INTO sys_permission (permission_name, permission_key, description, resource_type) VALUES ('创建Agent', 'agent:create', '创建新Agent', 'agent');
-INSERT INTO sys_permission (permission_name, permission_key, description, resource_type) VALUES ('编辑Agent', 'agent:edit', '编辑Agent配置', 'agent');
+INSERT INTO sys_permission (permission_name, permission_key, description, resource_type) VALUES ('更新Agent', 'agent:update', '更新Agent配置', 'agent');
 INSERT INTO sys_permission (permission_name, permission_key, description, resource_type) VALUES ('删除Agent', 'agent:delete', '删除Agent', 'agent');
 INSERT INTO sys_permission (permission_name, permission_key, description, resource_type) VALUES ('发布Agent', 'agent:publish', '发布/下线Agent', 'agent');
 INSERT INTO sys_permission (permission_name, permission_key, description, resource_type) VALUES ('管理API Key', 'agent:apikey', '管理Agent的API Key', 'agent');
 INSERT INTO sys_permission (permission_name, permission_key, description, resource_type) VALUES ('查看Agent详情', 'agent:detail', '查看Agent详情和使用', 'agent');
+INSERT INTO sys_permission (permission_name, permission_key, description, resource_type) VALUES ('查询Agent', 'agent:query', '查询Agent详情', 'agent');
+INSERT INTO sys_permission (permission_name, permission_key, description, resource_type) VALUES ('Agent数据源管理', 'agent:datasource', '管理Agent数据源关联', 'agent');
 INSERT INTO sys_permission (permission_name, permission_key, description, resource_type) VALUES ('查看数据源列表', 'datasource:list', '查看数据源列表', 'datasource');
 INSERT INTO sys_permission (permission_name, permission_key, description, resource_type) VALUES ('创建数据源', 'datasource:create', '创建新数据源', 'datasource');
 INSERT INTO sys_permission (permission_name, permission_key, description, resource_type) VALUES ('编辑数据源', 'datasource:edit', '编辑数据源配置', 'datasource');
@@ -62,10 +64,15 @@ INSERT INTO sys_permission (permission_name, permission_key, description, resour
 INSERT INTO sys_permission (permission_name, permission_key, description, resource_type) VALUES ('创建知识', 'knowledge:create', '创建知识条目', 'knowledge');
 INSERT INTO sys_permission (permission_name, permission_key, description, resource_type) VALUES ('编辑知识', 'knowledge:edit', '编辑知识条目', 'knowledge');
 INSERT INTO sys_permission (permission_name, permission_key, description, resource_type) VALUES ('删除知识', 'knowledge:delete', '删除知识条目', 'knowledge');
+INSERT INTO sys_permission (permission_name, permission_key, description, resource_type) VALUES ('知识库管理', 'knowledge:manage', '知识库增删改查', 'knowledge');
+INSERT INTO sys_permission (permission_name, permission_key, description, resource_type) VALUES ('文件上传', 'file:upload', '上传文件', 'file');
+INSERT INTO sys_permission (permission_name, permission_key, description, resource_type) VALUES ('语义模型管理', 'semantic:model', '管理语义模型', 'semantic');
+INSERT INTO sys_permission (permission_name, permission_key, description, resource_type) VALUES ('Prompt配置', 'prompt:config', '管理Prompt配置', 'prompt');
 INSERT INTO sys_permission (permission_name, permission_key, description, resource_type) VALUES ('用户管理', 'system:user:*', '用户管理全部权限', 'system');
 INSERT INTO sys_permission (permission_name, permission_key, description, resource_type) VALUES ('角色管理', 'system:role:*', '角色管理全部权限', 'system');
 INSERT INTO sys_permission (permission_name, permission_key, description, resource_type) VALUES ('菜单管理', 'system:menu:*', '菜单管理全部权限', 'system');
 INSERT INTO sys_permission (permission_name, permission_key, description, resource_type) VALUES ('模型配置', 'system:model:*', '模型配置全部权限', 'system');
+INSERT INTO sys_permission (permission_name, permission_key, description, resource_type) VALUES ('日志查询', 'system:log', '查询系统日志', 'system');
 INSERT INTO sys_permission (permission_name, permission_key, description, resource_type) VALUES ('查看登录日志', 'audit:login-log:list', '查看登录日志', 'audit');
 INSERT INTO sys_permission (permission_name, permission_key, description, resource_type) VALUES ('查看操作日志', 'audit:operation-log:list', '查看操作日志', 'audit');
 

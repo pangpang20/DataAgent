@@ -37,7 +37,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/datasource")
 @AllArgsConstructor
-@PreAuthorize("hasAuthority('datasource:list')")
 public class DatasourceController {
 
 	private final DatasourceService datasourceService;
@@ -45,6 +44,7 @@ public class DatasourceController {
 	/**
 	 * Get all data source list
 	 */
+	@PreAuthorize("hasAuthority('datasource:list')")
 	@GetMapping
 	public ResponseEntity<List<Datasource>> getAllDatasource(
 			@RequestParam(value = "status", required = false) String status,
@@ -68,6 +68,7 @@ public class DatasourceController {
 	/**
 	 * Paginated query for datasources
 	 */
+	@PreAuthorize("hasAuthority('datasource:list')")
 	@PostMapping("/page")
 	public PageResponse<List<Datasource>> queryByPage(@Valid @RequestBody DatasourceQueryDTO queryDTO) {
 		PageResult<Datasource> pageResult = datasourceService.queryByConditionsWithPage(queryDTO);
@@ -78,6 +79,7 @@ public class DatasourceController {
 	/**
 	 * Get data source details by ID
 	 */
+	@PreAuthorize("hasAuthority('datasource:list')")
 	@GetMapping("/{id}")
 	public ResponseEntity<Datasource> getDatasourceById(@PathVariable(value = "id") Integer id) {
 		Datasource datasource = datasourceService.getDatasourceById(id);
@@ -89,6 +91,7 @@ public class DatasourceController {
 		}
 	}
 
+	@PreAuthorize("hasAuthority('datasource:list')")
 	@GetMapping("/{id}/tables")
 	public ResponseEntity<List<String>> getDatasourceTables(@PathVariable(value = "id") Integer id) throws Exception {
 		List<String> tables = datasourceService.getDatasourceTables(id);
@@ -98,6 +101,7 @@ public class DatasourceController {
 	/**
 	 * Create data source
 	 */
+	@PreAuthorize("hasAuthority('datasource:create')")
 	@PostMapping
 	public ResponseEntity<Datasource> createDatasource(@RequestBody @Valid Datasource datasource) {
 		Datasource created = datasourceService.createDatasource(datasource);
@@ -107,6 +111,7 @@ public class DatasourceController {
 	/**
 	 * Update data source
 	 */
+	@PreAuthorize("hasAuthority('datasource:edit')")
 	@PutMapping("/{id}")
 	public ResponseEntity<Datasource> updateDatasource(@PathVariable(value = "id") Integer id,
 			@RequestBody @Valid Datasource datasource) {
@@ -117,6 +122,7 @@ public class DatasourceController {
 	/**
 	 * Delete data source
 	 */
+	@PreAuthorize("hasAuthority('datasource:delete')")
 	@DeleteMapping("/{id}")
 	public ResponseEntity<ApiResponse> deleteDatasource(@PathVariable(value = "id") Integer id) {
 		datasourceService.deleteDatasource(id);
@@ -126,6 +132,7 @@ public class DatasourceController {
 	/**
 	 * Test data source connection
 	 */
+	@PreAuthorize("hasAuthority('datasource:test')")
 	@PostMapping("/{id}/test")
 	public ResponseEntity<ApiResponse> testConnection(@PathVariable(value = "id") Integer id) {
 		boolean success = datasourceService.testConnection(id);
@@ -136,6 +143,7 @@ public class DatasourceController {
 	/**
 	 * 获取数据源表的字段列表
 	 */
+	@PreAuthorize("hasAuthority('datasource:list')")
 	@GetMapping("/{id}/tables/{tableName}/columns")
 	public ApiResponse<List<String>> getTableColumns(@PathVariable(value = "id") Integer id,
 			@PathVariable(value = "tableName") String tableName) throws Exception {
@@ -146,6 +154,7 @@ public class DatasourceController {
 	/**
 	 * 获取数据源的逻辑外键列表
 	 */
+	@PreAuthorize("hasAuthority('datasource:list')")
 	@GetMapping("/{id}/logical-relations")
 	public ApiResponse<List<LogicalRelation>> getLogicalRelations(@PathVariable(value = "id") Integer datasourceId) {
 		List<LogicalRelation> logicalRelations = datasourceService.getLogicalRelations(datasourceId);
@@ -155,6 +164,7 @@ public class DatasourceController {
 	/**
 	 * 添加逻辑外键
 	 */
+	@PreAuthorize("hasAuthority('datasource:edit')")
 	@PostMapping("/{id}/logical-relations")
 	public ApiResponse<LogicalRelation> addLogicalRelation(@PathVariable(value = "id") Integer datasourceId,
 			@Valid @RequestBody CreateLogicalRelationDTO dto) {
@@ -174,6 +184,7 @@ public class DatasourceController {
 	/**
 	 * 更新逻辑外键
 	 */
+	@PreAuthorize("hasAuthority('datasource:edit')")
 	@PutMapping("/{id}/logical-relations/{relationId}")
 	public ApiResponse<LogicalRelation> updateLogicalRelation(@PathVariable(value = "id") Integer datasourceId,
 			@PathVariable(value = "relationId") Integer relationId, @RequestBody UpdateLogicalRelationDTO dto) {
@@ -193,6 +204,7 @@ public class DatasourceController {
 	/**
 	 * 删除逻辑外键
 	 */
+	@PreAuthorize("hasAuthority('datasource:delete')")
 	@DeleteMapping("/{id}/logical-relations/{relationId}")
 	public ApiResponse<Void> deleteLogicalRelation(@PathVariable(value = "id") Integer datasourceId,
 			@PathVariable(value = "relationId") Integer relationId) {
@@ -203,6 +215,7 @@ public class DatasourceController {
 	/**
 	 * 批量保存逻辑外键（替换现有的所有外键）
 	 */
+	@PreAuthorize("hasAuthority('datasource:edit')")
 	@PutMapping("/{id}/logical-relations")
 	public ApiResponse<List<LogicalRelation>> saveLogicalRelations(@PathVariable(value = "id") Integer datasourceId,
 			@RequestBody List<LogicalRelation> logicalRelations) {
