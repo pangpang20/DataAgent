@@ -28,6 +28,23 @@ server:
   # - 这两种情况都支持 IPv4 和 IPv6 客户端访问！
 
 # ============================================================================
+# JWT 认证配置（RBAC 权限模块）
+# ============================================================================
+dataagent:
+  jwt:
+    # JWT 签名密钥（生产环境务必修改，至少 32 个字符）
+    secret: ${JWT_SECRET:DataAgentDefaultSecretKey2024!@#$%^&*()_+AbCdEfGhIjKlMnOpQrStUvWxYz}
+    # Access Token 有效期（秒），默认 2 小时
+    access-token-expiration: ${JWT_ACCESS_EXPIRATION:7200}
+    # Refresh Token 有效期（秒），默认 7 天
+    refresh-token-expiration: ${JWT_REFRESH_EXPIRATION:604800}
+    # 记住我有效期（秒），默认 30 天
+    remember-me-expiration: ${JWT_REMEMBER_EXPIRATION:2592000}
+  cors:
+    # 允许的跨域来源（逗号分隔）
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:80}
+
+# ============================================================================
 # 数据库配置（必须配置）
 # ============================================================================
 # 重要说明：此数据库用于存储 DataAgent 的元数据（Agent 配置、会话记录、知识库等）
@@ -118,7 +135,23 @@ spring:
   #   达梦数据库：
   #     disql SYSDBA/SYSDBA@localhost:5236 < data-agent-management/src/main/resources/sql/dameng/schema.sql
   # 后续启动必须设置 mode: never，避免重复初始化导致数据丢失！
-  
+
+  # ============================================================================
+  # Redis 配置（RBAC Token 黑名单、验证码缓存）
+  # ============================================================================
+  data:
+    redis:
+      host: ${REDIS_HOST:127.0.0.1}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      database: 0
+      timeout: 3000ms
+      lettuce:
+        pool:
+          max-active: 20
+          max-idle: 10
+          min-idle: 5
+
   # ============================================================================
   # AI 配置
   # ============================================================================
@@ -372,6 +405,8 @@ logging:
     com.audaque.cloud.ai.dataagent.mapper.AgentMapper: DEBUG
     # 打印 AgentPresetQuestion 相关的 SQL 语句(排查排序问题)
     com.audaque.cloud.ai.dataagent.mapper.AgentPresetQuestionMapper: DEBUG
+    # Security 日志
+    org.springframework.security: info
     
     # 生产环境建议：
     # - root: WARN 或 INFO
