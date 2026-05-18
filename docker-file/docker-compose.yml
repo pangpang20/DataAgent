@@ -17,6 +17,22 @@
 # 如需使用达梦数据库，请使用：docker-compose -f docker-compose-dameng.yml up -d
 
 services:
+  # Redis（Token 黑名单、验证码缓存）
+  redis:
+    image: redis:7-alpine
+    container_name: data-agent-redis
+    command: redis-server --requirepass Audaque@123 --port 6379
+    ports:
+      - "6379:6379"
+    networks:
+      - app-network
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "redis-cli", "-a", "Audaque@123", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
   # MySQL数据库（元数据存储）
   mysql:
     image: mysql:8.0
@@ -55,6 +71,10 @@ services:
       - DATA_AGENT_DATASOURCE_USERNAME=root
       - DATA_AGENT_DATASOURCE_PASSWORD=root
       - AI_DASHSCOPE_API_KEY=${AI_DASHSCOPE_API_KEY}
+      # Redis 配置（RBAC Token 黑名单）
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=Audaque@123
       # 使用AI模拟模式执行Python代码（如果镜像无Python）
       # - SPRING_AI_ALIBABA_DATA_AGENT_CODE_EXECUTOR_CODE_POOL_EXECUTOR=AI_SIMULATION
       # 使用local模式（需要镜像内有Python3）
@@ -62,6 +82,8 @@ services:
     ports:
       - "18065:8065"
     depends_on:
+      redis:
+        condition: service_healthy
       mysql:
         condition: service_healthy
       mysql-data:
