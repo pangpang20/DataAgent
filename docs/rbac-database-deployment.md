@@ -87,11 +87,13 @@ disql <user>/<password>@<host>:<port> -f data-agent-management/src/main/resource
 
 ### Step 4: 验证部署
 
-执行以下 SQL 验证表和数据是否正确：
+根据实际数据库类型执行对应验证 SQL：
+
+**MySQL:**
 
 ```sql
 -- 检查表是否存在
-SELECT table_name FROM information_schema.tables WHERE table_name LIKE 'sys_%';
+SELECT table_name FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name LIKE 'sys_%';
 
 -- 检查预置角色
 SELECT * FROM sys_role;
@@ -100,10 +102,48 @@ SELECT * FROM sys_role;
 SELECT id, username, nickname, status FROM sys_user;
 
 -- 检查权限数据
-SELECT COUNT(*) FROM sys_permission;
+SELECT COUNT(*) AS permission_count FROM sys_permission;
 
 -- 检查菜单数据
-SELECT COUNT(*) FROM sys_menu;
+SELECT COUNT(*) AS menu_count FROM sys_menu;
+```
+
+**PostgreSQL:**
+
+```sql
+-- 检查表是否存在（PostgreSQL 表名默认小写）
+SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_name LIKE 'sys_%';
+
+-- 检查预置角色
+SELECT * FROM sys_role;
+
+-- 检查预置用户（默认密码: Admin@123456）
+SELECT id, username, nickname, status FROM sys_user;
+
+-- 检查权限数据
+SELECT COUNT(*) AS permission_count FROM sys_permission;
+
+-- 检查菜单数据
+SELECT COUNT(*) AS menu_count FROM sys_menu;
+```
+
+**达梦:**
+
+```sql
+-- 检查表是否存在
+SELECT TABLE_NAME FROM USER_TABLES WHERE TABLE_NAME LIKE 'SYS_%';
+
+-- 检查预置角色
+SELECT * FROM SYS_ROLE;
+
+-- 检查预置用户（默认密码: Admin@123456）
+SELECT ID, USERNAME, NICKNAME, STATUS FROM SYS_USER;
+
+-- 检查权限数据
+SELECT COUNT(*) AS PERMISSION_COUNT FROM SYS_PERMISSION;
+
+-- 检查菜单数据
+SELECT COUNT(*) AS MENU_COUNT FROM SYS_MENU;
 ```
 
 ## 预置数据说明
