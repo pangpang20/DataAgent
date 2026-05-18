@@ -242,7 +242,8 @@ public class DockerCodePoolExecutorService extends AbstractCodePoolExecutorServi
 					log.error("pull image {} error", properties.getImageName(), e);
 					throw new RuntimeException("Failed to pull Docker image: " + properties.getImageName(), e);
 				}
-			} else {
+			}
+			else {
 				log.info("Image {} found locally", properties.getImageName());
 			}
 

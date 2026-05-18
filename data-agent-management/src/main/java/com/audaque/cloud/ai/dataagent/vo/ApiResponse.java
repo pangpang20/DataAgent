@@ -27,35 +27,54 @@ public class ApiResponse<T> {
 
 	private boolean success;
 
+	private int code;
+
 	private String message;
 
 	private T data;
 
 	public ApiResponse(boolean success, String message) {
 		this.success = success;
+		this.code = success ? 200 : 500;
 		this.message = message;
 	}
 
 	public ApiResponse(boolean success, String message, T data) {
 		this.success = success;
+		this.code = success ? 200 : 500;
+		this.message = message;
+		this.data = data;
+	}
+
+	public ApiResponse(boolean success, int code, String message, T data) {
+		this.success = success;
+		this.code = code;
 		this.message = message;
 		this.data = data;
 	}
 
 	public static <T> ApiResponse<T> success(String message) {
-		return new ApiResponse<>(true, message);
+		return new ApiResponse<>(true, 200, message, null);
 	}
 
 	public static <T> ApiResponse<T> success(String message, T data) {
-		return new ApiResponse<>(true, message, data);
+		return new ApiResponse<>(true, 200, message, data);
 	}
 
 	public static <T> ApiResponse<T> error(String message) {
-		return new ApiResponse<>(false, message);
+		return new ApiResponse<>(false, 500, message, null);
 	}
 
 	public static <T> ApiResponse<T> error(String message, T data) {
-		return new ApiResponse<>(false, message, data);
+		return new ApiResponse<>(false, 500, message, data);
+	}
+
+	public static <T> ApiResponse<T> error(int code, String message) {
+		return new ApiResponse<>(false, code, message, null);
+	}
+
+	public static <T> ApiResponse<T> error(int code, String message, T data) {
+		return new ApiResponse<>(false, code, message, data);
 	}
 
 }

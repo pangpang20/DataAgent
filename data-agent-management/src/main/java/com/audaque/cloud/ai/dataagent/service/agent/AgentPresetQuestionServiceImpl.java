@@ -58,8 +58,8 @@ public class AgentPresetQuestionServiceImpl implements AgentPresetQuestionServic
 
 	@Override
 	public AgentPresetQuestion create(AgentPresetQuestion question) {
-		log.info("Creating preset question for agentId: {}, question: {}",
-				question.getAgentId(), question.getQuestion());
+		log.info("Creating preset question for agentId: {}, question: {}", question.getAgentId(),
+				question.getQuestion());
 
 		// Ensure default values
 		if (question.getSortOrder() == null) {
@@ -80,8 +80,8 @@ public class AgentPresetQuestionServiceImpl implements AgentPresetQuestionServic
 		question.setUpdateTime(now);
 
 		agentPresetQuestionMapper.insert(question);
-		log.info("Successfully created preset question with id: {} for agentId: {}",
-				question.getId(), question.getAgentId());
+		log.info("Successfully created preset question with id: {} for agentId: {}", question.getId(),
+				question.getAgentId());
 		return question;
 	}
 
@@ -125,7 +125,8 @@ public class AgentPresetQuestionServiceImpl implements AgentPresetQuestionServic
 				if (question.getSortOrder() == null) {
 					question.setSortOrder(i);
 					log.debug("Auto-assigned sortOrder={} for question at index {}", i, i);
-				} else {
+				}
+				else {
 					log.debug("Using provided sortOrder={} for question at index {}", question.getSortOrder(), i);
 				}
 
@@ -144,8 +145,8 @@ public class AgentPresetQuestionServiceImpl implements AgentPresetQuestionServic
 	@Override
 	public PageResult<AgentPresetQuestion> queryByConditionsWithPage(PresetQuestionQueryDTO queryDTO) {
 		log.info("Page query preset questions: agentId={}, pageNum={}, pageSize={}, keyword={}, isActive={}",
-				queryDTO.getAgentId(), queryDTO.getPageNum(), queryDTO.getPageSize(),
-				queryDTO.getKeyword(), queryDTO.getIsActive());
+				queryDTO.getAgentId(), queryDTO.getPageNum(), queryDTO.getPageSize(), queryDTO.getKeyword(),
+				queryDTO.getIsActive());
 
 		// Validate parameters
 		if (queryDTO.getAgentId() == null) {
@@ -155,8 +156,8 @@ public class AgentPresetQuestionServiceImpl implements AgentPresetQuestionServic
 
 		// Calculate offset
 		int offset = (queryDTO.getPageNum() - 1) * queryDTO.getPageSize();
-		log.debug("Calculated offset: {} (pageNum={}, pageSize={})",
-				offset, queryDTO.getPageNum(), queryDTO.getPageSize());
+		log.debug("Calculated offset: {} (pageNum={}, pageSize={})", offset, queryDTO.getPageNum(),
+				queryDTO.getPageSize());
 
 		// Query total count
 		Long total = agentPresetQuestionMapper.countByConditions(queryDTO);
@@ -171,8 +172,7 @@ public class AgentPresetQuestionServiceImpl implements AgentPresetQuestionServic
 			log.debug("Records order check:");
 			for (int i = 0; i < dataList.size(); i++) {
 				AgentPresetQuestion q = dataList.get(i);
-				log.debug("  [{}] id={}, sortOrder={}, question={}",
-						i, q.getId(), q.getSortOrder(),
+				log.debug("  [{}] id={}, sortOrder={}, question={}", i, q.getId(), q.getSortOrder(),
 						q.getQuestion().length() > 50 ? q.getQuestion().substring(0, 50) + "..." : q.getQuestion());
 			}
 		}
@@ -191,8 +191,8 @@ public class AgentPresetQuestionServiceImpl implements AgentPresetQuestionServic
 	@Override
 	@Transactional
 	public boolean batchDelete(BatchDeleteDTO deleteDTO) {
-		log.info("Batch deleting preset questions: agentId={}, count={}",
-				deleteDTO.getAgentId(), deleteDTO.getIds().size());
+		log.info("Batch deleting preset questions: agentId={}, count={}", deleteDTO.getAgentId(),
+				deleteDTO.getIds().size());
 
 		// Validate parameters
 		if (deleteDTO.getAgentId() == null || deleteDTO.getIds() == null || deleteDTO.getIds().isEmpty()) {
@@ -204,7 +204,8 @@ public class AgentPresetQuestionServiceImpl implements AgentPresetQuestionServic
 			int deletedCount = agentPresetQuestionMapper.batchDeleteByIds(deleteDTO.getAgentId(), deleteDTO.getIds());
 			log.info("Successfully deleted {} preset questions", deletedCount);
 			return deletedCount > 0;
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			log.error("Batch delete failed: agentId={}, error={}", deleteDTO.getAgentId(), e.getMessage(), e);
 			throw new RuntimeException("Batch delete failed: " + e.getMessage(), e);
 		}
@@ -228,14 +229,13 @@ public class AgentPresetQuestionServiceImpl implements AgentPresetQuestionServic
 		}
 
 		try {
-			int updatedCount = agentPresetQuestionMapper.batchUpdateStatus(
-					updateStatusDTO.getAgentId(),
-					updateStatusDTO.getIds(),
-					updateStatusDTO.getIsActive());
+			int updatedCount = agentPresetQuestionMapper.batchUpdateStatus(updateStatusDTO.getAgentId(),
+					updateStatusDTO.getIds(), updateStatusDTO.getIsActive());
 			log.info("Successfully updated {} preset questions status to {}", updatedCount,
 					updateStatusDTO.getIsActive());
 			return updatedCount > 0;
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			log.error("Batch update status failed: agentId={}, error={}", updateStatusDTO.getAgentId(), e.getMessage(),
 					e);
 			throw new RuntimeException("Batch update status failed: " + e.getMessage(), e);

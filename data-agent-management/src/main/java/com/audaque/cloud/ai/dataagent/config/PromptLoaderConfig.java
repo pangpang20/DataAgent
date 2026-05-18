@@ -24,8 +24,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Configuration;
 
 /**
- * Prompt加载器配置类
- * 在Spring容器启动时初始化PromptLoader的外部目录配置
+ * Prompt加载器配置类 在Spring容器启动时初始化PromptLoader的外部目录配置
  *
  */
 @Slf4j

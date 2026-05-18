@@ -28,24 +28,24 @@ import java.time.LocalDate;
 @EqualsAndHashCode(callSuper = true)
 public class ChatSessionQueryDTO extends BasePageQueryDTO {
 
-    /**
-     * Agent ID (required)
-     */
-    private Integer agentId;
+	/**
+	 * Agent ID (required)
+	 */
+	private Integer agentId;
 
-    /**
-     * Fuzzy search by title
-     */
-    private String keyword;
+	/**
+	 * Fuzzy search by title
+	 */
+	private String keyword;
 
-    /**
-     * Filter by start date (inclusive)
-     */
-    private LocalDate startDate;
+	/**
+	 * Filter by start date (inclusive)
+	 */
+	private LocalDate startDate;
 
-    /**
-     * Filter by end date (inclusive)
-     */
-    private LocalDate endDate;
+	/**
+	 * Filter by end date (inclusive)
+	 */
+	private LocalDate endDate;
 
 }

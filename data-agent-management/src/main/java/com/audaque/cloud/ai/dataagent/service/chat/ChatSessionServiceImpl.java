@@ -51,7 +51,8 @@ public class ChatSessionServiceImpl implements ChatSessionService {
 		ChatSession session = chatSessionMapper.selectBySessionId(sessionId);
 		if (session == null) {
 			log.warn("Session not found for sessionId: {}", sessionId);
-		} else {
+		}
+		else {
 			log.debug("Found session: {} for agentId: {}", sessionId, session.getAgentId());
 		}
 		return session;
@@ -137,8 +138,8 @@ public class ChatSessionServiceImpl implements ChatSessionService {
 	@Override
 	public PageResult<ChatSession> queryByConditionsWithPage(ChatSessionQueryDTO queryDTO) {
 		log.info("Page query sessions: agentId={}, pageNum={}, pageSize={}, keyword={}, startDate={}, endDate={}",
-				queryDTO.getAgentId(), queryDTO.getPageNum(), queryDTO.getPageSize(),
-				queryDTO.getKeyword(), queryDTO.getStartDate(), queryDTO.getEndDate());
+				queryDTO.getAgentId(), queryDTO.getPageNum(), queryDTO.getPageSize(), queryDTO.getKeyword(),
+				queryDTO.getStartDate(), queryDTO.getEndDate());
 
 		if (queryDTO.getAgentId() == null) {
 			throw new IllegalArgumentException("agentId cannot be null");
@@ -156,8 +157,8 @@ public class ChatSessionServiceImpl implements ChatSessionService {
 		pageResult.setPageSize(queryDTO.getPageSize());
 		pageResult.calculateTotalPages();
 
-		log.debug("Query completed: total={}, pages={}, returned {} records",
-				total, pageResult.getTotalPages(), dataList.size());
+		log.debug("Query completed: total={}, pages={}, returned {} records", total, pageResult.getTotalPages(),
+				dataList.size());
 
 		return pageResult;
 	}

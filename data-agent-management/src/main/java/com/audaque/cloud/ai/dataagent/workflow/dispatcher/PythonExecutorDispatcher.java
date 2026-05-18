@@ -50,7 +50,9 @@ public class PythonExecutorDispatcher implements EdgeAction {
 			log.error("Python Executor Node Error: {}", message);
 			int tries = StateUtil.getObjectValue(state, PYTHON_TRIES_COUNT, Integer.class, 0);
 			if (tries >= codeExecutorProperties.getPythonMaxTriesCount()) {
-				log.error("Python execution failed and exceeded maximum retry count (attempts: {}), workflow terminated", tries);
+				log.error(
+						"Python execution failed and exceeded maximum retry count (attempts: {}), workflow terminated",
+						tries);
 				return END;
 			}
 			else {

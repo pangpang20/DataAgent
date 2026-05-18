@@ -62,7 +62,8 @@ public class AiModelRegistry {
 							// 核心：基于新 Model 创建新 Client，彻底消除旧参数缓存
 							currentChatClient = ChatClient.builder(chatModel).build();
 						}
-					} catch (Exception e) {
+					}
+					catch (Exception e) {
 						log.error("Failed to initialize ChatClient: {}", e.getMessage(), e);
 					}
 
@@ -99,10 +100,12 @@ public class AiModelRegistry {
 							currentEmbeddingModel = modelFactory.createEmbeddingModel(config);
 							log.info("EmbeddingModel created successfully, dimensions: {}",
 									currentEmbeddingModel.dimensions());
-						} else {
+						}
+						else {
 							log.warn("No active Embedding model config found in database, will use default config");
 						}
-					} catch (Exception e) {
+					}
+					catch (Exception e) {
 						log.error("Exception occurred while initializing EmbeddingModel: {}", e.getMessage(), e);
 						log.debug("Exception stack trace: ", e);
 					}
@@ -118,7 +121,8 @@ public class AiModelRegistry {
 						currentEmbeddingModel = new DummyEmbeddingModel(defaultEmbeddingDimension);
 						log.debug("DummyEmbeddingModel creation completed, dimensions() returns: {}",
 								currentEmbeddingModel.dimensions());
-					} else {
+					}
+					else {
 						log.info(
 								"Using database configured Embedding model, dimensions: {}, this model will be used for Milvus collection schema",
 								currentEmbeddingModel.dimensions());

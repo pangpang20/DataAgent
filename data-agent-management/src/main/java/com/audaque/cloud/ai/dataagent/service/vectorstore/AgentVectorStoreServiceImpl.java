@@ -87,8 +87,8 @@ public class AgentVectorStoreServiceImpl implements AgentVectorStoreService {
 		this.dataAgentProperties = dataAgentProperties;
 		this.dynamicFilterService = dynamicFilterService;
 		this.milvusClient = milvusClient;
-		log.info("VectorStore type: {}, MilvusClient present: {}",
-				vectorStore.getClass().getSimpleName(), milvusClient.isPresent());
+		log.info("VectorStore type: {}, MilvusClient present: {}", vectorStore.getClass().getSimpleName(),
+				milvusClient.isPresent());
 		log.info("Milvus configuration - Collection: {}, Auto Flush: {}, Max Concurrency: {}, Delay: {}ms",
 				collectionName, flushAuto, flushMaxConcurrency, flushDelayMs);
 	}
@@ -97,17 +97,14 @@ public class AgentVectorStoreServiceImpl implements AgentVectorStoreService {
 	public List<Document> search(AgentSearchRequest searchRequest) {
 		log.info("=== Starting search operation ===");
 		log.info("Search parameters - agentId: {}, vectorType: {}, query: {}, topK: {}, similarityThreshold: {}",
-				searchRequest.getAgentId(),
-				searchRequest.getDocVectorType(),
-				searchRequest.getQuery(),
-				searchRequest.getTopK(),
-				searchRequest.getSimilarityThreshold());
+				searchRequest.getAgentId(), searchRequest.getDocVectorType(), searchRequest.getQuery(),
+				searchRequest.getTopK(), searchRequest.getSimilarityThreshold());
 
 		Assert.hasText(searchRequest.getAgentId(), "AgentId cannot be empty");
 		Assert.hasText(searchRequest.getDocVectorType(), "DocVectorType cannot be empty");
 
-		log.debug("Building dynamic filter for agentId: {}, vectorType: {}",
-				searchRequest.getAgentId(), searchRequest.getDocVectorType());
+		log.debug("Building dynamic filter for agentId: {}, vectorType: {}", searchRequest.getAgentId(),
+				searchRequest.getDocVectorType());
 		Filter.Expression filter = dynamicFilterService.buildDynamicFilter(searchRequest.getAgentId(),
 				searchRequest.getDocVectorType());
 
@@ -122,29 +119,27 @@ public class AgentVectorStoreServiceImpl implements AgentVectorStoreService {
 		log.debug("Dynamic filter built successfully: {}", filter);
 
 		HybridSearchRequest hybridRequest = HybridSearchRequest.builder()
-				.query(searchRequest.getQuery())
-				.topK(searchRequest.getTopK())
-				.similarityThreshold(searchRequest.getSimilarityThreshold())
-				.filterExpression(filter)
-				.build();
+			.query(searchRequest.getQuery())
+			.topK(searchRequest.getTopK())
+			.similarityThreshold(searchRequest.getSimilarityThreshold())
+			.filterExpression(filter)
+			.build();
 		log.debug("Hybrid search request built: {}", hybridRequest);
 
 		if (dataAgentProperties.getVectorStore().isEnableHybridSearch() && hybridRetrievalStrategy.isPresent()) {
-			log.info("Using hybrid search strategy for agentId: {}, vectorType: {}",
-					searchRequest.getAgentId(), searchRequest.getDocVectorType());
+			log.info("Using hybrid search strategy for agentId: {}, vectorType: {}", searchRequest.getAgentId(),
+					searchRequest.getDocVectorType());
 			List<Document> results = hybridRetrievalStrategy.get().retrieve(hybridRequest);
 			log.info("=== Search operation completed with hybrid search, found {} documents ===", results.size());
 			return results;
 		}
 		log.debug("Hybrid search is not enabled. use vector-search only");
-		log.debug("Executing vector similarity search with topK: {}, similarityThreshold: {}",
-				searchRequest.getTopK(), searchRequest.getSimilarityThreshold());
+		log.debug("Executing vector similarity search with topK: {}, similarityThreshold: {}", searchRequest.getTopK(),
+				searchRequest.getSimilarityThreshold());
 		List<Document> results = vectorStore.similaritySearch(hybridRequest.toVectorSearchRequest());
 		log.info("=== Search operation completed with vector search, found {} documents ===", results.size());
 		log.debug("Search results details - vectorType: {}, topK: {}, similarityThreshold: {}, actual count: {}",
-				searchRequest.getDocVectorType(),
-				searchRequest.getTopK(),
-				searchRequest.getSimilarityThreshold(),
+				searchRequest.getDocVectorType(), searchRequest.getTopK(), searchRequest.getSimilarityThreshold(),
 				results.size());
 		return results;
 
@@ -185,10 +180,8 @@ public class AgentVectorStoreServiceImpl implements AgentVectorStoreService {
 
 			// 详细日志：打印每个文档的关键信息
 			if (i == 0 || log.isDebugEnabled()) {
-				log.info("Document[{}] - id: {}, contentLength: {}, metadata keys: {}, vectorType: {}",
-						i,
-						document.getId(),
-						document.getText() != null ? document.getText().length() : 0,
+				log.info("Document[{}] - id: {}, contentLength: {}, metadata keys: {}, vectorType: {}", i,
+						document.getId(), document.getText() != null ? document.getText().length() : 0,
 						document.getMetadata().keySet(),
 						document.getMetadata().get(DocumentMetadataConstant.VECTOR_TYPE));
 
@@ -198,11 +191,13 @@ public class AgentVectorStoreServiceImpl implements AgentVectorStoreService {
 					String preview;
 					if (text.length() > 100) {
 						preview = text.substring(0, 50) + "..." + text.substring(text.length() - 50);
-					} else {
+					}
+					else {
 						preview = text;
 					}
 					log.info("Document[{}] - content preview: {}", i, preview);
-				} else {
+				}
+				else {
 					log.info("Document[{}] - content is empty", i);
 				}
 			}
@@ -223,25 +218,27 @@ public class AgentVectorStoreServiceImpl implements AgentVectorStoreService {
 			if (flushAuto) {
 				log.info("Auto flush is enabled, triggering async flush operation");
 				flushMilvusAsync();
-			} else {
-				log.info("Auto flush is disabled, documents inserted but not immediately searchable. " +
-						"Use manualFlush() API or enable auto flush for immediate availability.");
 			}
-		} catch (Exception e) {
+			else {
+				log.info("Auto flush is disabled, documents inserted but not immediately searchable. "
+						+ "Use manualFlush() API or enable auto flush for immediate availability.");
+			}
+		}
+		catch (Exception e) {
 			log.error("Failed to insert documents into Milvus: {}", e.getMessage(), e);
 			throw e;
 		}
 	}
 
 	/**
-	 * 手动触发 Milvus flush 操作
-	 * 当 auto flush 被禁用时，可以通过此方法手动执行 flush
+	 * 手动触发 Milvus flush 操作 当 auto flush 被禁用时，可以通过此方法手动执行 flush
 	 */
 	public void manualFlush() {
 		if (!flushAuto) {
 			log.info("Manual flush triggered, executing flush operation");
 			flushMilvus();
-		} else {
+		}
+		else {
 			log.info("Auto flush is enabled, manual flush not needed");
 		}
 	}
@@ -254,7 +251,8 @@ public class AgentVectorStoreServiceImpl implements AgentVectorStoreService {
 		try {
 			flushMilvus();
 			return CompletableFuture.completedFuture(null);
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			log.error("Async flush Milvus failed: {}", e.getMessage(), e);
 			return CompletableFuture.failedFuture(e);
 		}
@@ -272,12 +270,13 @@ public class AgentVectorStoreServiceImpl implements AgentVectorStoreService {
 		// 使用信号量控制并发 flush 操作，避免超出 Milvus 速率限制
 		try {
 			if (!flushSemaphore.tryAcquire(10, TimeUnit.SECONDS)) {
-				log.warn("Cannot acquire flush semaphore, timed out after 10 seconds. " +
-						"This may indicate high concurrent load or Milvus rate limiting. " +
-						"Consider enabling auto flush or reducing concurrent operations.");
+				log.warn("Cannot acquire flush semaphore, timed out after 10 seconds. "
+						+ "This may indicate high concurrent load or Milvus rate limiting. "
+						+ "Consider enabling auto flush or reducing concurrent operations.");
 				return;
 			}
-		} catch (InterruptedException e) {
+		}
+		catch (InterruptedException e) {
 			log.warn("Acquiring flush semaphore interrupted: {}", e.getMessage());
 			Thread.currentThread().interrupt();
 			return;
@@ -288,7 +287,8 @@ public class AgentVectorStoreServiceImpl implements AgentVectorStoreService {
 			try {
 				log.debug("Waiting {} ms before flush operation to avoid rate limiting", flushDelayMs);
 				Thread.sleep(flushDelayMs);
-			} catch (InterruptedException e) {
+			}
+			catch (InterruptedException e) {
 				log.warn("Initial delay wait interrupted: {}", e.getMessage());
 				Thread.currentThread().interrupt(); // 重新设置中断状态
 				return;
@@ -299,18 +299,18 @@ public class AgentVectorStoreServiceImpl implements AgentVectorStoreService {
 			int backoffMs = flushInitialBackoffMs;
 			while (attempt < flushRetryCount) {
 				try {
-					FlushParam flushParam = FlushParam.newBuilder()
-							.addCollectionName(collectionName)
-							.build();
+					FlushParam flushParam = FlushParam.newBuilder().addCollectionName(collectionName).build();
 					R<FlushResponse> response = milvusClient.get().flush(flushParam);
 					if (response.getStatus() == R.Status.Success.getCode()) {
 						log.info("Milvus flush successful, collection: {}, attempt: {}", collectionName, attempt + 1);
 						return; // 成功则直接返回
-					} else {
+					}
+					else {
 						log.warn("Milvus flush returned non-success status: {}, message: {}, attempt: {}",
 								response.getStatus(), response.getMessage(), attempt + 1);
 					}
-				} catch (Exception e) {
+				}
+				catch (Exception e) {
 					String errorMessage = e.getMessage();
 					if (errorMessage != null && errorMessage.contains("rate limit exceeded")) {
 						log.warn("Rate limit error detected, waiting longer before retry: {}", errorMessage);
@@ -326,7 +326,8 @@ public class AgentVectorStoreServiceImpl implements AgentVectorStoreService {
 						log.debug("Waiting {} ms before retry attempt {}", backoffMs, attempt + 1);
 						Thread.sleep(backoffMs);
 						backoffMs = (int) (backoffMs * 2.5); // 更激进的指数退避（从2倍改为2.5倍）
-					} catch (InterruptedException ie) {
+					}
+					catch (InterruptedException ie) {
 						log.warn("Flush retry wait interrupted: {}", ie.getMessage());
 						Thread.currentThread().interrupt(); // 重新设置中断状态
 						return;
@@ -335,7 +336,8 @@ public class AgentVectorStoreServiceImpl implements AgentVectorStoreService {
 			}
 
 			log.error("Milvus flush reached maximum retry count {}, operation failed", flushRetryCount);
-		} finally {
+		}
+		finally {
 			// 释放信号量
 			flushSemaphore.release();
 		}
@@ -359,7 +361,8 @@ public class AgentVectorStoreServiceImpl implements AgentVectorStoreService {
 			log.info("Using SimpleVectorStore, proceeding with batch deletion by filter");
 			// 目前SimpleVectorStore不支持通过元数据删除，使用会抛出UnsupportedOperationException,现在是通过id删除
 			batchDelDocumentsWithFilter(filterExpression);
-		} else {
+		}
+		else {
 			log.info("Using vectorStore.delete() with filter expression");
 			vectorStore.delete(filterExpression);
 		}
@@ -386,11 +389,11 @@ public class AgentVectorStoreServiceImpl implements AgentVectorStoreService {
 					dataAgentProperties.getVectorStore().getBatchDelTopkLimit());
 
 			batch = vectorStore.similaritySearch(org.springframework.ai.vectorstore.SearchRequest.builder()
-					.query(DEFAULT)// 使用默认的查询字符串，因为有的嵌入模型不支持空字符串
-					.filterExpression(filterExpression)
-					.similarityThreshold(0.0)// 设置最低相似度阈值以获取元数据匹配的所有文档
-					.topK(dataAgentProperties.getVectorStore().getBatchDelTopkLimit())
-					.build());
+				.query(DEFAULT)// 使用默认的查询字符串，因为有的嵌入模型不支持空字符串
+				.filterExpression(filterExpression)
+				.similarityThreshold(0.0)// 设置最低相似度阈值以获取元数据匹配的所有文档
+				.topK(dataAgentProperties.getVectorStore().getBatchDelTopkLimit())
+				.build());
 
 			log.debug("Batch #{} fetched {} documents", batchNumber, batch.size());
 
@@ -406,22 +409,22 @@ public class AgentVectorStoreServiceImpl implements AgentVectorStoreService {
 				}
 			}
 
-			log.debug("Batch #{} - {} new documents to delete, {} duplicates skipped",
-					batchNumber, newDocumentsCount, batch.size() - newDocumentsCount);
+			log.debug("Batch #{} - {} new documents to delete, {} duplicates skipped", batchNumber, newDocumentsCount,
+					batch.size() - newDocumentsCount);
 
 			// 删除这批新文档
 			if (!idsToDelete.isEmpty()) {
 				log.info("Deleting {} documents in batch #{}", idsToDelete.size(), batchNumber);
 				vectorStore.delete(idsToDelete);
 				totalDeleted += idsToDelete.size();
-				log.info("Batch #{} deletion completed, total deleted so far: {}",
-						batchNumber, totalDeleted);
+				log.info("Batch #{} deletion completed, total deleted so far: {}", batchNumber, totalDeleted);
 			}
 
-		} while (newDocumentsCount > 0); // 只有当获取到新文档时才继续循环
+		}
+		while (newDocumentsCount > 0); // 只有当获取到新文档时才继续循环
 
-		log.info("=== Batch delete completed - total {} documents deleted with filter: {} ===",
-				totalDeleted, filterExpression);
+		log.info("=== Batch delete completed - total {} documents deleted with filter: {} ===", totalDeleted,
+				filterExpression);
 	}
 
 	@Override
@@ -444,16 +447,16 @@ public class AgentVectorStoreServiceImpl implements AgentVectorStoreService {
 	public List<Document> getDocumentsForAgent(String agentId, String query, String vectorType, int topK,
 			double threshold) {
 		log.info("=== Starting getDocumentsForAgent with custom parameters ===");
-		log.info("Parameters - agentId: {}, query: {}, vectorType: {}, topK: {}, threshold: {}",
-				agentId, query, vectorType, topK, threshold);
+		log.info("Parameters - agentId: {}, query: {}, vectorType: {}, topK: {}, threshold: {}", agentId, query,
+				vectorType, topK, threshold);
 
 		AgentSearchRequest searchRequest = AgentSearchRequest.builder()
-				.agentId(agentId)
-				.docVectorType(vectorType)
-				.query(query)
-				.topK(topK) // 使用传入的参数
-				.similarityThreshold(threshold) // 使用传入的参数
-				.build();
+			.agentId(agentId)
+			.docVectorType(vectorType)
+			.query(query)
+			.topK(topK) // 使用传入的参数
+			.similarityThreshold(threshold) // 使用传入的参数
+			.build();
 		log.debug("Built search request: {}", searchRequest);
 
 		List<Document> result = search(searchRequest);
@@ -475,11 +478,11 @@ public class AgentVectorStoreServiceImpl implements AgentVectorStoreService {
 
 		log.debug("Building search request with query: '{}', topK: {}, similarityThreshold: 0.0", DEFAULT);
 		SearchRequest searchRequest = SearchRequest.builder()
-				.query(DEFAULT)
-				.topK(topK)
-				.filterExpression(filterExpression)
-				.similarityThreshold(0.0)
-				.build();
+			.query(DEFAULT)
+			.topK(topK)
+			.filterExpression(filterExpression)
+			.similarityThreshold(0.0)
+			.build();
 
 		log.debug("Executing similarity search with filter only");
 		List<Document> result = vectorStore.similaritySearch(searchRequest);
@@ -498,11 +501,11 @@ public class AgentVectorStoreServiceImpl implements AgentVectorStoreService {
 
 		log.debug("Executing similarity search with topK=1 to check document existence");
 		List<Document> docs = vectorStore.similaritySearch(org.springframework.ai.vectorstore.SearchRequest.builder()
-				.query(DEFAULT)// 使用默认的查询字符串，因为有的嵌入模型不支持空字符串
-				.filterExpression(filterExpression)
-				.topK(1) // 只获取1个文档
-				.similarityThreshold(0.0)
-				.build());
+			.query(DEFAULT)// 使用默认的查询字符串，因为有的嵌入模型不支持空字符串
+			.filterExpression(filterExpression)
+			.topK(1) // 只获取1个文档
+			.similarityThreshold(0.0)
+			.build());
 
 		boolean hasDocuments = !docs.isEmpty();
 		log.info("=== hasDocuments check completed for agentId: {}, result: {} ===", agentId, hasDocuments);

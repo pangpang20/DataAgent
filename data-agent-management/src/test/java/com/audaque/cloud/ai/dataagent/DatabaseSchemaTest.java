@@ -51,8 +51,7 @@ public class DatabaseSchemaTest {
 		// 查询数据表是否符合预期数量
 		Connection conn = null;
 		try {
-			conn = DriverManager.getConnection(
-					com.audaque.cloud.ai.dataagent.MySqlContainerConfiguration.getJdbcUrl(),
+			conn = DriverManager.getConnection(com.audaque.cloud.ai.dataagent.MySqlContainerConfiguration.getJdbcUrl(),
 					com.audaque.cloud.ai.dataagent.MySqlContainerConfiguration.USER_PWD,
 					com.audaque.cloud.ai.dataagent.MySqlContainerConfiguration.USER_PWD);
 			DatabaseMetaData metaData = conn.getMetaData();

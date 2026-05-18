@@ -76,7 +76,8 @@ public class DynamicFilterService {
 				}
 				else {
 					// 添加 ID 过滤
-					log.debug("Adding business term ID filter, total {} valid business term IDs", recalledBusinessKnowledgeIds.size());
+					log.debug("Adding business term ID filter, total {} valid business term IDs",
+							recalledBusinessKnowledgeIds.size());
 					conditions
 						.add(b.in(DocumentMetadataConstant.DB_BUSINESS_TERM_ID, recalledBusinessKnowledgeIds.toArray())
 							.build());
@@ -205,7 +206,8 @@ public class DynamicFilterService {
 	}
 
 	public static Filter.Expression buildFilterExpressionForSearchTables(String agentId, List<String> tableNames) {
-		log.debug("Building table search filter for agentId: {}, table count: {}", agentId, tableNames != null ? tableNames.size() : 0);
+		log.debug("Building table search filter for agentId: {}, table count: {}", agentId,
+				tableNames != null ? tableNames.size() : 0);
 		FilterExpressionBuilder b = new FilterExpressionBuilder();
 		List<Filter.Expression> conditions = new ArrayList<>();
 
@@ -229,7 +231,8 @@ public class DynamicFilterService {
 	}
 
 	public Filter.Expression buildFilterExpressionForSearchColumns(String agentId, List<String> upstreamTableNames) {
-		log.debug("Building column search filter for agentId: {}, upstream table count: {}", agentId, upstreamTableNames != null ? upstreamTableNames.size() : 0);
+		log.debug("Building column search filter for agentId: {}, upstream table count: {}", agentId,
+				upstreamTableNames != null ? upstreamTableNames.size() : 0);
 		if (upstreamTableNames == null || upstreamTableNames.isEmpty()) {
 			log.warn("Upstream table names list is empty. Returning empty filter signal.");
 			return null;

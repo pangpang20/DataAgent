@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS agent (
     api_key_enabled TINYINT DEFAULT 0 COMMENT 'API Key 是否启用：0-禁用，1-启用',
     prompt TEXT COMMENT '自定义Prompt配置',
     category VARCHAR(100) COMMENT '分类',
-    admin_id BIGINT COMMENT '管理员ID',
+    creator_id BIGINT COMMENT '创建者ID',
     tags TEXT COMMENT '标签，逗号分隔',
     create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
@@ -37,7 +37,7 @@ CREATE TABLE IF NOT EXISTS agent (
     INDEX idx_name (name),
     INDEX idx_status (status),
     INDEX idx_category (category),
-    INDEX idx_admin_id (admin_id),
+    INDEX idx_creator_id (creator_id),
     INDEX idx_is_deleted (is_deleted)
     ) ENGINE = InnoDB COMMENT = '智能体表';
 

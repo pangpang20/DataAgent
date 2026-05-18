@@ -71,8 +71,7 @@ public interface SemanticModelService {
 
 	/**
 	 * 从Excel文件导入语义模型
-	 * 
-	 * @param file    Excel文件
+	 * @param file Excel文件
 	 * @param agentId 智能体ID
 	 * @return 导入结果
 	 */
@@ -80,7 +79,6 @@ public interface SemanticModelService {
 
 	/**
 	 * Page query semantic models with filters
-	 * 
 	 * @param queryDTO query parameters
 	 * @return page result
 	 */
@@ -88,9 +86,8 @@ public interface SemanticModelService {
 
 	/**
 	 * Batch delete semantic models by ids
-	 * 
 	 * @param agentId agent id
-	 * @param ids     id list
+	 * @param ids id list
 	 * @return affected count
 	 */
 	int batchDelete(Long agentId, List<Long> ids);

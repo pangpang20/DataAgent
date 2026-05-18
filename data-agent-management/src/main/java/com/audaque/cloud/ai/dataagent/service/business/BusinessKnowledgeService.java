@@ -47,7 +47,6 @@ public interface BusinessKnowledgeService {
 
 	/**
 	 * Page query business knowledge with filters
-	 * 
 	 * @param queryDTO query parameters
 	 * @return page result
 	 */
@@ -55,18 +54,16 @@ public interface BusinessKnowledgeService {
 
 	/**
 	 * Batch delete business knowledge by ids (logical delete)
-	 * 
 	 * @param agentId agent id
-	 * @param ids     id list
+	 * @param ids id list
 	 * @return affected count
 	 */
 	int batchDelete(Long agentId, List<Long> ids);
 
 	/**
 	 * Batch update recall status for business knowledge
-	 * 
-	 * @param agentId  agent id
-	 * @param ids      id list
+	 * @param agentId agent id
+	 * @param ids id list
 	 * @param isRecall recall status (true: recall, false: cancel recall)
 	 * @return affected count
 	 */

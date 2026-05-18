@@ -77,31 +77,28 @@ class PythonExecuteNodeTest {
 		String base64Image = Base64.getEncoder().encodeToString(fakePngBytes);
 		String pythonOutput = String.format("{\"chart_image\":\"%s\",\"summary\":\"test summary\"}", base64Image);
 
-		state.updateState(Map.of(
-				PYTHON_GENERATE_NODE_OUTPUT, "import matplotlib; matplotlib.use('Agg')",
-				PYTHON_TRIES_COUNT, 0));
+		state.updateState(
+				Map.of(PYTHON_GENERATE_NODE_OUTPUT, "import matplotlib; matplotlib.use('Agg')", PYTHON_TRIES_COUNT, 0));
 
-		CodePoolExecutorService.TaskResponse successResponse = new CodePoolExecutorService.TaskResponse(
-				true, false, pythonOutput, "", null);
+		CodePoolExecutorService.TaskResponse successResponse = new CodePoolExecutorService.TaskResponse(true, false,
+				pythonOutput, "", null);
 		when(codePoolExecutor.runTask(any())).thenReturn(successResponse);
 
 		String expectedUrl = "/api/upload/data-agent/charts/chart_test.png";
 		when(fileStorageService.storeFile(any(byte[].class), anyString(), eq("charts")))
-				.thenReturn("data-agent/charts/chart_test.png");
-		when(fileStorageService.getFileUrl("data-agent/charts/chart_test.png"))
-				.thenReturn(expectedUrl);
+			.thenReturn("data-agent/charts/chart_test.png");
+		when(fileStorageService.getFileUrl("data-agent/charts/chart_test.png")).thenReturn(expectedUrl);
 
 		// Act
 		Map<String, Object> result = node.apply(state);
 
 		// Get the Flux and subscribe to trigger execution
 		Flux<GraphResponse<StreamingOutput>> flux = (Flux<GraphResponse<StreamingOutput>>) result
-				.get(PYTHON_EXECUTE_NODE_OUTPUT);
+			.get(PYTHON_EXECUTE_NODE_OUTPUT);
 
 		// Collect the done response (last element)
-		GraphResponse<StreamingOutput> doneResponse = flux
-				.filter(GraphResponse::isDone)
-				.blockLast(java.time.Duration.ofSeconds(5));
+		GraphResponse<StreamingOutput> doneResponse = flux.filter(GraphResponse::isDone)
+			.blockLast(java.time.Duration.ofSeconds(5));
 
 		assertNotNull(doneResponse, "Should have a DONE response");
 
@@ -131,27 +128,24 @@ class PythonExecuteNodeTest {
 		String base64Image = Base64.getEncoder().encodeToString(fakePngBytes);
 		String pythonOutput = String.format("{\"chart_image\":\"%s\",\"summary\":\"test\"}", base64Image);
 
-		state.updateState(Map.of(
-				PYTHON_GENERATE_NODE_OUTPUT, "print('hello')",
-				PYTHON_TRIES_COUNT, 0));
+		state.updateState(Map.of(PYTHON_GENERATE_NODE_OUTPUT, "print('hello')", PYTHON_TRIES_COUNT, 0));
 
-		CodePoolExecutorService.TaskResponse successResponse = new CodePoolExecutorService.TaskResponse(
-				true, false, pythonOutput, "", null);
+		CodePoolExecutorService.TaskResponse successResponse = new CodePoolExecutorService.TaskResponse(true, false,
+				pythonOutput, "", null);
 		when(codePoolExecutor.runTask(any())).thenReturn(successResponse);
 
 		// Storage throws exception
 		when(fileStorageService.storeFile(any(byte[].class), anyString(), anyString()))
-				.thenThrow(new RuntimeException("Disk full"));
+			.thenThrow(new RuntimeException("Disk full"));
 
 		// Act
 		Map<String, Object> result = node.apply(state);
 
 		Flux<GraphResponse<StreamingOutput>> flux = (Flux<GraphResponse<StreamingOutput>>) result
-				.get(PYTHON_EXECUTE_NODE_OUTPUT);
+			.get(PYTHON_EXECUTE_NODE_OUTPUT);
 
-		GraphResponse<StreamingOutput> doneResponse = flux
-				.filter(GraphResponse::isDone)
-				.blockLast(java.time.Duration.ofSeconds(5));
+		GraphResponse<StreamingOutput> doneResponse = flux.filter(GraphResponse::isDone)
+			.blockLast(java.time.Duration.ofSeconds(5));
 
 		assertNotNull(doneResponse);
 
@@ -172,23 +166,20 @@ class PythonExecuteNodeTest {
 		// Arrange
 		String pythonOutput = "{\"summary\":\"analysis complete\"}";
 
-		state.updateState(Map.of(
-				PYTHON_GENERATE_NODE_OUTPUT, "print('hello')",
-				PYTHON_TRIES_COUNT, 0));
+		state.updateState(Map.of(PYTHON_GENERATE_NODE_OUTPUT, "print('hello')", PYTHON_TRIES_COUNT, 0));
 
-		CodePoolExecutorService.TaskResponse successResponse = new CodePoolExecutorService.TaskResponse(
-				true, false, pythonOutput, "", null);
+		CodePoolExecutorService.TaskResponse successResponse = new CodePoolExecutorService.TaskResponse(true, false,
+				pythonOutput, "", null);
 		when(codePoolExecutor.runTask(any())).thenReturn(successResponse);
 
 		// Act
 		Map<String, Object> result = node.apply(state);
 
 		Flux<GraphResponse<StreamingOutput>> flux = (Flux<GraphResponse<StreamingOutput>>) result
-				.get(PYTHON_EXECUTE_NODE_OUTPUT);
+			.get(PYTHON_EXECUTE_NODE_OUTPUT);
 
-		GraphResponse<StreamingOutput> doneResponse = flux
-				.filter(GraphResponse::isDone)
-				.blockLast(java.time.Duration.ofSeconds(5));
+		GraphResponse<StreamingOutput> doneResponse = flux.filter(GraphResponse::isDone)
+			.blockLast(java.time.Duration.ofSeconds(5));
 
 		assertNotNull(doneResponse);
 

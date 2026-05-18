@@ -24,43 +24,41 @@ import org.springframework.stereotype.Component;
 @Component
 public class SqlDialectResolver {
 
-    private String platform;
+	private String platform;
 
-    private static String staticPlatform;
+	private static String staticPlatform;
 
-    @Value("${spring.datasource.platform:mysql}")
-    public void setPlatform(String platform) {
-        this.platform = platform;
-        staticPlatform = platform;
-    }
+	@Value("${spring.datasource.platform:mysql}")
+	public void setPlatform(String platform) {
+		this.platform = platform;
+		staticPlatform = platform;
+	}
 
-    /**
-     * 获取当前时间函数
-     */
-    public static String now() {
-        if ("dameng".equalsIgnoreCase(staticPlatform) || "dm".equalsIgnoreCase(staticPlatform)) {
-            return "SYSDATE";
-        }
-        return "NOW()";
-    }
+	/**
+	 * 获取当前时间函数
+	 */
+	public static String now() {
+		if ("dameng".equalsIgnoreCase(staticPlatform) || "dm".equalsIgnoreCase(staticPlatform)) {
+			return "SYSDATE";
+		}
+		return "NOW()";
+	}
 
-    /**
-     * 获取分页查询的 LIMIT 语法部分
-     * MySQL: LIMIT offset, size
-     * Dameng: LIMIT size OFFSET offset
-     */
-    public static String limit(int offset, int size) {
-        if ("dameng".equalsIgnoreCase(staticPlatform) || "dm".equalsIgnoreCase(staticPlatform)) {
-            return "LIMIT " + size + " OFFSET " + offset;
-        }
-        return "LIMIT " + offset + ", " + size;
-    }
+	/**
+	 * 获取分页查询的 LIMIT 语法部分 MySQL: LIMIT offset, size Dameng: LIMIT size OFFSET offset
+	 */
+	public static String limit(int offset, int size) {
+		if ("dameng".equalsIgnoreCase(staticPlatform) || "dm".equalsIgnoreCase(staticPlatform)) {
+			return "LIMIT " + size + " OFFSET " + offset;
+		}
+		return "LIMIT " + offset + ", " + size;
+	}
 
-    /**
-     * 判断是否为达梦数据库
-     */
-    public static boolean isDameng() {
-        return "dameng".equalsIgnoreCase(staticPlatform) || "dm".equalsIgnoreCase(staticPlatform);
-    }
+	/**
+	 * 判断是否为达梦数据库
+	 */
+	public static boolean isDameng() {
+		return "dameng".equalsIgnoreCase(staticPlatform) || "dm".equalsIgnoreCase(staticPlatform);
+	}
 
 }

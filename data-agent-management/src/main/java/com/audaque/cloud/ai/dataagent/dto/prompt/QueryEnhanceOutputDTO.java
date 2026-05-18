@@ -23,12 +23,11 @@ import lombok.NoArgsConstructor;
 import java.util.List;
 
 /**
- * 查询增强输出 DTO
- * 对应 query-enhancement.txt 模板的输出
+ * 查询增强输出 DTO 对应 query-enhancement.txt 模板的输出
  */
 @Data
 @NoArgsConstructor
-@JsonIgnoreProperties(ignoreUnknown = true)  // 忽略LLM返回的未知字段
+@JsonIgnoreProperties(ignoreUnknown = true) // 忽略LLM返回的未知字段
 public class QueryEnhanceOutputDTO {
 
 	// 经LLM重写后的 规范化查询

@@ -215,7 +215,8 @@ public class ReportGeneratorNode implements NodeAction {
 	/**
 	 * Builds analysis steps and data results description.
 	 */
-	private String buildAnalysisStepsAndData(Plan plan, HashMap<String, String> executionResults, String pythonExecuteResult) {
+	private String buildAnalysisStepsAndData(Plan plan, HashMap<String, String> executionResults,
+			String pythonExecuteResult) {
 		StringBuilder sb = new StringBuilder();
 		sb.append("## 数据执行结果\n");
 
@@ -259,8 +260,8 @@ public class ReportGeneratorNode implements NodeAction {
 				sb.append("### Python 分析结果\n");
 				try {
 					// Parse JSON to check for chart_image
-					com.fasterxml.jackson.databind.JsonNode jsonNode = 
-						new com.fasterxml.jackson.databind.ObjectMapper().readTree(pythonExecuteResult);
+					com.fasterxml.jackson.databind.JsonNode jsonNode = new com.fasterxml.jackson.databind.ObjectMapper()
+						.readTree(pythonExecuteResult);
 					if (jsonNode.has("chart_image")) {
 						String chartImage = jsonNode.get("chart_image").asText();
 						if (chartImage != null && !chartImage.isEmpty() && !chartImage.equals("null")) {

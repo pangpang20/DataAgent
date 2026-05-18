@@ -33,8 +33,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
- * DatabaseUtil 单元测试
- * 测试数据库工具类的核心功能，支持 MySQL 和达梦数据库
+ * DatabaseUtil 单元测试 测试数据库工具类的核心功能，支持 MySQL 和达梦数据库
  *
  */
 @ExtendWith(MockitoExtension.class)
@@ -58,7 +57,7 @@ class DatabaseUtilTest {
 	void testGetAgentDbConfigForMySQL() {
 		// Given
 		Integer agentId = Integer.valueOf(1);
-		
+
 		Datasource datasource = new Datasource();
 		datasource.setId(Integer.valueOf(100));
 		datasource.setName("test_datasource");
@@ -71,10 +70,8 @@ class DatabaseUtilTest {
 		dbConfig.setUrl("jdbc:mysql://localhost:3306/test_db");
 		dbConfig.setSchema("test_db");
 
-		when(agentDatasourceService.getCurrentAgentDatasource(agentId))
-			.thenReturn(agentDatasource);
-		when(datasourceService.getDbConfig(datasource))
-			.thenReturn(dbConfig);
+		when(agentDatasourceService.getCurrentAgentDatasource(agentId)).thenReturn(agentDatasource);
+		when(datasourceService.getDbConfig(datasource)).thenReturn(dbConfig);
 
 		// When
 		DbConfigBO result = databaseUtil.getAgentDbConfig(agentId);
@@ -93,7 +90,7 @@ class DatabaseUtilTest {
 	void testGetAgentDbConfigForDameng() {
 		// Given
 		Integer agentId = Integer.valueOf(2);
-		
+
 		Datasource datasource = new Datasource();
 		datasource.setId(Integer.valueOf(200));
 		datasource.setName("dameng_datasource");
@@ -106,10 +103,8 @@ class DatabaseUtilTest {
 		dbConfig.setUrl("jdbc:dm://localhost:5236");
 		dbConfig.setSchema("SYSDBA");
 
-		when(agentDatasourceService.getCurrentAgentDatasource(agentId))
-			.thenReturn(agentDatasource);
-		when(datasourceService.getDbConfig(datasource))
-			.thenReturn(dbConfig);
+		when(agentDatasourceService.getCurrentAgentDatasource(agentId)).thenReturn(agentDatasource);
+		when(datasourceService.getDbConfig(datasource)).thenReturn(dbConfig);
 
 		// When
 		DbConfigBO result = databaseUtil.getAgentDbConfig(agentId);
@@ -128,7 +123,7 @@ class DatabaseUtilTest {
 	void testGetAgentAccessor() {
 		// Given
 		Integer agentId = Integer.valueOf(1);
-		
+
 		Datasource datasource = new Datasource();
 		datasource.setId(Integer.valueOf(100));
 		datasource.setType("mysql");
@@ -141,12 +136,9 @@ class DatabaseUtilTest {
 
 		Accessor mockAccessor = mock(Accessor.class);
 
-		when(agentDatasourceService.getCurrentAgentDatasource(agentId))
-			.thenReturn(agentDatasource);
-		when(datasourceService.getDbConfig(datasource))
-			.thenReturn(dbConfig);
-		when(accessorFactory.getAccessorByDbConfig(dbConfig))
-			.thenReturn(mockAccessor);
+		when(agentDatasourceService.getCurrentAgentDatasource(agentId)).thenReturn(agentDatasource);
+		when(datasourceService.getDbConfig(datasource)).thenReturn(dbConfig);
+		when(accessorFactory.getAccessorByDbConfig(dbConfig)).thenReturn(mockAccessor);
 
 		// When
 		Accessor result = databaseUtil.getAgentAccessor(agentId);
@@ -163,7 +155,7 @@ class DatabaseUtilTest {
 	void testGetAgentDbConfigWithNoActiveDatasource() {
 		// Given
 		Integer agentId = Integer.valueOf(999);
-		
+
 		when(agentDatasourceService.getCurrentAgentDatasource(agentId))
 			.thenThrow(new RuntimeException("No active datasource found"));
 

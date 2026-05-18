@@ -26,34 +26,34 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 public class BusinessKnowledgeQueryDTO extends BasePageQueryDTO {
 
-    /**
-     * Agent ID (required)
-     */
-    private Long agentId;
+	/**
+	 * Agent ID (required)
+	 */
+	private Long agentId;
 
-    /**
-     * Fuzzy search by business term, description, or synonyms
-     */
-    private String keyword;
+	/**
+	 * Fuzzy search by business term, description, or synonyms
+	 */
+	private String keyword;
 
-    /**
-     * Filter by recall status: null-all, true-recalled, false-not recalled
-     */
-    private Boolean isRecall;
+	/**
+	 * Filter by recall status: null-all, true-recalled, false-not recalled
+	 */
+	private Boolean isRecall;
 
-    /**
-     * Filter by embedding status: PENDING, PROCESSING, COMPLETED, FAILED
-     */
-    private String embeddingStatus;
+	/**
+	 * Filter by embedding status: PENDING, PROCESSING, COMPLETED, FAILED
+	 */
+	private String embeddingStatus;
 
-    /**
-     * Date range filter - start
-     */
-    private String createTimeStart;
+	/**
+	 * Date range filter - start
+	 */
+	private String createTimeStart;
 
-    /**
-     * Date range filter - end
-     */
-    private String createTimeEnd;
+	/**
+	 * Date range filter - end
+	 */
+	private String createTimeEnd;
 
 }

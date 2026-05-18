@@ -111,7 +111,9 @@ public class SchemaServiceImpl implements SchemaService {
 			.map(doc -> (String) doc.getMetadata().getOrDefault("foreignKey", ""))
 			.flatMap(fk -> Arrays.stream(fk.split("、")))
 			.filter(StringUtils::isNotBlank)
-			.filter(fk -> fk.contains("=") && !fk.endsWith("=")) // 过滤掉 format 为 "TABLE.COLUMN=" 的不完整外键
+			.filter(fk -> fk.contains("=") && !fk.endsWith("=")) // 过滤掉 format 为
+																	// "TABLE.COLUMN="
+																	// 的不完整外键
 			.collect(Collectors.toSet());
 		schemaDTO.setForeignKeys(new ArrayList<>(foreignKeys));
 	}
@@ -254,7 +256,8 @@ public class SchemaServiceImpl implements SchemaService {
 			// 过滤掉空值，确保外键信息完整
 			if (StringUtils.isBlank(fk.getTable()) || StringUtils.isBlank(fk.getColumn())
 					|| StringUtils.isBlank(fk.getReferencedTable()) || StringUtils.isBlank(fk.getReferencedColumn())) {
-				log.warn("Skipping incomplete foreign key: table={}, column={}, referencedTable={}, referencedColumn={}",
+				log.warn(
+						"Skipping incomplete foreign key: table={}, column={}, referencedTable={}, referencedColumn={}",
 						fk.getTable(), fk.getColumn(), fk.getReferencedTable(), fk.getReferencedColumn());
 				continue;
 			}
@@ -469,7 +472,8 @@ public class SchemaServiceImpl implements SchemaService {
 			if (matcher.find()) {
 				schemaDTO.setName(matcher.group(1));
 				log.info("Extracted database name from URL: {}", schemaDTO.getName());
-			} else {
+			}
+			else {
 				log.warn("Failed to extract database name from URL: {}", dbConfig.getUrl());
 			}
 		}
@@ -490,8 +494,8 @@ public class SchemaServiceImpl implements SchemaService {
 	}
 
 	/**
-	 * Extract database name from SQL Server JDBC URL
-	 * Format: jdbc:sqlserver://host:port[;databaseName=xxx][;otherParams]
+	 * Extract database name from SQL Server JDBC URL Format:
+	 * jdbc:sqlserver://host:port[;databaseName=xxx][;otherParams]
 	 */
 	private String extractSqlServerDatabaseName(String url) {
 		if (url == null || url.isEmpty()) {

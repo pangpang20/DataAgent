@@ -24,43 +24,43 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * LLM返回的表选择结果
- * 用于解析fine selection的JSON响应
+ * LLM返回的表选择结果 用于解析fine selection的JSON响应
  */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class FineSelectionResult {
-    
-    /**
-     * 表名
-     */
-    @JsonProperty("table")
-    private String table;
-    
-    /**
-     * WHERE条件
-     */
-    @JsonProperty("where")
-    private String where;
-    
-    /**
-     * GROUP BY字段列表
-     */
-    @JsonProperty("group_by")
-    private List<String> groupBy;
-    
-    /**
-     * 聚合函数信息
-     */
-    @JsonProperty("agg")
-    private Map<String, Object> agg;
-    
-    /**
-     * 从结果中提取表名列表
-     * @return 表名列表
-     */
-    public List<String> extractTableNames() {
-        return List.of(table);
-    }
+
+	/**
+	 * 表名
+	 */
+	@JsonProperty("table")
+	private String table;
+
+	/**
+	 * WHERE条件
+	 */
+	@JsonProperty("where")
+	private String where;
+
+	/**
+	 * GROUP BY字段列表
+	 */
+	@JsonProperty("group_by")
+	private List<String> groupBy;
+
+	/**
+	 * 聚合函数信息
+	 */
+	@JsonProperty("agg")
+	private Map<String, Object> agg;
+
+	/**
+	 * 从结果中提取表名列表
+	 * @return 表名列表
+	 */
+	public List<String> extractTableNames() {
+		return List.of(table);
+	}
+
 }

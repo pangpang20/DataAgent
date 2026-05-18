@@ -27,6 +27,7 @@ import com.audaque.cloud.ai.dataagent.vo.PageResult;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.util.StringUtils;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -36,8 +37,8 @@ import java.util.List;
 @Slf4j
 @RestController
 @RequestMapping("/api/business-knowledge")
-@CrossOrigin(origins = "*")
 @AllArgsConstructor
+@PreAuthorize("hasAuthority('knowledge:manage')")
 public class BusinessKnowledgeController {
 
 	private final BusinessKnowledgeService businessKnowledgeService;
@@ -50,7 +51,8 @@ public class BusinessKnowledgeController {
 
 		if (StringUtils.hasText(keyword)) {
 			result = businessKnowledgeService.searchKnowledge(agentId, keyword);
-		} else {
+		}
+		else {
 			result = businessKnowledgeService.getKnowledge(agentId);
 		}
 		return ApiResponse.success("success list businessKnowledge", result);
@@ -105,7 +107,8 @@ public class BusinessKnowledgeController {
 		try {
 			businessKnowledgeService.refreshAllKnowledgeToVectorStore(agentId);
 			return ApiResponse.success("success refresh vector store");
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			log.error("Failed to refresh vector store for agentId: {}", agentId, e);
 			return ApiResponse.error("Failed to refresh vector store");
 		}
@@ -123,17 +126,19 @@ public class BusinessKnowledgeController {
 	@PostMapping("/page")
 	public PageResponse<List<BusinessKnowledgeVO>> queryByPage(@Valid @RequestBody BusinessKnowledgeQueryDTO queryDTO) {
 		try {
-			log.info("Page query request: agentId={}, pageNum={}, pageSize={}",
-					queryDTO.getAgentId(), queryDTO.getPageNum(), queryDTO.getPageSize());
+			log.info("Page query request: agentId={}, pageNum={}, pageSize={}", queryDTO.getAgentId(),
+					queryDTO.getPageNum(), queryDTO.getPageSize());
 
 			PageResult<BusinessKnowledgeVO> pageResult = businessKnowledgeService.queryByConditionsWithPage(queryDTO);
 
-			return PageResponse.success(pageResult.getData(), pageResult.getTotal(),
-					pageResult.getPageNum(), pageResult.getPageSize(), pageResult.getTotalPages());
-		} catch (IllegalArgumentException e) {
+			return PageResponse.success(pageResult.getData(), pageResult.getTotal(), pageResult.getPageNum(),
+					pageResult.getPageSize(), pageResult.getTotalPages());
+		}
+		catch (IllegalArgumentException e) {
 			log.error("Invalid query parameters: {}", e.getMessage());
 			return PageResponse.pageError("Invalid parameters: " + e.getMessage());
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			log.error("Error querying business knowledge page", e);
 			return PageResponse.pageError("Query failed: " + e.getMessage());
 		}
@@ -145,20 +150,22 @@ public class BusinessKnowledgeController {
 	@DeleteMapping("/batch")
 	public ApiResponse<Boolean> batchDelete(@Valid @RequestBody BatchDeleteDTO deleteDTO) {
 		try {
-			log.info("Batch delete request: agentId={}, count={}",
-					deleteDTO.getAgentId(), deleteDTO.getIds().size());
+			log.info("Batch delete request: agentId={}, count={}", deleteDTO.getAgentId(), deleteDTO.getIds().size());
 
 			int affected = businessKnowledgeService.batchDelete(deleteDTO.getAgentId(), deleteDTO.getIds());
 
 			if (affected > 0) {
 				return ApiResponse.success("Batch delete successful", true);
-			} else {
+			}
+			else {
 				return ApiResponse.error("No records deleted");
 			}
-		} catch (IllegalArgumentException e) {
+		}
+		catch (IllegalArgumentException e) {
 			log.error("Invalid batch delete parameters: {}", e.getMessage());
 			return ApiResponse.error("Invalid parameters: " + e.getMessage());
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			log.error("Error batch deleting business knowledge", e);
 			return ApiResponse.error("Batch delete failed: " + e.getMessage());
 		}
@@ -171,21 +178,24 @@ public class BusinessKnowledgeController {
 	public ApiResponse<Boolean> batchUpdateRecallStatus(@Valid @RequestBody BatchDeleteDTO requestDTO,
 			@RequestParam(value = "isRecall") Boolean isRecall) {
 		try {
-			log.info("Batch update recall status request: agentId={}, count={}, isRecall={}",
-					requestDTO.getAgentId(), requestDTO.getIds().size(), isRecall);
+			log.info("Batch update recall status request: agentId={}, count={}, isRecall={}", requestDTO.getAgentId(),
+					requestDTO.getIds().size(), isRecall);
 
-			int affected = businessKnowledgeService.batchUpdateRecallStatus(
-					requestDTO.getAgentId(), requestDTO.getIds(), isRecall);
+			int affected = businessKnowledgeService.batchUpdateRecallStatus(requestDTO.getAgentId(),
+					requestDTO.getIds(), isRecall);
 
 			if (affected > 0) {
 				return ApiResponse.success("Batch update recall status successful", true);
-			} else {
+			}
+			else {
 				return ApiResponse.error("No records updated");
 			}
-		} catch (IllegalArgumentException e) {
+		}
+		catch (IllegalArgumentException e) {
 			log.error("Invalid batch update recall parameters: {}", e.getMessage());
 			return ApiResponse.error("Invalid parameters: " + e.getMessage());
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			log.error("Error batch updating recall status", e);
 			return ApiResponse.error("Batch update recall status failed: " + e.getMessage());
 		}

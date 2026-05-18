@@ -70,7 +70,8 @@ class LocalFileStorageServiceImplTest {
 		assertTrue(Files.exists(storedFile));
 		try {
 			assertArrayEquals(data, Files.readAllBytes(storedFile));
-		} catch (IOException e) {
+		}
+		catch (IOException e) {
 			fail("Failed to read stored file: " + e.getMessage());
 		}
 	}

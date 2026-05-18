@@ -114,7 +114,6 @@ public interface DatasourceService {
 
 	/**
 	 * Page query datasources with filters
-	 * 
 	 * @param queryDTO query parameters
 	 * @return page result
 	 */

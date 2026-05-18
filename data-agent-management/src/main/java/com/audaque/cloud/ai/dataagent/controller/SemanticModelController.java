@@ -32,6 +32,7 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.util.StreamUtils;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -47,8 +48,8 @@ import java.util.List;
 @Slf4j
 @RestController
 @RequestMapping("/api/semantic-model")
-@CrossOrigin(origins = "*")
 @AllArgsConstructor
+@PreAuthorize("hasAuthority('semantic:model')")
 public class SemanticModelController {
 
 	private static final String TEMPLATE_FILE_NAME = "semantic_model_template.xlsx";
@@ -61,9 +62,11 @@ public class SemanticModelController {
 		List<SemanticModel> result;
 		if (keyword != null && !keyword.trim().isEmpty()) {
 			result = semanticModelService.search(keyword);
-		} else if (agentId != null) {
+		}
+		else if (agentId != null) {
 			result = semanticModelService.getByAgentId(agentId);
-		} else {
+		}
+		else {
 			result = semanticModelService.getAll();
 		}
 		return ApiResponse.success("success list semanticModel", result);
@@ -81,8 +84,8 @@ public class SemanticModelController {
 	@PostMapping("/page")
 	public PageResponse<List<SemanticModel>> queryByPage(@Valid @RequestBody SemanticModelQueryDTO queryDTO) {
 		PageResult<SemanticModel> pageResult = semanticModelService.queryByConditionsWithPage(queryDTO);
-		return PageResponse.success(pageResult.getData(), pageResult.getTotal(),
-				pageResult.getPageNum(), pageResult.getPageSize(), pageResult.getTotalPages());
+		return PageResponse.success(pageResult.getData(), pageResult.getTotal(), pageResult.getPageNum(),
+				pageResult.getPageSize(), pageResult.getTotalPages());
 	}
 
 	@PostMapping
@@ -90,7 +93,8 @@ public class SemanticModelController {
 		boolean success = semanticModelService.addSemanticModel(semanticModelAddDto);
 		if (success) {
 			return ApiResponse.success("Semantic model created successfully", true);
-		} else {
+		}
+		else {
 			return ApiResponse.error("Failed to create semantic model");
 		}
 	}
@@ -166,7 +170,8 @@ public class SemanticModelController {
 			headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
 			headers.setContentDispositionFormData("attachment", TEMPLATE_FILE_NAME);
 			return ResponseEntity.ok().headers(headers).body(template);
-		} catch (IOException e) {
+		}
+		catch (IOException e) {
 			log.error("读取Excel模板失败", e);
 			return ResponseEntity.internalServerError().build();
 		}
@@ -178,10 +183,12 @@ public class SemanticModelController {
 		try {
 			BatchImportResult result = semanticModelService.importFromExcel(file, agentId);
 			return ApiResponse.success("Excel导入完成", result);
-		} catch (IllegalArgumentException e) {
+		}
+		catch (IllegalArgumentException e) {
 			log.error("Excel导入失败: {}", e.getMessage());
 			return ApiResponse.error("Excel导入失败: " + e.getMessage());
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			log.error("Excel导入失败", e);
 			return ApiResponse.error("Excel导入失败: " + e.getMessage());
 		}

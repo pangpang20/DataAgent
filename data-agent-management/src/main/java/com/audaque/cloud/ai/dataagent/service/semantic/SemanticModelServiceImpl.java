@@ -96,18 +96,18 @@ public class SemanticModelServiceImpl implements SemanticModelService {
 
 		// 转换DTO为Entity
 		SemanticModel semanticModel = SemanticModel.builder()
-				.agentId(dto.getAgentId())
-				.datasourceId(datasourceId)
-				.tableName(dto.getTableName())
-				.columnName(dto.getColumnName())
-				.businessName(dto.getBusinessName())
-				.synonyms(dto.getSynonyms())
-				.businessDescription(dto.getBusinessDescription())
-				.columnComment(dto.getColumnComment())
-				.dataType(dto.getDataType())
-				.status(1) // 默认启用状态
-				.isDeleted(0) // 显式设置未删除状态
-				.build();
+			.agentId(dto.getAgentId())
+			.datasourceId(datasourceId)
+			.tableName(dto.getTableName())
+			.columnName(dto.getColumnName())
+			.businessName(dto.getBusinessName())
+			.synonyms(dto.getSynonyms())
+			.businessDescription(dto.getBusinessDescription())
+			.columnComment(dto.getColumnComment())
+			.dataType(dto.getDataType())
+			.status(1) // 默认启用状态
+			.isDeleted(0) // 显式设置未删除状态
+			.build();
 
 		// 保存到数据库
 		LocalDateTime now = LocalDateTime.now();
@@ -188,16 +188,17 @@ public class SemanticModelServiceImpl implements SemanticModelService {
 	@Override
 	public BatchImportResult batchImport(SemanticModelBatchImportDTO dto) {
 		BatchImportResult result = BatchImportResult.builder()
-				.total(dto.getItems().size())
-				.successCount(0)
-				.failCount(0)
-				.build();
+			.total(dto.getItems().size())
+			.successCount(0)
+			.failCount(0)
+			.build();
 
 		// 获取datasourceId
 		Integer datasourceId;
 		try {
 			datasourceId = findDatasourceIdByAgentId(dto.getAgentId());
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			log.error("Failed to get datasource ID: agentId={}", dto.getAgentId(), e);
 			result.setFailCount(dto.getItems().size());
 			result.addError("获取数据源ID失败: " + e.getMessage());
@@ -226,40 +227,39 @@ public class SemanticModelServiceImpl implements SemanticModelService {
 					syncSemanticModelToVectorStore(existing);
 
 					log.info("Updated semantic model: agentId={}, tableName={}, columnName={}", dto.getAgentId(),
-							item.getTableName(),
-							item.getColumnName());
-				} else {
+							item.getTableName(), item.getColumnName());
+				}
+				else {
 					// 插入新记录
 					SemanticModel newModel = SemanticModel.builder()
-							.agentId(dto.getAgentId().intValue())
-							.datasourceId(datasourceId)
-							.tableName(item.getTableName())
-							.columnName(item.getColumnName())
-							.businessName(item.getBusinessName())
-							.synonyms(item.getSynonyms())
-							.businessDescription(item.getBusinessDescription())
-							.columnComment(item.getColumnComment())
-							.dataType(item.getDataType())
-							.status(1) // 默认启用
-							.isDeleted(0) // 显式设置未删除状态
-							.createdTime(item.getCreateTime() != null ? item.getCreateTime() : LocalDateTime.now())
-							.updatedTime(LocalDateTime.now())
-							.build();
+						.agentId(dto.getAgentId().intValue())
+						.datasourceId(datasourceId)
+						.tableName(item.getTableName())
+						.columnName(item.getColumnName())
+						.businessName(item.getBusinessName())
+						.synonyms(item.getSynonyms())
+						.businessDescription(item.getBusinessDescription())
+						.columnComment(item.getColumnComment())
+						.dataType(item.getDataType())
+						.status(1) // 默认启用
+						.isDeleted(0) // 显式设置未删除状态
+						.createdTime(item.getCreateTime() != null ? item.getCreateTime() : LocalDateTime.now())
+						.updatedTime(LocalDateTime.now())
+						.build();
 					semanticModelMapper.insert(newModel);
 
 					// 同步到向量数据库
 					syncSemanticModelToVectorStore(newModel);
 
 					log.info("Inserted semantic model: agentId={}, tableName={}, columnName={}", dto.getAgentId(),
-							item.getTableName(),
-							item.getColumnName());
+							item.getTableName(), item.getColumnName());
 				}
 
 				result.setSuccessCount(result.getSuccessCount() + 1);
-			} catch (Exception e) {
+			}
+			catch (Exception e) {
 				log.error("Failed to import record {}: tableName={}, columnName={}", i + 1, item.getTableName(),
-						item.getColumnName(),
-						e);
+						item.getColumnName(), e);
 				result.setFailCount(result.getFailCount() + 1);
 				result.addError(String.format("第%d条记录失败 (%s.%s): %s", i + 1, item.getTableName(), item.getColumnName(),
 						e.getMessage()));
@@ -271,7 +271,6 @@ public class SemanticModelServiceImpl implements SemanticModelService {
 
 	/**
 	 * 同步语义模型到向量数据库
-	 * 
 	 * @param semanticModel 语义模型对象
 	 */
 	private void syncSemanticModelToVectorStore(SemanticModel semanticModel) {
@@ -284,18 +283,18 @@ public class SemanticModelServiceImpl implements SemanticModelService {
 
 			log.info(
 					"Successfully synced semantic model to vector store: id={}, agentId={}, tableName={}, columnName={}",
-					semanticModel.getId(), semanticModel.getAgentId(),
-					semanticModel.getTableName(), semanticModel.getColumnName());
-		} catch (Exception e) {
-			log.error("Failed to sync semantic model to vector store: id={}, agentId={}",
-					semanticModel.getId(), semanticModel.getAgentId(), e);
+					semanticModel.getId(), semanticModel.getAgentId(), semanticModel.getTableName(),
+					semanticModel.getColumnName());
+		}
+		catch (Exception e) {
+			log.error("Failed to sync semantic model to vector store: id={}, agentId={}", semanticModel.getId(),
+					semanticModel.getAgentId(), e);
 			// 不抛出异常，允许数据库操作成功但向量化失败
 		}
 	}
 
 	/**
 	 * 从向量数据库删除语义模型
-	 * 
 	 * @param semanticModel 语义模型对象
 	 */
 	private void deleteSemanticModelFromVectorStore(SemanticModel semanticModel) {
@@ -307,11 +306,12 @@ public class SemanticModelServiceImpl implements SemanticModelService {
 			// 从向量数据库删除
 			agentVectorStoreService.deleteDocumentsByMetedata(semanticModel.getAgentId().toString(), metadata);
 
-			log.info("Successfully deleted semantic model from vector store: id={}, agentId={}",
-					semanticModel.getId(), semanticModel.getAgentId());
-		} catch (Exception e) {
-			log.error("Failed to delete semantic model from vector store: id={}, agentId={}",
-					semanticModel.getId(), semanticModel.getAgentId(), e);
+			log.info("Successfully deleted semantic model from vector store: id={}, agentId={}", semanticModel.getId(),
+					semanticModel.getAgentId());
+		}
+		catch (Exception e) {
+			log.error("Failed to delete semantic model from vector store: id={}, agentId={}", semanticModel.getId(),
+					semanticModel.getAgentId(), e);
 			// 不抛出异常，允许关系数据库删除成功
 		}
 	}
@@ -326,18 +326,18 @@ public class SemanticModelServiceImpl implements SemanticModelService {
 
 			// 组装DTO
 			SemanticModelBatchImportDTO dto = SemanticModelBatchImportDTO.builder()
-					.agentId(agentId)
-					.items(items)
-					.build();
+				.agentId(agentId)
+				.items(items)
+				.build();
 
 			// 执行批量导入
 			BatchImportResult result = batchImport(dto);
 			log.info("Excel import completed: total={}, success={}, failed={}", result.getTotal(),
-					result.getSuccessCount(),
-					result.getFailCount());
+					result.getSuccessCount(), result.getFailCount());
 
 			return result;
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			log.error("Excel import failed", e);
 			BatchImportResult result = BatchImportResult.builder().total(0).successCount(0).failCount(0).build();
 			result.addError("Excel导入失败: " + e.getMessage());
@@ -347,8 +347,8 @@ public class SemanticModelServiceImpl implements SemanticModelService {
 
 	@Override
 	public PageResult<SemanticModel> queryByConditionsWithPage(SemanticModelQueryDTO queryDTO) {
-		log.info("Page query semantic models: agentId={}, pageNum={}, pageSize={}, keyword={}",
-				queryDTO.getAgentId(), queryDTO.getPageNum(), queryDTO.getPageSize(), queryDTO.getKeyword());
+		log.info("Page query semantic models: agentId={}, pageNum={}, pageSize={}, keyword={}", queryDTO.getAgentId(),
+				queryDTO.getPageNum(), queryDTO.getPageSize(), queryDTO.getKeyword());
 
 		if (queryDTO.getAgentId() == null) {
 			throw new IllegalArgumentException("agentId cannot be null");

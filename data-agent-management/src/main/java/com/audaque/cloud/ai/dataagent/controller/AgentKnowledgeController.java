@@ -26,6 +26,7 @@ import com.audaque.cloud.ai.dataagent.vo.PageResponse;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -36,8 +37,8 @@ import java.util.List;
 @Slf4j
 @RestController
 @RequestMapping("/api/agent-knowledge")
-@CrossOrigin(origins = "*")
 @AllArgsConstructor
+@PreAuthorize("hasAuthority('knowledge:manage')")
 public class AgentKnowledgeController {
 
 	private final AgentKnowledgeService agentKnowledgeService;

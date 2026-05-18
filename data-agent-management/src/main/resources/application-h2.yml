@@ -15,9 +15,11 @@ spring:
       schema-locations:
         - classpath:sql/h2/schema-h2.sql
         - classpath:sql/h2/product_schema-h2.sql
+        - classpath:sql/h2/schema_rbac.sql
       data-locations:
         - classpath:sql/h2/data-h2.sql
         - classpath:sql/h2/product_data-h2.sql
+        - classpath:sql/h2/data_rbac.sql
       continue-on-error: true
       separator: ;
       encoding: utf-8
@@ -68,9 +70,28 @@ mybatis:
     log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
 
 # 日志配置
+dataagent:
+  jwt:
+    secret: TestSecretKeyForH2Database2024!@#$%^&*()_+AbCdEfGhIjKlMnOpQrStUvWxYz
+    access-token-expiration: 7200
+    refresh-token-expiration: 604800
+    remember-me-expiration: 2592000
+
+spring:
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      database: 0
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration
+
 logging:
   level:
     com.audaque.cloud.ai.dataagent.service: debug
     com.audaque.cloud.ai.dataagent.workflow.node: debug
     com.alibaba.cloud.ai.mapper: debug
     org.springframework.jdbc: debug
+    org.springframework.security: debug

@@ -51,11 +51,11 @@ public class AccessorFactory {
 			throw new IllegalArgumentException("dbConfig cannot be null");
 		}
 		BizDataSourceTypeEnum typeEnum = Arrays.stream(BizDataSourceTypeEnum.values())
-				.filter(e -> e.getDialect().equalsIgnoreCase(dbConfig.getDialectType()))
-				.filter(e -> e.getProtocol().equalsIgnoreCase(dbConfig.getConnectionType()))
-				.findFirst()
-				.orElseThrow(() -> new IllegalStateException(
-						"no accessor registered for dialect: " + dbConfig.getDialectType()));
+			.filter(e -> e.getDialect().equalsIgnoreCase(dbConfig.getDialectType()))
+			.filter(e -> e.getProtocol().equalsIgnoreCase(dbConfig.getConnectionType()))
+			.findFirst()
+			.orElseThrow(() -> new IllegalStateException(
+					"no accessor registered for dialect: " + dbConfig.getDialectType()));
 		return getAccessorByDbTypeEnum(typeEnum);
 	}
 
@@ -66,16 +66,15 @@ public class AccessorFactory {
 
 	/**
 	 * 根据枚举类型查找对应的访问器（无缓存版本）
-	 * 
 	 * @param typeEnum 数据源类型枚举
 	 * @return 对应的访问器
 	 */
 	private Accessor findAccessorByTypeEnum(BizDataSourceTypeEnum typeEnum) {
 		return accessorMap.values()
-				.stream()
-				.filter(a -> a.supportedDataSourceType(typeEnum.getTypeName()))
-				.findFirst()
-				.orElseThrow(() -> new IllegalStateException("no accessor registered for dialect: " + typeEnum));
+			.stream()
+			.filter(a -> a.supportedDataSourceType(typeEnum.getTypeName()))
+			.findFirst()
+			.orElseThrow(() -> new IllegalStateException("no accessor registered for dialect: " + typeEnum));
 	}
 
 	public Accessor getAccessorByType(String type) {

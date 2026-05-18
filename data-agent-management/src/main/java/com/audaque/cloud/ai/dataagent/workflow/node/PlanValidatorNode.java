@@ -31,8 +31,8 @@ import java.util.Set;
 import static com.audaque.cloud.ai.dataagent.constant.Constant.*;
 
 /**
- * Plan validation node that validates the generated plan once after creation.
- * This avoids repeated validation in PlanExecutorNode for better performance.
+ * Plan validation node that validates the generated plan once after creation. This avoids
+ * repeated validation in PlanExecutorNode for better performance.
  */
 @Slf4j
 @Component
@@ -50,7 +50,8 @@ public class PlanValidatorNode implements NodeAction {
 		Plan plan;
 		try {
 			plan = PlanProcessUtil.getPlan(state);
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			log.error("Plan validation failed due to a parsing error.", e);
 			return buildValidationResult(state, false,
 					"Validation failed: The plan is not a valid JSON structure. Error: " + e.getMessage());
@@ -76,10 +77,7 @@ public class PlanValidatorNode implements NodeAction {
 		Boolean humanReviewEnabled = state.value(HUMAN_REVIEW_ENABLED, false);
 		if (Boolean.TRUE.equals(humanReviewEnabled)) {
 			log.info("Human review enabled: routing to human_feedback node");
-			return Map.of(
-					PLAN_VALIDATION_STATUS, true,
-					PLAN_NEXT_NODE, HUMAN_FEEDBACK_NODE,
-					PLAN_CURRENT_STEP, 1);
+			return Map.of(PLAN_VALIDATION_STATUS, true, PLAN_NEXT_NODE, HUMAN_FEEDBACK_NODE, PLAN_CURRENT_STEP, 1);
 		}
 
 		// 5. Plan is valid, proceed to first execution step
@@ -87,10 +85,7 @@ public class PlanValidatorNode implements NodeAction {
 		String firstTool = firstStep.getToolToUse();
 
 		log.info("Routing to first execution node: {}", firstTool);
-		return Map.of(
-				PLAN_VALIDATION_STATUS, true,
-				PLAN_NEXT_NODE, firstTool,
-				PLAN_CURRENT_STEP, 1);
+		return Map.of(PLAN_VALIDATION_STATUS, true, PLAN_NEXT_NODE, firstTool, PLAN_CURRENT_STEP, 1);
 	}
 
 	/**
@@ -102,7 +97,6 @@ public class PlanValidatorNode implements NodeAction {
 
 	/**
 	 * Validate a single execution step
-	 * 
 	 * @return error message if validation fails, null if validation passes
 	 */
 	private String validateExecutionStep(ExecutionStep step) {
@@ -149,13 +143,13 @@ public class PlanValidatorNode implements NodeAction {
 	private Map<String, Object> buildValidationResult(OverAllState state, boolean isValid, String errorMessage) {
 		if (isValid) {
 			return Map.of(PLAN_VALIDATION_STATUS, true);
-		} else {
+		}
+		else {
 			// When validation fails, increment the repair count here.
 			int repairCount = StateUtil.getObjectValue(state, PLAN_REPAIR_COUNT, Integer.class, 0);
-			return Map.of(
-					PLAN_VALIDATION_STATUS, false,
-					PLAN_VALIDATION_ERROR, errorMessage,
-					PLAN_REPAIR_COUNT, repairCount + 1);
+			return Map.of(PLAN_VALIDATION_STATUS, false, PLAN_VALIDATION_ERROR, errorMessage, PLAN_REPAIR_COUNT,
+					repairCount + 1);
 		}
 	}
+
 }

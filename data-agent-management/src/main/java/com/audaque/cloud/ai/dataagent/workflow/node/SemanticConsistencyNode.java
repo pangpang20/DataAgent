@@ -41,15 +41,11 @@ import static com.audaque.cloud.ai.dataagent.util.PlanProcessUtil.getCurrentExec
 import static com.audaque.cloud.ai.dataagent.prompt.PromptHelper.buildMixMacSqlDbPrompt;
 
 /**
- * Semantic consistency validation node that checks SQL query semantic
- * consistency.
+ * Semantic consistency validation node that checks SQL query semantic consistency.
  *
- * This node is responsible for: - Validating SQL query semantic consistency
- * against
- * schema and evidence - Providing validation results for query refinement -
- * Handling
- * validation failures with recommendations - Managing step progression in
- * execution plan
+ * This node is responsible for: - Validating SQL query semantic consistency against
+ * schema and evidence - Providing validation results for query refinement - Handling
+ * validation failures with recommendations - Managing step progression in execution plan
  *
  */
 @Slf4j
@@ -74,19 +70,19 @@ public class SemanticConsistencyNode implements NodeAction {
 		String sql = StateUtil.getStringValue(state, SQL_GENERATE_OUTPUT);
 		String userQuery = StateUtil.getCanonicalQuery(state);
 
-		log.debug("[SemanticConsistencyNode] Input SQL for validation: [{}], length: {}",
-				sql, sql != null ? sql.length() : 0);
-		log.debug("[SemanticConsistencyNode] Dialect: {}, UserQuery: {}, Evidence length: {}",
-				dialect, userQuery, evidence != null ? evidence.length() : 0);
+		log.debug("[SemanticConsistencyNode] Input SQL for validation: [{}], length: {}", sql,
+				sql != null ? sql.length() : 0);
+		log.debug("[SemanticConsistencyNode] Dialect: {}, UserQuery: {}, Evidence length: {}", dialect, userQuery,
+				evidence != null ? evidence.length() : 0);
 
 		SemanticConsistencyDTO semanticConsistencyDTO = SemanticConsistencyDTO.builder()
-				.dialect(dialect)
-				.sql(sql)
-				.executionDescription(getCurrentExecutionStepInstruction(state))
-				.schemaInfo(buildMixMacSqlDbPrompt(schemaDTO, true))
-				.userQuery(userQuery)
-				.evidence(evidence)
-				.build();
+			.dialect(dialect)
+			.sql(sql)
+			.executionDescription(getCurrentExecutionStepInstruction(state))
+			.schemaInfo(buildMixMacSqlDbPrompt(schemaDTO, true))
+			.userQuery(userQuery)
+			.evidence(evidence)
+			.build();
 		log.info("[SemanticConsistencyNode] Starting semantic consistency validation - SQL length: {}",
 				sql != null ? sql.length() : 0);
 		log.debug("[SemanticConsistencyNode] Execution description: {}", getCurrentExecutionStepInstruction(state));
@@ -111,9 +107,8 @@ public class SemanticConsistencyNode implements NodeAction {
 	}
 
 	/**
-	 * Parse validation result from LLM response (JSON format)
-	 * Extracts "is_passed" field from JSON response
-	 * 
+	 * Parse validation result from LLM response (JSON format) Extracts "is_passed" field
+	 * from JSON response
 	 * @param validationResult The raw validation result from LLM (JSON format)
 	 * @return true if passed, false otherwise
 	 */
@@ -149,18 +144,19 @@ public class SemanticConsistencyNode implements NodeAction {
 								rootNode.get("hallucinated_fields"));
 					}
 					if (rootNode.has("syntax_errors") && rootNode.get("syntax_errors").size() > 0) {
-						log.info("[SemanticConsistencyNode] Syntax errors: {}",
-								rootNode.get("syntax_errors"));
+						log.info("[SemanticConsistencyNode] Syntax errors: {}", rootNode.get("syntax_errors"));
 					}
 				}
 
 				return isPassed;
-			} else {
+			}
+			else {
 				log.warn("[SemanticConsistencyNode] JSON response missing 'is_passed' field, treating as failed");
 				log.warn("[SemanticConsistencyNode] Parsed JSON: {}", rootNode);
 				return false;
 			}
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			log.error("[SemanticConsistencyNode] Failed to parse JSON validation result, treating as failed", e);
 			log.error("[SemanticConsistencyNode] Raw content: {}",
 					jsonContent.length() > 500 ? jsonContent.substring(0, 500) + "..." : jsonContent);
@@ -171,9 +167,7 @@ public class SemanticConsistencyNode implements NodeAction {
 	}
 
 	/**
-	 * Legacy parsing method for backward compatibility
-	 * Only used when JSON parsing fails
-	 * 
+	 * Legacy parsing method for backward compatibility Only used when JSON parsing fails
 	 * @param validationResult The raw validation result
 	 * @return true if passed, false otherwise
 	 */
@@ -191,8 +185,8 @@ public class SemanticConsistencyNode implements NodeAction {
 			// But if it looks like SQL (contains SELECT, FROM, WHERE, etc.), treat as
 			// failed
 			if (containsSqlKeywords(validationResult)) {
-				log.warn("[SemanticConsistencyNode] Legacy check: Result contains 'PASS' but also SQL keywords, " +
-						"LLM returned SQL instead of validation result. Treating as failed.");
+				log.warn("[SemanticConsistencyNode] Legacy check: Result contains 'PASS' but also SQL keywords, "
+						+ "LLM returned SQL instead of validation result. Treating as failed.");
 				return false;
 			}
 
@@ -209,17 +203,13 @@ public class SemanticConsistencyNode implements NodeAction {
 
 	/**
 	 * Check if text contains SQL keywords
-	 * 
 	 * @param text Text to check
 	 * @return true if contains SQL keywords
 	 */
 	private boolean containsSqlKeywords(String text) {
 		String upperText = text.toUpperCase();
-		return upperText.contains("SELECT ") ||
-				upperText.contains(" FROM ") ||
-				upperText.contains(" WHERE ") ||
-				upperText.contains(" GROUP BY ") ||
-				upperText.contains(" ORDER BY ");
+		return upperText.contains("SELECT ") || upperText.contains(" FROM ") || upperText.contains(" WHERE ")
+				|| upperText.contains(" GROUP BY ") || upperText.contains(" ORDER BY ");
 	}
 
 	/**
@@ -228,7 +218,8 @@ public class SemanticConsistencyNode implements NodeAction {
 	private Map<String, Object> buildValidationResult(boolean passed, String validationResult) {
 		if (passed) {
 			return Map.of(SEMANTIC_CONSISTENCY_NODE_OUTPUT, true);
-		} else {
+		}
+		else {
 			return Map.of(SEMANTIC_CONSISTENCY_NODE_OUTPUT, false, SQL_REGENERATE_REASON,
 					SqlRetryDto.semantic(validationResult));
 		}

@@ -40,8 +40,8 @@ class ReportGeneratorNodeTest {
 		// Create node with null dependencies (not used by the tested method)
 		node = new ReportGeneratorNode(null, null, null);
 
-		buildAnalysisStepsAndDataMethod = ReportGeneratorNode.class.getDeclaredMethod(
-				"buildAnalysisStepsAndData", Plan.class, HashMap.class, String.class);
+		buildAnalysisStepsAndDataMethod = ReportGeneratorNode.class.getDeclaredMethod("buildAnalysisStepsAndData",
+				Plan.class, HashMap.class, String.class);
 		buildAnalysisStepsAndDataMethod.setAccessible(true);
 	}
 
@@ -74,8 +74,7 @@ class ReportGeneratorNodeTest {
 
 		String result = invokeBuildAnalysisStepsAndData(plan, executionResults, pythonResult);
 
-		assertTrue(result.contains("![分析图表](" + imageUrl + ")"),
-				"Should use URL directly without data URI prefix");
+		assertTrue(result.contains("![分析图表](" + imageUrl + ")"), "Should use URL directly without data URI prefix");
 		assertFalse(result.contains("data:image/png;base64,"), "Should not contain base64 prefix");
 		assertTrue(result.contains("分析完成"), "Should contain summary");
 	}
@@ -90,8 +89,7 @@ class ReportGeneratorNodeTest {
 
 		String result = invokeBuildAnalysisStepsAndData(plan, executionResults, pythonResult);
 
-		assertTrue(result.contains("![分析图表](" + imageUrl + ")"),
-				"Should use HTTP URL directly");
+		assertTrue(result.contains("![分析图表](" + imageUrl + ")"), "Should use HTTP URL directly");
 		assertFalse(result.contains("data:image/png;base64,"), "Should not contain base64 prefix");
 	}
 

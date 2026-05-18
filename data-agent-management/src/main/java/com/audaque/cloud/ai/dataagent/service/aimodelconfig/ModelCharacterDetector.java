@@ -25,27 +25,20 @@ import java.util.Set;
  *
  * 根据模型名称或提供商自动识别模型特征，用于自动路由到合适的提示词模式。
  *
- * 设计原则：
- * 1. 开源模型/本地部署模型 -> 使用简化提示词（lite prompt）
- * 2. 商业闭源模型 -> 使用完整提示词（full prompt）
+ * 设计原则： 1. 开源模型/本地部署模型 -> 使用简化提示词（lite prompt） 2. 商业闭源模型 -> 使用完整提示词（full prompt）
  *
- * 判定逻辑：
- * - 开源模型通常上下文有限、推理能力较弱，需要更多 few-shot 示例和简化结构
- * - 商业模型如 GPT-4、Claude 等上下文大、能力强，可使用完整提示词
+ * 判定逻辑： - 开源模型通常上下文有限、推理能力较弱，需要更多 few-shot 示例和简化结构 - 商业模型如 GPT-4、Claude
+ * 等上下文大、能力强，可使用完整提示词
  */
 @Slf4j
 @Component
 public class ModelCharacterDetector {
 
 	/**
-	 * 已知开源模型/本地部署模型的提供商列表
-	 * 这些提供商的模型通常：
-	 * 1. 上下文窗口有限
-	 * 2. 需要更多示例引导
-	 * 3. 对复杂指令遵循能力较弱
-	 * 
-	 * 注意：仅包含本地部署工具（如 Ollama、LocalAI 等），其他模型厂商（如 Qwen、GLM、Llama 等）
-	 * 虽然基于开源模型，但通常通过商业 API 提供服务，应归类为商业提供商。
+	 * 已知开源模型/本地部署模型的提供商列表 这些提供商的模型通常： 1. 上下文窗口有限 2. 需要更多示例引导 3. 对复杂指令遵循能力较弱
+	 *
+	 * 注意：仅包含本地部署工具（如 Ollama、LocalAI 等），其他模型厂商（如 Qwen、GLM、Llama 等） 虽然基于开源模型，但通常通过商业 API
+	 * 提供服务，应归类为商业提供商。
 	 */
 	private static final Set<String> OPEN_SOURCE_PROVIDERS = Set.of(
 			// Ollama（本地运行开源模型）
@@ -54,11 +47,9 @@ public class ModelCharacterDetector {
 			"localai", "vllm", "local");
 
 	/**
-	 * 已知开源模型/本地部署模型的模型名称关键词
-	 * 用于补充判断，特别是当提供商名称不标准时
-	 * 
-	 * 注意：仅包含本地部署工具相关的关键词，其他模型系列（如 Qwen、Llama、GLM 等）
-	 * 虽然模型本身开源，但通常通过商业 API 提供服务，不应在此列出。
+	 * 已知开源模型/本地部署模型的模型名称关键词 用于补充判断，特别是当提供商名称不标准时
+	 *
+	 * 注意：仅包含本地部署工具相关的关键词，其他模型系列（如 Qwen、Llama、GLM 等） 虽然模型本身开源，但通常通过商业 API 提供服务，不应在此列出。
 	 */
 	private static final Set<String> OPEN_SOURCE_MODEL_KEYWORDS = Set.of(
 			// Ollama 相关
@@ -69,16 +60,10 @@ public class ModelCharacterDetector {
 			"vllm");
 
 	/**
-	 * 已知商业闭源模型的提供商列表
-	 * 这些提供商的模型通常：
-	 * 1. 上下文窗口大
-	 * 2. 指令遵循能力强
-	 * 3. 不需要额外的 few-shot 示例
-	 * 
-	 * 包含：
-	 * - 国际大厂：OpenAI、Anthropic、Google、Microsoft
-	 * - 国内厂商：阿里通义、智谱 AI、深度求索、百川智能等
-	 * - 开源模型的商业 API 服务：Llama、Qwen、GLM 等通过云服务的 API
+	 * 已知商业闭源模型的提供商列表 这些提供商的模型通常： 1. 上下文窗口大 2. 指令遵循能力强 3. 不需要额外的 few-shot 示例
+	 *
+	 * 包含： - 国际大厂：OpenAI、Anthropic、Google、Microsoft - 国内厂商：阿里通义、智谱 AI、深度求索、百川智能等 - 开源模型的商业
+	 * API 服务：Llama、Qwen、GLM 等通过云服务的 API
 	 */
 	private static final Set<String> COMMERCIAL_PROVIDERS = Set.of(
 			// OpenAI
@@ -107,8 +92,7 @@ public class ModelCharacterDetector {
 			"chatglm", "chatglm2", "chatglm3");
 
 	/**
-	 * 已知商业闭源模型的模型名称关键词
-	 * 包含主流商业模型和开源模型的商业 API 服务
+	 * 已知商业闭源模型的模型名称关键词 包含主流商业模型和开源模型的商业 API 服务
 	 */
 	private static final Set<String> COMMERCIAL_MODEL_KEYWORDS = Set.of(
 			// GPT 系列
@@ -146,8 +130,7 @@ public class ModelCharacterDetector {
 
 	/**
 	 * 检测是否为开源模型/本地部署模型
-	 *
-	 * @param provider  模型提供商
+	 * @param provider 模型提供商
 	 * @param modelName 模型名称
 	 * @return true 如果是开源模型，需要轻量级提示词；false 如果是商业模型，可使用完整提示词
 	 */
@@ -188,8 +171,8 @@ public class ModelCharacterDetector {
 		}
 
 		// 4. 都无法匹配时，默认使用完整提示词（保守策略）
-		log.info("Unknown provider/model '{}'/ '{}', defaulting to full prompt (conservative strategy)",
-				provider, modelName);
+		log.info("Unknown provider/model '{}'/ '{}', defaulting to full prompt (conservative strategy)", provider,
+				modelName);
 		return false;
 	}
 
@@ -197,16 +180,16 @@ public class ModelCharacterDetector {
 	 * 检查提供商是否为已知开源提供商
 	 */
 	private boolean isOpenSourceProvider(String providerLower) {
-		return OPEN_SOURCE_PROVIDERS.contains(providerLower) ||
-				OPEN_SOURCE_PROVIDERS.stream().anyMatch(p -> providerLower.startsWith(p));
+		return OPEN_SOURCE_PROVIDERS.contains(providerLower)
+				|| OPEN_SOURCE_PROVIDERS.stream().anyMatch(p -> providerLower.startsWith(p));
 	}
 
 	/**
 	 * 检查提供商是否为已知商业提供商
 	 */
 	private boolean isCommercialProvider(String providerLower) {
-		return COMMERCIAL_PROVIDERS.contains(providerLower) ||
-				COMMERCIAL_PROVIDERS.stream().anyMatch(p -> providerLower.startsWith(p));
+		return COMMERCIAL_PROVIDERS.contains(providerLower)
+				|| COMMERCIAL_PROVIDERS.stream().anyMatch(p -> providerLower.startsWith(p));
 	}
 
 	/**

@@ -17,11 +17,11 @@ package com.audaque.cloud.ai.dataagent.dto.datasource;
 
 /**
  * SQL retry context with error type classification
- * 
- * @param reason         error reason description
- * @param semanticFail   indicates semantic consistency check failure
+ *
+ * @param reason error reason description
+ * @param semanticFail indicates semantic consistency check failure
  * @param sqlExecuteFail indicates SQL execution failure
- * @param errorType      specific error type: SYNTAX, SEMANTIC, EXECUTION
+ * @param errorType specific error type: SYNTAX, SEMANTIC, EXECUTION
  */
 public record SqlRetryDto(String reason, boolean semanticFail, boolean sqlExecuteFail, ErrorType errorType) {
 
@@ -29,10 +29,12 @@ public record SqlRetryDto(String reason, boolean semanticFail, boolean sqlExecut
 	 * Error type enumeration for fine-grained retry control
 	 */
 	public enum ErrorType {
+
 		SYNTAX, // SQL syntax error (e.g., LLM output format issues)
 		SEMANTIC, // Semantic consistency check failure
 		EXECUTION, // SQL execution error (e.g., non-existent fields, syntax conflicts)
 		UNKNOWN // Unknown or unclassified error
+
 	}
 
 	public static SqlRetryDto semantic(String reason) {

@@ -23,6 +23,7 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.http.codec.ServerSentEvent;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Sinks;
@@ -35,8 +36,8 @@ import static com.audaque.cloud.ai.dataagent.constant.Constant.STREAM_EVENT_ERRO
 @Slf4j
 @RestController
 @AllArgsConstructor
-@CrossOrigin(origins = "*")
 @RequestMapping("/api")
+@PreAuthorize("hasAuthority('agent:query')")
 public class GraphController {
 
 	private final GraphService graphService;

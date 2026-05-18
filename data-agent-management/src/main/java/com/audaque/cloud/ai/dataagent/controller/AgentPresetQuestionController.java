@@ -28,6 +28,7 @@ import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -35,8 +36,8 @@ import java.util.List;
 @Slf4j
 @RestController
 @RequestMapping("/api/agent")
-@CrossOrigin(origins = "*")
 @AllArgsConstructor
+@PreAuthorize("hasAuthority('agent:manage')")
 public class AgentPresetQuestionController {
 
 	private final AgentPresetQuestionService presetQuestionService;
@@ -49,7 +50,8 @@ public class AgentPresetQuestionController {
 		try {
 			List<AgentPresetQuestion> questions = presetQuestionService.findAllByAgentId(agentId);
 			return ResponseEntity.ok(questions);
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			log.error("Error getting preset questions for agent {}", agentId, e);
 			return ResponseEntity.internalServerError().build();
 		}
@@ -83,7 +85,8 @@ public class AgentPresetQuestionController {
 
 			presetQuestionService.batchSave(agentId, questions);
 			return ResponseEntity.ok(CommonResponseDTO.success("预设问题保存成功"));
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			log.error("Error saving preset questions for agent {}", agentId, e);
 			return ResponseEntity.internalServerError().body(CommonResponseDTO.error("保存预设问题失败: " + e.getMessage()));
 		}
@@ -98,7 +101,8 @@ public class AgentPresetQuestionController {
 		try {
 			presetQuestionService.deleteById(questionId);
 			return ResponseEntity.ok(CommonResponseDTO.success("预设问题删除成功"));
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			log.error("Error deleting preset question {} for agent {}", questionId, agentId, e);
 			return ResponseEntity.internalServerError().body(CommonResponseDTO.error("删除预设问题失败: " + e.getMessage()));
 		}
@@ -121,10 +125,12 @@ public class AgentPresetQuestionController {
 
 			return PageResponse.success(pageResult.getData(), pageResult.getTotal(), pageResult.getPageNum(),
 					pageResult.getPageSize(), pageResult.getTotalPages());
-		} catch (IllegalArgumentException e) {
+		}
+		catch (IllegalArgumentException e) {
 			log.error("Invalid query parameters for agent {}: {}", agentId, e.getMessage());
 			return PageResponse.pageError("Invalid parameters: " + e.getMessage());
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			log.error("Error querying preset questions page for agent {}", agentId, e);
 			return PageResponse.pageError("Query failed: " + e.getMessage());
 		}
@@ -146,17 +152,20 @@ public class AgentPresetQuestionController {
 
 			if (success) {
 				return ResponseEntity.ok(CommonResponseDTO.success("Batch delete successful"));
-			} else {
-				return ResponseEntity.internalServerError()
-						.body(CommonResponseDTO.error("Batch delete failed: no records deleted"));
 			}
-		} catch (IllegalArgumentException e) {
+			else {
+				return ResponseEntity.internalServerError()
+					.body(CommonResponseDTO.error("Batch delete failed: no records deleted"));
+			}
+		}
+		catch (IllegalArgumentException e) {
 			log.error("Invalid batch delete parameters for agent {}: {}", agentId, e.getMessage());
 			return ResponseEntity.badRequest().body(CommonResponseDTO.error("Invalid parameters: " + e.getMessage()));
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			log.error("Error batch deleting preset questions for agent {}", agentId, e);
 			return ResponseEntity.internalServerError()
-					.body(CommonResponseDTO.error("Batch delete failed: " + e.getMessage()));
+				.body(CommonResponseDTO.error("Batch delete failed: " + e.getMessage()));
 		}
 	}
 
@@ -178,17 +187,20 @@ public class AgentPresetQuestionController {
 			if (success) {
 				String action = updateStatusDTO.getIsActive() ? "enabled" : "disabled";
 				return ResponseEntity.ok(CommonResponseDTO.success("Batch " + action + " successful"));
-			} else {
-				return ResponseEntity.internalServerError()
-						.body(CommonResponseDTO.error("Batch update status failed: no records updated"));
 			}
-		} catch (IllegalArgumentException e) {
+			else {
+				return ResponseEntity.internalServerError()
+					.body(CommonResponseDTO.error("Batch update status failed: no records updated"));
+			}
+		}
+		catch (IllegalArgumentException e) {
 			log.error("Invalid batch update status parameters for agent {}: {}", agentId, e.getMessage());
 			return ResponseEntity.badRequest().body(CommonResponseDTO.error("Invalid parameters: " + e.getMessage()));
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			log.error("Error batch updating status for agent {}", agentId, e);
 			return ResponseEntity.internalServerError()
-					.body(CommonResponseDTO.error("Batch update status failed: " + e.getMessage()));
+				.body(CommonResponseDTO.error("Batch update status failed: " + e.getMessage()));
 		}
 	}
 

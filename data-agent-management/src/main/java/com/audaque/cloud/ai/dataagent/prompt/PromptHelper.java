@@ -43,10 +43,15 @@ public class PromptHelper {
 	 * Schema compression options
 	 */
 	public static class SchemaCompressionOptions {
+
 		private boolean removeDescription = false;
+
 		private boolean removeForeignKeys = false;
+
 		private boolean removeExamples = false;
+
 		private boolean enableSmartFilter = false;
+
 		private String executionDescription = null;
 
 		public static SchemaCompressionOptions none() {
@@ -84,11 +89,11 @@ public class PromptHelper {
 			this.removeExamples = remove;
 			return this;
 		}
+
 	}
 
 	/**
 	 * Clean quotes from string to avoid ST4 template parsing conflicts
-	 * 
 	 * @param str original string
 	 * @return cleaned string
 	 */
@@ -102,10 +107,8 @@ public class PromptHelper {
 
 	/**
 	 * Extract referenced table and column names from execution description
-	 * 
 	 * @param executionDescription the current execution step description
-	 * @return set of referenced entity names (table names and
-	 *         "tableName.columnName")
+	 * @return set of referenced entity names (table names and "tableName.columnName")
 	 */
 	private static Set<String> extractReferencedEntities(String executionDescription) {
 		if (StringUtils.isBlank(executionDescription)) {
@@ -162,7 +165,8 @@ public class PromptHelper {
 			log.debug("Extracted Chinese table reference: {}", entity);
 		}
 
-		// Pattern 5: English table names followed by Chinese '表' character (e.g., "ORDERS 表", "ORDER_ITEMS 表")
+		// Pattern 5: English table names followed by Chinese '表' character (e.g., "ORDERS
+		// 表", "ORDER_ITEMS 表")
 		Pattern englishTableWithChinesePattern = Pattern.compile("([A-Z][A-Z0-9_]*) 表");
 		Matcher englishTableWithChineseMatcher = englishTableWithChinesePattern.matcher(executionDescription);
 		while (englishTableWithChineseMatcher.find()) {
@@ -171,8 +175,8 @@ public class PromptHelper {
 			log.debug("Extracted English table name with Chinese suffix: {}", entity);
 		}
 
-		log.info("Extracted {} referenced entities from execution description: {}",
-				referencedEntities.size(), referencedEntities);
+		log.info("Extracted {} referenced entities from execution description: {}", referencedEntities.size(),
+				referencedEntities);
 		return referencedEntities;
 	}
 
@@ -180,16 +184,14 @@ public class PromptHelper {
 	 * Check if a word is a common SQL keyword
 	 */
 	private static boolean isSqlKeyword(String word) {
-		Set<String> keywords = Set.of("select", "where", "and", "or", "group", "order",
-				"having", "limit", "offset", "as", "on", "by", "in", "like", "between",
-				"sum", "count", "avg", "max", "min", "distinct", "all");
+		Set<String> keywords = Set.of("select", "where", "and", "or", "group", "order", "having", "limit", "offset",
+				"as", "on", "by", "in", "like", "between", "sum", "count", "avg", "max", "min", "distinct", "all");
 		return keywords.contains(word.toLowerCase());
 	}
 
 	/**
 	 * Filter schema based on referenced entities
-	 * 
-	 * @param schemaDTO          original schema
+	 * @param schemaDTO original schema
 	 * @param referencedEntities referenced entity names
 	 * @return filtered schema (creates a copy)
 	 */
@@ -199,8 +201,8 @@ public class PromptHelper {
 			return schemaDTO;
 		}
 
-		log.debug("Filtering schema with {} tables based on {} referenced entities",
-				schemaDTO.getTable().size(), referencedEntities.size());
+		log.debug("Filtering schema with {} tables based on {} referenced entities", schemaDTO.getTable().size(),
+				referencedEntities.size());
 
 		// Find all referenced tables (direct references)
 		Set<String> referencedTables = new HashSet<>();
@@ -215,8 +217,8 @@ public class PromptHelper {
 		// Add related tables via foreign keys
 		Set<String> relatedTables = findRelatedTablesByForeignKeys(schemaDTO, referencedTables);
 		referencedTables.addAll(relatedTables);
-		log.info("Total tables after foreign key expansion: {} (added {} related tables)",
-				referencedTables.size(), relatedTables.size());
+		log.info("Total tables after foreign key expansion: {} (added {} related tables)", referencedTables.size(),
+				relatedTables.size());
 
 		// Create filtered schema
 		SchemaDTO filteredSchema = new SchemaDTO();
@@ -228,8 +230,8 @@ public class PromptHelper {
 				// Filter columns within the table
 				TableDTO filteredTable = filterTableColumns(table, referencedEntities);
 				filteredTables.add(filteredTable);
-				log.debug("Included table: {} with {} columns",
-						filteredTable.getName(), filteredTable.getColumn().size());
+				log.debug("Included table: {} with {} columns", filteredTable.getName(),
+						filteredTable.getColumn().size());
 			}
 		}
 
@@ -239,9 +241,8 @@ public class PromptHelper {
 		List<String> filteredForeignKeys = filterForeignKeys(schemaDTO.getForeignKeys(), referencedTables);
 		filteredSchema.setForeignKeys(filteredForeignKeys);
 
-		log.info("Schema filtering completed: {} -> {} tables, {} -> {} foreign keys",
-				schemaDTO.getTable().size(), filteredTables.size(),
-				schemaDTO.getForeignKeys() != null ? schemaDTO.getForeignKeys().size() : 0,
+		log.info("Schema filtering completed: {} -> {} tables, {} -> {} foreign keys", schemaDTO.getTable().size(),
+				filteredTables.size(), schemaDTO.getForeignKeys() != null ? schemaDTO.getForeignKeys().size() : 0,
 				filteredForeignKeys.size());
 
 		return filteredSchema;
@@ -274,7 +275,8 @@ public class PromptHelper {
 			if (baseTables.contains(leftTable) && !baseTables.contains(rightTable)) {
 				relatedTables.add(rightTable);
 				log.debug("Added related table via foreign key: {} (from {})", rightTable, leftTable);
-			} else if (baseTables.contains(rightTable) && !baseTables.contains(leftTable)) {
+			}
+			else if (baseTables.contains(rightTable) && !baseTables.contains(leftTable)) {
 				relatedTables.add(leftTable);
 				log.debug("Added related table via foreign key: {} (from {})", leftTable, rightTable);
 			}
@@ -303,12 +305,10 @@ public class PromptHelper {
 			// 1. It's a primary key (always important)
 			// 2. It's explicitly referenced
 			// 3. No specific column references for this table (include all columns)
-			boolean isPrimaryKey = originalTable.getPrimaryKeys() != null &&
-					originalTable.getPrimaryKeys().contains(column.getName());
-			boolean isReferenced = referencedEntities.contains(columnLower) ||
-					referencedEntities.contains(fullName);
-			boolean hasTableLevelReference = referencedEntities.stream()
-					.noneMatch(e -> e.startsWith(tableLower + "."));
+			boolean isPrimaryKey = originalTable.getPrimaryKeys() != null
+					&& originalTable.getPrimaryKeys().contains(column.getName());
+			boolean isReferenced = referencedEntities.contains(columnLower) || referencedEntities.contains(fullName);
+			boolean hasTableLevelReference = referencedEntities.stream().noneMatch(e -> e.startsWith(tableLower + "."));
 
 			if (isPrimaryKey || isReferenced || hasTableLevelReference) {
 				filteredColumns.add(column);
@@ -358,8 +358,8 @@ public class PromptHelper {
 	}
 
 	public static String buildMixSelectorPrompt(String evidence, String question, SchemaDTO schemaDTO) {
-		log.debug("Building mix selector prompt - question: {}, tables count: {}",
-				question, schemaDTO != null ? schemaDTO.getTable().size() : 0);
+		log.debug("Building mix selector prompt - question: {}, tables count: {}", question,
+				schemaDTO != null ? schemaDTO.getTable().size() : 0);
 
 		// 构建 Schema 信息（会清理表名/列名中的引号）
 		String schemaInfo = buildMixMacSqlDbPrompt(schemaDTO, true);
@@ -373,7 +373,8 @@ public class PromptHelper {
 		if (StringUtils.isBlank(evidence)) {
 			params.put("evidence", "无");
 			log.debug("No evidence provided, using default value");
-		} else {
+		}
+		else {
 			params.put("evidence", evidence);
 			log.debug("Evidence provided, length: {} chars", evidence.length());
 		}
@@ -391,37 +392,39 @@ public class PromptHelper {
 
 	/**
 	 * Build schema information with compression options
-	 * 
-	 * @param schemaDTO          schema data
-	 * @param withColumnType     whether to include column types
+	 * @param schemaDTO schema data
+	 * @param withColumnType whether to include column types
 	 * @param compressionOptions compression options
 	 * @return formatted schema string
 	 */
 	public static String buildMixMacSqlDbPrompt(SchemaDTO schemaDTO, Boolean withColumnType,
 			SchemaCompressionOptions compressionOptions) {
 		log.debug("Building schema prompt - DB: {}, tables: {}, withColumnType: {}, compression enabled: {}",
-				schemaDTO.getName(), schemaDTO.getTable().size(), withColumnType,
-				compressionOptions.enableSmartFilter);
+				schemaDTO.getName(), schemaDTO.getTable().size(), withColumnType, compressionOptions.enableSmartFilter);
 
 		// Apply smart filtering if enabled
 		SchemaDTO workingSchema = schemaDTO;
-		if (compressionOptions.enableSmartFilter &&
-				StringUtils.isNotBlank(compressionOptions.executionDescription)) {
+		if (compressionOptions.enableSmartFilter && StringUtils.isNotBlank(compressionOptions.executionDescription)) {
 			log.debug("Applying smart schema filtering based on execution description");
 			Set<String> referencedEntities = extractReferencedEntities(compressionOptions.executionDescription);
 			if (!referencedEntities.isEmpty()) {
 				workingSchema = filterSchemaByReferences(schemaDTO, referencedEntities);
-				log.info("Schema filtered: {} -> {} tables",
-						schemaDTO.getTable().size(), workingSchema.getTable().size());
+				log.info("Schema filtered: {} -> {} tables", schemaDTO.getTable().size(),
+						workingSchema.getTable().size());
 
 				// 诊断：如果过滤后表数量为 0，说明 smart filtering 失败，回退到原始 schema
 				if (workingSchema.getTable().isEmpty()) {
-					log.error("Smart filtering resulted in EMPTY table list! Root cause: extracted entities '{}' do not match any table names in schema", referencedEntities);
-					log.warn("Falling back to original schema ({} tables) to prevent empty schema error", schemaDTO.getTable().size());
+					log.error(
+							"Smart filtering resulted in EMPTY table list! Root cause: extracted entities '{}' do not match any table names in schema",
+							referencedEntities);
+					log.warn("Falling back to original schema ({} tables) to prevent empty schema error",
+							schemaDTO.getTable().size());
 					workingSchema = schemaDTO;
 				}
-			} else {
-				log.warn("No entities extracted from execution description: '{}'. Using original schema.", compressionOptions.executionDescription);
+			}
+			else {
+				log.warn("No entities extracted from execution description: '{}'. Using original schema.",
+						compressionOptions.executionDescription);
 			}
 		}
 
@@ -431,8 +434,8 @@ public class PromptHelper {
 		// Build table information
 		for (int i = 0; i < workingSchema.getTable().size(); i++) {
 			TableDTO tableDTO = workingSchema.getTable().get(i);
-			log.debug("Processing table {}/{}: name='{}', columns count: {}",
-					i + 1, workingSchema.getTable().size(), tableDTO.getName(), tableDTO.getColumn().size());
+			log.debug("Processing table {}/{}: name='{}', columns count: {}", i + 1, workingSchema.getTable().size(),
+					tableDTO.getName(), tableDTO.getColumn().size());
 
 			sb.append(buildMixMacSqlTablePrompt(tableDTO, withColumnType, compressionOptions)).append("\n");
 		}
@@ -441,9 +444,11 @@ public class PromptHelper {
 		if (!compressionOptions.removeForeignKeys && CollectionUtils.isNotEmpty(workingSchema.getForeignKeys())) {
 			log.debug("Adding {} foreign keys to schema", workingSchema.getForeignKeys().size());
 			sb.append("【Foreign keys】\n").append(StringUtils.join(workingSchema.getForeignKeys(), "\n"));
-		} else if (compressionOptions.removeForeignKeys) {
+		}
+		else if (compressionOptions.removeForeignKeys) {
 			log.debug("Foreign keys removed by compression option");
-		} else {
+		}
+		else {
 			log.debug("No foreign keys in schema");
 		}
 
@@ -458,9 +463,8 @@ public class PromptHelper {
 
 	/**
 	 * Build table prompt with compression options
-	 * 
-	 * @param tableDTO           table data
-	 * @param withColumnType     whether to include column types
+	 * @param tableDTO table data
+	 * @param withColumnType whether to include column types
 	 * @param compressionOptions compression options
 	 * @return formatted table string
 	 */
@@ -470,8 +474,8 @@ public class PromptHelper {
 		String originalTableName = tableDTO.getName();
 		log.debug(
 				"Building table prompt - original table name: '{}', columns: {}, compression: removeDesc={}, removeExamples={}",
-				originalTableName, tableDTO.getColumn().size(),
-				compressionOptions.removeDescription, compressionOptions.removeExamples);
+				originalTableName, tableDTO.getColumn().size(), compressionOptions.removeDescription,
+				compressionOptions.removeExamples);
 
 		StringBuilder sb = new StringBuilder();
 		// Clean quotes in table name to avoid ST4 template parsing conflicts
@@ -486,12 +490,12 @@ public class PromptHelper {
 		sb.append("# Table: ").append(cleanTableName);
 
 		// Conditionally add description based on compression options
-		if (!compressionOptions.removeDescription &&
-				!StringUtils.equals(cleanTableName, cleanTableDesc) &&
-				StringUtils.isNotBlank(cleanTableDesc)) {
+		if (!compressionOptions.removeDescription && !StringUtils.equals(cleanTableName, cleanTableDesc)
+				&& StringUtils.isNotBlank(cleanTableDesc)) {
 			sb.append(", ").append(cleanTableDesc);
 			log.debug("Table description included");
-		} else if (compressionOptions.removeDescription) {
+		}
+		else if (compressionOptions.removeDescription) {
 			log.debug("Table description removed by compression option");
 		}
 		sb.append("\n");
@@ -509,13 +513,12 @@ public class PromptHelper {
 
 			// Log if column name was cleaned
 			if (!originalColumnName.equals(cleanColumnName)) {
-				log.debug("  Column name cleaned in table '{}': '{}' -> '{}'",
-						cleanTableName, originalColumnName, cleanColumnName);
+				log.debug("  Column name cleaned in table '{}': '{}' -> '{}'", cleanTableName, originalColumnName,
+						cleanColumnName);
 				cleanedColumnsCount++;
 			}
 
-			line.append("(")
-					.append(cleanColumnName);
+			line.append("(").append(cleanColumnName);
 
 			// Add column type if requested
 			if (BooleanUtils.isTrue(withColumnType)) {
@@ -524,9 +527,8 @@ public class PromptHelper {
 			}
 
 			// Conditionally add description based on compression options
-			if (!compressionOptions.removeDescription &&
-					!StringUtils.equals(cleanColumnDesc, cleanColumnName) &&
-					StringUtils.isNotBlank(cleanColumnDesc)) {
+			if (!compressionOptions.removeDescription && !StringUtils.equals(cleanColumnDesc, cleanColumnName)
+					&& StringUtils.isNotBlank(cleanColumnDesc)) {
 				line.append(", ").append(cleanColumnDesc);
 			}
 
@@ -539,10 +541,10 @@ public class PromptHelper {
 			// Conditionally add example data based on compression options
 			if (!compressionOptions.removeExamples) {
 				List<String> enumData = Optional.ofNullable(columnDTO.getData())
-						.orElse(new ArrayList<>())
-						.stream()
-						.filter(d -> !StringUtils.isEmpty(d))
-						.collect(Collectors.toList());
+					.orElse(new ArrayList<>())
+					.stream()
+					.filter(d -> !StringUtils.isEmpty(d))
+					.collect(Collectors.toList());
 				if (CollectionUtils.isNotEmpty(enumData) && !"id".equals(cleanColumnName)) {
 					line.append(", Examples: [");
 					List<String> data = new ArrayList<>(enumData.subList(0, Math.min(3, enumData.size())));
@@ -559,9 +561,10 @@ public class PromptHelper {
 
 		String result = sb.toString();
 		if (cleanedColumnsCount > 0) {
-			log.debug("Table '{}' prompt built: cleaned {} column names, total length: {} chars",
-					cleanTableName, cleanedColumnsCount, result.length());
-		} else {
+			log.debug("Table '{}' prompt built: cleaned {} column names, total length: {} chars", cleanTableName,
+					cleanedColumnsCount, result.length());
+		}
+		else {
 			log.debug("Table '{}' prompt built: no column names needed cleaning, total length: {} chars",
 					cleanTableName, result.length());
 		}
@@ -570,8 +573,8 @@ public class PromptHelper {
 	}
 
 	public static String buildNewSqlGeneratorPrompt(SqlGenerationDTO sqlGenerationDTO) {
-		log.debug("Building new SQL generator prompt - dialect: {}, query: {}",
-				sqlGenerationDTO.getDialect(), sqlGenerationDTO.getQuery());
+		log.debug("Building new SQL generator prompt - dialect: {}, query: {}", sqlGenerationDTO.getDialect(),
+				sqlGenerationDTO.getQuery());
 
 		// Use smart schema filtering based on execution description
 		SchemaCompressionOptions compressionOptions = StringUtils.isNotBlank(sqlGenerationDTO.getExecutionDescription())
@@ -598,8 +601,8 @@ public class PromptHelper {
 	}
 
 	/**
-	 * Build simplified SQL generator prompt for open-source models
-	 * Features: shorter prompt, more few-shot examples, simpler structure
+	 * Build simplified SQL generator prompt for open-source models Features: shorter
+	 * prompt, more few-shot examples, simpler structure
 	 */
 	public static String buildLiteSqlGeneratorPrompt(SqlGenerationDTO sqlGenerationDTO) {
 		log.debug("Building lite SQL generator prompt for open-source models - dialect: {}, query: {}",
@@ -652,9 +655,8 @@ public class PromptHelper {
 
 	/**
 	 * Build report generation prompt with custom prompt
-	 * 
-	 * @param userRequirementsAndPlan   user requirements and plan
-	 * @param analysisStepsAndData      analysis steps and data
+	 * @param userRequirementsAndPlan user requirements and plan
+	 * @param analysisStepsAndData analysis steps and data
 	 * @param summaryAndRecommendations summary and recommendations
 	 * @return built prompt
 	 */
@@ -677,18 +679,18 @@ public class PromptHelper {
 		// Render using the chosen report generator template
 		return (plainReport ? PromptConstant.getReportGeneratorPlainPromptTemplate()
 				: PromptConstant.getReportGeneratorPromptTemplate())
-				.render(params);
+			.render(params);
 	}
 
 	public static String buildSqlErrorFixerPrompt(SqlGenerationDTO sqlGenerationDTO) {
-		log.debug("Building SQL error fixer prompt - dialect: {}, error SQL length: {}",
-				sqlGenerationDTO.getDialect(),
+		log.debug("Building SQL error fixer prompt - dialect: {}, error SQL length: {}", sqlGenerationDTO.getDialect(),
 				sqlGenerationDTO.getSql() != null ? sqlGenerationDTO.getSql().length() : 0);
 
 		// IMPORTANT: Do NOT use smart filtering for SQL error fixing
 		// SQL error fixing requires COMPLETE schema information to validate column names
 		// Smart filtering would remove columns and cause the fix to fail
-		String schemaInfo = buildMixMacSqlDbPrompt(sqlGenerationDTO.getSchemaDTO(), true, SchemaCompressionOptions.none());
+		String schemaInfo = buildMixMacSqlDbPrompt(sqlGenerationDTO.getSchemaDTO(), true,
+				SchemaCompressionOptions.none());
 		log.debug("Schema info built for SQL error fixing (full schema), length: {} chars", schemaInfo.length());
 
 		// Extract db_id from schema (ensure it's not empty)
@@ -699,7 +701,8 @@ public class PromptHelper {
 				dbId = "UNKNOWN"; // Fallback to prevent empty DB_ID
 				log.warn("Schema name is empty, using 'UNKNOWN' as DB_ID");
 			}
-		} else {
+		}
+		else {
 			dbId = "MISSING"; // Fallback to prevent empty DB_ID
 			log.error("Schema DTO is null, using 'MISSING' as DB_ID");
 		}
@@ -722,8 +725,7 @@ public class PromptHelper {
 		params.put("execution_description", sqlGenerationDTO.getExecutionDescription());
 		params.put("failure_history", failureHistoryStr);
 
-		log.debug("SQL error fixer params - db_id: {}, error_message: {}, failure_history: {}",
-				dbId,
+		log.debug("SQL error fixer params - db_id: {}, error_message: {}, failure_history: {}", dbId,
 				sqlGenerationDTO.getExceptionMessage() != null ? "provided" : "null",
 				!failureHistoryStr.isEmpty() ? "provided" : "empty");
 
@@ -761,9 +763,8 @@ public class PromptHelper {
 
 	/**
 	 * 构建优化提示词部分内容
-	 * 
 	 * @param optimizationConfigs 优化配置列表
-	 * @param params              模板参数（不再使用，保留签名兼容性）
+	 * @param params 模板参数（不再使用，保留签名兼容性）
 	 * @return 优化部分的内容
 	 */
 	private static String buildOptimizationSection(List<UserPromptConfig> optimizationConfigs,
@@ -789,8 +790,7 @@ public class PromptHelper {
 
 	/**
 	 * 构建意图识别提示词
-	 * 
-	 * @param multiTurn   多轮对话历史
+	 * @param multiTurn 多轮对话历史
 	 * @param latestQuery 最新用户输入
 	 * @return 意图识别提示词
 	 */
@@ -803,14 +803,13 @@ public class PromptHelper {
 
 	/**
 	 * 构建查询处理提示词
-	 * 
-	 * @param multiTurn   多轮对话历史
+	 * @param multiTurn 多轮对话历史
 	 * @param latestQuery 最新用户输入
 	 * @return 查询处理提示词
 	 */
 	public static String buildQueryEnhancePrompt(String multiTurn, String latestQuery, String evidence) {
-		log.debug("Building query enhance prompt - latest query: {}, multiTurn: {}, evidence: {}",
-				latestQuery, multiTurn != null ? "provided" : "null", evidence != null ? "provided" : "null");
+		log.debug("Building query enhance prompt - latest query: {}, multiTurn: {}, evidence: {}", latestQuery,
+				multiTurn != null ? "provided" : "null", evidence != null ? "provided" : "null");
 
 		Map<String, Object> params = new HashMap<>();
 		params.put("multi_turn", multiTurn != null ? multiTurn : "(无)");
@@ -828,17 +827,16 @@ public class PromptHelper {
 
 	/**
 	 * 构建可行性评估提示词
-	 * 
 	 * @param canonicalQuery 规范化查询
 	 * @param recalledSchema 召回的数据库Schema
-	 * @param evidence       参考信息
-	 * @param multiTurn      多轮对话历史
+	 * @param evidence 参考信息
+	 * @param multiTurn 多轮对话历史
 	 * @return 可行性评估提示词
 	 */
 	public static String buildFeasibilityAssessmentPrompt(String canonicalQuery, SchemaDTO recalledSchema,
 			String evidence, String multiTurn) {
-		log.debug("Building feasibility assessment prompt - canonical query: {}, tables count: {}",
-				canonicalQuery, recalledSchema != null ? recalledSchema.getTable().size() : 0);
+		log.debug("Building feasibility assessment prompt - canonical query: {}, tables count: {}", canonicalQuery,
+				recalledSchema != null ? recalledSchema.getTable().size() : 0);
 
 		Map<String, Object> params = new HashMap<>();
 		String schemaInfo = buildMixMacSqlDbPrompt(recalledSchema, true);
@@ -856,8 +854,7 @@ public class PromptHelper {
 
 	/**
 	 * 构建查询重写提示词
-	 * 
-	 * @param multiTurn   多轮对话历史
+	 * @param multiTurn 多轮对话历史
 	 * @param latestQuery 最新用户输入
 	 * @return 查询重写提示词
 	 */
@@ -870,7 +867,6 @@ public class PromptHelper {
 
 	/**
 	 * 渲染优化提示词（纯文本，不再走 ST 编译）
-	 * 
 	 * @param optimizationPrompt 优化提示词内容
 	 * @return 原始内容
 	 */

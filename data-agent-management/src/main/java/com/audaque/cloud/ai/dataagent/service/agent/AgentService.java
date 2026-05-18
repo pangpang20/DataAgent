@@ -49,7 +49,6 @@ public interface AgentService {
 
 	/**
 	 * Page query agents with filters
-	 * 
 	 * @param queryDTO query parameters
 	 * @return page result
 	 */

@@ -39,8 +39,8 @@ public class TableRelationDispatcher implements EdgeAction {
 
 		if (errorFlag != null && !errorFlag.isEmpty()) {
 			if (isRetryableError(errorFlag) && retryCount < MAX_RETRY_COUNT) {
-				log.info("[TableRelationDispatcher] Retryable error detected, retrying (attempt {}/{})", 
-					retryCount + 1, MAX_RETRY_COUNT);
+				log.info("[TableRelationDispatcher] Retryable error detected, retrying (attempt {}/{})", retryCount + 1,
+						MAX_RETRY_COUNT);
 				return TABLE_RELATION_NODE;
 			}
 			else {

@@ -26,19 +26,19 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 public class DatasourceQueryDTO extends BasePageQueryDTO {
 
-    /**
-     * Fuzzy search by name or description
-     */
-    private String keyword;
+	/**
+	 * Fuzzy search by name or description
+	 */
+	private String keyword;
 
-    /**
-     * Filter by type: mysql, postgresql, sqlserver, dameng
-     */
-    private String type;
+	/**
+	 * Filter by type: mysql, postgresql, sqlserver, dameng
+	 */
+	private String type;
 
-    /**
-     * Filter by status: active, inactive
-     */
-    private String status;
+	/**
+	 * Filter by status: active, inactive
+	 */
+	private String status;
 
 }

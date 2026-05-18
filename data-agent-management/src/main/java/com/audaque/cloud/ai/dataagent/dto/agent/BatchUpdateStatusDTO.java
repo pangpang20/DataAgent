@@ -24,13 +24,13 @@ import lombok.Data;
 @Data
 public class BatchUpdateStatusDTO {
 
-    // Will be set from path variable in controller, not required in request body
-    private Long agentId;
+	// Will be set from path variable in controller, not required in request body
+	private Long agentId;
 
-    @NotEmpty(message = "ids cannot be empty")
-    private List<Long> ids;
+	@NotEmpty(message = "ids cannot be empty")
+	private List<Long> ids;
 
-    @NotNull(message = "isActive cannot be null")
-    private Boolean isActive;
+	@NotNull(message = "isActive cannot be null")
+	private Boolean isActive;
 
 }

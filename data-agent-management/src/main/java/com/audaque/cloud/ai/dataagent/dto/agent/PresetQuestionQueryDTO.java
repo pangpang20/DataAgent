@@ -26,27 +26,27 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class PresetQuestionQueryDTO {
 
-    // Will be set from path variable in controller, not required in request body
-    private Long agentId;
+	// Will be set from path variable in controller, not required in request body
+	private Long agentId;
 
-    // Search by question content (fuzzy search)
-    private String keyword;
+	// Search by question content (fuzzy search)
+	private String keyword;
 
-    // Filter by active status: null-all, true-active only, false-inactive only
-    private Boolean isActive;
+	// Filter by active status: null-all, true-active only, false-inactive only
+	private Boolean isActive;
 
-    // Date range filter
-    private String createTimeStart;
+	// Date range filter
+	private String createTimeStart;
 
-    private String createTimeEnd;
+	private String createTimeEnd;
 
-    // Pagination parameters
-    @NotNull(message = "pageNum cannot be null")
-    @Min(value = 1, message = "pageNum must be greater than 0")
-    private Integer pageNum = 1;
+	// Pagination parameters
+	@NotNull(message = "pageNum cannot be null")
+	@Min(value = 1, message = "pageNum must be greater than 0")
+	private Integer pageNum = 1;
 
-    @NotNull(message = "pageSize cannot be null")
-    @Min(value = 1, message = "pageSize must be greater than 0")
-    private Integer pageSize = 10;
+	@NotNull(message = "pageSize cannot be null")
+	@Min(value = 1, message = "pageSize must be greater than 0")
+	private Integer pageSize = 10;
 
 }

@@ -42,16 +42,14 @@ public class SqlGenerationDTO {
 	private String dialect;
 
 	/**
-	 * Retry count for dynamic temperature adjustment
-	 * - Initial generation: 0
-	 * - First retry: 1
-	 * - And so on...
+	 * Retry count for dynamic temperature adjustment - Initial generation: 0 - First
+	 * retry: 1 - And so on...
 	 */
 	private int retryCount;
 
 	/**
-	 * History of failed SQL attempts for learning
-	 * Each entry contains: "Attempt #N: SQL\nError: ..."
+	 * History of failed SQL attempts for learning Each entry contains: "Attempt #N:
+	 * SQL\nError: ..."
 	 */
 	private List<String> failureHistory;
 

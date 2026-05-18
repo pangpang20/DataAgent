@@ -23,39 +23,36 @@ import lombok.Data;
 @Data
 public class CommonResponseDTO {
 
-    /**
-     * 响应消息
-     */
-    private String message;
+	/**
+	 * 响应消息
+	 */
+	private String message;
 
-    /**
-     * 错误信息（可选）
-     */
-    private String error;
+	/**
+	 * 错误信息（可选）
+	 */
+	private String error;
 
-    /**
-     * 构造成功响应
-     * 
-     * @param message 响应消息
-     * @return CommonResponseDTO
-     */
-    public static CommonResponseDTO success(String message) {
-        CommonResponseDTO response = new CommonResponseDTO();
-        response.setMessage(message);
-        return response;
-    }
+	/**
+	 * 构造成功响应
+	 * @param message 响应消息
+	 * @return CommonResponseDTO
+	 */
+	public static CommonResponseDTO success(String message) {
+		CommonResponseDTO response = new CommonResponseDTO();
+		response.setMessage(message);
+		return response;
+	}
 
-    /**
-     * 构造错误响应
-     * 
-     * @param error 错误信息
-     * @return CommonResponseDTO
-     */
-    public static CommonResponseDTO error(String error) {
-        CommonResponseDTO response = new CommonResponseDTO();
-        response.setError(error);
-        return response;
-    }
+	/**
+	 * 构造错误响应
+	 * @param error 错误信息
+	 * @return CommonResponseDTO
+	 */
+	public static CommonResponseDTO error(String error) {
+		CommonResponseDTO response = new CommonResponseDTO();
+		response.setError(error);
+		return response;
+	}
 
 }
-

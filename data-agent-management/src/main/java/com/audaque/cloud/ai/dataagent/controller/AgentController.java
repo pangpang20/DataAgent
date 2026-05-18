@@ -18,6 +18,7 @@ package com.audaque.cloud.ai.dataagent.controller;
 import com.audaque.cloud.ai.dataagent.dto.agent.AgentQueryDTO;
 import com.audaque.cloud.ai.dataagent.entity.Agent;
 import com.audaque.cloud.ai.dataagent.enums.AgentStatus;
+import com.audaque.cloud.ai.dataagent.security.SecurityUtils;
 import com.audaque.cloud.ai.dataagent.service.agent.AgentService;
 import com.audaque.cloud.ai.dataagent.vo.ApiKeyResponse;
 import com.audaque.cloud.ai.dataagent.vo.ApiResponse;
@@ -27,7 +28,7 @@ import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -46,7 +47,6 @@ import java.util.List;
 @Slf4j
 @RestController
 @RequestMapping("/api/agent")
-@CrossOrigin(origins = "*")
 @AllArgsConstructor
 public class AgentController {
 
@@ -55,15 +55,18 @@ public class AgentController {
 	/**
 	 * Get agent list
 	 */
+	@PreAuthorize("hasAuthority('agent:list')")
 	@GetMapping("/list")
 	public ResponseEntity<List<Agent>> list(@RequestParam(value = "status", required = false) String status,
 			@RequestParam(value = "keyword", required = false) String keyword) {
 		List<Agent> result;
 		if (keyword != null && !keyword.trim().isEmpty()) {
 			result = agentService.search(keyword);
-		} else if (status != null && !status.trim().isEmpty()) {
+		}
+		else if (status != null && !status.trim().isEmpty()) {
 			result = agentService.findByStatus(status);
-		} else {
+		}
+		else {
 			result = agentService.findAll();
 		}
 		return ResponseEntity.ok(result);
@@ -72,6 +75,7 @@ public class AgentController {
 	/**
 	 * Get agent details by ID
 	 */
+	@PreAuthorize("hasAuthority('agent:query')")
 	@GetMapping("/{id}")
 	public ResponseEntity<Agent> get(@PathVariable(value = "id") Long id) {
 		Agent agent = agentService.findById(id);
@@ -84,12 +88,13 @@ public class AgentController {
 	/**
 	 * Create agent
 	 */
+	@PreAuthorize("hasAuthority('agent:create')")
 	@PostMapping
 	public ResponseEntity<Agent> create(@RequestBody Agent agent) {
-		// Set default status
 		if (agent.getStatus() == null) {
 			agent.setStatus(AgentStatus.DRAFT);
 		}
+		agent.setCreatorId(SecurityUtils.getCurrentUserId());
 		Agent saved = agentService.save(agent);
 		return ResponseEntity.ok(saved);
 	}
@@ -97,6 +102,7 @@ public class AgentController {
 	/**
 	 * Update agent
 	 */
+	@PreAuthorize("hasAuthority('agent:update')")
 	@PutMapping("/{id}")
 	public ResponseEntity<Agent> update(@PathVariable(value = "id") Long id, @RequestBody Agent agent) {
 		if (agentService.findById(id) == null) {
@@ -110,6 +116,7 @@ public class AgentController {
 	/**
 	 * Delete agent
 	 */
+	@PreAuthorize("hasAuthority('agent:delete')")
 	@DeleteMapping("/{id}")
 	public ResponseEntity<Void> delete(@PathVariable(value = "id") Long id) {
 		if (agentService.findById(id) == null) {
@@ -122,6 +129,7 @@ public class AgentController {
 	/**
 	 * Publish agent
 	 */
+	@PreAuthorize("hasAuthority('agent:publish')")
 	@PostMapping("/{id}/publish")
 	public ResponseEntity<Agent> publish(@PathVariable(value = "id") Long id) {
 		Agent agent = agentService.findById(id);
@@ -136,6 +144,7 @@ public class AgentController {
 	/**
 	 * Offline agent
 	 */
+	@PreAuthorize("hasAuthority('agent:publish')")
 	@PostMapping("/{id}/offline")
 	public ResponseEntity<Agent> offline(@PathVariable(value = "id") Long id) {
 		Agent agent = agentService.findById(id);
@@ -150,6 +159,7 @@ public class AgentController {
 	/**
 	 * Get masked API Key status
 	 */
+	@PreAuthorize("hasAuthority('agent:apikey')")
 	@GetMapping("/{id}/api-key")
 	public ResponseEntity<ApiResponse<ApiKeyResponse>> getApiKey(@PathVariable("id") Long id) {
 		Agent agent = agentService.findById(id);
@@ -163,6 +173,7 @@ public class AgentController {
 	/**
 	 * Generate API Key
 	 */
+	@PreAuthorize("hasAuthority('agent:apikey')")
 	@PostMapping("/{id}/api-key/generate")
 	public ResponseEntity<ApiResponse<ApiKeyResponse>> generateApiKey(@PathVariable("id") Long id) {
 		Agent existing = agentService.findById(id);
@@ -176,6 +187,7 @@ public class AgentController {
 	/**
 	 * Reset API Key
 	 */
+	@PreAuthorize("hasAuthority('agent:apikey')")
 	@PostMapping("/{id}/api-key/reset")
 	public ResponseEntity<ApiResponse<ApiKeyResponse>> resetApiKey(@PathVariable("id") Long id) {
 		Agent existing = agentService.findById(id);
@@ -189,6 +201,7 @@ public class AgentController {
 	/**
 	 * Reveal full API Key (show unmasked key)
 	 */
+	@PreAuthorize("hasAuthority('agent:apikey')")
 	@PostMapping("/{id}/api-key/reveal")
 	public ResponseEntity<ApiResponse<ApiKeyResponse>> revealApiKey(@PathVariable("id") Long id) {
 		Agent agent = agentService.findById(id);
@@ -204,6 +217,7 @@ public class AgentController {
 	/**
 	 * Delete API Key
 	 */
+	@PreAuthorize("hasAuthority('agent:apikey')")
 	@DeleteMapping("/{id}/api-key")
 	public ResponseEntity<ApiResponse<ApiKeyResponse>> deleteApiKey(@PathVariable("id") Long id) {
 		Agent existing = agentService.findById(id);
@@ -217,6 +231,7 @@ public class AgentController {
 	/**
 	 * Toggle API Key enable flag
 	 */
+	@PreAuthorize("hasAuthority('agent:apikey')")
 	@PostMapping("/{id}/api-key/enable")
 	public ResponseEntity<ApiResponse<ApiKeyResponse>> toggleApiKey(@PathVariable("id") Long id,
 			@RequestParam("enabled") boolean enabled) {
@@ -236,17 +251,19 @@ public class AgentController {
 	/**
 	 * Page query agents with filters
 	 */
+	@PreAuthorize("hasAuthority('agent:list')")
 	@PostMapping("/page")
 	public PageResponse<List<Agent>> queryByPage(@Valid @RequestBody AgentQueryDTO queryDTO) {
 		try {
-			log.info("Page query request: pageNum={}, pageSize={}, keyword={}, status={}",
-					queryDTO.getPageNum(), queryDTO.getPageSize(), queryDTO.getKeyword(), queryDTO.getStatus());
+			log.info("Page query request: pageNum={}, pageSize={}, keyword={}, status={}", queryDTO.getPageNum(),
+					queryDTO.getPageSize(), queryDTO.getKeyword(), queryDTO.getStatus());
 
 			PageResult<Agent> pageResult = agentService.queryByConditionsWithPage(queryDTO);
 
-			return PageResponse.success(pageResult.getData(), pageResult.getTotal(),
-					pageResult.getPageNum(), pageResult.getPageSize(), pageResult.getTotalPages());
-		} catch (Exception e) {
+			return PageResponse.success(pageResult.getData(), pageResult.getTotal(), pageResult.getPageNum(),
+					pageResult.getPageSize(), pageResult.getTotalPages());
+		}
+		catch (Exception e) {
 			log.error("Error querying agent page", e);
 			return PageResponse.pageError("Query failed: " + e.getMessage());
 		}

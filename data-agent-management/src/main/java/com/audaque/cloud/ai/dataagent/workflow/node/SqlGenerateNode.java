@@ -46,14 +46,10 @@ import static com.audaque.cloud.ai.dataagent.constant.Constant.*;
 import static com.audaque.cloud.ai.dataagent.util.PlanProcessUtil.getCurrentExecutionStepInstruction;
 
 /**
- * Enhanced SQL generation node that handles SQL query regeneration with
- * advanced
- * optimization features. This node is responsible for: - Multi-round SQL
- * optimization and
- * refinement - Syntax validation and security analysis - Performance
- * optimization and
- * intelligent caching - Handling execution exceptions and semantic consistency
- * failures -
+ * Enhanced SQL generation node that handles SQL query regeneration with advanced
+ * optimization features. This node is responsible for: - Multi-round SQL optimization and
+ * refinement - Syntax validation and security analysis - Performance optimization and
+ * intelligent caching - Handling execution exceptions and semantic consistency failures -
  * Managing retry logic with schema advice - Providing streaming feedback during
  * regeneration process
  *
@@ -75,8 +71,8 @@ public class SqlGenerateNode implements NodeAction {
 		int semanticErrorCount = state.value(SQL_SEMANTIC_ERROR_COUNT, 0);
 		int executionErrorCount = state.value(SQL_EXECUTION_ERROR_COUNT, 0);
 
-		log.debug("Current retry status - Total: {}, Syntax: {}, Semantic: {}, Execution: {}",
-				count, syntaxErrorCount, semanticErrorCount, executionErrorCount);
+		log.debug("Current retry status - Total: {}, Syntax: {}, Semantic: {}, Execution: {}", count, syntaxErrorCount,
+				semanticErrorCount, executionErrorCount);
 
 		// Check if maximum retry count reached (using total count as final safeguard)
 		// Note: Fine-grained thresholds are checked in SqlGenerateDispatcher
@@ -84,14 +80,10 @@ public class SqlGenerateNode implements NodeAction {
 		if (count >= properties.getMaxSqlRetryCount()) {
 			ExecutionStep executionStep = PlanProcessUtil.getCurrentExecutionStep(state);
 			String sqlGenerateOutput = String.format(
-					"Step [%d] SQL generation limit exceeded.\n" +
-							"Total attempts: %d/%d\n" +
-							"Error breakdown - Syntax: %d, Semantic: %d, Execution: %d\n" +
-							"Step description: %s",
-					executionStep.getStep(),
-					count, properties.getMaxSqlRetryCount(),
-					syntaxErrorCount, semanticErrorCount, executionErrorCount,
-					executionStep.getToolParameters().getInstruction());
+					"Step [%d] SQL generation limit exceeded.\n" + "Total attempts: %d/%d\n"
+							+ "Error breakdown - Syntax: %d, Semantic: %d, Execution: %d\n" + "Step description: %s",
+					executionStep.getStep(), count, properties.getMaxSqlRetryCount(), syntaxErrorCount,
+					semanticErrorCount, executionErrorCount, executionStep.getToolParameters().getInstruction());
 
 			log.error(
 					"SQL generation failed after {} attempts - Syntax errors: {}, Semantic errors: {}, Execution errors: {}",
@@ -117,8 +109,7 @@ public class SqlGenerateNode implements NodeAction {
 		SqlRetryDto retryDto = StateUtil.getObjectValue(state, SQL_REGENERATE_REASON, SqlRetryDto.class,
 				SqlRetryDto.empty());
 
-		log.debug("Retry context - Error type: {}, Total attempts: {}",
-				retryDto.errorType(), count);
+		log.debug("Retry context - Error type: {}, Total attempts: {}", retryDto.errorType(), count);
 
 		if (retryDto.sqlExecuteFail()) {
 			displayMessage = "检测到 SQL 执行异常，开始重新生成 SQL...";
@@ -126,13 +117,15 @@ public class SqlGenerateNode implements NodeAction {
 					retryDto.reason());
 			sqlFlux = handleRetryGenerateSql(state, StateUtil.getStringValue(state, SQL_GENERATE_OUTPUT, ""),
 					retryDto.reason(), promptForSql);
-		} else if (retryDto.semanticFail()) {
+		}
+		else if (retryDto.semanticFail()) {
 			displayMessage = "语义一致性校验未通过，开始重新生成 SQL...";
 			log.info("Semantic consistency check failed, retrying - error type: {}, reason: {}", retryDto.errorType(),
 					retryDto.reason());
 			sqlFlux = handleRetryGenerateSql(state, StateUtil.getStringValue(state, SQL_GENERATE_OUTPUT, ""),
 					retryDto.reason(), promptForSql);
-		} else {
+		}
+		else {
 			displayMessage = "开始生成 SQL...";
 			log.info("Starting initial SQL generation for step {}", count + 1);
 			sqlFlux = handleGenerateSql(state, promptForSql);
@@ -148,10 +141,12 @@ public class SqlGenerateNode implements NodeAction {
 		if (retryDto.errorType() == SqlRetryDto.ErrorType.SYNTAX) {
 			result.put(SQL_SYNTAX_ERROR_COUNT, syntaxErrorCount + 1);
 			log.debug("Incrementing syntax error counter: {} -> {}", syntaxErrorCount, syntaxErrorCount + 1);
-		} else if (retryDto.errorType() == SqlRetryDto.ErrorType.SEMANTIC) {
+		}
+		else if (retryDto.errorType() == SqlRetryDto.ErrorType.SEMANTIC) {
 			result.put(SQL_SEMANTIC_ERROR_COUNT, semanticErrorCount + 1);
 			log.debug("Incrementing semantic error counter: {} -> {}", semanticErrorCount, semanticErrorCount + 1);
-		} else if (retryDto.errorType() == SqlRetryDto.ErrorType.EXECUTION) {
+		}
+		else if (retryDto.errorType() == SqlRetryDto.ErrorType.EXECUTION) {
 			result.put(SQL_EXECUTION_ERROR_COUNT, executionErrorCount + 1);
 			log.debug("Incrementing execution error counter: {} -> {}", executionErrorCount, executionErrorCount + 1);
 		}
@@ -160,17 +155,15 @@ public class SqlGenerateNode implements NodeAction {
 		StringBuilder sqlCollector = new StringBuilder();
 		Flux<ChatResponse> preFlux = Flux.just(ChatResponseUtil.createResponse(displayMessage),
 				ChatResponseUtil.createPureResponse(TextType.SQL.getStartSign()));
-		Flux<ChatResponse> displayFlux = preFlux
-				.concatWith(sqlFlux.doOnNext(chunk -> {
-					log.info("SqlGenerateNode received SQL chunk: [{}], length={}", chunk,
-							chunk != null ? chunk.length() : -1);
-					if (chunk == null || chunk.isEmpty()) {
-						log.warn("Received NULL or empty SQL chunk from LLM!");
-					}
-					sqlCollector.append(chunk != null ? chunk : "");
-				}).map(ChatResponseUtil::createPureResponse))
-				.concatWith(Flux.just(ChatResponseUtil.createPureResponse(TextType.SQL.getEndSign()),
-						ChatResponseUtil.createResponse("SQL 生成完成，准备执行")));
+		Flux<ChatResponse> displayFlux = preFlux.concatWith(sqlFlux.doOnNext(chunk -> {
+			log.info("SqlGenerateNode received SQL chunk: [{}], length={}", chunk, chunk != null ? chunk.length() : -1);
+			if (chunk == null || chunk.isEmpty()) {
+				log.warn("Received NULL or empty SQL chunk from LLM!");
+			}
+			sqlCollector.append(chunk != null ? chunk : "");
+		}).map(ChatResponseUtil::createPureResponse))
+			.concatWith(Flux.just(ChatResponseUtil.createPureResponse(TextType.SQL.getEndSign()),
+					ChatResponseUtil.createResponse("SQL 生成完成，准备执行")));
 
 		Flux<GraphResponse<StreamingOutput>> generator = FluxUtil.createStreamingGeneratorWithMessages(this.getClass(),
 				state, v -> {
@@ -185,7 +178,8 @@ public class SqlGenerateNode implements NodeAction {
 					if (sql != null && !sql.trim().isEmpty()) {
 						result.put(SQL_GENERATE_OUTPUT, sql);
 						log.info("SQL generation successful, SQL: {}", sql);
-					} else {
+					}
+					else {
 						log.warn(
 								"LLM returned empty SQL, will trigger retry in dispatcher. Count: {}, Raw output length: {}",
 								count + 1, rawSql.length());
@@ -219,16 +213,16 @@ public class SqlGenerateNode implements NodeAction {
 				failureHistory.size());
 
 		SqlGenerationDTO sqlGenerationDTO = SqlGenerationDTO.builder()
-				.evidence(evidence)
-				.query(userQuery)
-				.schemaDTO(schemaDTO)
-				.sql(originalSql)
-				.exceptionMessage(errorMsg)
-				.executionDescription(executionDescription)
-				.dialect(dialect)
-				.retryCount(retryCount)
-				.failureHistory(failureHistory)
-				.build();
+			.evidence(evidence)
+			.query(userQuery)
+			.schemaDTO(schemaDTO)
+			.sql(originalSql)
+			.exceptionMessage(errorMsg)
+			.executionDescription(executionDescription)
+			.dialect(dialect)
+			.retryCount(retryCount)
+			.failureHistory(failureHistory)
+			.build();
 
 		return nl2SqlService.generateSql(sqlGenerationDTO);
 	}

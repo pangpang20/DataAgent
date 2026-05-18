@@ -58,16 +58,15 @@ public class DdlFactory {
 
 	/**
 	 * 根据枚举类型查找对应的DDL执行器（无缓存版本）
-	 * 
 	 * @param type 数据源类型枚举
 	 * @return 对应的DDL执行器
 	 */
 	private Ddl findDdlExecutorByTypeEnum(BizDataSourceTypeEnum type) {
 		return ddlExecutorSet.values()
-				.stream()
-				.filter(d -> d.supportedDataSourceType(type))
-				.findFirst()
-				.orElseThrow(() -> new IllegalStateException("no ddl executor found for " + type));
+			.stream()
+			.filter(d -> d.supportedDataSourceType(type))
+			.findFirst()
+			.orElseThrow(() -> new IllegalStateException("no ddl executor found for " + type));
 	}
 
 	public Ddl getDdlExecutorByType(String type) {

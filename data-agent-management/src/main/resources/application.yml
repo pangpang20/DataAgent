@@ -165,6 +165,30 @@ management:
     defaults:
       enabled: true
 
+dataagent:
+  jwt:
+    secret: ${JWT_SECRET:DataAgentDefaultSecretKey2024!@#$%^&*()_+AbCdEfGhIjKlMnOpQrStUvWxYz}
+    access-token-expiration: 7200
+    refresh-token-expiration: 604800
+    remember-me-expiration: 2592000
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:80}
+
+spring:
+  data:
+    redis:
+      host: ${REDIS_HOST:127.0.0.1}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      database: 0
+      timeout: 3000ms
+      lettuce:
+        pool:
+          max-active: 20
+          max-idle: 10
+          min-idle: 5
+          max-wait: 3000ms
+
 logging:
   level:
     com.audaque.cloud.ai.dataagent.service: debug
@@ -184,3 +208,5 @@ logging:
     com.audaque.cloud.ai.dataagent.mapper.AgentMapper: debug
     # 打印 AgentPresetQuestion 相关的 SQL 语句(排查排序问题)
     com.audaque.cloud.ai.dataagent.mapper.AgentPresetQuestionMapper: debug
+    # Security 日志
+    org.springframework.security: info

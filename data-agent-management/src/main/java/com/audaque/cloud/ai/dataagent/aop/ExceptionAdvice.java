@@ -15,20 +15,55 @@
  */
 package com.audaque.cloud.ai.dataagent.aop;
 
+import com.audaque.cloud.ai.dataagent.exception.BizException;
 import com.audaque.cloud.ai.dataagent.vo.ApiResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.catalina.connector.ClientAbortException;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.async.AsyncRequestNotUsableException;
+
+import java.util.stream.Collectors;
 
 @Slf4j
 @RestControllerAdvice
 public class ExceptionAdvice {
 
+	@ExceptionHandler(AuthenticationException.class)
+	public ResponseEntity<ApiResponse<Void>> handleAuthenticationException(AuthenticationException e) {
+		log.debug("Authentication failed: {}", e.getMessage());
+		return ResponseEntity.status(401).body(ApiResponse.error(401003, "未认证，请先登录"));
+	}
+
+	@ExceptionHandler(AccessDeniedException.class)
+	public ResponseEntity<ApiResponse<Void>> handleAccessDeniedException(AccessDeniedException e) {
+		log.debug("Access denied: {}", e.getMessage());
+		return ResponseEntity.status(403).body(ApiResponse.error(403001, "无权限访问该资源"));
+	}
+
+	@ExceptionHandler(BizException.class)
+	public ResponseEntity<ApiResponse<Void>> handleBizException(BizException e) {
+		log.warn("Business exception: code={}, message={}", e.getCode(), e.getMessage());
+		return ResponseEntity.badRequest().body(ApiResponse.error(e.getCode(), e.getMessage()));
+	}
+
+	@ExceptionHandler(MethodArgumentNotValidException.class)
+	public ResponseEntity<ApiResponse<Void>> handleValidationException(MethodArgumentNotValidException e) {
+		String message = e.getBindingResult()
+			.getFieldErrors()
+			.stream()
+			.map(err -> err.getField() + ": " + err.getDefaultMessage())
+			.collect(Collectors.joining("; "));
+		log.debug("Validation failed: {}", message);
+		return ResponseEntity.badRequest().body(ApiResponse.error(400001, message));
+	}
+
 	@ExceptionHandler(Exception.class)
-	public ResponseEntity<ApiResponse> handleException(Exception e) {
+	public ResponseEntity<ApiResponse<Void>> handleException(Exception e) {
 		// 忽略客户端断开连接的异常(用户刷新页面、关闭标签页等)
 		if (isClientDisconnectException(e)) {
 			log.debug("Client disconnected during streaming: {}", e.getMessage());
@@ -50,9 +85,8 @@ public class ExceptionAdvice {
 
 		// 检查异常消息
 		String message = e.getMessage();
-		if (message != null && (message.contains("Broken pipe") ||
-				message.contains("ClientAbortException") ||
-				message.contains("An I/O error occurred"))) {
+		if (message != null && (message.contains("Broken pipe") || message.contains("ClientAbortException")
+				|| message.contains("An I/O error occurred"))) {
 			return true;
 		}
 

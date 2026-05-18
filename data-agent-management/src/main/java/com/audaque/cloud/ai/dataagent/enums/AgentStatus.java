@@ -23,74 +23,74 @@ import com.fasterxml.jackson.annotation.JsonValue;
  */
 public enum AgentStatus {
 
-    /**
-     * 草稿状态 - 待发布
-     */
-    DRAFT("draft", "草稿"),
+	/**
+	 * 草稿状态 - 待发布
+	 */
+	DRAFT("draft", "草稿"),
 
-    /**
-     * 已发布状态
-     */
-    PUBLISHED("published", "已发布"),
+	/**
+	 * 已发布状态
+	 */
+	PUBLISHED("published", "已发布"),
 
-    /**
-     * 离线状态
-     */
-    OFFLINE("offline", "离线");
+	/**
+	 * 离线状态
+	 */
+	OFFLINE("offline", "离线");
 
-    private final String code;
-    private final String description;
+	private final String code;
 
-    AgentStatus(String code, String description) {
-        this.code = code;
-        this.description = description;
-    }
+	private final String description;
 
-    public String getCode() {
-        return code;
-    }
+	AgentStatus(String code, String description) {
+		this.code = code;
+		this.description = description;
+	}
 
-    @JsonValue
-    public String getValue() {
-        return code;
-    }
+	public String getCode() {
+		return code;
+	}
 
-    public String getDescription() {
-        return description;
-    }
+	@JsonValue
+	public String getValue() {
+		return code;
+	}
 
-    /**
-     * 根据代码获取枚举值
-     * 
-     * @param code 状态代码
-     * @return 对应的枚举值，如果未找到则返回null
-     */
-    @JsonCreator
-    public static AgentStatus fromCode(String code) {
-        if (code == null || code.isEmpty()) {
-            return null;
-        }
+	public String getDescription() {
+		return description;
+	}
 
-        for (AgentStatus status : AgentStatus.values()) {
-            if (status.code.equalsIgnoreCase(code)) {
-                return status;
-            }
-        }
-        return null;
-    }
+	/**
+	 * 根据代码获取枚举值
+	 * @param code 状态代码
+	 * @return 对应的枚举值，如果未找到则返回null
+	 */
+	@JsonCreator
+	public static AgentStatus fromCode(String code) {
+		if (code == null || code.isEmpty()) {
+			return null;
+		}
 
-    /**
-     * 判断是否为有效状态
-     * 
-     * @param code 状态代码
-     * @return 是否有效
-     */
-    public static boolean isValidStatus(String code) {
-        return fromCode(code) != null;
-    }
+		for (AgentStatus status : AgentStatus.values()) {
+			if (status.code.equalsIgnoreCase(code)) {
+				return status;
+			}
+		}
+		return null;
+	}
 
-    @Override
-    public String toString() {
-        return code;
-    }
+	/**
+	 * 判断是否为有效状态
+	 * @param code 状态代码
+	 * @return 是否有效
+	 */
+	public static boolean isValidStatus(String code) {
+		return fromCode(code) != null;
+	}
+
+	@Override
+	public String toString() {
+		return code;
+	}
+
 }

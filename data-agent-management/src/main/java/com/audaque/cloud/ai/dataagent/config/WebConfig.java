@@ -43,20 +43,20 @@ public class WebConfig implements WebMvcConfigurer {
 		log.info("配置静态资源映射 - URL前缀: {}, 物理路径: {}", urlPrefix, uploadDir);
 
 		registry.addResourceHandler(urlPrefix + "/**")
-				.addResourceLocations("file:" + uploadDir + "/")
-				.setCachePeriod(3600);
+			.addResourceLocations("file:" + uploadDir + "/")
+			.setCachePeriod(3600);
 	}
 
 	@Override
 	public void addCorsMappings(CorsRegistry registry) {
 		// Add CORS configuration for widget.js and API endpoints
 		registry.addMapping("/**")
-				.allowedOrigins("*")
-				.allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
-				.allowedHeaders("*")
-				.exposedHeaders("*")
-				.allowCredentials(false)
-				.maxAge(3600);
+			.allowedOrigins("*")
+			.allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+			.allowedHeaders("*")
+			.exposedHeaders("*")
+			.allowCredentials(false)
+			.maxAge(3600);
 
 		log.info("CORS configuration applied for all endpoints");
 	}

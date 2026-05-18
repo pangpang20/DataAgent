@@ -22,6 +22,7 @@ import com.audaque.cloud.ai.dataagent.service.prompt.UserPromptService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -34,7 +35,7 @@ import java.util.Map;
  */
 @RestController
 @RequestMapping("/api/prompt-config")
-@CrossOrigin(origins = "*", maxAge = 3600)
+@PreAuthorize("hasAuthority('prompt:config')")
 public class PromptConfigController {
 
 	private static final Logger logger = LoggerFactory.getLogger(PromptConfigController.class);
@@ -350,9 +351,7 @@ public class PromptConfigController {
 		response.put("externalDir", externalDir);
 		response.put("configured", externalDir != null);
 		response.put("cacheSize", cacheSize);
-		response.put("message", externalDir != null 
-			? "外部Prompt目录已配置: " + externalDir 
-			: "未配置外部Prompt目录,使用JAR内部资源");
+		response.put("message", externalDir != null ? "外部Prompt目录已配置: " + externalDir : "未配置外部Prompt目录,使用JAR内部资源");
 
 		return ResponseEntity.ok(response);
 	}

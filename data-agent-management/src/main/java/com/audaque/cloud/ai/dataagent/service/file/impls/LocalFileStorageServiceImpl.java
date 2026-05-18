@@ -60,7 +60,8 @@ public class LocalFileStorageServiceImpl implements FileStorageService {
 			log.info("File stored successfully: {}", storagePath);
 			return storagePath;
 
-		} catch (IOException e) {
+		}
+		catch (IOException e) {
 			log.error("File storage failed", e);
 			throw new RuntimeException("文件存储失败: " + e.getMessage(), e);
 		}
@@ -82,7 +83,8 @@ public class LocalFileStorageServiceImpl implements FileStorageService {
 			log.info("File stored successfully from byte array: {}", storagePath);
 			return storagePath;
 
-		} catch (IOException e) {
+		}
+		catch (IOException e) {
 			log.error("File storage failed from byte array", e);
 			throw new RuntimeException("文件存储失败: " + e.getMessage(), e);
 		}
@@ -96,12 +98,14 @@ public class LocalFileStorageServiceImpl implements FileStorageService {
 			if (Files.exists(fullPath)) {
 				Files.deleteIfExists(fullPath);
 				log.info("File deleted successfully: {}", internalPath);
-			} else {
+			}
+			else {
 				// Deletion is idempotent, treat non-existence as success
 				log.info("File does not exist, skipping deletion (idempotent): {}", internalPath);
 			}
 			return true;
-		} catch (IOException e) {
+		}
+		catch (IOException e) {
 			log.error("Failed to delete file: {}", filePath, e);
 			return false;
 		}
@@ -122,7 +126,8 @@ public class LocalFileStorageServiceImpl implements FileStorageService {
 		Path fullPath = Paths.get(fileStorageProperties.getPath(), internalPath);
 		if (Files.exists(fullPath)) {
 			return new FileSystemResource(fullPath);
-		} else {
+		}
+		else {
 			throw new RuntimeException("File is not exist: " + internalPath);
 		}
 	}
@@ -142,7 +147,8 @@ public class LocalFileStorageServiceImpl implements FileStorageService {
 			try {
 				java.net.URL url = new java.net.URL(path);
 				path = url.getPath();
-			} catch (java.net.MalformedURLException e) {
+			}
+			catch (java.net.MalformedURLException e) {
 				log.warn("Failed to parse URL: {}", path);
 			}
 		}

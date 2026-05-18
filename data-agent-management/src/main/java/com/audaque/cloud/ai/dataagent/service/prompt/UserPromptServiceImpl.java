@@ -26,8 +26,7 @@ import java.time.LocalDateTime;
 import java.util.*;
 
 /**
- * User Prompt Configuration Management Service Provides CRUD functionality for
- * prompt
+ * User Prompt Configuration Management Service Provides CRUD functionality for prompt
  * configurations, supports runtime configuration updates
  *
  */
@@ -40,8 +39,8 @@ public class UserPromptServiceImpl implements UserPromptService {
 
 	@Override
 	public UserPromptConfig saveOrUpdateConfig(PromptConfigDTO configDTO) {
-		log.info("Saving or updating prompt config: name={}, type={}, agentId={}",
-				configDTO.name(), configDTO.promptType(), configDTO.agentId());
+		log.info("Saving or updating prompt config: name={}, type={}, agentId={}", configDTO.name(),
+				configDTO.promptType(), configDTO.agentId());
 
 		UserPromptConfig config;
 		if (configDTO.id() != null) {
@@ -57,7 +56,8 @@ public class UserPromptServiceImpl implements UserPromptService {
 				config.setDisplayOrder(configDTO.displayOrder() != null ? configDTO.displayOrder() : 0);
 				config.setUpdateTime(LocalDateTime.now());
 				userPromptConfigMapper.updateById(config);
-			} else {
+			}
+			else {
 				// ID不存在，创建新配置
 				config = new UserPromptConfig();
 				config.setId(configDTO.id());
@@ -77,7 +77,8 @@ public class UserPromptServiceImpl implements UserPromptService {
 
 				userPromptConfigMapper.insert(config);
 			}
-		} else {
+		}
+		else {
 			// Create new configuration
 			config = new UserPromptConfig();
 			config.setId(UUID.randomUUID().toString());
@@ -115,7 +116,8 @@ public class UserPromptServiceImpl implements UserPromptService {
 		UserPromptConfig config = userPromptConfigMapper.selectById(id);
 		if (config == null) {
 			log.warn("Prompt config not found for id: {}", id);
-		} else {
+		}
+		else {
 			log.debug("Found prompt config: {} (type: {})", config.getName(), config.getPromptType());
 		}
 		return config;
@@ -135,7 +137,8 @@ public class UserPromptServiceImpl implements UserPromptService {
 		UserPromptConfig config = userPromptConfigMapper.selectActiveByPromptType(promptType, agentId);
 		if (config == null) {
 			log.debug("No active config found for type: {}, agentId: {}", promptType, agentId);
-		} else {
+		}
+		else {
 			log.debug("Found active config: {} for type: {}", config.getName(), promptType);
 		}
 		return config;
@@ -166,10 +169,12 @@ public class UserPromptServiceImpl implements UserPromptService {
 			if (deleted > 0) {
 				log.info("Successfully deleted prompt config: {} (name: {})", id, config.getName());
 				return true;
-			} else {
+			}
+			else {
 				log.error("Failed to delete prompt config: {}", id);
 			}
-		} else {
+		}
+		else {
 			log.warn("Prompt config not found for deletion: {}", id);
 		}
 		return false;
@@ -184,10 +189,12 @@ public class UserPromptServiceImpl implements UserPromptService {
 			if (updated > 0) {
 				log.info("Successfully enabled prompt config: {} (name: {})", id, config.getName());
 				return true;
-			} else {
+			}
+			else {
 				log.error("Failed to enable prompt config: {}", id);
 			}
-		} else {
+		}
+		else {
 			log.warn("Prompt config not found for enabling: {}", id);
 		}
 		return false;
@@ -200,7 +207,8 @@ public class UserPromptServiceImpl implements UserPromptService {
 		if (updated > 0) {
 			log.info("Successfully disabled prompt config: {}", id);
 			return true;
-		} else {
+		}
+		else {
 			log.warn("Failed to disable prompt config: {} - config not found or already disabled", id);
 		}
 		return false;
@@ -249,7 +257,8 @@ public class UserPromptServiceImpl implements UserPromptService {
 			userPromptConfigMapper.updateById(config);
 			log.info("Successfully updated priority for config: {} to {}", id, priority);
 			return true;
-		} else {
+		}
+		else {
 			log.warn("Prompt config not found for priority update: {}", id);
 		}
 		return false;
@@ -265,7 +274,8 @@ public class UserPromptServiceImpl implements UserPromptService {
 			userPromptConfigMapper.updateById(config);
 			log.info("Successfully updated display order for config: {} to {}", id, displayOrder);
 			return true;
-		} else {
+		}
+		else {
 			log.warn("Prompt config not found for display order update: {}", id);
 		}
 		return false;

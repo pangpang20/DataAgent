@@ -52,7 +52,7 @@ public class Agent {
 
 	private String category; // Category
 
-	private Long adminId; // Admin ID
+	private Long creatorId; // Creator ID
 
 	private String tags; // Tags, comma separated
 

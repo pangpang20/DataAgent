@@ -26,19 +26,19 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 public class AgentQueryDTO extends BasePageQueryDTO {
 
-    /**
-     * Fuzzy search by name or description
-     */
-    private String keyword;
+	/**
+	 * Fuzzy search by name or description
+	 */
+	private String keyword;
 
-    /**
-     * Filter by status: draft, published, offline
-     */
-    private String status;
+	/**
+	 * Filter by status: draft, published, offline
+	 */
+	private String status;
 
-    /**
-     * Filter by category
-     */
-    private String category;
+	/**
+	 * Filter by category
+	 */
+	private String category;
 
 }

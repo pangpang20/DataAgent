@@ -20,6 +20,7 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.MediaType;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -39,8 +40,8 @@ import java.nio.file.Paths;
 @Slf4j
 @RestController
 @RequestMapping("/api")
-@CrossOrigin(origins = "*")
 @AllArgsConstructor
+@PreAuthorize("hasAuthority('file:upload')")
 public class FileUploadController {
 
 	private final FileStorageProperties fileStorageProperties;
@@ -75,15 +76,15 @@ public class FileUploadController {
 			log.debug("头像上传成功 - filePath: {}, fileUrl: {}, filename: {}", filePath, fileUrl, filename);
 			return ResponseEntity.ok(UploadResponse.ok("上传成功", fileUrl, filename));
 
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			log.error("头像上传失败", e);
 			return ResponseEntity.internalServerError().body(UploadResponse.error("上传失败: " + e.getMessage()));
 		}
 	}
 
 	/**
-	 * 获取文件 - 此方法已废弃，文件访问由 WebConfig 静态资源映射处理
-	 * 保留此方法仅作为备用方案
+	 * 获取文件 - 此方法已废弃，文件访问由 WebConfig 静态资源映射处理 保留此方法仅作为备用方案
 	 */
 	@Deprecated
 	@GetMapping("/upload/**")
@@ -103,11 +104,11 @@ public class FileUploadController {
 			String contentType = Files.probeContentType(fullPath);
 
 			return ResponseEntity.ok()
-					.contentType(
-							MediaType.parseMediaType(contentType != null ? contentType : "application/octet-stream"))
-					.body(fileContent);
+				.contentType(MediaType.parseMediaType(contentType != null ? contentType : "application/octet-stream"))
+				.body(fileContent);
 
-		} catch (IOException e) {
+		}
+		catch (IOException e) {
 			log.error("文件读取失败", e);
 			return ResponseEntity.internalServerError().build();
 		}

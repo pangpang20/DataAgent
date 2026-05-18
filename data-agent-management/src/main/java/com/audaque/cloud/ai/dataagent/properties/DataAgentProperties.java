@@ -51,9 +51,8 @@ public class DataAgentProperties {
 	private int maxSqlRetryCount = 10;
 
 	/**
-	 * Fine-grained retry thresholds for different error types
-	 * Syntax errors: typically LLM output format issues, excessive retries are
-	 * meaningless
+	 * Fine-grained retry thresholds for different error types Syntax errors: typically
+	 * LLM output format issues, excessive retries are meaningless
 	 */
 	private int maxSqlSyntaxErrorRetry = 10;
 
@@ -230,10 +229,8 @@ public class DataAgentProperties {
 	public static class PromptProperties {
 
 		/**
-		 * 外部Prompt目录路径
-		 * 支持绝对路径：/opt/dataagent/prompts 或 C:\\dataagent\\prompts
-		 * 支持相对路径：./prompts 或 prompts（相对于应用启动目录）
-		 * 未配置或为空则使用JAR内部资源
+		 * 外部Prompt目录路径 支持绝对路径：/opt/dataagent/prompts 或 C:\\dataagent\\prompts
+		 * 支持相对路径：./prompts 或 prompts（相对于应用启动目录） 未配置或为空则使用JAR内部资源
 		 */
 		private String externalDir;
 

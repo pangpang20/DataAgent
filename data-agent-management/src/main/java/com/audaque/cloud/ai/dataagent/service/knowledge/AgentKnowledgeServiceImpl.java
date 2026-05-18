@@ -68,8 +68,8 @@ public class AgentKnowledgeServiceImpl implements AgentKnowledgeService {
 	@Override
 	@Transactional
 	public AgentKnowledgeVO createKnowledge(CreateKnowledgeDTO createKnowledgeDto) {
-		log.info("Creating agent knowledge: title={}, type={}, agentId={}",
-				createKnowledgeDto.getTitle(), createKnowledgeDto.getType(), createKnowledgeDto.getAgentId());
+		log.info("Creating agent knowledge: title={}, type={}, agentId={}", createKnowledgeDto.getTitle(),
+				createKnowledgeDto.getType(), createKnowledgeDto.getAgentId());
 		String storagePath = null;
 		checkCreateKnowledgeDto(createKnowledgeDto);
 
@@ -77,7 +77,8 @@ public class AgentKnowledgeServiceImpl implements AgentKnowledgeService {
 			// 将文件保存到磁盘
 			try {
 				storagePath = fileStorageService.storeFile(createKnowledgeDto.getFile(), AGENT_KNOWLEDGE_FILE_PATH);
-			} catch (Exception e) {
+			}
+			catch (Exception e) {
 				log.error("Failed to store file, agentId:{} title:{} type:{} ", createKnowledgeDto.getAgentId(),
 						createKnowledgeDto.getTitle(), createKnowledgeDto.getType());
 				throw new RuntimeException("Failed to store file.");
@@ -168,8 +169,8 @@ public class AgentKnowledgeServiceImpl implements AgentKnowledgeService {
 
 	@Override
 	public PageResult<AgentKnowledgeVO> queryByConditionsWithPage(AgentKnowledgeQueryDTO queryDTO) {
-		log.debug("Querying agent knowledge with page: pageNum={}, pageSize={}, agentId={}",
-				queryDTO.getPageNum(), queryDTO.getPageSize(), queryDTO.getAgentId());
+		log.debug("Querying agent knowledge with page: pageNum={}, pageSize={}, agentId={}", queryDTO.getPageNum(),
+				queryDTO.getPageSize(), queryDTO.getAgentId());
 
 		int offset = (queryDTO.getPageNum() - 1) * queryDTO.getPageSize();
 
@@ -183,8 +184,8 @@ public class AgentKnowledgeServiceImpl implements AgentKnowledgeService {
 		pageResult.setPageNum(queryDTO.getPageNum());
 		pageResult.setPageSize(queryDTO.getPageSize());
 		pageResult.calculateTotalPages();
-		log.debug("Query completed: total={}, pages={}, returned {} records",
-				total, pageResult.getTotalPages(), dataListVO.size());
+		log.debug("Query completed: total={}, pages={}, returned {} records", total, pageResult.getTotalPages(),
+				dataListVO.size());
 
 		return pageResult;
 	}

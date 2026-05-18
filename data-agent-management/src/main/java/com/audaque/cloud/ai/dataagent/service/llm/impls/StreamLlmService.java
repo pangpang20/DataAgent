@@ -34,17 +34,17 @@ public class StreamLlmService implements LlmService {
 		log.debug("System message: {}", system);
 		log.debug("User message: {}", user);
 		return registry.getChatClient()
-				.prompt()
-				.system(system)
-				.user(user)
-				.stream()
-				.chatResponse()
-				.doOnSubscribe(s -> log.trace("LLM stream subscribed (system+user)"))
-				.doOnNext(r -> log.trace("LLM response received: hasResult={}, hasOutput={}",
-						r != null && r.getResult() != null,
-						r != null && r.getResult() != null && r.getResult().getOutput() != null))
-				.doOnError(e -> log.error("LLM stream error (system+user): {}", e.getMessage(), e))
-				.doOnComplete(() -> log.trace("LLM stream completed (system+user)"));
+			.prompt()
+			.system(system)
+			.user(user)
+			.stream()
+			.chatResponse()
+			.doOnSubscribe(s -> log.trace("LLM stream subscribed (system+user)"))
+			.doOnNext(r -> log.trace("LLM response received: hasResult={}, hasOutput={}",
+					r != null && r.getResult() != null,
+					r != null && r.getResult() != null && r.getResult().getOutput() != null))
+			.doOnError(e -> log.error("LLM stream error (system+user): {}", e.getMessage(), e))
+			.doOnComplete(() -> log.trace("LLM stream completed (system+user)"));
 	}
 
 	@Override
@@ -52,17 +52,17 @@ public class StreamLlmService implements LlmService {
 		log.debug("StreamLlmService.callSystem() - Sending system message with default user message");
 		log.debug("System message: {}", system);
 		return registry.getChatClient()
-				.prompt()
-				.system(system)
-				.user("请根据以上指令执行")
-				.stream()
-				.chatResponse()
-				.doOnSubscribe(s -> log.trace("LLM stream subscribed (system+default user)"))
-				.doOnNext(r -> log.trace("LLM response received: hasResult={}, hasOutput={}",
-						r != null && r.getResult() != null,
-						r != null && r.getResult() != null && r.getResult().getOutput() != null))
-				.doOnError(e -> log.error("LLM stream error (system+default user): {}", e.getMessage(), e))
-				.doOnComplete(() -> log.trace("LLM stream completed (system+default user)"));
+			.prompt()
+			.system(system)
+			.user("请根据以上指令执行")
+			.stream()
+			.chatResponse()
+			.doOnSubscribe(s -> log.trace("LLM stream subscribed (system+default user)"))
+			.doOnNext(r -> log.trace("LLM response received: hasResult={}, hasOutput={}",
+					r != null && r.getResult() != null,
+					r != null && r.getResult() != null && r.getResult().getOutput() != null))
+			.doOnError(e -> log.error("LLM stream error (system+default user): {}", e.getMessage(), e))
+			.doOnComplete(() -> log.trace("LLM stream completed (system+default user)"));
 	}
 
 	@Override
@@ -70,16 +70,16 @@ public class StreamLlmService implements LlmService {
 		log.debug("StreamLlmService.callUser() - Sending user message only");
 		log.debug("User message: {}", user);
 		return registry.getChatClient()
-				.prompt()
-				.user(user)
-				.stream()
-				.chatResponse()
-				.doOnSubscribe(s -> log.trace("LLM stream subscribed (user only)"))
-				.doOnNext(r -> log.trace("LLM response received: hasResult={}, hasOutput={}",
-						r != null && r.getResult() != null,
-						r != null && r.getResult() != null && r.getResult().getOutput() != null))
-				.doOnError(e -> log.error("LLM stream error (user only): {}", e.getMessage(), e))
-				.doOnComplete(() -> log.trace("LLM stream completed (user only)"));
+			.prompt()
+			.user(user)
+			.stream()
+			.chatResponse()
+			.doOnSubscribe(s -> log.trace("LLM stream subscribed (user only)"))
+			.doOnNext(r -> log.trace("LLM response received: hasResult={}, hasOutput={}",
+					r != null && r.getResult() != null,
+					r != null && r.getResult() != null && r.getResult().getOutput() != null))
+			.doOnError(e -> log.error("LLM stream error (user only): {}", e.getMessage(), e))
+			.doOnComplete(() -> log.trace("LLM stream completed (user only)"));
 	}
 
 }

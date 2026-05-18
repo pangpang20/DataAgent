@@ -70,7 +70,8 @@ public class SqlGenerateDispatcher implements EdgeAction {
 						shouldRetry = true;
 						log.info("SQL syntax error retry allowed: {}/{}", syntaxErrorCount,
 								properties.getMaxSqlSyntaxErrorRetry());
-					} else {
+					}
+					else {
 						reachedLimitReason = "syntax error";
 						log.warn("SQL syntax error retry limit reached: {}/{}", syntaxErrorCount,
 								properties.getMaxSqlSyntaxErrorRetry());
@@ -81,7 +82,8 @@ public class SqlGenerateDispatcher implements EdgeAction {
 						shouldRetry = true;
 						log.info("SQL semantic error retry allowed: {}/{}", semanticErrorCount,
 								properties.getMaxSqlSemanticErrorRetry());
-					} else {
+					}
+					else {
 						reachedLimitReason = "semantic error";
 						log.warn("SQL semantic error retry limit reached: {}/{}", semanticErrorCount,
 								properties.getMaxSqlSemanticErrorRetry());
@@ -92,7 +94,8 @@ public class SqlGenerateDispatcher implements EdgeAction {
 						shouldRetry = true;
 						log.info("SQL execution error retry allowed: {}/{}", executionErrorCount,
 								properties.getMaxSqlExecutionErrorRetry());
-					} else {
+					}
+					else {
 						reachedLimitReason = "execution error";
 						log.warn("SQL execution error retry limit reached: {}/{}", executionErrorCount,
 								properties.getMaxSqlExecutionErrorRetry());
@@ -104,7 +107,8 @@ public class SqlGenerateDispatcher implements EdgeAction {
 					if (totalCount < 3) {
 						shouldRetry = true;
 						log.info("SQL unknown error retry allowed (fallback): {}/3", totalCount);
-					} else {
+					}
+					else {
 						reachedLimitReason = "unknown error (empty response)";
 						log.warn("SQL unknown error retry limit reached: {}/3", totalCount);
 					}
@@ -115,7 +119,8 @@ public class SqlGenerateDispatcher implements EdgeAction {
 						shouldRetry = true;
 						log.info("SQL unknown error retry allowed (fallback): {}/{}", totalCount,
 								properties.getMaxSqlRetryCount());
-					} else {
+					}
+					else {
 						reachedLimitReason = "total retry count";
 						log.warn("SQL total retry limit reached: {}/{}", totalCount, properties.getMaxSqlRetryCount());
 					}
@@ -125,7 +130,8 @@ public class SqlGenerateDispatcher implements EdgeAction {
 			if (shouldRetry) {
 				log.info("Starting SQL generation retry for {} error, attempt #{}", errorType, totalCount + 1);
 				return SQL_GENERATE_NODE;
-			} else {
+			}
+			else {
 				log.error(
 						"SQL generation failed permanently - reached {} limit. Total: {}, Syntax: {}, Semantic: {}, Execution: {}",
 						reachedLimitReason, totalCount, syntaxErrorCount, semanticErrorCount, executionErrorCount);
@@ -139,7 +145,8 @@ public class SqlGenerateDispatcher implements EdgeAction {
 		if (END.equals(sqlGenerateOutput)) {
 			log.info("Detected workflow end flag: {}", END);
 			return END;
-		} else {
+		}
+		else {
 			log.info("SQL generation successful, entering semantic consistency check node: {}",
 					SEMANTIC_CONSISTENCY_NODE);
 			return SEMANTIC_CONSISTENCY_NODE;

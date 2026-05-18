@@ -75,7 +75,8 @@ public class AgentDatasourceServiceImpl implements AgentDatasourceService {
 			// Call the original initialization method
 			return schemaService.schema(agentIdStr, schemaInitRequest);
 
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			log.error("Failed to initialize schema for agent: {} with datasource: {}", agentId, datasourceId, e);
 			throw new RuntimeException("Failed to initialize schema for agent " + agentId + ": " + e.getMessage(), e);
 		}
@@ -94,8 +95,8 @@ public class AgentDatasourceServiceImpl implements AgentDatasourceService {
 			if (agentDatasource.getDatasourceId() != null) {
 				Datasource datasource = datasourceService.getDatasourceById(agentDatasource.getDatasourceId());
 				agentDatasource.setDatasource(datasource);
-				log.debug("Filled datasource info for relation id: {}, datasource: {}",
-						agentDatasource.getId(), datasource != null ? datasource.getName() : "null");
+				log.debug("Filled datasource info for relation id: {}, datasource: {}", agentDatasource.getId(),
+						datasource != null ? datasource.getName() : "null");
 			}
 			// Get selected tables
 			int id = agentDatasource.getId();
@@ -132,7 +133,8 @@ public class AgentDatasourceServiceImpl implements AgentDatasourceService {
 			// Query and return the updated association
 			result = agentDatasourceMapper.selectByAgentIdAndDatasourceId(agentId, datasourceId);
 			log.info("Activated existing datasource relation for agent: {}, datasource: {}", agentId, datasourceId);
-		} else {
+		}
+		else {
 			log.debug("Creating new datasource relation for agent: {}, datasource: {}", agentId, datasourceId);
 			// If it does not exist, create a new association
 			AgentDatasource agentDatasource = new AgentDatasource(agentId, datasourceId);
@@ -184,8 +186,8 @@ public class AgentDatasourceServiceImpl implements AgentDatasourceService {
 	@Override
 	@Transactional
 	public void updateDatasourceTables(Integer agentId, Integer datasourceId, List<String> tables) {
-		log.info("Updating datasource tables for agent: {}, datasource: {}, table count: {}",
-				agentId, datasourceId, tables != null ? tables.size() : 0);
+		log.info("Updating datasource tables for agent: {}, datasource: {}, table count: {}", agentId, datasourceId,
+				tables != null ? tables.size() : 0);
 
 		if (agentId == null || datasourceId == null || tables == null) {
 			log.error("Invalid parameters - agentId: {}, datasourceId: {}, tables: {}", agentId, datasourceId, tables);
@@ -201,7 +203,8 @@ public class AgentDatasourceServiceImpl implements AgentDatasourceService {
 		if (tables.isEmpty()) {
 			log.debug("Removing all tables from relation id: {}", datasource.getId());
 			tablesMapper.removeAllTables(datasource.getId());
-		} else {
+		}
+		else {
 			log.debug("Updating {} tables for relation id: {}", tables.size(), datasource.getId());
 			tablesMapper.updateAgentDatasourceTables(datasource.getId(), tables);
 		}

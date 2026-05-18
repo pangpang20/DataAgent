@@ -81,8 +81,7 @@ public class AgentKnowledge {
 	private Integer isResourceCleaned;
 
 	/**
-	 * 文本切割方式：token, recursive
-	 * 默认值：token
+	 * 文本切割方式：token, recursive 默认值：token
 	 */
 	private String splitterType = "token";
 

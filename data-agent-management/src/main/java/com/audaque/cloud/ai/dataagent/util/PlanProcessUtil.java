@@ -96,8 +96,8 @@ public final class PlanProcessUtil {
 	}
 
 	/**
-	 * Get the plan object from state. Attempts to repair truncated JSON if initial parsing
-	 * fails (e.g., when LLM output is cut off due to maxTokens limit).
+	 * Get the plan object from state. Attempts to repair truncated JSON if initial
+	 * parsing fails (e.g., when LLM output is cut off due to maxTokens limit).
 	 * @param state the overall state containing plan information
 	 * @return the parsed plan object
 	 * @throws IllegalStateException if plan output is empty or plan parsing fails

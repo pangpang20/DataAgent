@@ -168,7 +168,8 @@ public class DatasourceServiceImpl implements DatasourceService {
 			updateTestStatus(id, connectionSuccess ? "success" : "failed");
 
 			return connectionSuccess;
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			updateTestStatus(id, "failed");
 			log.error("Error testing connection for datasource ID " + id + ": " + e.getMessage(), e);
 			return false;
@@ -241,10 +242,10 @@ public class DatasourceServiceImpl implements DatasourceService {
 
 		// Extract table names
 		List<String> tableNames = tableInfoList.stream()
-				.map(TableInfoBO::getName)
-				.filter(name -> name != null && !name.trim().isEmpty())
-				.sorted()
-				.toList();
+			.map(TableInfoBO::getName)
+			.filter(name -> name != null && !name.trim().isEmpty())
+			.sorted()
+			.toList();
 
 		log.info("Found {} tables for datasource: {}", tableNames.size(), datasourceId);
 		return tableNames;
@@ -278,10 +279,10 @@ public class DatasourceServiceImpl implements DatasourceService {
 		Accessor dbAccessor = accessorFactory.getAccessorByDbConfig(dbConfig);
 		List<ColumnInfoBO> columnInfoList = dbAccessor.showColumns(dbConfig, queryParam); // 提取字段名称
 		List<String> columnNames = columnInfoList.stream()
-				.map(ColumnInfoBO::getName)
-				.filter(name -> name != null && !name.trim().isEmpty())
-				.sorted()
-				.toList();
+			.map(ColumnInfoBO::getName)
+			.filter(name -> name != null && !name.trim().isEmpty())
+			.sorted()
+			.toList();
 
 		log.info("Found {} columns for table {} in datasource: {}", columnNames.size(), tableName, datasourceId);
 		return columnNames;
@@ -386,13 +387,13 @@ public class DatasourceServiceImpl implements DatasourceService {
 		// 获取现有的所有外键关系
 		List<LogicalRelation> existingRelations = logicalRelationMapper.selectByDatasourceId(datasourceId);
 		Map<Integer, LogicalRelation> existingMap = existingRelations.stream()
-				.collect(Collectors.toMap(LogicalRelation::getId, relation -> relation));
+			.collect(Collectors.toMap(LogicalRelation::getId, relation -> relation));
 
 		// 收集传入列表中已存在的ID
 		Set<Integer> incomingIds = logicalRelations.stream()
-				.map(LogicalRelation::getId)
-				.filter(Objects::nonNull)
-				.collect(Collectors.toSet());
+			.map(LogicalRelation::getId)
+			.filter(Objects::nonNull)
+			.collect(Collectors.toSet());
 
 		// 删除那些不在传入列表中的外键
 		int deletedCount = 0;
@@ -418,7 +419,8 @@ public class DatasourceServiceImpl implements DatasourceService {
 			if (!seen.contains(key)) {
 				seen.add(key);
 				uniqueRelations.add(logicalRelation);
-			} else {
+			}
+			else {
 				log.warn("Skipping duplicate logical foreign key: {} -> {}", logicalRelation.getSourceTableName(),
 						logicalRelation.getTargetTableName());
 			}
@@ -442,7 +444,8 @@ public class DatasourceServiceImpl implements DatasourceService {
 				updatedCount++;
 				log.debug("Updated logical relation: {} -> {}", logicalRelation.getSourceTableName(),
 						logicalRelation.getTargetTableName());
-			} else {
+			}
+			else {
 				// 插入新记录
 				logicalRelation.setId(null);
 				logicalRelation.setCreatedTime(now);
@@ -462,8 +465,8 @@ public class DatasourceServiceImpl implements DatasourceService {
 
 	@Override
 	public PageResult<Datasource> queryByConditionsWithPage(DatasourceQueryDTO queryDTO) {
-		log.info("Page query datasources: pageNum={}, pageSize={}, keyword={}, type={}",
-				queryDTO.getPageNum(), queryDTO.getPageSize(), queryDTO.getKeyword(), queryDTO.getType());
+		log.info("Page query datasources: pageNum={}, pageSize={}, keyword={}, type={}", queryDTO.getPageNum(),
+				queryDTO.getPageSize(), queryDTO.getKeyword(), queryDTO.getType());
 
 		int offset = queryDTO.calculateOffset();
 

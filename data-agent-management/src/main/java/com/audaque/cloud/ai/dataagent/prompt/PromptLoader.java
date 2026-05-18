@@ -29,28 +29,26 @@ import java.nio.file.Paths;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Prompt loader, used to load prompt templates from file system
- * 支持从外部目录或JAR内部加载Prompt模板
+ * Prompt loader, used to load prompt templates from file system 支持从外部目录或JAR内部加载Prompt模板
  *
  */
 @Slf4j
 public class PromptLoader {
 
 	/**
-	 * 外部Prompt目录路径，通过DataAgentProperties配置
-	 * 优先级: application.yml > 环境变量 DATAAGENT_PROMPT_DIR > 系统属性 dataagent.prompt.dir
+	 * 外部Prompt目录路径，通过DataAgentProperties配置 优先级: application.yml > 环境变量
+	 * DATAAGENT_PROMPT_DIR > 系统属性 dataagent.prompt.dir
 	 */
 	private static String externalPromptDir;
-	
+
 	/**
-	 * 初始化外部Prompt目录配置
-	 * 此方法由Spring容器启动时调用
+	 * 初始化外部Prompt目录配置 此方法由Spring容器启动时调用
 	 * @param properties DataAgent配置属性
 	 */
 	public static void initialize(DataAgentProperties properties) {
 		if (properties != null && properties.getPrompt() != null) {
 			String configuredDir = properties.getPrompt().getExternalDir();
-			
+
 			// 优先使用application.yml中的配置
 			if (StringUtils.hasText(configuredDir)) {
 				externalPromptDir = configuredDir.trim();
@@ -58,7 +56,7 @@ public class PromptLoader {
 				return;
 			}
 		}
-		
+
 		// 回退到环境变量
 		String envDir = System.getenv("DATAAGENT_PROMPT_DIR");
 		if (StringUtils.hasText(envDir)) {
@@ -66,7 +64,7 @@ public class PromptLoader {
 			log.info("Using external prompt directory from environment variable: {}", externalPromptDir);
 			return;
 		}
-		
+
 		// 最后尝试系统属性
 		String sysDir = System.getProperty("dataagent.prompt.dir");
 		if (StringUtils.hasText(sysDir)) {
@@ -74,21 +72,19 @@ public class PromptLoader {
 			log.info("Using external prompt directory from system property: {}", externalPromptDir);
 			return;
 		}
-		
+
 		// 未配置任何外部目录
 		externalPromptDir = null;
 		log.debug("No external prompt directory configured, will use internal resources");
 	}
-	
+
 	private static final String PROMPT_PATH_PREFIX = "prompts/";
 
 	private static final ConcurrentHashMap<String, String> promptCache = new ConcurrentHashMap<>();
 
 	/**
-	 * Load prompt template from file
-	 * 加载顺序:
-	 * 1. 如果配置了外部Prompt目录，优先从外部目录加载
-	 * 2. 如果外部文件不存在，回退到JAR内部资源
+	 * Load prompt template from file 加载顺序: 1. 如果配置了外部Prompt目录，优先从外部目录加载 2.
+	 * 如果外部文件不存在，回退到JAR内部资源
 	 * @param promptName prompt file name (without path and extension)
 	 * @return prompt content
 	 */
@@ -101,12 +97,12 @@ public class PromptLoader {
 					return externalContent;
 				}
 			}
-			
+
 			// 2. 回退到JAR内部资源
 			return loadFromInternalResource(name);
 		});
 	}
-	
+
 	/**
 	 * 从外部目录加载Prompt文件
 	 * @param promptName prompt名称
@@ -115,24 +111,26 @@ public class PromptLoader {
 	private static String loadFromExternalDir(String promptName) {
 		try {
 			Path externalFile = Paths.get(externalPromptDir, promptName + ".txt");
-			
+
 			if (Files.exists(externalFile) && Files.isRegularFile(externalFile)) {
 				String content = Files.readString(externalFile, StandardCharsets.UTF_8);
-				log.info("Successfully loaded prompt '{}' from external directory: {}", 
-						promptName, externalFile.toAbsolutePath());
+				log.info("Successfully loaded prompt '{}' from external directory: {}", promptName,
+						externalFile.toAbsolutePath());
 				return content;
-			} else {
-				log.debug("External prompt file not found: {}, will fallback to internal resource", 
+			}
+			else {
+				log.debug("External prompt file not found: {}, will fallback to internal resource",
 						externalFile.toAbsolutePath());
 				return null;
 			}
-		} catch (IOException e) {
-			log.warn("Failed to load external prompt '{}': {}, will fallback to internal resource", 
-					promptName, e.getMessage());
+		}
+		catch (IOException e) {
+			log.warn("Failed to load external prompt '{}': {}, will fallback to internal resource", promptName,
+					e.getMessage());
 			return null;
 		}
 	}
-	
+
 	/**
 	 * 从JAR内部资源加载Prompt文件
 	 * @param promptName prompt名称
@@ -156,15 +154,14 @@ public class PromptLoader {
 	}
 
 	/**
-	 * Clear prompt cache
-	 * 清空缓存后，下次加载将重新读取文件（用于热更新Prompt）
+	 * Clear prompt cache 清空缓存后，下次加载将重新读取文件（用于热更新Prompt）
 	 */
 	public static void clearCache() {
 		int cacheSize = promptCache.size();
 		promptCache.clear();
 		log.info("Prompt cache cleared, {} prompts removed", cacheSize);
 	}
-	
+
 	/**
 	 * Reload specific prompt (clear cache and reload)
 	 * @param promptName prompt name to reload
@@ -181,7 +178,7 @@ public class PromptLoader {
 	public static int getCacheSize() {
 		return promptCache.size();
 	}
-	
+
 	/**
 	 * Get external prompt directory path
 	 * @return external directory path, null if not configured

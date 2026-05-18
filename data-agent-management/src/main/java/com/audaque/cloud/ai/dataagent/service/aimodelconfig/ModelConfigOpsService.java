@@ -101,8 +101,7 @@ public class ModelConfigOpsService {
 	}
 
 	/**
-	 * 强制激活指定配置（用于切换不同维度的 Embedding 模型）
-	 * 会删除现有的 Milvus collection 并重新创建
+	 * 强制激活指定配置（用于切换不同维度的 Embedding 模型） 会删除现有的 Milvus collection 并重新创建
 	 */
 	@Transactional(rollbackFor = Exception.class)
 	public void forceActivateConfig(Integer id) {
@@ -121,28 +120,31 @@ public class ModelConfigOpsService {
 				int modelDimension = tempModel.dimensions();
 
 				// 检查与向量库的兼容性
-				VectorDimensionService.DimensionCheckResult result = 
-					vectorDimensionService.checkDimensionCompatibility(modelDimension);
+				VectorDimensionService.DimensionCheckResult result = vectorDimensionService
+					.checkDimensionCompatibility(modelDimension);
 
 				if (!result.isCompatible()) {
 					// 维度不匹配，删除现有 collection
 					log.warn("Dimension mismatch detected. Collection: {}, Model: {}. Dropping collection...",
 							result.getCollectionDimension(), result.getModelDimension());
-					
+
 					boolean dropped = vectorDimensionService.dropCurrentCollection();
 					if (!dropped) {
 						throw new RuntimeException("删除现有 collection 失败，无法切换模型");
 					}
-					
+
 					// 更新配置文件中的维度
 					vectorDimensionService.updateConfiguredDimension(modelDimension);
-					
-					log.info("Collection dropped successfully. Dimension updated to {}. Please restart the application to create new collection.",
+
+					log.info(
+							"Collection dropped successfully. Dimension updated to {}. Please restart the application to create new collection.",
 							modelDimension);
 				}
-			} catch (RuntimeException e) {
+			}
+			catch (RuntimeException e) {
 				throw e;
-			} catch (Exception e) {
+			}
+			catch (Exception e) {
 				log.error("Failed to check embedding dimension: {}", e.getMessage(), e);
 				throw new RuntimeException("检查 Embedding 维度失败: " + e.getMessage());
 			}
@@ -169,7 +171,8 @@ public class ModelConfigOpsService {
 			int modelDimension = tempModel.dimensions();
 
 			// 检查与向量库的兼容性
-			VectorDimensionService.DimensionCheckResult result = vectorDimensionService.checkDimensionCompatibility(modelDimension);
+			VectorDimensionService.DimensionCheckResult result = vectorDimensionService
+				.checkDimensionCompatibility(modelDimension);
 
 			if (!result.isCompatible()) {
 				log.warn("Embedding model dimension mismatch! {}", result.getMessage());
@@ -179,10 +182,12 @@ public class ModelConfigOpsService {
 
 			log.info("Embedding model dimension check passed. Collection: {}, Model: {}",
 					result.getCollectionDimension(), result.getModelDimension());
-		} catch (RuntimeException e) {
+		}
+		catch (RuntimeException e) {
 			// 重新抛出已知的运行时异常
 			throw e;
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			log.error("Failed to check embedding dimension compatibility: {}", e.getMessage(), e);
 			// 维度检查失败不阻止激活，但记录警告
 			log.warn("Could not verify embedding dimension compatibility. Proceeding with activation.");

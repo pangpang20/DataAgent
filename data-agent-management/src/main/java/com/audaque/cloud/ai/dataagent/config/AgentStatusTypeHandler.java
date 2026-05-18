@@ -25,32 +25,32 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 /**
- * 自定义 AgentStatus 枚举类型处理器
- * 处理数据库字符串与 Java 枚举之间的转换
+ * 自定义 AgentStatus 枚举类型处理器 处理数据库字符串与 Java 枚举之间的转换
  */
 public class AgentStatusTypeHandler extends BaseTypeHandler<AgentStatus> {
 
-    @Override
-    public void setNonNullParameter(PreparedStatement ps, int i, AgentStatus parameter, JdbcType jdbcType)
-            throws SQLException {
-        ps.setString(i, parameter.getCode());
-    }
+	@Override
+	public void setNonNullParameter(PreparedStatement ps, int i, AgentStatus parameter, JdbcType jdbcType)
+			throws SQLException {
+		ps.setString(i, parameter.getCode());
+	}
 
-    @Override
-    public AgentStatus getNullableResult(ResultSet rs, String columnName) throws SQLException {
-        String code = rs.getString(columnName);
-        return code != null ? AgentStatus.fromCode(code) : null;
-    }
+	@Override
+	public AgentStatus getNullableResult(ResultSet rs, String columnName) throws SQLException {
+		String code = rs.getString(columnName);
+		return code != null ? AgentStatus.fromCode(code) : null;
+	}
 
-    @Override
-    public AgentStatus getNullableResult(ResultSet rs, int columnIndex) throws SQLException {
-        String code = rs.getString(columnIndex);
-        return code != null ? AgentStatus.fromCode(code) : null;
-    }
+	@Override
+	public AgentStatus getNullableResult(ResultSet rs, int columnIndex) throws SQLException {
+		String code = rs.getString(columnIndex);
+		return code != null ? AgentStatus.fromCode(code) : null;
+	}
 
-    @Override
-    public AgentStatus getNullableResult(CallableStatement cs, int columnIndex) throws SQLException {
-        String code = cs.getString(columnIndex);
-        return code != null ? AgentStatus.fromCode(code) : null;
-    }
+	@Override
+	public AgentStatus getNullableResult(CallableStatement cs, int columnIndex) throws SQLException {
+		String code = cs.getString(columnIndex);
+		return code != null ? AgentStatus.fromCode(code) : null;
+	}
+
 }

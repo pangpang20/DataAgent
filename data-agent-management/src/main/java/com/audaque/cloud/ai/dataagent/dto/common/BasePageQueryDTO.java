@@ -26,22 +26,21 @@ import lombok.Data;
 @Data
 public class BasePageQueryDTO {
 
-    @NotNull(message = "pageNum cannot be null")
-    @Min(value = 1, message = "pageNum must be greater than 0")
-    private Integer pageNum = 1;
+	@NotNull(message = "pageNum cannot be null")
+	@Min(value = 1, message = "pageNum must be greater than 0")
+	private Integer pageNum = 1;
 
-    @NotNull(message = "pageSize cannot be null")
-    @Min(value = 1, message = "pageSize must be greater than 0")
-    @Max(value = 100, message = "pageSize cannot exceed 100")
-    private Integer pageSize = 10;
+	@NotNull(message = "pageSize cannot be null")
+	@Min(value = 1, message = "pageSize must be greater than 0")
+	@Max(value = 100, message = "pageSize cannot exceed 100")
+	private Integer pageSize = 10;
 
-    /**
-     * Calculate offset for pagination
-     * 
-     * @return offset value
-     */
-    public int calculateOffset() {
-        return (pageNum - 1) * pageSize;
-    }
+	/**
+	 * Calculate offset for pagination
+	 * @return offset value
+	 */
+	public int calculateOffset() {
+		return (pageNum - 1) * pageSize;
+	}
 
 }

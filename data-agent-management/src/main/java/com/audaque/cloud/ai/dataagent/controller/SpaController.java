@@ -19,44 +19,43 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 
 /**
- * SPA Fallback Controller.
- * Handles frontend routes by forwarding to index.html for Vue Router to
- * process.
+ * SPA Fallback Controller. Handles frontend routes by forwarding to index.html for Vue
+ * Router to process.
  */
 @Controller
 public class SpaController {
 
-    /**
-     * Forward widget routes to index.html for Vue Router.
-     * This enables the /widget/{id} route to work properly in production.
-     */
-    @GetMapping("/widget/**")
-    public String widget() {
-        return "forward:/index.html";
-    }
+	/**
+	 * Forward widget routes to index.html for Vue Router. This enables the /widget/{id}
+	 * route to work properly in production.
+	 */
+	@GetMapping("/widget/**")
+	public String widget() {
+		return "forward:/index.html";
+	}
 
-    /**
-     * Forward agent run routes to index.html.
-     */
-    @GetMapping("/agent/**")
-    public String agent() {
-        return "forward:/index.html";
-    }
+	/**
+	 * Forward agent run routes to index.html.
+	 */
+	@GetMapping("/agent/**")
+	public String agent() {
+		return "forward:/index.html";
+	}
 
-    /**
-     * Forward agents list route to index.html.
-     */
-    @GetMapping("/agents")
-    public String agents() {
-        return "forward:/index.html";
-    }
+	/**
+	 * Forward agents list route to index.html.
+	 */
+	@GetMapping("/agents")
+	public String agents() {
+		return "forward:/index.html";
+	}
 
-    /**
-     * Forward model-config route to index.html.
-     */
-    @GetMapping("/model-config")
-    public String modelConfig() {
-        return "forward:/index.html";
-    }
+	/**
+	 * Forward model-config route to index.html.
+	 */
+	@GetMapping("/model-config")
+	public String modelConfig() {
+		return "forward:/index.html";
+	}
 
 }

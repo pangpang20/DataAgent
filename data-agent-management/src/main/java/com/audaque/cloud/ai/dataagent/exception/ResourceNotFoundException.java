@@ -20,11 +20,12 @@ package com.audaque.cloud.ai.dataagent.exception;
  */
 public class ResourceNotFoundException extends BusinessException {
 
-    public ResourceNotFoundException(String message) {
-        super(message);
-    }
+	public ResourceNotFoundException(String message) {
+		super(message);
+	}
 
-    public ResourceNotFoundException(String resourceType, Object resourceId) {
-        super(String.format("%s not found: %s", resourceType, resourceId));
-    }
+	public ResourceNotFoundException(String resourceType, Object resourceId) {
+		super(String.format("%s not found: %s", resourceType, resourceId));
+	}
+
 }

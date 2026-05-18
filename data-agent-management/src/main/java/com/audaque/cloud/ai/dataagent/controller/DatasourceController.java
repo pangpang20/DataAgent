@@ -28,6 +28,7 @@ import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -35,8 +36,8 @@ import java.util.List;
 @Slf4j
 @RestController
 @RequestMapping("/api/datasource")
-@CrossOrigin(origins = "*")
 @AllArgsConstructor
+@PreAuthorize("hasAuthority('datasource:list')")
 public class DatasourceController {
 
 	private final DatasourceService datasourceService;
@@ -53,9 +54,11 @@ public class DatasourceController {
 
 		if (status != null && !status.isEmpty()) {
 			datasources = datasourceService.getDatasourceByStatus(status);
-		} else if (type != null && !type.isEmpty()) {
+		}
+		else if (type != null && !type.isEmpty()) {
 			datasources = datasourceService.getDatasourceByType(type);
-		} else {
+		}
+		else {
 			datasources = datasourceService.getAllDatasource();
 		}
 
@@ -68,8 +71,8 @@ public class DatasourceController {
 	@PostMapping("/page")
 	public PageResponse<List<Datasource>> queryByPage(@Valid @RequestBody DatasourceQueryDTO queryDTO) {
 		PageResult<Datasource> pageResult = datasourceService.queryByConditionsWithPage(queryDTO);
-		return PageResponse.success(pageResult.getData(), pageResult.getTotal(),
-				pageResult.getPageNum(), pageResult.getPageSize(), pageResult.getTotalPages());
+		return PageResponse.success(pageResult.getData(), pageResult.getTotal(), pageResult.getPageNum(),
+				pageResult.getPageSize(), pageResult.getTotalPages());
 	}
 
 	/**
@@ -80,7 +83,8 @@ public class DatasourceController {
 		Datasource datasource = datasourceService.getDatasourceById(id);
 		if (datasource != null) {
 			return ResponseEntity.ok(datasource);
-		} else {
+		}
+		else {
 			return ResponseEntity.notFound().build();
 		}
 	}
@@ -155,13 +159,13 @@ public class DatasourceController {
 	public ApiResponse<LogicalRelation> addLogicalRelation(@PathVariable(value = "id") Integer datasourceId,
 			@Valid @RequestBody CreateLogicalRelationDTO dto) {
 		LogicalRelation logicalRelation = LogicalRelation.builder()
-				.sourceTableName(dto.getSourceTableName())
-				.sourceColumnName(dto.getSourceColumnName())
-				.targetTableName(dto.getTargetTableName())
-				.targetColumnName(dto.getTargetColumnName())
-				.relationType(dto.getRelationType())
-				.description(dto.getDescription())
-				.build();
+			.sourceTableName(dto.getSourceTableName())
+			.sourceColumnName(dto.getSourceColumnName())
+			.targetTableName(dto.getTargetTableName())
+			.targetColumnName(dto.getTargetColumnName())
+			.relationType(dto.getRelationType())
+			.description(dto.getDescription())
+			.build();
 
 		LogicalRelation created = datasourceService.addLogicalRelation(datasourceId, logicalRelation);
 		return ApiResponse.success("success create logical relation", created);
@@ -174,16 +178,15 @@ public class DatasourceController {
 	public ApiResponse<LogicalRelation> updateLogicalRelation(@PathVariable(value = "id") Integer datasourceId,
 			@PathVariable(value = "relationId") Integer relationId, @RequestBody UpdateLogicalRelationDTO dto) {
 		LogicalRelation logicalRelation = LogicalRelation.builder()
-				.sourceTableName(dto.getSourceTableName())
-				.sourceColumnName(dto.getSourceColumnName())
-				.targetTableName(dto.getTargetTableName())
-				.targetColumnName(dto.getTargetColumnName())
-				.relationType(dto.getRelationType())
-				.description(dto.getDescription())
-				.build();
+			.sourceTableName(dto.getSourceTableName())
+			.sourceColumnName(dto.getSourceColumnName())
+			.targetTableName(dto.getTargetTableName())
+			.targetColumnName(dto.getTargetColumnName())
+			.relationType(dto.getRelationType())
+			.description(dto.getDescription())
+			.build();
 
-		LogicalRelation updated = datasourceService.updateLogicalRelation(datasourceId, relationId,
-				logicalRelation);
+		LogicalRelation updated = datasourceService.updateLogicalRelation(datasourceId, relationId, logicalRelation);
 		return ApiResponse.success("success update logical relation", updated);
 	}
 

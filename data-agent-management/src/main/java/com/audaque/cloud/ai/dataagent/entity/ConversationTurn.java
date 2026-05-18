@@ -31,40 +31,41 @@ import java.time.LocalDateTime;
 @Builder
 public class ConversationTurn {
 
-    private Long id;
+	private Long id;
 
-    /**
-     * 会话线程ID
-     */
-    private String threadId;
+	/**
+	 * 会话线程ID
+	 */
+	private String threadId;
 
-    /**
-     * 用户问题
-     */
-    private String userQuestion;
+	/**
+	 * 用户问题
+	 */
+	private String userQuestion;
 
-    /**
-     * AI规划输出
-     */
-    private String plan;
+	/**
+	 * AI规划输出
+	 */
+	private String plan;
 
-    /**
-     * 创建时间
-     */
-    private LocalDateTime createTime;
+	/**
+	 * 创建时间
+	 */
+	private LocalDateTime createTime;
 
-    /**
-     * 更新时间
-     */
-    private LocalDateTime updateTime;
+	/**
+	 * 更新时间
+	 */
+	private LocalDateTime updateTime;
 
-    /**
-     * 序号（用于排序）
-     */
-    private Integer sequenceNumber;
+	/**
+	 * 序号（用于排序）
+	 */
+	private Integer sequenceNumber;
 
-    public ConversationTurn(String userQuestion, String plan) {
-        this.userQuestion = userQuestion;
-        this.plan = plan;
-    }
+	public ConversationTurn(String userQuestion, String plan) {
+		this.userQuestion = userQuestion;
+		this.plan = plan;
+	}
+
 }

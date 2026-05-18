@@ -17,7 +17,6 @@ package com.audaque.cloud.ai.dataagent.controller;
 
 import lombok.Data;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -29,52 +28,50 @@ import jakarta.servlet.http.HttpServletRequest;
  */
 @RestController
 @RequestMapping("/api/config")
-@CrossOrigin(origins = "*")
 public class ConfigController {
 
-    @Value("${server.port:8065}")
-    private Integer serverPort;
+	@Value("${server.port:8065}")
+	private Integer serverPort;
 
-    @Value("${server.address:0.0.0.0}")
-    private String serverAddress;
+	@Value("${server.address:0.0.0.0}")
+	private String serverAddress;
 
-    /**
-     * Get backend base URL configuration
-     * Returns the actual backend URL based on request
-     */
-    @GetMapping("/baseUrl")
-    public BaseUrlResponse getBaseUrl(HttpServletRequest request) {
-        // Get host from request (preserves IP/domain from client's perspective)
-        String scheme = request.getScheme(); // http or https
-        String serverName = request.getServerName(); // IP or domain
-        int port = request.getServerPort(); // actual port
+	/**
+	 * Get backend base URL configuration Returns the actual backend URL based on request
+	 */
+	@GetMapping("/baseUrl")
+	public BaseUrlResponse getBaseUrl(HttpServletRequest request) {
+		// Get host from request (preserves IP/domain from client's perspective)
+		String scheme = request.getScheme(); // http or https
+		String serverName = request.getServerName(); // IP or domain
+		int port = request.getServerPort(); // actual port
 
-        // Build base URL
-        String baseUrl = scheme + "://" + serverName;
-        if ((scheme.equals("http") && port != 80) || (scheme.equals("https") && port != 443)) {
-            baseUrl += ":" + port;
-        }
+		// Build base URL
+		String baseUrl = scheme + "://" + serverName;
+		if ((scheme.equals("http") && port != 80) || (scheme.equals("https") && port != 443)) {
+			baseUrl += ":" + port;
+		}
 
-        BaseUrlResponse response = new BaseUrlResponse();
-        response.setBaseUrl(baseUrl);
-        response.setPort(port);
-        response.setScheme(scheme);
-        response.setHost(serverName);
+		BaseUrlResponse response = new BaseUrlResponse();
+		response.setBaseUrl(baseUrl);
+		response.setPort(port);
+		response.setScheme(scheme);
+		response.setHost(serverName);
 
-        return response;
-    }
+		return response;
+	}
 
-    @Data
-    public static class BaseUrlResponse {
+	@Data
+	public static class BaseUrlResponse {
 
-        private String baseUrl;
+		private String baseUrl;
 
-        private int port;
+		private int port;
 
-        private String scheme;
+		private String scheme;
 
-        private String host;
+		private String host;
 
-    }
+	}
 
 }

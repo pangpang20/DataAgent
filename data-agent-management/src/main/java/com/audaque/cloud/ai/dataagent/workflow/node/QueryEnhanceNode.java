@@ -58,9 +58,9 @@ public class QueryEnhanceNode implements NodeAction {
 
 		String evidence = StateUtil.getStringValue(state, EVIDENCE);
 		String multiTurn = StateUtil.getStringValue(state, MULTI_TURN_CONTEXT, "(无)");
-		
-		log.debug("[QueryEnhanceNode] Context details - evidence length: {}, multiTurn: {}", 
-			evidence != null ? evidence.length() : 0, multiTurn);
+
+		log.debug("[QueryEnhanceNode] Context details - evidence length: {}, multiTurn: {}",
+				evidence != null ? evidence.length() : 0, multiTurn);
 
 		// 构建查询处理提示
 		String prompt = PromptHelper.buildQueryEnhancePrompt(multiTurn, userInput, evidence);
@@ -83,7 +83,7 @@ public class QueryEnhanceNode implements NodeAction {
 
 	private Map<String, Object> handleQueryEnhance(String llmOutput) {
 		log.debug("[QueryEnhanceNode] Handling LLM output, length: {}", llmOutput.length());
-		
+
 		// 获取处理结果
 		String enhanceResult = MarkdownParserUtil.extractRawText(llmOutput.trim());
 		log.info("[QueryEnhanceNode] Query enhance result: {}", enhanceResult);

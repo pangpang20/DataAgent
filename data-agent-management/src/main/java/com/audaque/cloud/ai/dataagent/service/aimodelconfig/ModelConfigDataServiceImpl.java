@@ -45,7 +45,8 @@ public class ModelConfigDataServiceImpl implements ModelConfigDataService {
 		ModelConfig config = modelConfigMapper.findById(id);
 		if (config == null) {
 			log.warn("Model config not found for id: {}", id);
-		} else {
+		}
+		else {
 			log.debug("Found model config: {} (type: {})", config.getModelName(), config.getModelType());
 		}
 		return config;
@@ -66,9 +67,9 @@ public class ModelConfigDataServiceImpl implements ModelConfigDataService {
 			entity.setIsActive(true);
 			entity.setUpdatedTime(LocalDateTime.now());
 			modelConfigMapper.updateById(entity);
-			log.info("Successfully activated model config: {} (id: {}) for type: {}",
-					entity.getModelName(), id, type);
-		} else {
+			log.info("Successfully activated model config: {} (id: {}) for type: {}", entity.getModelName(), id, type);
+		}
+		else {
 			log.warn("Model config not found for id: {} when switching active status", id);
 		}
 	}
@@ -76,17 +77,18 @@ public class ModelConfigDataServiceImpl implements ModelConfigDataService {
 	@Override
 	public List<ModelConfigDTO> listConfigs() {
 		log.debug("Listing all model configs");
-		List<ModelConfigDTO> configs = modelConfigMapper.findAll().stream()
-				.map(ModelConfigConverter::toDTO)
-				.collect(Collectors.toList());
+		List<ModelConfigDTO> configs = modelConfigMapper.findAll()
+			.stream()
+			.map(ModelConfigConverter::toDTO)
+			.collect(Collectors.toList());
 		log.debug("Found {} model configs", configs.size());
 		return configs;
 	}
 
 	@Override
 	public void addConfig(ModelConfigDTO dto) {
-		log.info("Adding new model config: {} (provider: {}, type: {})",
-				dto.getModelName(), dto.getProvider(), dto.getModelType());
+		log.info("Adding new model config: {} (provider: {}, type: {})", dto.getModelName(), dto.getProvider(),
+				dto.getModelType());
 		clean(dto);
 		modelConfigMapper.insert(toEntity(dto));
 		log.info("Successfully added model config: {}", dto.getModelName());
@@ -110,8 +112,8 @@ public class ModelConfigDataServiceImpl implements ModelConfigDataService {
 	}
 
 	/**
-	 * Update config in database (without hot switch)
-	 * Returns updated entity for upper layer to decide whether to refresh memory
+	 * Update config in database (without hot switch) Returns updated entity for upper
+	 * layer to decide whether to refresh memory
 	 */
 	@Transactional(rollbackFor = Exception.class)
 	@Override
@@ -129,8 +131,8 @@ public class ModelConfigDataServiceImpl implements ModelConfigDataService {
 
 		// Model type cannot be changed
 		if (!entity.getModelType().getCode().equals(dto.getModelType())) {
-			log.error("Attempted to change model type from {} to {} for id: {}",
-					entity.getModelType(), dto.getModelType(), dto.getId());
+			log.error("Attempted to change model type from {} to {} for id: {}", entity.getModelType(),
+					dto.getModelType(), dto.getId());
 			throw new RuntimeException("Model type cannot be modified");
 		}
 

@@ -29,8 +29,7 @@ import org.springframework.stereotype.Service;
 import java.util.Optional;
 
 /**
- * 向量维度检测服务
- * 用于检测 Milvus collection 的向量维度，以及与新 Embedding 模型的维度兼容性
+ * 向量维度检测服务 用于检测 Milvus collection 的向量维度，以及与新 Embedding 模型的维度兼容性
  */
 @Slf4j
 @Service
@@ -60,33 +59,35 @@ public class VectorDimensionService {
 
 		try {
 			DescribeCollectionParam param = DescribeCollectionParam.newBuilder()
-					.withCollectionName(collectionName)
-					.build();
+				.withCollectionName(collectionName)
+				.build();
 
 			R<DescribeCollectionResponse> response = milvusClient.get().describeCollection(param);
 			if (response.getStatus() != R.Status.Success.getCode()) {
-				log.warn("Failed to describe collection: {}, returning configured dimension: {}",
-						response.getMessage(), configuredDimension);
+				log.warn("Failed to describe collection: {}, returning configured dimension: {}", response.getMessage(),
+						configuredDimension);
 				return configuredDimension;
 			}
 
 			// 查找 embedding 字段的维度
 			for (FieldSchema field : response.getData().getSchema().getFieldsList()) {
 				if ("embedding".equals(field.getName())) {
-					int dimension = field.getTypeParamsList().stream()
-							.filter(p -> "dim".equals(p.getKey()))
-							.map(p -> Integer.parseInt(p.getValue()))
-							.findFirst()
-							.orElse(configuredDimension);
+					int dimension = field.getTypeParamsList()
+						.stream()
+						.filter(p -> "dim".equals(p.getKey()))
+						.map(p -> Integer.parseInt(p.getValue()))
+						.findFirst()
+						.orElse(configuredDimension);
 					log.info("Collection '{}' has embedding dimension: {}", collectionName, dimension);
 					return dimension;
 				}
 			}
 
-			log.warn("No embedding field found in collection '{}', returning configured dimension: {}",
-					collectionName, configuredDimension);
+			log.warn("No embedding field found in collection '{}', returning configured dimension: {}", collectionName,
+					configuredDimension);
 			return configuredDimension;
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			log.error("Error getting collection dimension: {}", e.getMessage(), e);
 			return configuredDimension;
 		}
@@ -101,22 +102,19 @@ public class VectorDimensionService {
 		int collectionDimension = getCollectionDimension();
 
 		if (newModelDimension == collectionDimension) {
-			return new DimensionCheckResult(true, collectionDimension, newModelDimension,
-					"维度匹配，可以正常使用");
-		} else {
+			return new DimensionCheckResult(true, collectionDimension, newModelDimension, "维度匹配，可以正常使用");
+		}
+		else {
 			String message = String.format(
-					"维度不匹配！Collection 维度: %d, 新模型维度: %d。请选择以下解决方案之一：\n" +
-							"1. 删除现有 collection 并重新创建（会丢失所有向量数据）\n" +
-							"2. 修改配置使用新的 collection 名称（保留旧数据）\n" +
-							"3. 使用维度匹配的 Embedding 模型",
+					"维度不匹配！Collection 维度: %d, 新模型维度: %d。请选择以下解决方案之一：\n" + "1. 删除现有 collection 并重新创建（会丢失所有向量数据）\n"
+							+ "2. 修改配置使用新的 collection 名称（保留旧数据）\n" + "3. 使用维度匹配的 Embedding 模型",
 					collectionDimension, newModelDimension);
 			return new DimensionCheckResult(false, collectionDimension, newModelDimension, message);
 		}
 	}
 
 	/**
-	 * 删除当前的 Milvus collection
-	 * 用于在切换不同维度的 Embedding 模型时重建 collection
+	 * 删除当前的 Milvus collection 用于在切换不同维度的 Embedding 模型时重建 collection
 	 * @return 是否删除成功
 	 */
 	public boolean dropCurrentCollection() {
@@ -126,42 +124,46 @@ public class VectorDimensionService {
 		}
 
 		try {
-			DropCollectionParam param = DropCollectionParam.newBuilder()
-					.withCollectionName(collectionName)
-					.build();
+			DropCollectionParam param = DropCollectionParam.newBuilder().withCollectionName(collectionName).build();
 
 			R<RpcStatus> response = milvusClient.get().dropCollection(param);
 			if (response.getStatus() == R.Status.Success.getCode()) {
 				log.info("Successfully dropped collection: {}", collectionName);
 				return true;
-			} else {
+			}
+			else {
 				log.error("Failed to drop collection '{}': {}", collectionName, response.getMessage());
 				return false;
 			}
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			log.error("Error dropping collection '{}': {}", collectionName, e.getMessage(), e);
 			return false;
 		}
 	}
 
 	/**
-	 * 更新配置文件中的 embedding-dimension
-	 * 注意：这个方法只更新内存中的值，需要重启应用才能生效
+	 * 更新配置文件中的 embedding-dimension 注意：这个方法只更新内存中的值，需要重启应用才能生效
 	 * @param newDimension 新的维度值
 	 */
 	public void updateConfiguredDimension(int newDimension) {
 		log.info("Updating configured embedding dimension from {} to {}", configuredDimension, newDimension);
 		this.configuredDimension = newDimension;
-		log.info("Configured dimension updated in memory. Note: Application restart required for Milvus collection recreation.");
+		log.info(
+				"Configured dimension updated in memory. Note: Application restart required for Milvus collection recreation.");
 	}
 
 	/**
 	 * 维度检查结果
 	 */
 	public static class DimensionCheckResult {
+
 		private final boolean compatible;
+
 		private final int collectionDimension;
+
 		private final int modelDimension;
+
 		private final String message;
 
 		public DimensionCheckResult(boolean compatible, int collectionDimension, int modelDimension, String message) {
@@ -186,5 +188,7 @@ public class VectorDimensionService {
 		public String getMessage() {
 			return message;
 		}
+
 	}
+
 }

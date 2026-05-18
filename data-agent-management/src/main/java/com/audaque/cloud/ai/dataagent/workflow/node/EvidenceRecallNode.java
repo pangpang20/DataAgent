@@ -151,11 +151,13 @@ public class EvidenceRecallNode implements NodeAction {
 
 			// 返回结果
 			return Map.of(EVIDENCE, evidence);
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			log.error("Error occurred while getting evidences", e);
 			sink.tryEmitError(e);
 			return Map.of(EVIDENCE, "");
-		} finally {
+		}
+		finally {
 			sink.tryEmitComplete();
 		}
 	}
@@ -171,23 +173,25 @@ public class EvidenceRecallNode implements NodeAction {
 		log.info("Starting parallel retrieval of business and agent knowledge documents");
 
 		// 【并行优化】业务知识和智能体知识的向量检索互不依赖，可以并行执行
-		CompletableFuture<List<Document>> businessFuture = CompletableFuture
-				.supplyAsync(() -> {
-					log.debug("Starting business term knowledge retrieval");
-					List<Document> result = vectorStoreService.getDocumentsForAgent(agentId, standaloneQuery,
-							DocumentMetadataConstant.BUSINESS_TERM).stream().toList();
-					log.debug("Business term knowledge retrieval completed, found {} documents", result.size());
-					return result;
-				}, executor);
+		CompletableFuture<List<Document>> businessFuture = CompletableFuture.supplyAsync(() -> {
+			log.debug("Starting business term knowledge retrieval");
+			List<Document> result = vectorStoreService
+				.getDocumentsForAgent(agentId, standaloneQuery, DocumentMetadataConstant.BUSINESS_TERM)
+				.stream()
+				.toList();
+			log.debug("Business term knowledge retrieval completed, found {} documents", result.size());
+			return result;
+		}, executor);
 
-		CompletableFuture<List<Document>> agentFuture = CompletableFuture
-				.supplyAsync(() -> {
-					log.debug("Starting agent knowledge retrieval");
-					List<Document> result = vectorStoreService.getDocumentsForAgent(agentId, standaloneQuery,
-							DocumentMetadataConstant.AGENT_KNOWLEDGE).stream().toList();
-					log.debug("Agent knowledge retrieval completed, found {} documents", result.size());
-					return result;
-				}, executor);
+		CompletableFuture<List<Document>> agentFuture = CompletableFuture.supplyAsync(() -> {
+			log.debug("Starting agent knowledge retrieval");
+			List<Document> result = vectorStoreService
+				.getDocumentsForAgent(agentId, standaloneQuery, DocumentMetadataConstant.AGENT_KNOWLEDGE)
+				.stream()
+				.toList();
+			log.debug("Agent knowledge retrieval completed, found {} documents", result.size());
+			return result;
+		}, executor);
 
 		// 等待两个检索都完成
 		CompletableFuture<Void> allFutures = CompletableFuture.allOf(businessFuture, agentFuture);
@@ -213,17 +217,17 @@ public class EvidenceRecallNode implements NodeAction {
 		if (!businessTermDocuments.isEmpty()) {
 			log.debug("Business term documents preview: {}",
 					businessTermDocuments.stream()
-							.limit(3)
-							.map(d -> d.getText().substring(0, Math.min(50, d.getText().length())))
-							.toList());
+						.limit(3)
+						.map(d -> d.getText().substring(0, Math.min(50, d.getText().length())))
+						.toList());
 		}
 
 		if (!agentKnowledgeDocuments.isEmpty()) {
 			log.debug("Agent knowledge documents preview: {}",
 					agentKnowledgeDocuments.stream()
-							.limit(3)
-							.map(d -> d.getText().substring(0, Math.min(50, d.getText().length())))
-							.toList());
+						.limit(3)
+						.map(d -> d.getText().substring(0, Math.min(50, d.getText().length())))
+						.toList());
 		}
 
 		return new DocumentRetrievalResult(businessTermDocuments, agentKnowledgeDocuments, allDocuments);
@@ -283,7 +287,8 @@ public class EvidenceRecallNode implements NodeAction {
 			// 根据知识类型调用不同的处理方法
 			if (KnowledgeType.FAQ.getCode().equals(knowledgeType) || KnowledgeType.QA.getCode().equals(knowledgeType)) {
 				processFaqOrQaKnowledge(doc, i, result);
-			} else {
+			}
+			else {
 				processDocumentKnowledge(doc, i, result);
 			}
 		}
@@ -313,15 +318,18 @@ public class EvidenceRecallNode implements NodeAction {
 					result.append("] Q: ").append(content).append(" A: ").append(knowledge.getContent()).append("\n");
 
 					log.debug("Successfully processed {} knowledge with title: {}", knowledgeType, title);
-				} else {
+				}
+				else {
 					log.warn("Knowledge not found for id: {}", knowledgeId);
 				}
-			} catch (Exception e) {
+			}
+			catch (Exception e) {
 				log.error("Error getting knowledge by id: {}", knowledgeId, e);
 				// 如果获取失败，使用原始内容
 				result.append(index + 1).append(". [来源: 知识库] ").append(content).append("\n");
 			}
-		} else {
+		}
+		else {
 			// 如果没有知识ID，使用原始内容
 			log.error("No knowledge id found for agent knowledge document: {}", doc.getId());
 			result.append(index + 1).append(". [来源: 知识库] ").append(content).append("\n");
@@ -350,10 +358,12 @@ public class EvidenceRecallNode implements NodeAction {
 
 					log.debug("Successfully processed {} knowledge with title: {}, source file: {}", knowledgeType,
 							title, sourceFilename);
-				} else {
+				}
+				else {
 					log.warn("Knowledge not found for id: {}", knowledgeId);
 				}
-			} catch (Exception e) {
+			}
+			catch (Exception e) {
 				log.error("Error getting knowledge by id: {}", knowledgeId, e);
 			}
 		}
@@ -401,7 +411,8 @@ public class EvidenceRecallNode implements NodeAction {
 			log.info("For getting evidence, successfully parsed EvidenceQueryRewriteDTO from LLM response: {}",
 					evidenceQueryRewriteDTO);
 			return evidenceQueryRewriteDTO.getStandaloneQuery();
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			log.error("Failed to parse EvidenceQueryRewriteDTO from LLM response", e);
 		}
 		return null;

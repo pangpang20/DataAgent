@@ -49,7 +49,8 @@ public class IntentRecognitionDispatcher implements EdgeAction {
 		if ("《闲聊或无关指令》".equals(classification)) {
 			log.info("Intent classified as chat or irrelevant, routing to ChatResponseNode");
 			return CHAT_RESPONSE_NODE;
-		} else {
+		}
+		else {
 			log.info("Intent classified as potential data analysis request, proceeding to evidence recall");
 			return EVIDENCE_RECALL_NODE;
 		}

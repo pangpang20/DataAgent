@@ -26,34 +26,34 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 public class SemanticModelQueryDTO extends BasePageQueryDTO {
 
-    /**
-     * Agent ID (required)
-     */
-    private Long agentId;
+	/**
+	 * Agent ID (required)
+	 */
+	private Long agentId;
 
-    /**
-     * Fuzzy search by table name, column name, business name, or synonyms
-     */
-    private String keyword;
+	/**
+	 * Fuzzy search by table name, column name, business name, or synonyms
+	 */
+	private String keyword;
 
-    /**
-     * Filter by table name
-     */
-    private String tableName;
+	/**
+	 * Filter by table name
+	 */
+	private String tableName;
 
-    /**
-     * Filter by status: 0-disabled, 1-enabled
-     */
-    private Integer status;
+	/**
+	 * Filter by status: 0-disabled, 1-enabled
+	 */
+	private Integer status;
 
-    /**
-     * Date range filter - start
-     */
-    private String createTimeStart;
+	/**
+	 * Date range filter - start
+	 */
+	private String createTimeStart;
 
-    /**
-     * Date range filter - end
-     */
-    private String createTimeEnd;
+	/**
+	 * Date range filter - end
+	 */
+	private String createTimeEnd;
 
 }

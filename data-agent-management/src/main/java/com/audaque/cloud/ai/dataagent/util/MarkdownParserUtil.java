@@ -29,8 +29,11 @@ public class MarkdownParserUtil {
 			return markdownCode;
 		}
 
-		// Filter out <think>...</think> and <thinking>...</thinking> content before processing
-		String filteredContent = markdownCode.replaceAll("(?i)(<think>[\\s\\S]*?</think>|<thinking>[\\s\\S]*?</thinking>)", "").trim();
+		// Filter out <think>...</think> and <thinking>...</thinking> content before
+		// processing
+		String filteredContent = markdownCode
+			.replaceAll("(?i)(<think>[\\s\\S]*?</think>|<thinking>[\\s\\S]*?</thinking>)", "")
+			.trim();
 		if (filteredContent.isEmpty()) {
 			return "";
 		}
@@ -44,7 +47,8 @@ public class MarkdownParserUtil {
 				startIndex = i;
 				delimiterLength = 3;
 				// Count additional backticks
-				while (i + delimiterLength < filteredContent.length() && filteredContent.charAt(i + delimiterLength) == '`') {
+				while (i + delimiterLength < filteredContent.length()
+						&& filteredContent.charAt(i + delimiterLength) == '`') {
 					delimiterLength++;
 				}
 				break;
@@ -79,8 +83,8 @@ public class MarkdownParserUtil {
 	}
 
 	/**
-	 * Remove single backticks from the beginning and end of the text.
-	 * This handles cases where LLM wraps SQL with single backticks like `SELECT ...`
+	 * Remove single backticks from the beginning and end of the text. This handles cases
+	 * where LLM wraps SQL with single backticks like `SELECT ...`
 	 * @param text The text that may have single backticks
 	 * @return The text with leading and trailing single backticks removed
 	 */

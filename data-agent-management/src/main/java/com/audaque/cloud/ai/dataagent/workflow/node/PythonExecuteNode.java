@@ -79,8 +79,7 @@ public class PythonExecuteNode implements NodeAction {
 			// Get context
 			String pythonCode = StateUtil.getStringValue(state, PYTHON_GENERATE_NODE_OUTPUT);
 			List<Map<String, String>> sqlResults = StateUtil.hasValue(state, SQL_RESULT_LIST_MEMORY)
-					? StateUtil.getListValue(state, SQL_RESULT_LIST_MEMORY)
-					: new ArrayList<>();
+					? StateUtil.getListValue(state, SQL_RESULT_LIST_MEMORY) : new ArrayList<>();
 
 			// 检查重试次数
 			int triesCount = StateUtil.getObjectValue(state, PYTHON_TRIES_COUNT, Integer.class, 0);
@@ -110,10 +109,10 @@ public class PythonExecuteNode implements NodeAction {
 					});
 
 					Flux<GraphResponse<StreamingOutput>> fallbackGenerator = FluxUtil
-							.createStreamingGeneratorWithMessages(this.getClass(), state,
-									v -> Map.of(PYTHON_EXECUTE_NODE_OUTPUT, fallbackOutput, PYTHON_IS_SUCCESS, false,
-											PYTHON_FALLBACK_MODE, true),
-									fallbackDisplayFlux);
+						.createStreamingGeneratorWithMessages(this.getClass(), state,
+								v -> Map.of(PYTHON_EXECUTE_NODE_OUTPUT, fallbackOutput, PYTHON_IS_SUCCESS, false,
+										PYTHON_FALLBACK_MODE, true),
+								fallbackDisplayFlux);
 
 					return Map.of(PYTHON_EXECUTE_NODE_OUTPUT, fallbackGenerator);
 				}
@@ -126,11 +125,13 @@ public class PythonExecuteNode implements NodeAction {
 			String stderr = taskResponse.stdErr();
 
 			// 记录 Python 执行的完整输出，便于调试
-			log.info("Python Execute - StdOut length: {}, StdErr length: {}", stdout.length(), stderr != null ? stderr.length() : 0);
+			log.info("Python Execute - StdOut length: {}, StdErr length: {}", stdout.length(),
+					stderr != null ? stderr.length() : 0);
 			if (stderr != null && !stderr.isEmpty()) {
 				log.info("Python Execute - StdErr: {}", stderr);
 			}
-			log.info("Python Execute - StdOut (first 500 chars): {}", stdout.length() > 500 ? stdout.substring(0, 500) : stdout);
+			log.info("Python Execute - StdOut (first 500 chars): {}",
+					stdout.length() > 500 ? stdout.substring(0, 500) : stdout);
 
 			Object value = jsonParseUtil.tryConvertToObject(stdout, Object.class);
 			if (value != null) {
@@ -151,26 +152,32 @@ public class PythonExecuteNode implements NodeAction {
 					chartImageBase64 = jsonNode.get("chart_image").asText();
 					if (chartImageBase64 == null || chartImageBase64.isEmpty() || chartImageBase64.equals("null")) {
 						log.info("Chart image is null/empty, Python code did not generate chart");
-					} else {
+					}
+					else {
 						log.info("Chart image detected, length: {} chars", chartImageBase64.length());
 						// Decode base64 and persist to storage
 						if (isValidBase64Image(chartImageBase64)) {
 							chartImageUrl = persistChartImage(chartImageBase64);
 							if (chartImageUrl != null) {
-								// Replace base64 with URL in the JSON for downstream nodes
+								// Replace base64 with URL in the JSON for downstream
+								// nodes
 								((ObjectNode) jsonNode).put("chart_image", chartImageUrl);
 								outputStdout = objectMapper.writeValueAsString(jsonNode);
 								log.info("Chart image persisted, URL: {}", chartImageUrl);
 							}
-						} else {
+						}
+						else {
 							log.warn("Invalid or oversized chart image, skipping persistence");
 						}
 					}
-				} else {
+				}
+				else {
 					log.warn("chart_image field NOT found in Python output JSON!");
 				}
-			} catch (Exception e) {
-				log.error("Failed to parse JSON for chart image detection: {}. JSON: {}", e.getMessage(), originalStdout);
+			}
+			catch (Exception e) {
+				log.error("Failed to parse JSON for chart image detection: {}. JSON: {}", e.getMessage(),
+						originalStdout);
 			}
 			String finalStdout = outputStdout;
 			String finalChartImageUrl = chartImageUrl;
@@ -208,7 +215,8 @@ public class PythonExecuteNode implements NodeAction {
 					v -> Map.of(PYTHON_EXECUTE_NODE_OUTPUT, finalStdout, PYTHON_IS_SUCCESS, true), displayFlux);
 
 			return Map.of(PYTHON_EXECUTE_NODE_OUTPUT, generator);
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			String errorMessage = e.getMessage();
 			log.error("Python Execute Exception: {}", errorMessage);
 
@@ -232,8 +240,7 @@ public class PythonExecuteNode implements NodeAction {
 	}
 
 	/**
-	 * 持久化图表图片：解码 base64 → 存储到文件服务 → 返回访问 URL
-	 * 失败时返回 null，不影响主流程
+	 * 持久化图表图片：解码 base64 → 存储到文件服务 → 返回访问 URL 失败时返回 null，不影响主流程
 	 */
 	private String persistChartImage(String base64) {
 		try {
@@ -243,15 +250,16 @@ public class PythonExecuteNode implements NodeAction {
 			String url = fileStorageService.getFileUrl(storagePath);
 			log.info("Chart image persisted: {} -> {}", fileName, url);
 			return url;
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			log.warn("Failed to persist chart image, falling back to base64: {}", e.getMessage());
 			return null;
 		}
 	}
 
 	/**
-	 * Validates base64 image string for security.
-	 * Checks: 1) Valid base64 format, 2) Size limit, 3) No dangerous patterns
+	 * Validates base64 image string for security. Checks: 1) Valid base64 format, 2) Size
+	 * limit, 3) No dangerous patterns
 	 */
 	private boolean isValidBase64Image(String base64) {
 		if (base64 == null || base64.isEmpty()) {

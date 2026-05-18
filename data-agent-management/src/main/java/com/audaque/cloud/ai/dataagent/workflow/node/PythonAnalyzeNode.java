@@ -88,9 +88,8 @@ public class PythonAnalyzeNode implements NodeAction {
 
 		// 直接加载提示词模板并手动替换变量（避免 ST 模板引擎解析 JSON 示例中的大括号）
 		String promptTemplate = PromptLoader.loadPrompt("python-analyze");
-		String systemPrompt = promptTemplate
-				.replace("{user_query}", userQuery != null ? userQuery : "")
-				.replace("{python_output}", pythonOutput != null ? pythonOutput : "");
+		String systemPrompt = promptTemplate.replace("{user_query}", userQuery != null ? userQuery : "")
+			.replace("{python_output}", pythonOutput != null ? pythonOutput : "");
 
 		Flux<ChatResponse> pythonAnalyzeFlux = llmService.callSystem(systemPrompt);
 

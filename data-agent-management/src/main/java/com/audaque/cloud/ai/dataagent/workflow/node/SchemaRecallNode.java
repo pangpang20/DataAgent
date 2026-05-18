@@ -65,11 +65,11 @@ public class SchemaRecallNode implements NodeAction {
 
 		// Execute business logic first - recall schema information immediately
 		List<Document> rawTableDocuments = new ArrayList<>(schemaService.getTableDocumentsForAgent(agentId, input));
-		
+
 		// 过滤系统表并提取表名
 		List<Document> tableDocuments = filterSystemTableDocuments(rawTableDocuments);
 		List<String> recalledTableNames = extractTableNames(tableDocuments);
-		
+
 		List<Document> columnDocuments = schemaService.getColumnDocumentsByTableName(agentId, recalledTableNames);
 
 		String failMessage = """
@@ -105,24 +105,21 @@ public class SchemaRecallNode implements NodeAction {
 	}
 
 	/**
-	 * DataAgent系统表列表 - 这些表不应该出现在用户查询的Schema中
-	 * 当用户的数据源连接到DataAgent同一数据库时，需要过滤掉这些系统表
+	 * DataAgent系统表列表 - 这些表不应该出现在用户查询的Schema中 当用户的数据源连接到DataAgent同一数据库时，需要过滤掉这些系统表
 	 */
 	private static final Set<String> SYSTEM_TABLES = Set.of(
-		// DataAgent核心表
-		"agents", "agent_datasources", "agent_datasource_tables",
-		"agent_knowledges", "agent_knowledge_files",
-		// 数据源相关
-		"datasources", "databases", "schemas",
-		// 聊天相关
-		"chat_messages", "chat_sessions",
-		// 配置相关
-		"model_configs", "preset_questions", "user_prompt_configs",
-		// 语义模型和逻辑关系
-		"semantic_models", "logical_relations",
-		// 业务知识
-		"business_terms"
-	);
+			// DataAgent核心表
+			"agents", "agent_datasources", "agent_datasource_tables", "agent_knowledges", "agent_knowledge_files",
+			// 数据源相关
+			"datasources", "databases", "schemas",
+			// 聊天相关
+			"chat_messages", "chat_sessions",
+			// 配置相关
+			"model_configs", "preset_questions", "user_prompt_configs",
+			// 语义模型和逻辑关系
+			"semantic_models", "logical_relations",
+			// 业务知识
+			"business_terms");
 
 	/**
 	 * 过滤系统表Document - 移除DataAgent系统表的文档
@@ -130,23 +127,24 @@ public class SchemaRecallNode implements NodeAction {
 	private static List<Document> filterSystemTableDocuments(List<Document> tableDocuments) {
 		List<Document> filteredDocs = new ArrayList<>();
 		List<String> filteredSystemTables = new ArrayList<>();
-		
+
 		for (Document document : tableDocuments) {
 			String name = (String) document.getMetadata().get("name");
 			if (name != null && !name.isEmpty()) {
 				if (SYSTEM_TABLES.contains(name.toLowerCase())) {
 					filteredSystemTables.add(name);
-				} else {
+				}
+				else {
 					filteredDocs.add(document);
 				}
 			}
 		}
-		
+
 		if (!filteredSystemTables.isEmpty()) {
-			log.warn("Filtered {} DataAgent system tables from recall: {}", 
-				filteredSystemTables.size(), filteredSystemTables);
+			log.warn("Filtered {} DataAgent system tables from recall: {}", filteredSystemTables.size(),
+					filteredSystemTables);
 		}
-		
+
 		return filteredDocs;
 	}
 

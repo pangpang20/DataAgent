@@ -92,11 +92,13 @@ public class OssFileStorageServiceImpl implements FileStorageService {
 				ossClient.putObject(ossProperties.getBucketName(), objectKey, inputStream, metadata);
 				log.info("File uploaded successfully: {}", objectKey);
 				return objectKey;
-			} catch (IOException e) {
+			}
+			catch (IOException e) {
 				log.error("File storage failed, input stream error", e);
 				throw new RuntimeException("文件存储失败: " + e.getMessage(), e);
 			}
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			log.error("File storage failed, OSS upload error", e);
 			throw new RuntimeException("文件存储失败: " + e.getMessage(), e);
 		}
@@ -116,7 +118,8 @@ public class OssFileStorageServiceImpl implements FileStorageService {
 			metadata.setContentLength(data.length);
 			if (fileName.endsWith(".png")) {
 				metadata.setContentType("image/png");
-			} else if (fileName.endsWith(".jpg") || fileName.endsWith(".jpeg")) {
+			}
+			else if (fileName.endsWith(".jpg") || fileName.endsWith(".jpeg")) {
 				metadata.setContentType("image/jpeg");
 			}
 			metadata.setCacheControl("no-cache");
@@ -125,11 +128,13 @@ public class OssFileStorageServiceImpl implements FileStorageService {
 				ossClient.putObject(ossProperties.getBucketName(), objectKey, inputStream, metadata);
 				log.info("File uploaded successfully from byte array: {}", objectKey);
 				return objectKey;
-			} catch (IOException e) {
+			}
+			catch (IOException e) {
 				log.error("File storage failed, input stream error", e);
 				throw new RuntimeException("文件存储失败: " + e.getMessage(), e);
 			}
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			log.error("File storage failed, OSS upload error", e);
 			throw new RuntimeException("文件存储失败: " + e.getMessage(), e);
 		}
@@ -145,12 +150,14 @@ public class OssFileStorageServiceImpl implements FileStorageService {
 			if (ossClient.doesObjectExist(ossProperties.getBucketName(), filePath)) {
 				ossClient.deleteObject(ossProperties.getBucketName(), filePath);
 				log.info("File deleted from OSS successfully: {}", filePath);
-			} else {
+			}
+			else {
 				// Deletion is idempotent, treat non-existence as success
 				log.info("File not found in OSS, skipping deletion (idempotent): {}", filePath);
 			}
 			return true;
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			log.error("Failed to delete file from OSS: {}", filePath, e);
 			return false;
 		}
@@ -167,7 +174,8 @@ public class OssFileStorageServiceImpl implements FileStorageService {
 					ossProperties.getEndpoint().replace("https://", "").replace("http://", ""));
 			return bucketDomain + "/" + filePath;
 
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			log.error("Failed to generate OSS file URL: {}", filePath, e);
 			return filePath;
 		}
@@ -183,7 +191,8 @@ public class OssFileStorageServiceImpl implements FileStorageService {
 		try {
 			log.debug("Creating OSS resource for file: {}", filePath);
 			return new OssResource(ossClient, ossProperties.getBucketName(), filePath, ossProperties);
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			log.error("Failed to create OSS resource for file: {}", filePath, e);
 			return null;
 		}

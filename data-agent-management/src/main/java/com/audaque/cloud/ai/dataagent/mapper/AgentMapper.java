@@ -75,8 +75,8 @@ public interface AgentMapper {
 	List<Agent> findByConditions(@Param("status") String status, @Param("keyword") String keyword);
 
 	@Insert("""
-			INSERT INTO agent (name, description, avatar, status, api_key, api_key_enabled, prompt, category, admin_id, tags, create_time, update_time, human_review_enabled)
-			VALUES (#{name}, #{description}, #{avatar}, #{status}, #{apiKey}, #{apiKeyEnabled}, #{prompt}, #{category}, #{adminId}, #{tags}, #{createTime}, #{updateTime}, #{humanReviewEnabled})
+			INSERT INTO agent (name, description, avatar, status, api_key, api_key_enabled, prompt, category, creator_id, tags, create_time, update_time, human_review_enabled)
+			VALUES (#{name}, #{description}, #{avatar}, #{status}, #{apiKey}, #{apiKeyEnabled}, #{prompt}, #{category}, #{creatorId}, #{tags}, #{createTime}, #{updateTime}, #{humanReviewEnabled})
 			""")
 	@Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
 	int insert(Agent agent);
@@ -93,7 +93,7 @@ public interface AgentMapper {
 			            <if test='apiKeyEnabled != null'>api_key_enabled = #{apiKeyEnabled},</if>
 			            <if test='prompt != null'>prompt = #{prompt},</if>
 			            <if test='category != null'>category = #{category},</if>
-			            <if test='adminId != null'>admin_id = #{adminId},</if>
+			            <if test='creatorId != null'>creator_id = #{creatorId},</if>
 			            <if test='tags != null'>tags = #{tags},</if>
 			            <if test='humanReviewEnabled != null'>human_review_enabled = #{humanReviewEnabled},</if>
 			            update_time = #{updateTime}

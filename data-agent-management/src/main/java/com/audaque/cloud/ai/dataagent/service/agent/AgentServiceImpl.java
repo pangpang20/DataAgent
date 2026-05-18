@@ -89,11 +89,12 @@ public class AgentServiceImpl implements AgentService {
 				agent.setApiKeyEnabled(0);
 			}
 
-			log.info("Preparing to insert new Agent - name: {}, avatar: {}, status: {}, category: {}",
-					agent.getName(), agent.getAvatar(), agent.getStatus(), agent.getCategory());
+			log.info("Preparing to insert new Agent - name: {}, avatar: {}, status: {}, category: {}", agent.getName(),
+					agent.getAvatar(), agent.getStatus(), agent.getCategory());
 			agentMapper.insert(agent);
 			log.info("Successfully inserted Agent, generated ID: {}", agent.getId());
-		} else {
+		}
+		else {
 			// Update
 			agent.setUpdateTime(now);
 			// 确保 humanReviewEnabled 不为 null
@@ -136,7 +137,8 @@ public class AgentServiceImpl implements AgentService {
 					try {
 						agentVectorStoreService.deleteDocumentsByMetedata(id.toString(), new HashMap<>());
 						log.info("Successfully deleted vector data for agent: {}", id);
-					} catch (Exception vectorException) {
+					}
+					catch (Exception vectorException) {
 						log.warn("Failed to delete vector data for agent: {}, error: {}", id,
 								vectorException.getMessage());
 						// 向量数据删除失败不影响主流程
@@ -149,16 +151,19 @@ public class AgentServiceImpl implements AgentService {
 						fileStorageService.deleteFile(avatar);
 						log.info("Successfully deleted avatar file: {} for agent: {}", avatar, id);
 					}
-				} catch (Exception avatarEx) {
+				}
+				catch (Exception avatarEx) {
 					log.warn("Failed to cleanup avatar file: {} for agent: {}, error: {}", avatar, id,
 							avatarEx.getMessage());
 				}
 
 				log.info("Successfully completed agent deletion process: {}", id);
-			} else {
+			}
+			else {
 				log.warn("Agent already deleted or not found: {}", id);
 			}
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			log.error("Failed to delete agent: {}", id, e);
 			throw new RuntimeException("Failed to delete agent: " + id, e);
 		}
@@ -216,8 +221,8 @@ public class AgentServiceImpl implements AgentService {
 
 	@Override
 	public PageResult<Agent> queryByConditionsWithPage(AgentQueryDTO queryDTO) {
-		log.info("Page query agents: pageNum={}, pageSize={}, keyword={}, status={}",
-				queryDTO.getPageNum(), queryDTO.getPageSize(), queryDTO.getKeyword(), queryDTO.getStatus());
+		log.info("Page query agents: pageNum={}, pageSize={}, keyword={}, status={}", queryDTO.getPageNum(),
+				queryDTO.getPageSize(), queryDTO.getKeyword(), queryDTO.getStatus());
 
 		int offset = queryDTO.calculateOffset();
 

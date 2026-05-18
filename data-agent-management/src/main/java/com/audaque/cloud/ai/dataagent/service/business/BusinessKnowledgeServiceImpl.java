@@ -180,16 +180,16 @@ public class BusinessKnowledgeServiceImpl implements BusinessKnowledgeService {
 		// 获取所有 isRecall 等于 1 且未逻辑删除的 BusinessKnowledge
 		List<BusinessKnowledge> allKnowledge = businessKnowledgeMapper.selectAll();
 		List<BusinessKnowledge> recalledKnowledge = allKnowledge.stream()
-				.filter(knowledge -> knowledge.getIsRecall() != null && knowledge.getIsRecall() == 1)
-				.filter(knowledge -> knowledge.getIsDeleted() == null || knowledge.getIsDeleted() == 0)
-				.filter(knowledge -> agentId.equals(knowledge.getAgentId().toString()))
-				.toList();
+			.filter(knowledge -> knowledge.getIsRecall() != null && knowledge.getIsRecall() == 1)
+			.filter(knowledge -> knowledge.getIsDeleted() == null || knowledge.getIsDeleted() == 0)
+			.filter(knowledge -> agentId.equals(knowledge.getAgentId().toString()))
+			.toList();
 
 		// 转换为 Document 并插入到 vectorStore
 		if (!recalledKnowledge.isEmpty()) {
 			List<Document> documents = recalledKnowledge.stream()
-					.map(DocumentConverterUtil::convertBusinessKnowledgeToDocument)
-					.toList();
+				.map(DocumentConverterUtil::convertBusinessKnowledgeToDocument)
+				.toList();
 			agentVectorStoreService.addDocuments(agentId, documents);
 		}
 	}
@@ -235,9 +235,7 @@ public class BusinessKnowledgeServiceImpl implements BusinessKnowledgeService {
 		Long total = businessKnowledgeMapper.countByConditions(queryDTO);
 		List<BusinessKnowledge> dataList = businessKnowledgeMapper.selectByConditionsWithPage(queryDTO, offset);
 
-		List<BusinessKnowledgeVO> voList = dataList.stream()
-				.map(businessKnowledgeConverter::toVo)
-				.toList();
+		List<BusinessKnowledgeVO> voList = dataList.stream().map(businessKnowledgeConverter::toVo).toList();
 
 		PageResult<BusinessKnowledgeVO> pageResult = new PageResult<>();
 		pageResult.setData(voList);

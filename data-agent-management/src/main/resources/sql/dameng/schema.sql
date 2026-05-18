@@ -25,7 +25,7 @@ CREATE TABLE agent (
     api_key_enabled TINYINT DEFAULT 0,
     prompt CLOB,
     category VARCHAR(100),
-    admin_id BIGINT,
+    creator_id BIGINT,
     tags CLOB,
     create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -36,7 +36,7 @@ CREATE TABLE agent (
 CREATE INDEX idx_agent_name ON agent(name);
 CREATE INDEX idx_agent_status ON agent(status);
 CREATE INDEX idx_agent_category ON agent(category);
-CREATE INDEX idx_agent_admin_id ON agent(admin_id);
+CREATE INDEX idx_agent_creator_id ON agent(creator_id);
 CREATE INDEX idx_agent_is_deleted ON agent(is_deleted);
 
 COMMENT ON TABLE agent IS '智能体表';
@@ -48,7 +48,7 @@ COMMENT ON COLUMN agent.api_key IS '访问 API Key，格式 sk-xxx';
 COMMENT ON COLUMN agent.api_key_enabled IS 'API Key 是否启用：0-禁用，1-启用';
 COMMENT ON COLUMN agent.prompt IS '自定义Prompt配置';
 COMMENT ON COLUMN agent.category IS '分类';
-COMMENT ON COLUMN agent.admin_id IS '管理员ID';
+COMMENT ON COLUMN agent.creator_id IS '创建者ID';
 COMMENT ON COLUMN agent.tags IS '标签，逗号分隔';
 COMMENT ON COLUMN agent.create_time IS '创建时间';
 COMMENT ON COLUMN agent.update_time IS '更新时间';

@@ -30,8 +30,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * Utility class for converting business objects to Document objects. Provides
- * common
+ * Utility class for converting business objects to Document objects. Provides common
  * document conversion functionality for vector store operations.
  */
 @Slf4j
@@ -53,8 +52,7 @@ public class DocumentConverterUtil {
 
 	/**
 	 * Converts a column info object to a Document for vector storage.
-	 * 
-	 * @param tableInfoBO  the table information containing schema details
+	 * @param tableInfoBO the table information containing schema details
 	 * @param columnInfoBO the column information to convert
 	 * @return Document object with column metadata
 	 */
@@ -81,7 +79,6 @@ public class DocumentConverterUtil {
 
 	/**
 	 * Converts a table info object to a Document for vector storage.
-	 * 
 	 * @param tableInfoBO the table information to convert
 	 * @return Document object with table metadata
 	 */
@@ -101,8 +98,8 @@ public class DocumentConverterUtil {
 
 	public static List<Document> convertTablesToDocuments(String agentId, List<TableInfoBO> tables) {
 		return tables.stream()
-				.map(table -> DocumentConverterUtil.convertTableToDocumentForAgent(agentId, table))
-				.collect(Collectors.toList());
+			.map(table -> DocumentConverterUtil.convertTableToDocumentForAgent(agentId, table))
+			.collect(Collectors.toList());
 	}
 
 	public static Document convertBusinessKnowledgeToDocument(BusinessKnowledge businessKnowledge) {
@@ -138,7 +135,6 @@ public class DocumentConverterUtil {
 
 	/**
 	 * 为文档列表添加元数据，用于DOCUMENT类型知识处理
-	 * 
 	 * @param documents 原始文档列表
 	 * @param knowledge 知识对象
 	 * @return 添加了元数据的文档列表
@@ -165,7 +161,6 @@ public class DocumentConverterUtil {
 
 	/**
 	 * 将语义模型转换为向量文档
-	 * 
 	 * @param semanticModel 语义模型对象
 	 * @return Document对象
 	 */
@@ -178,9 +173,8 @@ public class DocumentConverterUtil {
 		String businessDescription = Optional.ofNullable(semanticModel.getBusinessDescription()).orElse("无");
 		String dataType = semanticModel.getDataType();
 
-		String content = String.format(
-				"业务名称: %s, 表名: %s, 数据库字段名: %s, 字段同义词: %s, 业务描述: %s, 数据类型: %s",
-				businessName, tableName, columnName, synonyms, businessDescription, dataType);
+		String content = String.format("业务名称: %s, 表名: %s, 数据库字段名: %s, 字段同义词: %s, 业务描述: %s, 数据类型: %s", businessName,
+				tableName, columnName, synonyms, businessDescription, dataType);
 
 		// 构建元数据
 		Map<String, Object> metadata = new HashMap<>();
@@ -199,7 +193,8 @@ public class DocumentConverterUtil {
 		// 添加逻辑删除标志（重要：确保查询时能正确过滤）
 		if (semanticModel.getIsDeleted() != null) {
 			metadata.put("isDeleted", semanticModel.getIsDeleted());
-		} else {
+		}
+		else {
 			// 默认未删除
 			metadata.put("isDeleted", 0);
 		}

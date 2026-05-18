@@ -65,8 +65,7 @@ public class Nl2SqlServiceImpl implements Nl2SqlService {
 	@Override
 	public Flux<ChatResponse> performSemanticConsistency(SemanticConsistencyDTO semanticConsistencyDTO) {
 		log.info("Starting semantic consistency check - user_query: {}, dialect: {}, SQL length: {}",
-				semanticConsistencyDTO.getUserQuery(),
-				semanticConsistencyDTO.getDialect(),
+				semanticConsistencyDTO.getUserQuery(), semanticConsistencyDTO.getDialect(),
 				semanticConsistencyDTO.getSql() != null ? semanticConsistencyDTO.getSql().length() : 0);
 
 		String semanticConsistencyPrompt = PromptHelper.buildSemanticConsistenPrompt(semanticConsistencyDTO);
@@ -76,14 +75,13 @@ public class Nl2SqlServiceImpl implements Nl2SqlService {
 		Flux<ChatResponse> responseFlux = llmService.callUser(semanticConsistencyPrompt);
 		log.debug("Semantic consistency LLM call initiated");
 
-		return responseFlux
-				.doOnNext(response -> {
-					String text = ChatResponseUtil.getText(response);
-					log.debug("Received semantic consistency response chunk: [{}], length: {}",
-							text, text != null ? text.length() : 0);
-				})
-				.doOnComplete(() -> log.info("Semantic consistency check completed"))
-				.doOnError(e -> log.error("Semantic consistency check failed", e));
+		return responseFlux.doOnNext(response -> {
+			String text = ChatResponseUtil.getText(response);
+			log.debug("Received semantic consistency response chunk: [{}], length: {}", text,
+					text != null ? text.length() : 0);
+		})
+			.doOnComplete(() -> log.info("Semantic consistency check completed"))
+			.doOnError(e -> log.error("Semantic consistency check failed", e));
 	}
 
 	@Override
@@ -98,8 +96,8 @@ public class Nl2SqlServiceImpl implements Nl2SqlService {
 		double temperature = calculateTemperature(retryCount);
 
 		log.info("Generating SQL for query: {}, hasExistingSql: {}, dialect: {}, retryCount: {}, temperature: {}",
-				sqlGenerationDTO.getExecutionDescription(), StringUtils.hasText(sql),
-				sqlGenerationDTO.getDialect(), retryCount, temperature);
+				sqlGenerationDTO.getExecutionDescription(), StringUtils.hasText(sql), sqlGenerationDTO.getDialect(),
+				retryCount, temperature);
 
 		Flux<ChatResponse> chatResponseFlux;
 		if (sql != null && !sql.isEmpty()) {
@@ -110,30 +108,30 @@ public class Nl2SqlServiceImpl implements Nl2SqlService {
 
 			// Use aiModelRegistry directly for temperature control
 			chatResponseFlux = aiModelRegistry.getChatClient()
-					.prompt()
-					.user(errorFixerPrompt)
-					.options(OpenAiChatOptions.builder()
-							.temperature(temperature)
-							.build())
-					.stream()
-					.chatResponse();
-		} else {
+				.prompt()
+				.user(errorFixerPrompt)
+				.options(OpenAiChatOptions.builder().temperature(temperature).build())
+				.stream()
+				.chatResponse();
+		}
+		else {
 			// Normal SQL generation process with dynamic temperature
 			log.debug("Generating new SQL from scratch with temperature: {}", temperature);
 
 			// 开源模型优化模式：使用简化提示词
 			String prompt;
 			// 获取当前激活的模型配置，自动检测是否为开源模型
-			ModelConfigDTO activeConfig = modelConfigDataService.getActiveConfigByType(
-					com.audaque.cloud.ai.dataagent.enums.ModelType.CHAT);
-			boolean isOpenSourceModel = activeConfig != null && modelCharacterDetector.isOpenSourceModel(
-					activeConfig.getProvider(), activeConfig.getModelName());
+			ModelConfigDTO activeConfig = modelConfigDataService
+				.getActiveConfigByType(com.audaque.cloud.ai.dataagent.enums.ModelType.CHAT);
+			boolean isOpenSourceModel = activeConfig != null && modelCharacterDetector
+				.isOpenSourceModel(activeConfig.getProvider(), activeConfig.getModelName());
 
 			if (isOpenSourceModel) {
 				log.info("Open-source model detected (provider: {}, model: {}), using lite prompt",
 						activeConfig.getProvider(), activeConfig.getModelName());
 				prompt = PromptHelper.buildLiteSqlGeneratorPrompt(sqlGenerationDTO);
-			} else {
+			}
+			else {
 				prompt = PromptHelper.buildNewSqlGeneratorPrompt(sqlGenerationDTO);
 			}
 			log.debug("SQL generator prompt as follows \n {} \n", prompt);
@@ -143,54 +141,48 @@ public class Nl2SqlServiceImpl implements Nl2SqlService {
 			if (retryCount >= 2) {
 				log.info("Retry count >= 2, using simplified prompt and user role for better compatibility");
 				chatResponseFlux = aiModelRegistry.getChatClient()
-						.prompt()
-						.user("Please generate SQL query for: " + sqlGenerationDTO.getExecutionDescription() +
-								". Database schema: " + prompt.substring(0, Math.min(3000, prompt.length())))
-						.options(OpenAiChatOptions.builder()
-								.temperature(Math.max(temperature, 0.3))
-								.build())
-						.stream()
-						.chatResponse();
-			} else {
+					.prompt()
+					.user("Please generate SQL query for: " + sqlGenerationDTO.getExecutionDescription()
+							+ ". Database schema: " + prompt.substring(0, Math.min(3000, prompt.length())))
+					.options(OpenAiChatOptions.builder().temperature(Math.max(temperature, 0.3)).build())
+					.stream()
+					.chatResponse();
+			}
+			else {
 				// Use aiModelRegistry directly for temperature control
 				chatResponseFlux = aiModelRegistry.getChatClient()
-						.prompt()
-						.system(prompt)
-						.options(OpenAiChatOptions.builder()
-								.temperature(temperature)
-								.build())
-						.stream()
-						.chatResponse();
+					.prompt()
+					.system(prompt)
+					.options(OpenAiChatOptions.builder().temperature(temperature).build())
+					.stream()
+					.chatResponse();
 			}
 		}
 
 		// Add detailed logging to diagnose LLM response
-		return chatResponseFlux
-				.doOnNext(response -> {
-					if (response != null && response.getResult() != null && response.getResult().getOutput() != null) {
-						String text = response.getResult().getOutput().getText();
-						log.info("LLM ChatResponse chunk received: text=[{}], textLength={}",
-								text, text != null ? text.length() : -1);
-						if (text == null || text.isEmpty()) {
-							log.warn("LLM returned empty text! Full response: {}", response);
-						}
-					} else {
-						log.error(
-								"LLM ChatResponse chunk is NULL or has null result/output! Response structure: response={}, result={}, output={}",
-								response,
-								response != null ? response.getResult() : "N/A",
-								response != null && response.getResult() != null ? response.getResult().getOutput()
-										: "N/A");
-					}
-				})
-				.doOnComplete(() -> log.info("LLM SQL generation stream completed successfully"))
-				.doOnError(e -> log.error("LLM SQL generation stream FAILED with exception", e))
-				.map(ChatResponseUtil::getText);
+		return chatResponseFlux.doOnNext(response -> {
+			if (response != null && response.getResult() != null && response.getResult().getOutput() != null) {
+				String text = response.getResult().getOutput().getText();
+				log.info("LLM ChatResponse chunk received: text=[{}], textLength={}", text,
+						text != null ? text.length() : -1);
+				if (text == null || text.isEmpty()) {
+					log.warn("LLM returned empty text! Full response: {}", response);
+				}
+			}
+			else {
+				log.error(
+						"LLM ChatResponse chunk is NULL or has null result/output! Response structure: response={}, result={}, output={}",
+						response, response != null ? response.getResult() : "N/A",
+						response != null && response.getResult() != null ? response.getResult().getOutput() : "N/A");
+			}
+		})
+			.doOnComplete(() -> log.info("LLM SQL generation stream completed successfully"))
+			.doOnError(e -> log.error("LLM SQL generation stream FAILED with exception", e))
+			.map(ChatResponseUtil::getText);
 	}
 
 	/**
 	 * Calculate dynamic temperature based on retry count
-	 * 
 	 * @param retryCount current retry attempt count
 	 * @return calculated temperature value
 	 */
@@ -199,11 +191,13 @@ public class Nl2SqlServiceImpl implements Nl2SqlService {
 			// Initial generation: use low temperature for stability
 			log.debug("Initial SQL generation, using temperature: 0.1");
 			return 0.1;
-		} else if (retryCount <= 5) {
+		}
+		else if (retryCount <= 5) {
 			// Early retries: moderate temperature for diversity
 			log.debug("Early retry (count: {}), using temperature: 0.3", retryCount);
 			return 0.3;
-		} else {
+		}
+		else {
 			// Late retries: higher temperature to try different approaches
 			log.debug("Late retry (count: {}), using temperature: 0.5", retryCount);
 			return 0.5;
@@ -225,47 +219,43 @@ public class Nl2SqlServiceImpl implements Nl2SqlService {
 		log.debug("Built table selection with advice prompt as follows \n {} \n", prompt);
 
 		StringBuilder sb = new StringBuilder();
-		return llmService.callUser(prompt)
-				.doOnNext(r -> {
-					String text = r.getResult().getOutput().getText();
-					log.debug("Received advice-based selection chunk: {}", text);
-					sb.append(text);
-				})
-				.doOnComplete(() -> {
-					String content = sb.toString();
-					log.debug("Advice-based selection stream completed, full content length: {} chars",
-							content.length());
+		return llmService.callUser(prompt).doOnNext(r -> {
+			String text = r.getResult().getOutput().getText();
+			log.debug("Received advice-based selection chunk: {}", text);
+			sb.append(text);
+		}).doOnComplete(() -> {
+			String content = sb.toString();
+			log.debug("Advice-based selection stream completed, full content length: {} chars", content.length());
 
-					if (!content.trim().isEmpty()) {
-						String jsonContent = MarkdownParserUtil.extractText(content);
-						log.debug("Extracted JSON content: {}", jsonContent);
+			if (!content.trim().isEmpty()) {
+				String jsonContent = MarkdownParserUtil.extractText(content);
+				log.debug("Extracted JSON content: {}", jsonContent);
 
-						List<String> tableList;
-						try {
-							tableList = JsonUtil.getObjectMapper().readValue(jsonContent,
-									new TypeReference<List<String>>() {
-									});
-							log.debug("Successfully parsed table list: {}", tableList);
-						} catch (Exception e) {
-							log.error("Failed to parse table selection response: {}", jsonContent, e);
-							throw new IllegalStateException(jsonContent);
-						}
+				List<String> tableList;
+				try {
+					tableList = JsonUtil.getObjectMapper().readValue(jsonContent, new TypeReference<List<String>>() {
+					});
+					log.debug("Successfully parsed table list: {}", tableList);
+				}
+				catch (Exception e) {
+					log.error("Failed to parse table selection response: {}", jsonContent, e);
+					throw new IllegalStateException(jsonContent);
+				}
 
-						if (tableList != null && !tableList.isEmpty()) {
-							Set<String> selectedTables = tableList.stream()
-									.map(String::toLowerCase)
-									.collect(Collectors.toSet());
-							log.info("Advice-based selection completed: selected {} tables: {}", selectedTables.size(),
-									selectedTables);
-							resultConsumer.accept(selectedTables);
-							return;
-						}
-					}
+				if (tableList != null && !tableList.isEmpty()) {
+					Set<String> selectedTables = tableList.stream()
+						.map(String::toLowerCase)
+						.collect(Collectors.toSet());
+					log.info("Advice-based selection completed: selected {} tables: {}", selectedTables.size(),
+							selectedTables);
+					resultConsumer.accept(selectedTables);
+					return;
+				}
+			}
 
-					log.debug("No tables selected based on advice");
-					resultConsumer.accept(new HashSet<>());
-				})
-				.doOnError(e -> log.error("Advice-based selection failed", e));
+			log.debug("No tables selected based on advice");
+			resultConsumer.accept(new HashSet<>());
+		}).doOnError(e -> log.error("Advice-based selection failed", e));
 	}
 
 	@Override
@@ -295,13 +285,13 @@ public class Nl2SqlServiceImpl implements Nl2SqlService {
 			try {
 				// 非流式调用，直接获取完整响应
 				ChatResponse response = aiModelRegistry.getChatClient()
-						.prompt()
-						.user(prompt)
-						.options(OpenAiChatOptions.builder()
-								.temperature(0.0) // 温度为0，确保结果稳定
-								.build())
-						.call()
-						.chatResponse();
+					.prompt()
+					.user(prompt)
+					.options(OpenAiChatOptions.builder()
+						.temperature(0.0) // 温度为0，确保结果稳定
+						.build())
+					.call()
+					.chatResponse();
 
 				String content = response.getResult().getOutput().getText();
 				log.info("LLM fine selection response received, length: {} chars", content.length());
@@ -320,7 +310,8 @@ public class Nl2SqlServiceImpl implements Nl2SqlService {
 						log.info("Successfully parsed table list (old format), count: {}",
 								tableList != null ? tableList.size() : 0);
 						log.debug("Parsed table list: {}", tableList);
-					} catch (Exception e) {
+					}
+					catch (Exception e) {
 						// 如果解析失败,尝试解析为新格式: List<Map<String, Object>>
 						log.warn("Failed to parse as List<String>, trying new format with table objects");
 						try {
@@ -334,12 +325,13 @@ public class Nl2SqlServiceImpl implements Nl2SqlService {
 							// 从对象中提取 table 字段
 							if (tableObjects != null) {
 								tableList = tableObjects.stream()
-										.map(obj -> (String) obj.get("table"))
-										.filter(Objects::nonNull)
-										.collect(Collectors.toList());
+									.map(obj -> (String) obj.get("table"))
+									.filter(Objects::nonNull)
+									.collect(Collectors.toList());
 								log.info("Extracted table names from objects: {}", tableList);
 							}
-						} catch (Exception e2) {
+						}
+						catch (Exception e2) {
 							log.error("Failed to parse fine selection response as both formats: {}", jsonContent, e2);
 							throw new IllegalStateException("JSON parse failed: " + jsonContent, e2);
 						}
@@ -353,14 +345,13 @@ public class Nl2SqlServiceImpl implements Nl2SqlService {
 							int originalTableCount = schemaDTO.getTable().size();
 							log.debug("Filtering schema tables from {} tables", originalTableCount);
 
-							schemaDTO.getTable()
-									.removeIf(table -> {
-										boolean shouldRemove = !selectedTables.contains(table.getName().toLowerCase());
-										if (shouldRemove) {
-											log.debug("Removing table: {}", table.getName());
-										}
-										return shouldRemove;
-									});
+							schemaDTO.getTable().removeIf(table -> {
+								boolean shouldRemove = !selectedTables.contains(table.getName().toLowerCase());
+								if (shouldRemove) {
+									log.debug("Removing table: {}", table.getName());
+								}
+								return shouldRemove;
+							});
 
 							int finalTableCount = schemaDTO.getTable().size();
 							log.info("Fine selection filter completed: {} -> {} tables", originalTableCount,
@@ -368,10 +359,12 @@ public class Nl2SqlServiceImpl implements Nl2SqlService {
 							log.info("Remaining tables: {}",
 									schemaDTO.getTable().stream().map(t -> t.getName()).collect(Collectors.toList()));
 						}
-					} else {
+					}
+					else {
 						log.warn("Table list is null or empty after parsing");
 					}
-				} else {
+				}
+				else {
 					log.warn("LLM response content is empty");
 				}
 
@@ -393,7 +386,8 @@ public class Nl2SqlServiceImpl implements Nl2SqlService {
 				dtoConsumer.accept(schemaDTO);
 				return response;
 
-			} catch (Exception e) {
+			}
+			catch (Exception e) {
 				log.error("=== Fine selection failed with exception ===", e);
 				log.error("Exception type: {}", e.getClass().getName());
 				log.error("Exception message: {}", e.getMessage());

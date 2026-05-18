@@ -23,6 +23,7 @@ import com.audaque.cloud.ai.dataagent.vo.ApiResponse;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -36,8 +37,8 @@ import java.util.Optional;
 @Slf4j
 @RestController
 @RequestMapping("/api/agent/{agentId}/datasources")
-@CrossOrigin(origins = "*")
 @AllArgsConstructor
+@PreAuthorize("hasAuthority('agent:datasource')")
 public class AgentDatasourceController {
 
 	private final AgentDatasourceService agentDatasourceService;

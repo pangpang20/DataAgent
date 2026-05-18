@@ -30,7 +30,8 @@ class PlanProcessUtilTest {
 
 		// Should be valid JSON after repair
 		assertDoesNotThrow(() -> com.fasterxml.jackson.databind.ObjectMapper.class.getDeclaredConstructor()
-			.newInstance().readTree(repaired));
+			.newInstance()
+			.readTree(repaired));
 		assertTrue(repaired.endsWith("}]}") || repaired.endsWith("\"}]"));
 	}
 

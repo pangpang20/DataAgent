@@ -46,7 +46,6 @@ public class DBConnectionPoolFactory {
 
 	/**
 	 * Get corresponding DB connection pool based on database type
-	 * 
 	 * @param type database type
 	 * @return DB connection pool
 	 */
@@ -72,16 +71,15 @@ public class DBConnectionPoolFactory {
 
 	/**
 	 * 根据数据库类型查找对应的连接池（无缓存版本）
-	 * 
 	 * @param type 数据库类型
 	 * @return 对应的数据库连接池
 	 */
 	private DBConnectionPool findPoolByDbType(String type) {
 		return poolMap.values()
-				.stream()
-				.filter(p -> p.supportedDataSourceType(type))
-				.findFirst()
-				.orElseThrow(() -> new IllegalStateException("No DB connection pool found for type: " + type));
+			.stream()
+			.filter(p -> p.supportedDataSourceType(type))
+			.findFirst()
+			.orElseThrow(() -> new IllegalStateException("No DB connection pool found for type: " + type));
 	}
 
 }

@@ -29,9 +29,8 @@ import java.util.List;
 /**
  * Qwen Embedding 模型包装类
  *
- * 修复 qwen3-embedding API 返回的 data 数组中 index 不连续的问题。
- * qwen3-embedding 返回的 index 可能是 [0, 2] 而不是 [0, 1]，
- * 导致 Spring AI 的 EmbeddingModel.embed() 方法访问越界。
+ * 修复 qwen3-embedding API 返回的 data 数组中 index 不连续的问题。 qwen3-embedding 返回的 index 可能是 [0, 2]
+ * 而不是 [0, 1]， 导致 Spring AI 的 EmbeddingModel.embed() 方法访问越界。
  *
  * 此包装类会对返回的 embedding 列表按 index 排序并重新编号。
  */
@@ -82,8 +81,7 @@ public class QwenEmbeddingModel implements EmbeddingModel {
 	}
 
 	/**
-	 * 重写 embed(List<String>) 方法，确保修复 index 问题
-	 * 这是 MilvusVectorStore 调用的方法
+	 * 重写 embed(List<String>) 方法，确保修复 index 问题 这是 MilvusVectorStore 调用的方法
 	 */
 	@Override
 	public List<float[]> embed(List<String> texts) {
@@ -132,8 +130,8 @@ public class QwenEmbeddingModel implements EmbeddingModel {
 	/**
 	 * 修复 EmbeddingResponse 中的 index 问题
 	 *
-	 * qwen3-embedding 返回的 data 数组中，index 可能不连续（如 [0, 2]），
-	 * 此方法会按 index 排序并重新编号为连续的 [0, 1, 2, ...]
+	 * qwen3-embedding 返回的 data 数组中，index 可能不连续（如 [0, 2]）， 此方法会按 index 排序并重新编号为连续的 [0, 1,
+	 * 2, ...]
 	 *
 	 * 同时检测返回的 embedding 数量是否与输入数量匹配
 	 */
@@ -177,9 +175,9 @@ public class QwenEmbeddingModel implements EmbeddingModel {
 			fixedEmbeddings.add(fixed);
 		}
 
-		log.info("Fixed embedding indices to: {}",
-				fixedEmbeddings.stream().map(Embedding::getIndex).toList());
+		log.info("Fixed embedding indices to: {}", fixedEmbeddings.stream().map(Embedding::getIndex).toList());
 
 		return new EmbeddingResponse(fixedEmbeddings);
 	}
+
 }

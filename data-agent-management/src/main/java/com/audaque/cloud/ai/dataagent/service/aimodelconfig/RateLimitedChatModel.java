@@ -33,8 +33,7 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
 /**
- * ChatModel 装饰器：通过 Semaphore 限制对 LLM API 的并发请求数。
- * 解决多个工作流节点同时调用 LLM 导致超出网关速率限制（429）的问题。
+ * ChatModel 装饰器：通过 Semaphore 限制对 LLM API 的并发请求数。 解决多个工作流节点同时调用 LLM 导致超出网关速率限制（429）的问题。
  */
 @Slf4j
 public class RateLimitedChatModel implements ChatModel {
@@ -57,7 +56,8 @@ public class RateLimitedChatModel implements ChatModel {
 		acquirePermit();
 		try {
 			return delegate.call(convertSystemMessages(prompt));
-		} finally {
+		}
+		finally {
 			releasePermit();
 		}
 	}
@@ -66,13 +66,11 @@ public class RateLimitedChatModel implements ChatModel {
 	public Flux<ChatResponse> stream(Prompt prompt) {
 		return Flux.defer(() -> {
 			acquirePermit();
-			return delegate.stream(convertSystemMessages(prompt))
-					.doFinally(signal -> {
-						if (signal == SignalType.ON_COMPLETE || signal == SignalType.ON_ERROR
-								|| signal == SignalType.CANCEL) {
-							releasePermit();
-						}
-					});
+			return delegate.stream(convertSystemMessages(prompt)).doFinally(signal -> {
+				if (signal == SignalType.ON_COMPLETE || signal == SignalType.ON_ERROR || signal == SignalType.CANCEL) {
+					releasePermit();
+				}
+			});
 		});
 	}
 
@@ -82,9 +80,9 @@ public class RateLimitedChatModel implements ChatModel {
 	}
 
 	/**
-	 * 将 SystemMessage 转换为 UserMessage，兼容不支持 system 角色的模型（如 Qwen3.6-27B）。
-	 * - 仅含 SystemMessage 时：转为 UserMessage
-	 * - 同时含 SystemMessage 和 UserMessage 时：将 system 内容前置到 user 消息中
+	 * 将 SystemMessage 转换为 UserMessage，兼容不支持 system 角色的模型（如 Qwen3.6-27B）。 - 仅含
+	 * SystemMessage 时：转为 UserMessage - 同时含 SystemMessage 和 UserMessage 时：将 system 内容前置到
+	 * user 消息中
 	 */
 	private Prompt convertSystemMessages(Prompt prompt) {
 		List<Message> messages = prompt.getInstructions();
@@ -99,7 +97,8 @@ public class RateLimitedChatModel implements ChatModel {
 		for (Message message : messages) {
 			if (message instanceof SystemMessage sm) {
 				systemContent.append(sm.getText()).append("\n\n");
-			} else {
+			}
+			else {
 				converted.add(message);
 			}
 		}
@@ -109,12 +108,12 @@ public class RateLimitedChatModel implements ChatModel {
 				// 仅有 system 消息，转为 user 消息
 				converted.add(new UserMessage(systemContent.toString().trim()));
 				log.debug("Converted system-only prompt to user message");
-			} else {
+			}
+			else {
 				// 同时有 system 和 user，将 system 内容前置到第一个 user 消息
 				Message firstUser = converted.get(0);
 				if (firstUser instanceof UserMessage um) {
-					converted.set(0,
-							new UserMessage(systemContent + um.getText()));
+					converted.set(0, new UserMessage(systemContent + um.getText()));
 					log.debug("Prepended system content to user message");
 				}
 			}
@@ -128,10 +127,12 @@ public class RateLimitedChatModel implements ChatModel {
 			if (!semaphore.tryAcquire(60, TimeUnit.SECONDS)) {
 				log.warn("LLM rate limit: timed out waiting for permit (maxConcurrent={}), proceeding without permit",
 						maxConcurrent);
-			} else {
+			}
+			else {
 				log.debug("LLM rate limit: permit acquired, available={}", semaphore.availablePermits());
 			}
-		} catch (InterruptedException e) {
+		}
+		catch (InterruptedException e) {
 			Thread.currentThread().interrupt();
 			log.warn("LLM rate limit: interrupted while waiting for permit, proceeding without permit");
 		}
@@ -141,4 +142,5 @@ public class RateLimitedChatModel implements ChatModel {
 		semaphore.release();
 		log.debug("LLM rate limit: permit released, available={}", semaphore.availablePermits());
 	}
+
 }

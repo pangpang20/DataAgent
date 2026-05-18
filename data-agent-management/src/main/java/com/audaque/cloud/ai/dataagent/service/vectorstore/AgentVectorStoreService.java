@@ -30,8 +30,7 @@ public interface AgentVectorStoreService {
 	List<Document> search(AgentSearchRequest searchRequest);
 
 	/**
-	 * 手动触发 Milvus flush 操作
-	 * 当 auto flush 被禁用时使用
+	 * 手动触发 Milvus flush 操作 当 auto flush 被禁用时使用
 	 */
 	void manualFlush();
 

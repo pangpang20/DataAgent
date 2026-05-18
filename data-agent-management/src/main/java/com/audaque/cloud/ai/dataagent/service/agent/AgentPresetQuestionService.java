@@ -58,8 +58,7 @@ public interface AgentPresetQuestionService {
 	void deleteByAgentId(Long agentId);
 
 	/**
-	 * Batch save preset questions: delete all existing ones for the agent, then
-	 * insert
+	 * Batch save preset questions: delete all existing ones for the agent, then insert
 	 * the new list
 	 */
 	void batchSave(Long agentId, List<AgentPresetQuestion> questions);

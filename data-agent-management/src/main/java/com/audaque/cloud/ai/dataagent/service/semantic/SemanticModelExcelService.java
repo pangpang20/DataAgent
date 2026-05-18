@@ -40,9 +40,9 @@ public class SemanticModelExcelService {
 		try {
 			// 使用 EasyExcel 同步读取，自动根据 @ExcelProperty 注解映射列
 			List<SemanticModelImportItem> items = EasyExcel.read(file.getInputStream())
-					.head(SemanticModelImportItem.class)
-					.sheet()
-					.doReadSync();
+				.head(SemanticModelImportItem.class)
+				.sheet()
+				.doReadSync();
 
 			if (items == null || items.isEmpty()) {
 				throw new IllegalArgumentException("No valid data in Excel file");
@@ -81,7 +81,8 @@ public class SemanticModelExcelService {
 
 			log.info("Successfully parsed Excel file, total {} records", items.size());
 			return items;
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			log.error("Failed to parse Excel file: {}", file.getOriginalFilename(), e);
 			throw new IOException("Failed to parse Excel file: " + e.getMessage(), e);
 		}

@@ -56,8 +56,7 @@ public class DynamicModelFactory {
 	private int maxConcurrent;
 
 	/**
-	 * 统一使用 OpenAiChatModel，通过 baseUrl 实现多厂商兼容
-	 * 支持自定义认证头名称
+	 * 统一使用 OpenAiChatModel，通过 baseUrl 实现多厂商兼容 支持自定义认证头名称
 	 */
 	public ChatModel createChatModel(ModelConfigDTO config) {
 		// 1. 验证参数
@@ -74,20 +73,20 @@ public class DynamicModelFactory {
 
 		// 4. 构建运行时选项 (设置默认的模型名称，如 "deepseek-chat" 或 "gpt-4")
 		OpenAiChatOptions openAiChatOptions = OpenAiChatOptions.builder()
-				.model(modelName)
-				.temperature(config.getTemperature())
-				.maxTokens(config.getMaxTokens())
-				.build();
+			.model(modelName)
+			.temperature(config.getTemperature())
+			.maxTokens(config.getMaxTokens())
+			.build();
 
 		// 5. 创建自定义重试模板，支持 429 错误重试
 		RetryTemplate retryTemplate = createRetryTemplate();
 
 		// 6. 创建 OpenAiChatModel，配置重试机制
 		ChatModel chatModel = OpenAiChatModel.builder()
-				.openAiApi(openAiApi)
-				.defaultOptions(openAiChatOptions)
-				.retryTemplate(retryTemplate)
-				.build();
+			.openAiApi(openAiApi)
+			.defaultOptions(openAiChatOptions)
+			.retryTemplate(retryTemplate)
+			.build();
 
 		// 7. 使用 RateLimitedChatModel 包装，限制并发请求数
 		log.info("Wrapping ChatModel with RateLimitedChatModel, maxConcurrent={}", maxConcurrent);
@@ -112,10 +111,9 @@ public class DynamicModelFactory {
 
 		// 标准认证方式：使用 Authorization: Bearer
 		OpenAiApi.Builder apiBuilder = OpenAiApi.builder()
-				.apiKey(config.getApiKey())
-				.baseUrl(config.getBaseUrl())
-				.webClientBuilder(WebClient.builder()
-						.filter(createErrorResponseInterceptor()));
+			.apiKey(config.getApiKey())
+			.baseUrl(config.getBaseUrl())
+			.webClientBuilder(WebClient.builder().filter(createErrorResponseInterceptor()));
 
 		if (StringUtils.hasText(config.getCompletionsPath())) {
 			apiBuilder.completionsPath(config.getCompletionsPath());
@@ -128,9 +126,8 @@ public class DynamicModelFactory {
 	}
 
 	/**
-	 * 使用自定义认证头创建 OpenAiApi
-	 * 通过自定义 RestClient 和 WebClient 来实现非标准认证头
-	 * 注意：Spring AI 1.1.0 的 OpenAiApi 使用 RestClient（同步）和 WebClient（响应式流）
+	 * 使用自定义认证头创建 OpenAiApi 通过自定义 RestClient 和 WebClient 来实现非标准认证头 注意：Spring AI 1.1.0 的
+	 * OpenAiApi 使用 RestClient（同步）和 WebClient（响应式流）
 	 */
 	private OpenAiApi createOpenAiApiWithCustomAuthHeader(ModelConfigDTO config) {
 		String authHeaderName = config.getAuthHeaderName();
@@ -140,36 +137,35 @@ public class DynamicModelFactory {
 
 		// 创建自定义 RestClient，添加自定义认证头
 		RestClient.Builder restClientBuilder = RestClient.builder()
-				.defaultHeader(authHeaderName, apiKey)
-				.requestInterceptor((request, body, execution) -> {
-					request.getHeaders().remove("Authorization");
-					var response = execution.execute(request, body);
-					log.info("RestClient Response status: {}", response.getStatusCode());
-					return response;
-				});
+			.defaultHeader(authHeaderName, apiKey)
+			.requestInterceptor((request, body, execution) -> {
+				request.getHeaders().remove("Authorization");
+				var response = execution.execute(request, body);
+				log.info("RestClient Response status: {}", response.getStatusCode());
+				return response;
+			});
 
 		// 创建自定义 WebClient，添加自定义认证头（用于流式响应）
-		WebClient.Builder webClientBuilder =
-				WebClient.builder()
-						.defaultHeader(authHeaderName, apiKey)
-						.codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(-1))
-						.filter(createErrorResponseInterceptor())
-						.filter((request, next) -> {
-							var filteredRequest = ClientRequest.create(request.method(), request.url())
-									.headers(h -> h.addAll(request.headers()))
-									.headers(h -> h.remove("Authorization"))
-									.body(request.body())
-									.build();
-							log.debug("WebClient request to {}: headers={}",
-									filteredRequest.url(), filteredRequest.headers().keySet());
-							return next.exchange(filteredRequest);
-						});
+		WebClient.Builder webClientBuilder = WebClient.builder()
+			.defaultHeader(authHeaderName, apiKey)
+			.codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(-1))
+			.filter(createErrorResponseInterceptor())
+			.filter((request, next) -> {
+				var filteredRequest = ClientRequest.create(request.method(), request.url())
+					.headers(h -> h.addAll(request.headers()))
+					.headers(h -> h.remove("Authorization"))
+					.body(request.body())
+					.build();
+				log.debug("WebClient request to {}: headers={}", filteredRequest.url(),
+						filteredRequest.headers().keySet());
+				return next.exchange(filteredRequest);
+			});
 
 		OpenAiApi.Builder apiBuilder = OpenAiApi.builder()
-				.apiKey("")
-				.baseUrl(config.getBaseUrl())
-				.restClientBuilder(restClientBuilder)
-				.webClientBuilder(webClientBuilder);
+			.apiKey("")
+			.baseUrl(config.getBaseUrl())
+			.restClientBuilder(restClientBuilder)
+			.webClientBuilder(webClientBuilder);
 
 		if (StringUtils.hasText(config.getCompletionsPath())) {
 			apiBuilder.completionsPath(config.getCompletionsPath());
@@ -182,8 +178,7 @@ public class DynamicModelFactory {
 	}
 
 	/**
-	 * Embedding 同理
-	 * 支持自定义认证头名称
+	 * Embedding 同理 支持自定义认证头名称
 	 */
 	public EmbeddingModel createEmbeddingModel(ModelConfigDTO config) {
 		log.info("Creating NEW EmbeddingModel instance. Provider: {}, Model: {}, BaseUrl: {}, AuthHeader: {}",
@@ -194,8 +189,7 @@ public class DynamicModelFactory {
 
 		RetryTemplate retryTemplate = createRetryTemplate();
 		EmbeddingModel baseModel = new OpenAiEmbeddingModel(openAiApi, MetadataMode.EMBED,
-				OpenAiEmbeddingOptions.builder().model(config.getModelName()).build(),
-				retryTemplate);
+				OpenAiEmbeddingOptions.builder().model(config.getModelName()).build(), retryTemplate);
 
 		// 只对 Qwen 提供商使用 QwenEmbeddingModel 包装类（解决 Qwen API 返回结果数量不足问题）
 		// 其他提供商（Ollama、OpenAI、Azure 等）直接返回原始模型
@@ -208,29 +202,22 @@ public class DynamicModelFactory {
 	}
 
 	/**
-	 * 创建 WebClient 响应拦截器：在 Spring AI 解析响应之前拦截错误响应（4xx/5xx），
-	 * 提取 API 返回的真实错误信息并抛出有意义的异常，避免 MessageAggregator 解析失败导致错误信息丢失。
-	 * 对于正常响应（2xx），直接透传不影响流式处理。
+	 * 创建 WebClient 响应拦截器：在 Spring AI 解析响应之前拦截错误响应（4xx/5xx）， 提取 API 返回的真实错误信息并抛出有意义的异常，避免
+	 * MessageAggregator 解析失败导致错误信息丢失。 对于正常响应（2xx），直接透传不影响流式处理。
 	 */
 	private org.springframework.web.reactive.function.client.ExchangeFilterFunction createErrorResponseInterceptor() {
-		return org.springframework.web.reactive.function.client.ExchangeFilterFunction.ofResponseProcessor(
-				clientResponse -> {
-					if (clientResponse.statusCode().isError()) {
-						return clientResponse.bodyToMono(String.class)
-								.defaultIfEmpty("")
-								.flatMap(errorBody -> {
-									log.error("LLM API error response: status={}, body={}",
-											clientResponse.statusCode(), errorBody);
-									return Mono.error(WebClientResponseException.create(
-											clientResponse.statusCode().value(),
-											clientResponse.statusCode().toString(),
-											clientResponse.headers().asHttpHeaders(),
-											errorBody.getBytes(),
-											java.nio.charset.StandardCharsets.UTF_8));
-								});
-					}
-					return Mono.just(clientResponse);
-				});
+		return org.springframework.web.reactive.function.client.ExchangeFilterFunction
+			.ofResponseProcessor(clientResponse -> {
+				if (clientResponse.statusCode().isError()) {
+					return clientResponse.bodyToMono(String.class).defaultIfEmpty("").flatMap(errorBody -> {
+						log.error("LLM API error response: status={}, body={}", clientResponse.statusCode(), errorBody);
+						return Mono.error(WebClientResponseException.create(clientResponse.statusCode().value(),
+								clientResponse.statusCode().toString(), clientResponse.headers().asHttpHeaders(),
+								errorBody.getBytes(), java.nio.charset.StandardCharsets.UTF_8));
+					});
+				}
+				return Mono.just(clientResponse);
+			});
 	}
 
 	/**
@@ -238,34 +225,33 @@ public class DynamicModelFactory {
 	 */
 	private RetryTemplate createRetryTemplate() {
 		return RetryTemplate.builder()
-				.maxAttempts(maxAttempts)
-				.exponentialBackoff(initialInterval, multiplier, maxInterval)
-				.retryOn(WebClientResponseException.TooManyRequests.class)
-				.retryOn(WebClientResponseException.BadRequest.class)
-				.retryOn(WebClientResponseException.ServiceUnavailable.class)
-				.retryOn(WebClientResponseException.GatewayTimeout.class)
-				.retryOn(WebClientResponseException.InternalServerError.class)
-				.withListener(new org.springframework.retry.listener.RetryListenerSupport() {
-					@Override
-					public <T, E extends Throwable> void onError(
-							org.springframework.retry.RetryContext context,
-							org.springframework.retry.RetryCallback<T, E> callback,
-							Throwable throwable) {
-						if (throwable instanceof WebClientResponseException.TooManyRequests) {
-							log.warn("LLM API rate limit (429), retrying attempt {}, backoff: {} ms",
-									context.getRetryCount() + 1,
-									initialInterval * (long) Math.pow(multiplier, context.getRetryCount()));
-						} else if (throwable instanceof WebClientResponseException.BadRequest) {
-							log.warn("LLM API bad request (400), retrying attempt {}: {}",
-									context.getRetryCount() + 1,
-									((WebClientResponseException) throwable).getResponseBodyAsString());
-						} else {
-							log.warn("LLM API call failed, retrying attempt {}: {}",
-									context.getRetryCount() + 1, throwable.getMessage());
-						}
+			.maxAttempts(maxAttempts)
+			.exponentialBackoff(initialInterval, multiplier, maxInterval)
+			.retryOn(WebClientResponseException.TooManyRequests.class)
+			.retryOn(WebClientResponseException.BadRequest.class)
+			.retryOn(WebClientResponseException.ServiceUnavailable.class)
+			.retryOn(WebClientResponseException.GatewayTimeout.class)
+			.retryOn(WebClientResponseException.InternalServerError.class)
+			.withListener(new org.springframework.retry.listener.RetryListenerSupport() {
+				@Override
+				public <T, E extends Throwable> void onError(org.springframework.retry.RetryContext context,
+						org.springframework.retry.RetryCallback<T, E> callback, Throwable throwable) {
+					if (throwable instanceof WebClientResponseException.TooManyRequests) {
+						log.warn("LLM API rate limit (429), retrying attempt {}, backoff: {} ms",
+								context.getRetryCount() + 1,
+								initialInterval * (long) Math.pow(multiplier, context.getRetryCount()));
 					}
-				})
-				.build();
+					else if (throwable instanceof WebClientResponseException.BadRequest) {
+						log.warn("LLM API bad request (400), retrying attempt {}: {}", context.getRetryCount() + 1,
+								((WebClientResponseException) throwable).getResponseBodyAsString());
+					}
+					else {
+						log.warn("LLM API call failed, retrying attempt {}: {}", context.getRetryCount() + 1,
+								throwable.getMessage());
+					}
+				}
+			})
+			.build();
 	}
 
 }

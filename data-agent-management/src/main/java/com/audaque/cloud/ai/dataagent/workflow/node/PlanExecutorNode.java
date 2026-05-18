@@ -31,13 +31,12 @@ import java.util.Set;
 import static com.audaque.cloud.ai.dataagent.constant.Constant.*;
 
 /**
- * Plan execution node that handles step-by-step execution.
- * Plan validation is performed once in PlanValidatorNode.
- * 
- * Safety measures:
- * 1. Checks PLAN_VALIDATION_STATUS before execution (defensive programming)
- * 2. Only executes when validation has passed
- * 3. Prevents execution of invalid plans
+ * Plan execution node that handles step-by-step execution. Plan validation is performed
+ * once in PlanValidatorNode.
+ *
+ * Safety measures: 1. Checks PLAN_VALIDATION_STATUS before execution (defensive
+ * programming) 2. Only executes when validation has passed 3. Prevents execution of
+ * invalid plans
  */
 @Slf4j
 @Component
@@ -57,10 +56,8 @@ public class PlanExecutorNode implements NodeAction {
 			String validationError = state.value(PLAN_VALIDATION_ERROR, "Unknown validation error");
 			log.error("Plan validation failed, cannot execute. Error: {}", validationError);
 			// 校验失败的情况下，不应该进入执行阶段
-			return Map.of(
-				PLAN_VALIDATION_STATUS, false,
-				PLAN_VALIDATION_ERROR, "Plan validation failed before execution: " + validationError
-			);
+			return Map.of(PLAN_VALIDATION_STATUS, false, PLAN_VALIDATION_ERROR,
+					"Plan validation failed before execution: " + validationError);
 		}
 
 		// 2. Get current step and plan
@@ -73,11 +70,8 @@ public class PlanExecutorNode implements NodeAction {
 		// 3. Check if the plan is completed
 		if (currentStep > executionPlan.size()) {
 			log.info("Plan completed, current step: {}, total steps: {}", currentStep, executionPlan.size());
-			return Map.of(
-				PLAN_CURRENT_STEP, 1, 
-				PLAN_NEXT_NODE, isOnlyNl2Sql ? StateGraph.END : REPORT_GENERATOR_NODE,
-				PLAN_VALIDATION_STATUS, true
-			);
+			return Map.of(PLAN_CURRENT_STEP, 1, PLAN_NEXT_NODE, isOnlyNl2Sql ? StateGraph.END : REPORT_GENERATOR_NODE,
+					PLAN_VALIDATION_STATUS, true);
 		}
 
 		// 4. Get current step and determine next node
@@ -95,16 +89,16 @@ public class PlanExecutorNode implements NodeAction {
 		if (SUPPORTED_NODES.contains(toolToUse)) {
 			log.info("Determined next execution node: {}", toolToUse);
 			return Map.of(PLAN_NEXT_NODE, toolToUse, PLAN_VALIDATION_STATUS, true);
-		} else if (HUMAN_FEEDBACK_NODE.equals(toolToUse)) {
+		}
+		else if (HUMAN_FEEDBACK_NODE.equals(toolToUse)) {
 			log.info("Determined next execution node: {}", toolToUse);
 			return Map.of(PLAN_NEXT_NODE, toolToUse, PLAN_VALIDATION_STATUS, true);
-		} else {
+		}
+		else {
 			// This case should ideally not be reached if validation is done correctly
 			// before in PlanValidatorNode
-			return Map.of(
-				PLAN_VALIDATION_STATUS, false, 
-				PLAN_VALIDATION_ERROR, "Unsupported node type: " + toolToUse
-			);
+			return Map.of(PLAN_VALIDATION_STATUS, false, PLAN_VALIDATION_ERROR, "Unsupported node type: " + toolToUse);
 		}
 	}
+
 }

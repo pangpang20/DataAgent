@@ -22,13 +22,12 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 /**
- * Evidence查询重写输出 DTO
- * 对应 evidence-query-rewrite.txt 模板的输出
+ * Evidence查询重写输出 DTO 对应 evidence-query-rewrite.txt 模板的输出
  */
 @NoArgsConstructor
 @Setter
 @Getter
-@JsonIgnoreProperties(ignoreUnknown = true)  // 忽略LLM返回的未知字段
+@JsonIgnoreProperties(ignoreUnknown = true) // 忽略LLM返回的未知字段
 public class EvidenceQueryRewriteDTO {
 
 	/**

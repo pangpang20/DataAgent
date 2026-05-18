@@ -31,10 +31,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 /**
- * Manages multi-turn dialogue context for each thread. The context keeps a
- * lightweight
- * history of user questions and the corresponding planner outputs so downstream
- * prompts
+ * Manages multi-turn dialogue context for each thread. The context keeps a lightweight
+ * history of user questions and the corresponding planner outputs so downstream prompts
  * can reference prior turns.
  */
 @Slf4j
@@ -55,8 +53,7 @@ public class MultiTurnContextManager {
 
 	/**
 	 * Start tracking a new turn for the given thread.
-	 * 
-	 * @param threadId     conversation thread id
+	 * @param threadId conversation thread id
 	 * @param userQuestion latest user question
 	 */
 	public void beginTurn(String threadId, String userQuestion) {
@@ -68,9 +65,8 @@ public class MultiTurnContextManager {
 
 	/**
 	 * Append planner output chunk for the current turn.
-	 * 
 	 * @param threadId conversation thread id
-	 * @param chunk    planner streaming chunk
+	 * @param chunk planner streaming chunk
 	 */
 	public void appendPlannerChunk(String threadId, String chunk) {
 		if (StringUtils.isAnyBlank(threadId, chunk)) {
@@ -84,7 +80,6 @@ public class MultiTurnContextManager {
 
 	/**
 	 * Finalize current turn and add to history if planner output is available.
-	 * 
 	 * @param threadId conversation thread id
 	 */
 	public void finishTurn(String threadId) {
@@ -117,10 +112,8 @@ public class MultiTurnContextManager {
 	}
 
 	/**
-	 * Remove any pending turn data without touching persisted history. Typically
-	 * used
+	 * Remove any pending turn data without touching persisted history. Typically used
 	 * when a run is aborted.
-	 * 
 	 * @param threadId conversation thread id
 	 */
 	public void discardPending(String threadId) {
@@ -128,10 +121,8 @@ public class MultiTurnContextManager {
 	}
 
 	/**
-	 * Restart the latest turn so a new planner output can replace it (e.g. after
-	 * human
+	 * Restart the latest turn so a new planner output can replace it (e.g. after human
 	 * feedback). The last stored turn will be removed and its question reused.
-	 * 
 	 * @param threadId conversation thread id
 	 */
 	public void restartLastTurn(String threadId) {
@@ -155,7 +146,6 @@ public class MultiTurnContextManager {
 
 	/**
 	 * Build multi-turn context string for prompt injection.
-	 * 
 	 * @param threadId conversation thread id
 	 * @return formatted history string
 	 */
@@ -168,13 +158,12 @@ public class MultiTurnContextManager {
 			return "(无)";
 		}
 		return deque.stream()
-				.map(turn -> "用户: " + turn.getUserQuestion() + "\nAI计划: " + turn.getPlan())
-				.collect(Collectors.joining("\n"));
+			.map(turn -> "用户: " + turn.getUserQuestion() + "\nAI计划: " + turn.getPlan())
+			.collect(Collectors.joining("\n"));
 	}
 
 	/**
 	 * 确保指定线程的历史记录已从数据库加载到内存
-	 * 
 	 * @param threadId 线程ID
 	 */
 	private void ensureHistoryLoaded(String threadId) {
@@ -186,7 +175,6 @@ public class MultiTurnContextManager {
 
 	/**
 	 * 从数据库加载历史记录到内存
-	 * 
 	 * @param threadId 线程ID
 	 */
 	private void loadHistoryFromDatabase(String threadId) {
@@ -195,7 +183,8 @@ public class MultiTurnContextManager {
 			Deque<ConversationTurn> deque = new ArrayDeque<>(turns);
 			history.put(threadId, deque);
 			log.debug("Loaded {} conversation turns from database for thread {}", turns.size(), threadId);
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			log.error("Failed to load conversation history from database for thread {}", threadId, e);
 			history.putIfAbsent(threadId, new ArrayDeque<>());
 		}
@@ -203,23 +192,22 @@ public class MultiTurnContextManager {
 
 	/**
 	 * 将对话记录持久化到数据库
-	 * 
-	 * @param threadId     线程ID
+	 * @param threadId 线程ID
 	 * @param userQuestion 用户问题
-	 * @param plan         AI规划
+	 * @param plan AI规划
 	 */
 	private void persistTurnToDatabase(String threadId, String userQuestion, String plan) {
 		try {
 			int maxSequence = conversationTurnMapper.getMaxSequenceNumberByThreadId(threadId);
 
 			ConversationTurn turn = ConversationTurn.builder()
-					.threadId(threadId)
-					.userQuestion(userQuestion)
-					.plan(plan)
-					.sequenceNumber(maxSequence + 1)
-					.createTime(java.time.LocalDateTime.now())
-					.updateTime(java.time.LocalDateTime.now())
-					.build();
+				.threadId(threadId)
+				.userQuestion(userQuestion)
+				.plan(plan)
+				.sequenceNumber(maxSequence + 1)
+				.createTime(java.time.LocalDateTime.now())
+				.updateTime(java.time.LocalDateTime.now())
+				.build();
 
 			conversationTurnMapper.insert(turn);
 
@@ -229,14 +217,14 @@ public class MultiTurnContextManager {
 
 			log.debug("Persisted conversation turn to database: threadId={}, sequence={}", threadId,
 					turn.getSequenceNumber());
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			log.error("Failed to persist conversation turn to database: threadId={}", threadId, e);
 		}
 	}
 
 	/**
 	 * 清除指定线程的所有历史记录（内存和数据库）
-	 * 
 	 * @param threadId 线程ID
 	 */
 	public void clearHistory(String threadId) {
@@ -250,14 +238,14 @@ public class MultiTurnContextManager {
 			conversationTurnMapper.deleteByThreadId(threadId);
 
 			log.info("Cleared all conversation history for thread: {}", threadId);
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			log.error("Failed to clear conversation history for thread: {}", threadId, e);
 		}
 	}
 
 	/**
 	 * 获取指定线程的历史记录数量
-	 * 
 	 * @param threadId 线程ID
 	 * @return 历史记录数量
 	 */
@@ -278,4 +266,5 @@ public class MultiTurnContextManager {
 		}
 
 	}
+
 }

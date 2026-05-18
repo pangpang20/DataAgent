@@ -24,21 +24,20 @@ import lombok.Data;
 @Data
 public class PresetQuestionSaveDTO {
 
-    /**
-     * 问题内容
-     */
-    @NotBlank(message = "问题内容不能为空")
-    private String question;
+	/**
+	 * 问题内容
+	 */
+	@NotBlank(message = "问题内容不能为空")
+	private String question;
 
-    /**
-     * 排序序号
-     */
-    private Integer sortOrder;
+	/**
+	 * 排序序号
+	 */
+	private Integer sortOrder;
 
-    /**
-     * 是否启用
-     */
-    private Boolean isActive = true;
+	/**
+	 * 是否启用
+	 */
+	private Boolean isActive = true;
 
 }
-

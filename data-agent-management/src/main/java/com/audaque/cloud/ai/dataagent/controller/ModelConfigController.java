@@ -101,8 +101,7 @@ public class ModelConfigController {
 	}
 
 	/**
-	 * 5.1 强制启用/切换配置（用于切换不同维度的 Embedding 模型）
-	 * 会删除现有的 Milvus collection 并重新创建，所有向量数据将丢失
+	 * 5.1 强制启用/切换配置（用于切换不同维度的 Embedding 模型） 会删除现有的 Milvus collection 并重新创建，所有向量数据将丢失
 	 */
 	@PostMapping("/force-activate/{id}")
 	public ApiResponse<String> forceActivate(@PathVariable Integer id) {
@@ -153,8 +152,7 @@ public class ModelConfigController {
 	}
 
 	/**
-	 * 8. 获取向量库维度信息
-	 * 用于检查当前 Embedding 模型与向量库的维度兼容性
+	 * 8. 获取向量库维度信息 用于检查当前 Embedding 模型与向量库的维度兼容性
 	 */
 	@GetMapping("/vector-dimension")
 	public ApiResponse<Map<String, Object>> getVectorDimension() {
@@ -166,7 +164,8 @@ public class ModelConfigController {
 			result.put("message", "当前向量库 collection 的向量维度为: " + collectionDimension);
 
 			return ApiResponse.success("获取向量库维度成功", result);
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			return ApiResponse.error("获取向量库维度失败: " + e.getMessage());
 		}
 	}

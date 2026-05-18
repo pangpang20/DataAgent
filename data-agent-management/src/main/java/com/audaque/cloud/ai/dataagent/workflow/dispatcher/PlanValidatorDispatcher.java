@@ -49,7 +49,8 @@ public class PlanValidatorDispatcher implements EdgeAction {
 			String nextNode = state.value(PLAN_NEXT_NODE, StateGraph.END);
 			log.info("Routing to first execution node: {}", nextNode);
 			return nextNode;
-		} else {
+		}
+		else {
 			// Plan validation failed, check repair count and decide whether to retry or
 			// end.
 			int repairCount = StateUtil.getObjectValue(state, PLAN_REPAIR_COUNT, Integer.class, 0);
@@ -63,4 +64,5 @@ public class PlanValidatorDispatcher implements EdgeAction {
 			return PLANNER_NODE;
 		}
 	}
+
 }

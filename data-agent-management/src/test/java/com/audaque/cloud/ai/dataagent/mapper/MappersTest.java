@@ -62,18 +62,18 @@ public class MappersTest {
 
 	private Long createAgent(String name) {
 		Agent agent = Agent.builder()
-				.name(name)
-				.description("for fk")
-				.avatar("a")
-				.status(AgentStatus.DRAFT)
-				.prompt("p")
-				.category("c")
-				.adminId(1L)
-				.tags("t")
-				.createTime(LocalDateTime.now().withNano(0))
-				.updateTime(LocalDateTime.now().withNano(0))
-				.humanReviewEnabled(0)
-				.build();
+			.name(name)
+			.description("for fk")
+			.avatar("a")
+			.status(AgentStatus.DRAFT)
+			.prompt("p")
+			.category("c")
+			.creatorId(1L)
+			.tags("t")
+			.createTime(LocalDateTime.now().withNano(0))
+			.updateTime(LocalDateTime.now().withNano(0))
+			.humanReviewEnabled(0)
+			.build();
 		agentMapper.insert(agent);
 		return agent.getId();
 	}
@@ -87,18 +87,18 @@ public class MappersTest {
 		List<Agent> all = agentMapper.findAll();
 		Assertions.assertEquals(List.of(), all);
 		Agent agent = Agent.builder()
-				.name("test")
-				.description("test")
-				.avatar("test")
-				.status(AgentStatus.DRAFT)
-				.prompt("test")
-				.category("test")
-				.adminId(1L)
-				.tags("test")
-				.createTime(LocalDateTime.now().withNano(0))
-				.updateTime(LocalDateTime.now().withNano(0))
-				.humanReviewEnabled(0)
-				.build();
+			.name("test")
+			.description("test")
+			.avatar("test")
+			.status(AgentStatus.DRAFT)
+			.prompt("test")
+			.category("test")
+			.creatorId(1L)
+			.tags("test")
+			.createTime(LocalDateTime.now().withNano(0))
+			.updateTime(LocalDateTime.now().withNano(0))
+			.humanReviewEnabled(0)
+			.build();
 		int insert = agentMapper.insert(agent);
 		Assertions.assertEquals(1, insert);
 		Agent findById = agentMapper.findById(agent.getId());
@@ -238,7 +238,8 @@ public class MappersTest {
 			java.lang.reflect.Field field = BusinessKnowledge.class.getDeclaredField("isRecall");
 			field.setAccessible(true);
 			field.set(k, 1);
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			throw new RuntimeException(e);
 		}
 		int ins = businessKnowledgeMapper.insert(k);
